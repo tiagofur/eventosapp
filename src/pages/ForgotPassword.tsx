@@ -15,11 +15,6 @@ const forgotSchema = z.object({
 type ForgotForm = z.infer<typeof forgotSchema>;
 
 export const ForgotPassword: React.FC = () => {
-  // Check if Supabase is configured before any hooks
-  if (!isSupabaseConfigured()) {
-    return <SetupRequired />;
-  }
-
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +41,11 @@ export const ForgotPassword: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Check if Supabase is configured after all hooks
+  if (!isSupabaseConfigured()) {
+    return <SetupRequired />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors">

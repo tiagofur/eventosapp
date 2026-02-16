@@ -21,11 +21,6 @@ const registerSchema = z.object({
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export const Register: React.FC = () => {
-  // Check if Supabase is configured before any hooks
-  if (!isSupabaseConfigured()) {
-    return <SetupRequired />;
-  }
-
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +63,11 @@ export const Register: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Check if Supabase is configured after all hooks
+  if (!isSupabaseConfigured()) {
+    return <SetupRequired />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors">
