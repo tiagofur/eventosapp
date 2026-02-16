@@ -16,3 +16,17 @@ export const supabase = createClient<Database>(supabaseUrl || '', supabaseAnonKe
     detectSessionInUrl: true
   }
 });
+
+/**
+ * Get the current authenticated user's ID
+ * @throws Error if user is not authenticated
+ */
+export const getCurrentUserId = async (): Promise<string> => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (error || !user) {
+    throw new Error('Usuario no autenticado');
+  }
+  
+  return user.id;
+};
