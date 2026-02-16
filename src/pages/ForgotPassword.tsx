@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { supabase } from "../lib/supabase";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { Mail, AlertCircle, CheckCircle, Moon, Sun, ArrowLeft } from "lucide-react";
 import { useTheme } from '../hooks/useTheme';
+import { SetupRequired } from '../components/SetupRequired';
 
 const forgotSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -40,6 +41,11 @@ export const ForgotPassword: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Check if Supabase is configured after all hooks
+  if (!isSupabaseConfigured()) {
+    return <SetupRequired />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors">
