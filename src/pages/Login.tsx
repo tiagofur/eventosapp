@@ -16,6 +16,11 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export const Login: React.FC = () => {
+  // Check if Supabase is configured before any hooks
+  if (!isSupabaseConfigured()) {
+    return <SetupRequired />;
+  }
+
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,11 +29,6 @@ export const Login: React.FC = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
-
-  // Check if Supabase is configured before rendering login form
-  if (!isSupabaseConfigured()) {
-    return <SetupRequired />;
-  }
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);

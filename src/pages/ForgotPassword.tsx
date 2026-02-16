@@ -15,6 +15,11 @@ const forgotSchema = z.object({
 type ForgotForm = z.infer<typeof forgotSchema>;
 
 export const ForgotPassword: React.FC = () => {
+  // Check if Supabase is configured before any hooks
+  if (!isSupabaseConfigured()) {
+    return <SetupRequired />;
+  }
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,11 +28,6 @@ export const ForgotPassword: React.FC = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<ForgotForm>({
     resolver: zodResolver(forgotSchema),
   });
-
-  // Check if Supabase is configured before rendering forgot password form
-  if (!isSupabaseConfigured()) {
-    return <SetupRequired />;
-  }
 
   const onSubmit = async (data: ForgotForm) => {
     setIsLoading(true);

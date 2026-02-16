@@ -21,6 +21,11 @@ const registerSchema = z.object({
 type RegisterForm = z.infer<typeof registerSchema>;
 
 export const Register: React.FC = () => {
+  // Check if Supabase is configured before any hooks
+  if (!isSupabaseConfigured()) {
+    return <SetupRequired />;
+  }
+
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,11 +34,6 @@ export const Register: React.FC = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   });
-
-  // Check if Supabase is configured before rendering register form
-  if (!isSupabaseConfigured()) {
-    return <SetupRequired />;
-  }
 
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true);
