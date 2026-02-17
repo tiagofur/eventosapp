@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS product_ingredients CASCADE;
+DROP TABLE IF EXISTS event_extras CASCADE;
+DROP TABLE IF EXISTS event_products CASCADE;

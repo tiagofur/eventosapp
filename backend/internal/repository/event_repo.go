@@ -1,0 +1,293 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/tiagofur/eventosapp-backend/internal/models"
+)
+
+type EventRepo struct {
+	pool *pgxpool.Pool
+}
+
+func NewEventRepo(pool *pgxpool.Pool) *EventRepo {
+	return &EventRepo{pool: pool}
+}
+
+const eventSelectFields = `e.id, e.user_id, e.client_id, e.event_date, e.start_time, e.end_time,
+	e.service_type, e.num_people, e.status, e.discount, e.requires_invoice,
+	e.tax_rate, e.tax_amount, e.total_amount, e.location, e.city,
+	e.deposit_percent, e.cancellation_days, e.refund_percent,
+	e.notes, e.created_at, e.updated_at`
+
+func scanEvent(row pgx.Row) (*models.Event, error) {
+	e := &models.Event{}
+	err := row.Scan(
+		&e.ID, &e.UserID, &e.ClientID, &e.EventDate, &e.StartTime, &e.EndTime,
+		&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.RequiresInvoice,
+		&e.TaxRate, &e.TaxAmount, &e.TotalAmount, &e.Location, &e.City,
+		&e.DepositPercent, &e.CancellationDays, &e.RefundPercent,
+		&e.Notes, &e.CreatedAt, &e.UpdatedAt,
+	)
+	return e, err
+}
+
+func scanEventWithClient(rows pgx.Rows) (models.Event, error) {
+	var e models.Event
+	var clientName *string
+	err := rows.Scan(
+		&e.ID, &e.UserID, &e.ClientID, &e.EventDate, &e.StartTime, &e.EndTime,
+		&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.RequiresInvoice,
+		&e.TaxRate, &e.TaxAmount, &e.TotalAmount, &e.Location, &e.City,
+		&e.DepositPercent, &e.CancellationDays, &e.RefundPercent,
+		&e.Notes, &e.CreatedAt, &e.UpdatedAt,
+		&clientName,
+	)
+	if clientName != nil {
+		e.Client = &models.Client{Name: *clientName}
+	}
+	return e, err
+}
+
+func (r *EventRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Event, error) {
+	query := fmt.Sprintf(`SELECT %s, c.name as client_name
+		FROM events e LEFT JOIN clients c ON e.client_id = c.id
+		WHERE e.user_id = $1 ORDER BY e.event_date DESC`, eventSelectFields)
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		e, err := scanEventWithClient(rows)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, nil
+}
+
+func (r *EventRepo) GetByDateRange(ctx context.Context, userID uuid.UUID, start, end string) ([]models.Event, error) {
+	query := fmt.Sprintf(`SELECT %s, c.name as client_name
+		FROM events e LEFT JOIN clients c ON e.client_id = c.id
+		WHERE e.user_id = $1 AND e.event_date >= $2 AND e.event_date <= $3
+		ORDER BY e.event_date`, eventSelectFields)
+	rows, err := r.pool.Query(ctx, query, userID, start, end)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		e, err := scanEventWithClient(rows)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, nil
+}
+
+func (r *EventRepo) GetByClientID(ctx context.Context, userID, clientID uuid.UUID) ([]models.Event, error) {
+	query := fmt.Sprintf(`SELECT %s FROM events e WHERE e.user_id = $1 AND e.client_id = $2
+		ORDER BY e.event_date DESC`, eventSelectFields)
+	rows, err := r.pool.Query(ctx, query, userID, clientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		var e models.Event
+		err := rows.Scan(
+			&e.ID, &e.UserID, &e.ClientID, &e.EventDate, &e.StartTime, &e.EndTime,
+			&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.RequiresInvoice,
+			&e.TaxRate, &e.TaxAmount, &e.TotalAmount, &e.Location, &e.City,
+			&e.DepositPercent, &e.CancellationDays, &e.RefundPercent,
+			&e.Notes, &e.CreatedAt, &e.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, nil
+}
+
+func (r *EventRepo) GetByID(ctx context.Context, id, userID uuid.UUID) (*models.Event, error) {
+	query := fmt.Sprintf(`SELECT %s FROM events e WHERE e.id = $1 AND e.user_id = $2`, eventSelectFields)
+	return scanEvent(r.pool.QueryRow(ctx, query, id, userID))
+}
+
+func (r *EventRepo) GetUpcoming(ctx context.Context, userID uuid.UUID, limit int) ([]models.Event, error) {
+	query := fmt.Sprintf(`SELECT %s, c.name as client_name
+		FROM events e LEFT JOIN clients c ON e.client_id = c.id
+		WHERE e.user_id = $1 AND e.event_date >= CURRENT_DATE
+		ORDER BY e.event_date ASC LIMIT $2`, eventSelectFields)
+	rows, err := r.pool.Query(ctx, query, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		e, err := scanEventWithClient(rows)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	return events, nil
+}
+
+func (r *EventRepo) Create(ctx context.Context, e *models.Event) error {
+	query := `INSERT INTO events (user_id, client_id, event_date, start_time, end_time,
+		service_type, num_people, status, discount, requires_invoice,
+		tax_rate, tax_amount, total_amount, location, city,
+		deposit_percent, cancellation_days, refund_percent, notes)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+		RETURNING id, created_at, updated_at`
+	return r.pool.QueryRow(ctx, query,
+		e.UserID, e.ClientID, e.EventDate, e.StartTime, e.EndTime,
+		e.ServiceType, e.NumPeople, e.Status, e.Discount, e.RequiresInvoice,
+		e.TaxRate, e.TaxAmount, e.TotalAmount, e.Location, e.City,
+		e.DepositPercent, e.CancellationDays, e.RefundPercent, e.Notes,
+	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
+}
+
+func (r *EventRepo) Update(ctx context.Context, e *models.Event) error {
+	query := `UPDATE events SET client_id=$3, event_date=$4, start_time=$5, end_time=$6,
+		service_type=$7, num_people=$8, status=$9, discount=$10, requires_invoice=$11,
+		tax_rate=$12, tax_amount=$13, total_amount=$14, location=$15, city=$16,
+		deposit_percent=$17, cancellation_days=$18, refund_percent=$19, notes=$20, updated_at=NOW()
+		WHERE id=$1 AND user_id=$2
+		RETURNING created_at, updated_at`
+	return r.pool.QueryRow(ctx, query,
+		e.ID, e.UserID, e.ClientID, e.EventDate, e.StartTime, e.EndTime,
+		e.ServiceType, e.NumPeople, e.Status, e.Discount, e.RequiresInvoice,
+		e.TaxRate, e.TaxAmount, e.TotalAmount, e.Location, e.City,
+		e.DepositPercent, e.CancellationDays, e.RefundPercent, e.Notes,
+	).Scan(&e.CreatedAt, &e.UpdatedAt)
+}
+
+func (r *EventRepo) Delete(ctx context.Context, id, userID uuid.UUID) error {
+	tag, err := r.pool.Exec(ctx, "DELETE FROM events WHERE id=$1 AND user_id=$2", id, userID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("event not found")
+	}
+	return nil
+}
+
+// UpdateClientStats recalculates total_events and total_spent for a client.
+// This replaces the Supabase trigger `update_client_stats`.
+func (r *EventRepo) UpdateClientStats(ctx context.Context, clientID uuid.UUID) error {
+	query := `UPDATE clients SET
+		total_events = (SELECT COUNT(*) FROM events WHERE client_id = $1 AND status = 'completed'),
+		total_spent = (SELECT COALESCE(SUM(total_amount), 0) FROM events WHERE client_id = $1 AND status = 'completed')
+		WHERE id = $1`
+	_, err := r.pool.Exec(ctx, query, clientID)
+	return err
+}
+
+// -- Event Products --
+
+func (r *EventRepo) GetProducts(ctx context.Context, eventID uuid.UUID) ([]models.EventProduct, error) {
+	query := `SELECT ep.id, ep.event_id, ep.product_id, ep.quantity, ep.unit_price,
+		ep.discount, ep.total_price, ep.created_at, p.name
+		FROM event_products ep LEFT JOIN products p ON ep.product_id = p.id
+		WHERE ep.event_id = $1`
+	rows, err := r.pool.Query(ctx, query, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []models.EventProduct
+	for rows.Next() {
+		var ep models.EventProduct
+		if err := rows.Scan(&ep.ID, &ep.EventID, &ep.ProductID, &ep.Quantity,
+			&ep.UnitPrice, &ep.Discount, &ep.TotalPrice, &ep.CreatedAt, &ep.ProductName); err != nil {
+			return nil, err
+		}
+		products = append(products, ep)
+	}
+	return products, nil
+}
+
+func (r *EventRepo) GetExtras(ctx context.Context, eventID uuid.UUID) ([]models.EventExtra, error) {
+	query := `SELECT id, event_id, description, cost, price, exclude_utility, created_at
+		FROM event_extras WHERE event_id = $1`
+	rows, err := r.pool.Query(ctx, query, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var extras []models.EventExtra
+	for rows.Next() {
+		var ee models.EventExtra
+		if err := rows.Scan(&ee.ID, &ee.EventID, &ee.Description, &ee.Cost,
+			&ee.Price, &ee.ExcludeUtility, &ee.CreatedAt); err != nil {
+			return nil, err
+		}
+		extras = append(extras, ee)
+	}
+	return extras, nil
+}
+
+// UpdateEventItems replaces the Supabase RPC `update_event_items`.
+// It atomically replaces all products and extras for an event within a transaction.
+func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
+	products []models.EventProduct, extras []models.EventExtra) error {
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// Delete existing
+	if _, err := tx.Exec(ctx, "DELETE FROM event_products WHERE event_id=$1", eventID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, "DELETE FROM event_extras WHERE event_id=$1", eventID); err != nil {
+		return err
+	}
+
+	// Insert products
+	for _, p := range products {
+		_, err := tx.Exec(ctx,
+			`INSERT INTO event_products (event_id, product_id, quantity, unit_price, discount)
+			VALUES ($1, $2, $3, $4, $5)`,
+			eventID, p.ProductID, p.Quantity, p.UnitPrice, p.Discount)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Insert extras
+	for _, e := range extras {
+		_, err := tx.Exec(ctx,
+			`INSERT INTO event_extras (event_id, description, cost, price, exclude_utility)
+			VALUES ($1, $2, $3, $4, $5)`,
+			eventID, e.Description, e.Cost, e.Price, e.ExcludeUtility)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}

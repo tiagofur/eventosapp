@@ -7,6 +7,7 @@ import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
+import { SearchPage } from './pages/Search';
 import { ClientList } from './pages/Clients/ClientList';
 import { ClientForm } from './pages/Clients/ClientForm';
 import { ClientDetails } from './pages/Clients/ClientDetails';
@@ -36,6 +37,7 @@ function App() {
           </ProtectedRoute>
         }>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/search" element={<SearchPage />} />
           
           {/* Rutas de Calendario y Eventos */}
           <Route path="/calendar" element={<CalendarView />} />

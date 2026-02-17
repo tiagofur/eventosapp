@@ -1,0 +1,78 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/joho/godotenv"
+)
+
+type Config struct {
+	Port        string
+	Environment string
+
+	DatabaseURL string
+
+	JWTSecret      string
+	JWTExpiryHours int
+
+	CORSAllowedOrigins []string
+
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPassword string
+	SMTPFrom     string
+	FrontendURL  string
+}
+
+func Load() (*Config, error) {
+	// Load .env file (ignore error if not present, e.g. in production)
+	_ = godotenv.Load()
+
+	cfg := &Config{
+		Port:        getEnv("PORT", "8080"),
+		Environment: getEnv("ENVIRONMENT", "development"),
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+		JWTSecret:   os.Getenv("JWT_SECRET"),
+		SMTPHost:    getEnv("SMTP_HOST", ""),
+		SMTPUser:    getEnv("SMTP_USER", ""),
+		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:    getEnv("SMTP_FROM", "noreply@eventosapp.com"),
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:5173"),
+	}
+
+	if cfg.DatabaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL is required")
+	}
+
+	if cfg.JWTSecret == "" {
+		return nil, fmt.Errorf("JWT_SECRET is required")
+	}
+
+	jwtExpiry, err := strconv.Atoi(getEnv("JWT_EXPIRY_HOURS", "24"))
+	if err != nil {
+		return nil, fmt.Errorf("JWT_EXPIRY_HOURS must be a number: %w", err)
+	}
+	cfg.JWTExpiryHours = jwtExpiry
+
+	smtpPort, err := strconv.Atoi(getEnv("SMTP_PORT", "587"))
+	if err != nil {
+		return nil, fmt.Errorf("SMTP_PORT must be a number: %w", err)
+	}
+	cfg.SMTPPort = smtpPort
+
+	origins := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+	cfg.CORSAllowedOrigins = strings.Split(origins, ",")
+
+	return cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}

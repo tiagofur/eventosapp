@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -10,6 +10,7 @@ import {
   LogOut, 
   Menu, 
   X,
+  Search,
   Moon,
   Sun
 } from 'lucide-react';
@@ -22,7 +23,15 @@ export const Layout: React.FC = () => {
   const { signOut, profile } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+
+  useEffect(() => {
+    if (location.pathname !== '/search') return;
+    const params = new URLSearchParams(location.search);
+    setSearchValue(params.get('q') || '');
+  }, [location.pathname, location.search]);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -46,6 +55,14 @@ export const Layout: React.FC = () => {
       });
       window.location.href = '/login';
     }
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = searchValue.trim();
+    if (!trimmed) return;
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    setIsSidebarOpen(false);
   };
 
   return (
@@ -162,6 +179,19 @@ export const Layout: React.FC = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+          <form onSubmit={handleSearchSubmit} className="mb-6">
+            <div className="relative max-w-2xl">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="search"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder="Buscar clientes, eventos, productos o inventario"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-brand-orange focus:ring-brand-orange"
+                aria-label="Busqueda global"
+              />
+            </div>
+          </form>
           <Outlet />
         </main>
       </div>
