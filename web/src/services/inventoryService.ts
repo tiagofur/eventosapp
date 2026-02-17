@@ -7,7 +7,8 @@ type InventoryUpdate = Database['public']['Tables']['inventory']['Update'];
 
 export const inventoryService = {
   async getAll(): Promise<InventoryItem[]> {
-    return api.get<InventoryItem[]>('/inventory');
+    const data = await api.get<InventoryItem[] | null>('/inventory');
+    return data ?? [];
   },
 
   async getById(id: string): Promise<InventoryItem> {

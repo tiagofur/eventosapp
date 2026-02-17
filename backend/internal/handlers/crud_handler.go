@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -141,7 +143,17 @@ func (h *CRUDHandler) ListEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if start != "" && end != "" {
-		events, err := h.eventRepo.GetByDateRange(r.Context(), userID, start, end)
+		startDate, err := normalizeDateParam(start)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid start date")
+			return
+		}
+		endDate, err := normalizeDateParam(end)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid end date")
+			return
+		}
+		events, err := h.eventRepo.GetByDateRange(r.Context(), userID, startDate, endDate)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to fetch events")
 			return
@@ -511,6 +523,7 @@ func (h *CRUDHandler) DeleteInventoryItem(w http.ResponseWriter, r *http.Request
 // ===================
 
 func (h *CRUDHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	eventID := r.URL.Query().Get("event_id")
 	start := r.URL.Query().Get("start")
 	end := r.URL.Query().Get("end")
@@ -522,7 +535,7 @@ func (h *CRUDHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Invalid event_id")
 			return
 		}
-		payments, err := h.paymentRepo.GetByEventID(r.Context(), eid)
+		payments, err := h.paymentRepo.GetByEventID(r.Context(), userID, eid)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to fetch payments")
 			return
@@ -532,7 +545,7 @@ func (h *CRUDHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if start != "" && end != "" {
-		payments, err := h.paymentRepo.GetByDateRange(r.Context(), start, end)
+		payments, err := h.paymentRepo.GetByDateRange(r.Context(), userID, start, end)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to fetch payments")
 			return
@@ -547,11 +560,16 @@ func (h *CRUDHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 		for _, s := range splitCSV(eventIDs) {
 			id, err := uuid.Parse(s)
 			if err != nil {
-				continue
+				writeError(w, http.StatusBadRequest, "Invalid event_ids")
+				return
 			}
 			ids = append(ids, id)
 		}
-		payments, err := h.paymentRepo.GetByEventIDs(r.Context(), ids)
+		if len(ids) == 0 {
+			writeError(w, http.StatusBadRequest, "Invalid event_ids")
+			return
+		}
+		payments, err := h.paymentRepo.GetByEventIDs(r.Context(), userID, ids)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to fetch payments")
 			return
@@ -579,6 +597,7 @@ func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CRUDHandler) UpdatePayment(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid payment ID")
@@ -590,7 +609,7 @@ func (h *CRUDHandler) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	payment.ID = id
-	if err := h.paymentRepo.Update(r.Context(), &payment); err != nil {
+	if err := h.paymentRepo.Update(r.Context(), userID, &payment); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to update payment")
 		return
 	}
@@ -598,12 +617,13 @@ func (h *CRUDHandler) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CRUDHandler) DeletePayment(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid payment ID")
 		return
 	}
-	if err := h.paymentRepo.Delete(r.Context(), id); err != nil {
+	if err := h.paymentRepo.Delete(r.Context(), id, userID); err != nil {
 		writeError(w, http.StatusNotFound, "Payment not found")
 		return
 	}
@@ -628,4 +648,17 @@ func split(s, sep string) []string {
 
 func trim(s string) string {
 	return strings.TrimSpace(s)
+}
+
+func normalizeDateParam(value string) (string, error) {
+	if value == "" {
+		return "", nil
+	}
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t.Format("2006-01-02"), nil
+	}
+	if t, err := time.Parse("2006-01-02", value); err == nil {
+		return t.Format("2006-01-02"), nil
+	}
+	return "", fmt.Errorf("invalid date format")
 }

@@ -38,9 +38,10 @@
 - [ ] Offline mode
 
 ### Fase 6: Testing & Deployment (Día 16-18)
-- [ ] Unit tests
+- [ ] Unit tests (documentación: [10-testing.md](./10-testing.md))
 - [ ] Widget tests
 - [ ] Integration tests
+- [ ] Coverage de código (>70%)
 - [ ] Optimización de performance
 - [ ] Preparación para stores
 

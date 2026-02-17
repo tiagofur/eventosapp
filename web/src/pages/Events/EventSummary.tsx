@@ -4,7 +4,6 @@ import { eventService } from "../../services/eventService";
 import { productService } from "../../services/productService";
 import {
   ArrowLeft,
-  Printer,
   FileText,
   ShoppingCart,
   FileCheck,
@@ -62,17 +61,20 @@ export const EventSummary: React.FC = () => {
       prodIngredients.forEach((ing: any) => {
         const key = ing.inventory_id;
         const quantity = productQuantities.get(ing.product_id) || 0;
+        const ingredientName = ing.ingredient_name || ing.inventory?.ingredient_name;
+        const unit = ing.unit || ing.inventory?.unit;
+        const unitCost = ing.unit_cost ?? ing.inventory?.unit_cost ?? 0;
+
         if (!aggregatedIngredients[key]) {
           aggregatedIngredients[key] = {
-            name: ing.inventory?.ingredient_name,
-            unit: ing.inventory?.unit,
+            name: ingredientName,
+            unit,
             quantity: 0,
             cost: 0,
           };
         }
         aggregatedIngredients[key].quantity += ing.quantity_required * quantity;
-        aggregatedIngredients[key].cost +=
-          ing.quantity_required * quantity * (ing.inventory?.unit_cost || 0);
+        aggregatedIngredients[key].cost += ing.quantity_required * quantity * unitCost;
       });
 
       setIngredients(Object.values(aggregatedIngredients));
@@ -96,10 +98,6 @@ export const EventSummary: React.FC = () => {
   const profit = revenueExTax - totalCost;
   const margin = revenueExTax > 0 ? (profit / revenueExTax) * 100 : 0;
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const timeRange = event.start_time || event.end_time
     ? `${event.start_time || ""}${event.start_time && event.end_time ? " - " : ""}${event.end_time || ""}`
     : "";
@@ -109,7 +107,7 @@ export const EventSummary: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 print:hidden mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate(`/events/${id}/edit`)}
+            onClick={() => navigate(-1)}
             className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
           >
             <ArrowLeft className="h-4 w-4 mr-2" /> Volver
@@ -182,13 +180,6 @@ export const EventSummary: React.FC = () => {
             Contrato
           </button>
 
-          <button
-            onClick={handlePrint}
-            className="flex items-center px-4 py-2 bg-brand-orange text-white rounded hover:bg-orange-600 shadow-sm text-sm font-medium transition-colors"
-          >
-            <Printer className="h-4 w-4 mr-2" />
-            Imprimir
-          </button>
         </div>
       </div>
 

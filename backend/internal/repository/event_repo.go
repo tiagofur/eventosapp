@@ -18,7 +18,10 @@ func NewEventRepo(pool *pgxpool.Pool) *EventRepo {
 	return &EventRepo{pool: pool}
 }
 
-const eventSelectFields = `e.id, e.user_id, e.client_id, e.event_date, e.start_time, e.end_time,
+const eventSelectFields = `e.id, e.user_id, e.client_id,
+	to_char(e.event_date, 'YYYY-MM-DD') as event_date,
+	to_char(e.start_time, 'HH24:MI:SS') as start_time,
+	to_char(e.end_time, 'HH24:MI:SS') as end_time,
 	e.service_type, e.num_people, e.status, e.discount, e.requires_invoice,
 	e.tax_rate, e.tax_amount, e.total_amount, e.location, e.city,
 	e.deposit_percent, e.cancellation_days, e.refund_percent,
@@ -77,7 +80,7 @@ func (r *EventRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Even
 func (r *EventRepo) GetByDateRange(ctx context.Context, userID uuid.UUID, start, end string) ([]models.Event, error) {
 	query := fmt.Sprintf(`SELECT %s, c.name as client_name
 		FROM events e LEFT JOIN clients c ON e.client_id = c.id
-		WHERE e.user_id = $1 AND e.event_date >= $2::timestamptz::date AND e.event_date <= $3::timestamptz::date
+		WHERE e.user_id = $1 AND e.event_date >= $2::date AND e.event_date <= $3::date
 		ORDER BY e.event_date`, eventSelectFields)
 	rows, err := r.pool.Query(ctx, query, userID, start, end)
 	if err != nil {

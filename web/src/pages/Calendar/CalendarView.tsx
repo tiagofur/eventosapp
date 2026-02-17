@@ -22,8 +22,8 @@ export const CalendarView: React.FC = () => {
   const fetchEvents = async (date: Date) => {
     try {
       // setLoading(true);
-      const start = startOfMonth(date).toISOString();
-      const end = endOfMonth(date).toISOString();
+      const start = format(startOfMonth(date), 'yyyy-MM-dd');
+      const end = format(endOfMonth(date), 'yyyy-MM-dd');
       const data = await eventService.getByDateRange(start, end);
       setEvents(data || []);
     } catch (error) {
@@ -108,7 +108,7 @@ export const CalendarView: React.FC = () => {
                 <div 
                     key={event.id} 
                     className="border border-gray-200 dark:border-gray-700 rounded-md p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/events/${event.id}/edit`)}
+                    onClick={() => navigate(`/events/${event.id}/summary`)}
                 >
                   <div className="flex justify-between items-start">
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">{event.clients?.name}</h3>

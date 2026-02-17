@@ -71,8 +71,28 @@ dev_dependencies:
   freezed: ^2.4.6
   mockito: ^5.4.4
 
+scripts:
+  # Ejecutar todos los tests
+  test: flutter test --coverage
+
+  # Solo unit tests
+  test:unit: flutter test test/unit/ --coverage
+
+  # Solo widget tests
+  test:widget: flutter test test/widgets/ --coverage
+
+  # Solo integration tests
+  test:integration: flutter test test/integration/ --coverage
+
+  # Tests específicos con patrón
+  test:auth: flutter test test/**/*auth* test.dart --coverage
+  test:events: flutter test test/**/*event* test.dart --coverage
+
+  # Tests en watch mode (desarrollo)
+  test:watch: flutter test --watch
+
+  # Coverage con reporte
+  coverage: flutter test --coverage && lcov --summary lcov.info
+
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/icons/

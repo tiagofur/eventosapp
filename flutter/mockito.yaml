@@ -1,0 +1,22 @@
+# mockito.yaml
+# Configuración de generadores de mocks para mockito
+
+mocks:
+  # Generar mocks para todas las interfaces en el proyecto
+  - lib/features/auth/domain/repositories/auth_repository.dart
+  - lib/features/events/domain/repositories/events_repository.dart
+  - lib/features/clients/domain/repositories/clients_repository.dart
+  - lib/features/products/domain/repositories/products_repository.dart
+  - lib/features/inventory/domain/repositories/inventory_repository.dart
+  - lib/features/payments/domain/repositories/payments_repository.dart
+
+  # Generar mocks para datasources
+  - lib/features/events/data/datasources/events_remote_datasource.dart
+  - lib/features/clients/data/datasources/clients_remote_datasource.dart
+  - lib/features/products/data/datasources/products_remote_datasource.dart
+  - lib/features/inventory/data/datasources/inventory_remote_datasource.dart
+
+  # Generar mocks para servicios del core
+  - lib/core/api/api_client.dart
+  - lib/core/storage/secure_storage.dart
+  - lib/core/storage/local_storage.dart

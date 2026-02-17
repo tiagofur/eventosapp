@@ -1,0 +1,62 @@
+package handlers
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestWriteJSON(t *testing.T) {
+	rr := httptest.NewRecorder()
+
+	writeJSON(rr, http.StatusCreated, map[string]string{"status": "ok"})
+
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusCreated)
+	}
+	if got := rr.Header().Get("Content-Type"); got != "application/json" {
+		t.Fatalf("Content-Type = %q, want %q", got, "application/json")
+	}
+	if !strings.Contains(rr.Body.String(), `"status":"ok"`) {
+		t.Fatalf("body = %q, expected JSON payload", rr.Body.String())
+	}
+}
+
+func TestWriteError(t *testing.T) {
+	rr := httptest.NewRecorder()
+
+	writeError(rr, http.StatusBadRequest, "bad request")
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+	}
+	if !strings.Contains(rr.Body.String(), `"error":"bad request"`) {
+		t.Fatalf("body = %q, expected error JSON payload", rr.Body.String())
+	}
+}
+
+func TestDecodeJSON(t *testing.T) {
+	t.Run("GivenValidJSON_WhenDecode_ThenPopulateStruct", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"name":"john"}`))
+		var dst struct {
+			Name string `json:"name"`
+		}
+
+		if err := decodeJSON(req, &dst); err != nil {
+			t.Fatalf("decodeJSON() error = %v", err)
+		}
+		if dst.Name != "john" {
+			t.Fatalf("dst.Name = %q, want %q", dst.Name, "john")
+		}
+	})
+
+	t.Run("GivenInvalidJSON_WhenDecode_ThenReturnError", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"name":}`))
+		var dst map[string]string
+
+		if err := decodeJSON(req, &dst); err == nil {
+			t.Fatalf("decodeJSON() expected error for invalid JSON")
+		}
+	})
+}

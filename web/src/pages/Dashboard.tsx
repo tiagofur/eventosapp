@@ -61,10 +61,10 @@ export const Dashboard: React.FC = () => {
     setLoadingInventory(true);
 
     const today = new Date();
-    const start = startOfMonth(today).toISOString();
-    const end = endOfMonth(today).toISOString();
-    const startDate = format(startOfMonth(today), "yyyy-MM-dd");
-    const endDate = format(endOfMonth(today), "yyyy-MM-dd");
+    const start = format(startOfMonth(today), "yyyy-MM-dd");
+    const end = format(endOfMonth(today), "yyyy-MM-dd");
+    const startDate = start;
+    const endDate = end;
 
     // 1. Load Month Events
     eventService
@@ -138,7 +138,7 @@ export const Dashboard: React.FC = () => {
     inventoryService
       .getAll()
       .then((data) => {
-        const count = data.filter(
+        const count = (data || []).filter(
           (item) => item.current_stock <= item.minimum_stock,
         ).length;
         setLowStockCount(count);
@@ -557,10 +557,10 @@ export const Dashboard: React.FC = () => {
                                     </div>
                                     <div>
                                         <Link
-                                            to={`/events/${event.id}/edit`}
+                                            to={`/events/${event.id}/summary`}
                                             className="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-full text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                                         >
-                                            Editar
+                                            Ver
                                         </Link>
                                     </div>
                                 </div>

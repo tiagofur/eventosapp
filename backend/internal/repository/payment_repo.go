@@ -13,29 +13,33 @@ type PaymentRepo struct {
 	pool *pgxpool.Pool
 }
 
+const paymentSelectFields = `id, event_id, user_id, amount,
+	to_char(payment_date, 'YYYY-MM-DD') as payment_date,
+	payment_method, notes, created_at`
+
 func NewPaymentRepo(pool *pgxpool.Pool) *PaymentRepo {
 	return &PaymentRepo{pool: pool}
 }
 
-func (r *PaymentRepo) GetByEventID(ctx context.Context, eventID uuid.UUID) ([]models.Payment, error) {
-	query := `SELECT id, event_id, user_id, amount, payment_date, payment_method, notes, created_at
-		FROM payments WHERE event_id = $1 ORDER BY payment_date DESC`
-	return r.queryPayments(ctx, query, eventID)
+func (r *PaymentRepo) GetByEventID(ctx context.Context, userID, eventID uuid.UUID) ([]models.Payment, error) {
+	query := `SELECT ` + paymentSelectFields + `
+		FROM payments WHERE user_id = $1 AND event_id = $2 ORDER BY payment_date DESC`
+	return r.queryPayments(ctx, query, userID, eventID)
 }
 
-func (r *PaymentRepo) GetByDateRange(ctx context.Context, start, end string) ([]models.Payment, error) {
-	query := `SELECT id, event_id, user_id, amount, payment_date, payment_method, notes, created_at
-		FROM payments WHERE payment_date >= $1 AND payment_date <= $2 ORDER BY payment_date DESC`
-	return r.queryPayments(ctx, query, start, end)
+func (r *PaymentRepo) GetByDateRange(ctx context.Context, userID uuid.UUID, start, end string) ([]models.Payment, error) {
+	query := `SELECT ` + paymentSelectFields + `
+		FROM payments WHERE user_id = $1 AND payment_date >= $2::date AND payment_date <= $3::date ORDER BY payment_date DESC`
+	return r.queryPayments(ctx, query, userID, start, end)
 }
 
-func (r *PaymentRepo) GetByEventIDs(ctx context.Context, eventIDs []uuid.UUID) ([]models.Payment, error) {
+func (r *PaymentRepo) GetByEventIDs(ctx context.Context, userID uuid.UUID, eventIDs []uuid.UUID) ([]models.Payment, error) {
 	if len(eventIDs) == 0 {
-		return nil, nil
+		return []models.Payment{}, nil
 	}
-	query := `SELECT id, event_id, user_id, amount, payment_date, payment_method, notes, created_at
-		FROM payments WHERE event_id = ANY($1) ORDER BY payment_date DESC`
-	return r.queryPayments(ctx, query, eventIDs)
+	query := `SELECT ` + paymentSelectFields + `
+		FROM payments WHERE user_id = $1 AND event_id = ANY($2) ORDER BY payment_date DESC`
+	return r.queryPayments(ctx, query, userID, eventIDs)
 }
 
 func (r *PaymentRepo) Create(ctx context.Context, p *models.Payment) error {
@@ -47,17 +51,17 @@ func (r *PaymentRepo) Create(ctx context.Context, p *models.Payment) error {
 	).Scan(&p.ID, &p.CreatedAt)
 }
 
-func (r *PaymentRepo) Update(ctx context.Context, p *models.Payment) error {
+func (r *PaymentRepo) Update(ctx context.Context, userID uuid.UUID, p *models.Payment) error {
 	query := `UPDATE payments SET amount=$2, payment_date=$3, payment_method=$4, notes=$5
-		WHERE id=$1
+		WHERE id=$1 AND user_id=$6
 		RETURNING event_id, user_id, created_at`
 	return r.pool.QueryRow(ctx, query,
-		p.ID, p.Amount, p.PaymentDate, p.PaymentMethod, p.Notes,
+		p.ID, p.Amount, p.PaymentDate, p.PaymentMethod, p.Notes, userID,
 	).Scan(&p.EventID, &p.UserID, &p.CreatedAt)
 }
 
-func (r *PaymentRepo) Delete(ctx context.Context, id uuid.UUID) error {
-	tag, err := r.pool.Exec(ctx, "DELETE FROM payments WHERE id=$1", id)
+func (r *PaymentRepo) Delete(ctx context.Context, id, userID uuid.UUID) error {
+	tag, err := r.pool.Exec(ctx, "DELETE FROM payments WHERE id=$1 AND user_id=$2", id, userID)
 	if err != nil {
 		return err
 	}

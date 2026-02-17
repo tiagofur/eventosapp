@@ -180,7 +180,7 @@ export const EventForm: React.FC = () => {
             const ingredients = await productService.getIngredients(productId);
             const cost =
               ingredients?.reduce((sum, ing: any) => {
-                const unitCost = ing.inventory?.unit_cost || 0;
+                const unitCost = ing.unit_cost ?? ing.inventory?.unit_cost ?? 0;
                 return sum + ing.quantity_required * unitCost;
               }, 0) || 0;
             return { productId, cost };
@@ -353,16 +353,27 @@ export const EventForm: React.FC = () => {
   };
 
   const onSubmit = async (data: EventFormData) => {
+    if (activeStep < STEPS.length) {
+      setActiveStep((prev) => Math.min(prev + 1, STEPS.length));
+      return;
+    }
+
     if (!user) return;
     setIsLoading(true);
     setError(null);
 
     try {
+      const payload = {
+        ...data,
+        start_time: data.start_time?.trim() ? data.start_time : null,
+        end_time: data.end_time?.trim() ? data.end_time : null,
+      };
+
       let eventId = id;
       if (id) {
-        await eventService.update(id, data);
+        await eventService.update(id, payload);
       } else {
-        const newEvent = await eventService.create({ ...data, user_id: user.id });
+        const newEvent = await eventService.create({ ...payload, user_id: user.id });
         if (!newEvent) throw new Error('Error al crear el evento');
         eventId = newEvent.id;
       }

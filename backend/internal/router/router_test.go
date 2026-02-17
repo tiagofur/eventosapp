@@ -1,0 +1,205 @@
+package router
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/tiagofur/eventosapp-backend/internal/handlers"
+	"github.com/tiagofur/eventosapp-backend/internal/services"
+)
+
+func TestNewRouter(t *testing.T) {
+	authService := services.NewAuthService("test-secret", 1)
+	h := New(&handlers.AuthHandler{}, &handlers.CRUDHandler{}, authService, []string{"http://allowed.com"})
+
+	t.Run("GivenHealthEndpoint_WhenRequest_ThenReturnsOK", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/health", nil)
+		req.Header.Set("Origin", "http://allowed.com")
+		rr := httptest.NewRecorder()
+
+		h.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+		}
+		if !strings.Contains(rr.Body.String(), `"status":"ok"`) {
+			t.Fatalf("body = %q, expected health JSON", rr.Body.String())
+		}
+		if got := rr.Header().Get("Access-Control-Allow-Origin"); got != "http://allowed.com" {
+			t.Fatalf("Access-Control-Allow-Origin = %q, want %q", got, "http://allowed.com")
+		}
+	})
+
+	t.Run("GivenProtectedEndpointWithoutToken_WhenRequest_ThenUnauthorized", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/clients", nil)
+		rr := httptest.NewRecorder()
+
+		h.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+		}
+		if !strings.Contains(rr.Body.String(), "Authorization header required") {
+			t.Fatalf("body = %q, expected auth error", rr.Body.String())
+		}
+	})
+}
+
+func TestProtectedRoutesRequireValidBearerToken(t *testing.T) {
+	authService := services.NewAuthService("test-secret", 1)
+	h := New(&handlers.AuthHandler{}, &handlers.CRUDHandler{}, authService, []string{"http://allowed.com"})
+
+	protectedRequests := []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{"ClientsList", http.MethodGet, "/api/clients"},
+		{"ClientCreate", http.MethodPost, "/api/clients"},
+		{"EventsList", http.MethodGet, "/api/events"},
+		{"EventCreate", http.MethodPost, "/api/events"},
+		{"ProductsList", http.MethodGet, "/api/products"},
+		{"ProductCreate", http.MethodPost, "/api/products"},
+		{"InventoryList", http.MethodGet, "/api/inventory"},
+		{"InventoryCreate", http.MethodPost, "/api/inventory"},
+		{"PaymentsList", http.MethodGet, "/api/payments"},
+		{"PaymentsCreate", http.MethodPost, "/api/payments"},
+		{"CurrentUser", http.MethodGet, "/api/auth/me"},
+		{"UpdateProfile", http.MethodPut, "/api/users/me"},
+	}
+
+	unauthorizedCases := []struct {
+		name       string
+		authHeader string
+		wantBody   string
+	}{
+		{"NoHeader", "", "Authorization header required"},
+		{"InvalidFormat", "Token abc", "Invalid authorization format"},
+		{"InvalidToken", "Bearer invalid-token", "Invalid or expired token"},
+	}
+
+	for _, reqCase := range protectedRequests {
+		for _, authCase := range unauthorizedCases {
+			t.Run(reqCase.name+"_"+authCase.name, func(t *testing.T) {
+				req := httptest.NewRequest(reqCase.method, reqCase.path, nil)
+				if authCase.authHeader != "" {
+					req.Header.Set("Authorization", authCase.authHeader)
+				}
+				rr := httptest.NewRecorder()
+
+				h.ServeHTTP(rr, req)
+
+				if rr.Code != http.StatusUnauthorized {
+					t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+				}
+				if !strings.Contains(rr.Body.String(), authCase.wantBody) {
+					t.Fatalf("body = %q, expected %q", rr.Body.String(), authCase.wantBody)
+				}
+			})
+		}
+	}
+}
+
+func TestRouterErrorContractMatrix(t *testing.T) {
+	authService := services.NewAuthService("test-secret", 1)
+	h := New(&handlers.AuthHandler{}, &handlers.CRUDHandler{}, authService, []string{"http://allowed.com"})
+
+	cases := []struct {
+		name       string
+		method     string
+		path       string
+		body       string
+		authHeader string
+		wantStatus int
+		wantError  string
+	}{
+		{
+			name:       "RegisterInvalidJSON",
+			method:     http.MethodPost,
+			path:       "/api/auth/register",
+			body:       `{"email":}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "Invalid request body",
+		},
+		{
+			name:       "RegisterMissingFields",
+			method:     http.MethodPost,
+			path:       "/api/auth/register",
+			body:       `{"email":"a@test.dev","password":"123456"}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "Email, password, and name are required",
+		},
+		{
+			name:       "LoginMissingFields",
+			method:     http.MethodPost,
+			path:       "/api/auth/login",
+			body:       `{"email":"a@test.dev"}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "Email and password are required",
+		},
+		{
+			name:       "RefreshInvalidJSON",
+			method:     http.MethodPost,
+			path:       "/api/auth/refresh",
+			body:       `{"refresh_token":}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "Invalid request body",
+		},
+		{
+			name:       "ProtectedNoHeader",
+			method:     http.MethodGet,
+			path:       "/api/clients",
+			wantStatus: http.StatusUnauthorized,
+			wantError:  "Authorization header required",
+		},
+		{
+			name:       "ProtectedInvalidBearerFormat",
+			method:     http.MethodPut,
+			path:       "/api/users/me",
+			authHeader: "Token abc",
+			wantStatus: http.StatusUnauthorized,
+			wantError:  "Invalid authorization format. Use: Bearer <token>",
+		},
+		{
+			name:       "ProtectedInvalidToken",
+			method:     http.MethodGet,
+			path:       "/api/payments?event_ids=bad",
+			authHeader: "Bearer invalid-token",
+			wantStatus: http.StatusUnauthorized,
+			wantError:  "Invalid or expired token",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(tc.method, tc.path, bytes.NewBufferString(tc.body))
+			if tc.body != "" {
+				req.Header.Set("Content-Type", "application/json")
+			}
+			if tc.authHeader != "" {
+				req.Header.Set("Authorization", tc.authHeader)
+			}
+			rr := httptest.NewRecorder()
+
+			h.ServeHTTP(rr, req)
+
+			if rr.Code != tc.wantStatus {
+				t.Fatalf("status = %d, want %d, body=%s", rr.Code, tc.wantStatus, rr.Body.String())
+			}
+			if got := rr.Header().Get("Content-Type"); got != "application/json" {
+				t.Fatalf("Content-Type = %q, want %q", got, "application/json")
+			}
+			var payload map[string]string
+			if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
+				t.Fatalf("body is not valid JSON: %v; body=%s", err, rr.Body.String())
+			}
+			if payload["error"] != tc.wantError {
+				t.Fatalf("error = %q, want %q", payload["error"], tc.wantError)
+			}
+		})
+	}
+}

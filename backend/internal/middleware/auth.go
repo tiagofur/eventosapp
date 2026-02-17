@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -20,19 +21,19 @@ func Auth(authService *services.AuthService) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, `{"error":"Authorization header required"}`, http.StatusUnauthorized)
+				writeAuthError(w, http.StatusUnauthorized, "Authorization header required")
 				return
 			}
 
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
-				http.Error(w, `{"error":"Invalid authorization format. Use: Bearer <token>"}`, http.StatusUnauthorized)
+				writeAuthError(w, http.StatusUnauthorized, "Invalid authorization format. Use: Bearer <token>")
 				return
 			}
 
 			claims, err := authService.ValidateToken(parts[1])
 			if err != nil {
-				http.Error(w, `{"error":"Invalid or expired token"}`, http.StatusUnauthorized)
+				writeAuthError(w, http.StatusUnauthorized, "Invalid or expired token")
 				return
 			}
 
@@ -41,6 +42,12 @@ func Auth(authService *services.AuthService) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func writeAuthError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
 // GetUserID extracts the user ID from the request context.

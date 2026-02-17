@@ -1,0 +1,81 @@
+package database
+
+import (
+	"context"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func TestMigrateIntegration(t *testing.T) {
+	pool := openDBPoolForTest(t)
+	defer pool.Close()
+
+	if _, err := pool.Exec(context.Background(), "DROP TABLE IF EXISTS schema_migrations"); err != nil {
+		t.Fatalf("failed to drop schema_migrations: %v", err)
+	}
+
+	if err := Migrate(pool); err != nil {
+		t.Fatalf("Migrate() first run error = %v", err)
+	}
+
+	var count int
+	if err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM schema_migrations").Scan(&count); err != nil {
+		t.Fatalf("failed to count schema_migrations: %v", err)
+	}
+	if count != 7 {
+		t.Fatalf("schema_migrations count = %d, want 7", count)
+	}
+
+	if err := Migrate(pool); err != nil {
+		t.Fatalf("Migrate() second run error = %v", err)
+	}
+	if err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM schema_migrations").Scan(&count); err != nil {
+		t.Fatalf("failed to count schema_migrations after second run: %v", err)
+	}
+	if count != 7 {
+		t.Fatalf("schema_migrations count after rerun = %d, want 7", count)
+	}
+}
+
+func TestMigrateFailsWithClosedPool(t *testing.T) {
+	pool := openDBPoolForTest(t)
+	pool.Close()
+
+	if err := Migrate(pool); err == nil {
+		t.Fatalf("Migrate() expected error when pool is closed")
+	}
+}
+
+func openDBPoolForTest(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("Skipping integration tests: TEST_DATABASE_URL is not set (safety guard)")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	pool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Skipf("Skipping integration test: cannot create pool: %v", err)
+	}
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		t.Skipf("Skipping integration test: cannot ping db: %v", err)
+	}
+	_, err = pool.Exec(context.Background(), "SELECT pg_advisory_lock($1)", int64(22220001))
+	if err != nil {
+		pool.Close()
+		t.Fatalf("failed to acquire integration test lock: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = pool.Exec(context.Background(), "SELECT pg_advisory_unlock($1)", int64(22220001))
+	})
+
+	return pool
+}

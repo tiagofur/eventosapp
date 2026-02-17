@@ -1,0 +1,179 @@
+{
+  "version": "v1",
+  "contracts": {
+    "auth.register": {
+      "status": 201,
+      "kind": "object",
+      "required_keys": {
+        "user": "object",
+        "tokens": "object"
+      }
+    },
+    "auth.me": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "email": "string",
+        "name": "string",
+        "plan": "string"
+      }
+    },
+    "clients.create": {
+      "status": 201,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "name": "string",
+        "phone": "string"
+      }
+    },
+    "clients.get": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "name": "string",
+        "phone": "string"
+      }
+    },
+    "clients.list": {
+      "status": 200,
+      "kind": "array",
+      "min_items": 1
+    },
+    "inventory.create": {
+      "status": 201,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "ingredient_name": "string",
+        "current_stock": "number",
+        "minimum_stock": "number",
+        "unit": "string",
+        "type": "string"
+      }
+    },
+    "inventory.get": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "ingredient_name": "string",
+        "current_stock": "number"
+      }
+    },
+    "inventory.update": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "ingredient_name": "string",
+        "current_stock": "number"
+      }
+    },
+    "inventory.list": {
+      "status": 200,
+      "kind": "array",
+      "min_items": 1
+    },
+    "inventory.delete": {
+      "status": 204,
+      "kind": "empty"
+    },
+    "products.create": {
+      "status": 201,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "name": "string",
+        "category": "string",
+        "base_price": "number",
+        "is_active": "boolean"
+      }
+    },
+    "products.get": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "name": "string",
+        "category": "string",
+        "base_price": "number"
+      }
+    },
+    "products.update": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "name": "string",
+        "category": "string",
+        "base_price": "number",
+        "is_active": "boolean"
+      }
+    },
+    "products.list": {
+      "status": 200,
+      "kind": "array",
+      "min_items": 1
+    },
+    "products.delete": {
+      "status": 204,
+      "kind": "empty"
+    },
+    "events.create": {
+      "status": 201,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "user_id": "string",
+        "client_id": "string",
+        "event_date": "string",
+        "status": "string",
+        "total_amount": "number"
+      }
+    },
+    "payments.create": {
+      "status": 201,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "event_id": "string",
+        "user_id": "string",
+        "amount": "number",
+        "payment_date": "string",
+        "payment_method": "string"
+      }
+    },
+    "payments.update": {
+      "status": 200,
+      "kind": "object",
+      "required_keys": {
+        "id": "string",
+        "event_id": "string",
+        "user_id": "string",
+        "amount": "number",
+        "payment_date": "string",
+        "payment_method": "string"
+      }
+    },
+    "payments.list_by_event": {
+      "status": 200,
+      "kind": "array",
+      "min_items": 1
+    },
+    "payments.delete": {
+      "status": 204,
+      "kind": "empty"
+    }
+  }
+}
