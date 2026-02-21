@@ -125,7 +125,7 @@ describe('Settings', () => {
   it('updates contract settings', async () => {
     render(<Settings />);
     const editButtons = screen.getAllByRole('button', { name: /editar/i });
-    fireEvent.click(editButtons[1]);
+    fireEvent.click(editButtons[2]);
 
     fireEvent.change(screen.getByDisplayValue('40'), { target: { value: '55' } });
     fireEvent.change(screen.getByDisplayValue('10'), {
@@ -148,7 +148,7 @@ describe('Settings', () => {
   it('cancels contract settings edit', () => {
     render(<Settings />);
     const editButtons = screen.getAllByRole('button', { name: /editar/i });
-    fireEvent.click(editButtons[1]);
+    fireEvent.click(editButtons[2]);
 
     fireEvent.change(screen.getByDisplayValue('40'), { target: { value: '99' } });
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
@@ -161,7 +161,7 @@ describe('Settings', () => {
 
     render(<Settings />);
     const editButtons = screen.getAllByRole('button', { name: /editar/i });
-    fireEvent.click(editButtons[1]);
+    fireEvent.click(editButtons[2]);
     fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
 
     await waitFor(() => {

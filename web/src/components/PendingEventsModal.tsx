@@ -6,12 +6,13 @@ import { AlertCircle, CheckCircle, XCircle, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-type Event = Database["public"]["Tables"]["events"]["Row"] & {
-  clients?: { name: string } | null;
+type Event = Database["public"]["Tables"]["events"]["Row"];
+type EventWithClient = Event & {
+  client?: { name: string } | null;
 };
 
 export const PendingEventsModal: React.FC = () => {
-  const [pendingEvents, setPendingEvents] = useState<Event[]>([]);
+  const [pendingEvents, setPendingEvents] = useState<EventWithClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -99,7 +100,7 @@ export const PendingEventsModal: React.FC = () => {
                     {pendingEvents.map((event) => (
                       <div key={event.id} className="border dark:border-gray-700 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-50 dark:bg-gray-900/50">
                         <div>
-                          <p className="font-semibold text-gray-900 dark:text-white truncate max-w-xs">{event.clients?.name || 'Sin Cliente'} - {event.service_type}</p>
+                          <p className="font-semibold text-gray-900 dark:text-white truncate max-w-xs">{event.client?.name || 'Sin Cliente'} - {event.service_type}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {format(parseISO(event.event_date), "dd 'de' MMMM, yyyy", { locale: es })}
                           </p>

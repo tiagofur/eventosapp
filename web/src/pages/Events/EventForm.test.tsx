@@ -47,29 +47,40 @@ const mockFormData = {
   notes: '',
 };
 
+const resetMock = vi.fn();
+const watchMock = vi.fn();
+
+const controlMock = {};
+const handleSubmitMock = (fn: any) => () => fn(mockFormData);
+const setValueMockFn = (name: string, value: any) => {
+  setValueMock(name, value);
+  watchValues[name] = value;
+};
+
 vi.mock('react-hook-form', async () => {
   const actual = await vi.importActual<any>('react-hook-form');
   return {
     ...actual,
     useForm: () => ({
-      handleSubmit: (fn: any) => () => fn(mockFormData),
-      reset: vi.fn(),
-      setValue: (name: string, value: any) => {
-        setValueMock(name, value);
-        watchValues[name] = value;
-      },
-      control: {},
-      watch: vi.fn(),
+      handleSubmit: handleSubmitMock,
+      reset: resetMock,
+      setValue: setValueMockFn,
+      control: controlMock,
+      watch: watchMock,
       trigger: mockTrigger,
+      formState: { errors: {}, isValid: true, isSubmitted: false },
     }),
     useWatch: ({ name }: any) => watchValues[name] ?? 0,
   };
 });
 
+const mockUser = { id: 'user-1' };
+const mockProfile = { default_deposit_percent: 50, default_cancellation_days: 15, default_refund_percent: 0 };
+
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'user-1' },
-    profile: { default_deposit_percent: 50, default_cancellation_days: 15, default_refund_percent: 0 },
+    user: mockUser,
+    profile: mockProfile,
   }),
 }));
 
@@ -99,7 +110,7 @@ vi.mock('./components/EventProducts', () => ({
       props.onProductChange(0, 'quantity', 2);
       props.onProductChange(0, 'discount', 5);
       productsInvoked = true;
-    }, [props.selectedProducts.length, props.onAddProduct, props.onProductChange]);
+    }, [props.selectedProducts.length]);
 
     return <div>EVENT_PRODUCTS</div>;
   },
@@ -109,11 +120,14 @@ vi.mock('./components/EventExtras', () => ({
   EventExtras: (props: any) => {
     useEffect(() => {
       if (extrasBehavior !== 'invoke') return;
-      props.onAddExtra();
+      if (props.extras?.length === 0) {
+        props.onAddExtra();
+        return;
+      }
       props.onExtraChange(0, 'description', 'Transporte');
       props.onExtraChange(0, 'exclude_utility', true);
       props.onExtraChange(0, 'cost', 50);
-    }, [props]);
+    }, [props.extras?.length]);
 
     return <div>EVENT_EXTRAS</div>;
   },

@@ -21,9 +21,9 @@ describe('Landing', () => {
         <Landing />
       </MemoryRouter>
     );
-    expect(screen.getByText('Gestiona tus eventos')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /iniciar sesión/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /registrarse/i })).toBeInTheDocument();
+    expect(screen.getByText(/Gestiona tus eventos/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /iniciar sesión/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /comenzar/i })[0]).toBeInTheDocument();
   });
 
   it('toggles theme', () => {

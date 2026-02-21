@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Loader2 } from 'lucide-react';
+import { Search as SearchIcon, Users, ChevronRight, Loader2 } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Empty from '../components/Empty';
@@ -26,9 +26,9 @@ export const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const query = (searchParams.get('q') || '').trim();
   const [results, setResults] = useState<SearchResults>({
-    clients: [],
-    events: [],
-    products: [],
+    client: [],
+    event: [],
+    product: [],
     inventory: [],
   });
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export const SearchPage: React.FC = () => {
 
     const runSearch = async () => {
       if (!query) {
-        setResults({ clients: [], events: [], products: [], inventory: [] });
+        setResults({ client: [], event: [], product: [], inventory: [] });
         return;
       }
 
@@ -68,10 +68,10 @@ export const SearchPage: React.FC = () => {
 
   const totalResults = useMemo(() => {
     return (
-      results.clients.length +
-      results.events.length +
-      results.products.length +
-      results.inventory.length
+      (results.client?.length || 0) +
+      (results.event?.length || 0) +
+      (results.product?.length || 0) +
+      (results.inventory?.length || 0)
     );
   }, [results]);
 
@@ -120,41 +120,51 @@ export const SearchPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-          <Search className="h-4 w-4 mr-2" />
+          <SearchIcon className="h-4 w-4 mr-2" />
           Busqueda global
         </div>
       </div>
 
-      {results.clients.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Clientes</h2>
-          <div className="grid gap-3 md:grid-cols-2">
-            {results.clients.map((client) => (
-              <Link
-                key={client.id}
-                to={client.href}
-                className="group rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition"
-              >
-                <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-brand-orange">
-                  {client.title}
-                </p>
-                {client.subtitle && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{client.subtitle}</p>
-                )}
-                {client.meta && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{client.meta}</p>
-                )}
-              </Link>
-            ))}
+      {results.client.length > 0 && (
+        <section className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mt-6">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center">
+              <Users className="h-4 w-4 mr-2 text-blue-500" />
+              Clientes ({results.client.length})
+            </h2>
           </div>
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {results.client.map((client) => (
+              <li key={client.id}>
+                <Link
+                  to={client.href}
+                  className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white group-hover:text-brand-orange transition-colors">
+                        {client.title}
+                      </p>
+                      {client.subtitle && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {client.subtitle}
+                        </p>
+                      )}
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-brand-orange transition-colors" />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
-      {results.events.length > 0 && (
+      {results.event.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Eventos</h2>
           <div className="grid gap-3 md:grid-cols-2">
-            {results.events.map((event) => (
+            {results.event.map((event) => (
               <Link
                 key={event.id}
                 to={event.href}
@@ -177,11 +187,11 @@ export const SearchPage: React.FC = () => {
         </section>
       )}
 
-      {results.products.length > 0 && (
+      {results.product.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Productos</h2>
           <div className="grid gap-3 md:grid-cols-2">
-            {results.products.map((product) => (
+            {results.product.map((product) => (
               <Link
                 key={product.id}
                 to={product.href}

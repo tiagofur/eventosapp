@@ -52,7 +52,7 @@ describe('CalendarView', () => {
         status: 'confirmed',
         service_type: 'Boda',
         num_people: 100,
-        clients: { name: 'Ana' },
+        client: { name: 'Ana' },
       },
     ]);
 
@@ -84,7 +84,7 @@ describe('CalendarView', () => {
         status: 'confirmed',
         service_type: 'Boda',
         num_people: 100,
-        clients: { name: 'Ana' },
+        client: { name: 'Ana' },
       },
     ]);
 

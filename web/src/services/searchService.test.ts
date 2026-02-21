@@ -17,7 +17,7 @@ describe('searchService', () => {
 
   it('returns empty results for empty query', async () => {
     const result = await searchService.searchAll('');
-    expect(result).toEqual({ clients: [], events: [], products: [], inventory: [] });
+    expect(result).toEqual({ client: [], event: [], product: [], inventory: [] });
   });
 
   it('filters clients by name', async () => {
@@ -29,8 +29,8 @@ describe('searchService', () => {
     (eventService.getAll as any).mockResolvedValue([]);
 
     const result = await searchService.searchAll('juan');
-    expect(result.clients).toHaveLength(1);
-    expect(result.clients[0].title).toBe('Juan');
+    expect(result.client).toHaveLength(1);
+    expect(result.client[0].title).toBe('Juan');
   });
 
   it('maps and filters across entities', async () => {
@@ -46,17 +46,17 @@ describe('searchService', () => {
       { id: 'i2', ingredient_name: 'Horno', type: 'equipment', unit: 'pieza', current_stock: 1 },
     ]);
     (eventService.getAll as any).mockResolvedValue([
-      { id: 'e1', service_type: 'Boda', event_date: '2024-01-02', status: 'confirmed', clients: { name: 'Maria' } },
+      { id: 'e1', service_type: 'Boda', event_date: '2024-01-02', status: 'confirmed', client: { name: 'Maria' } },
     ]);
 
     const result = await searchService.searchAll('ma', 1);
 
-    expect(result.clients).toHaveLength(1);
-    expect(result.clients[0].subtitle).toContain('maria@test.com');
-    expect(result.products).toHaveLength(0);
+    expect(result.client).toHaveLength(1);
+    expect(result.client[0].subtitle).toContain('maria@test.com');
+    expect(result.product).toHaveLength(0);
     expect(result.inventory).toHaveLength(0);
-    expect(result.events).toHaveLength(1);
-    expect(result.events[0].href).toBe('/events/e1/summary');
+    expect(result.event).toHaveLength(1);
+    expect(result.event[0].href).toBe('/events/e1/summary');
   });
 
   it('handles events with client shape and inventory equipment', async () => {
@@ -74,8 +74,8 @@ describe('searchService', () => {
     const result = await searchService.searchAll('ho');
 
     expect(result.inventory[0].subtitle).toBe('Equipo - pieza');
-    expect(result.products).toHaveLength(0);
-    expect(result.events).toHaveLength(0);
+    expect(result.product).toHaveLength(0);
+    expect(result.event).toHaveLength(0);
   });
 
   it('maps product meta only when base price exists', async () => {
@@ -88,7 +88,7 @@ describe('searchService', () => {
 
     const result = await searchService.searchAll('tacos');
 
-    expect(result.products).toHaveLength(1);
-    expect(result.products[0].meta).toBeUndefined();
+    expect(result.product).toHaveLength(1);
+    expect(result.product[0].meta).toBeUndefined();
   });
 });

@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type Event = Database['public']['Tables']['events']['Row'] & {
-  clients?: Database['public']['Tables']['clients']['Row'] | null;
+  client?: Database['public']['Tables']['clients']['Row'] | null;
 };
 type Profile = Database['public']['Tables']['users']['Row'];
 type ProductItem = Database['public']['Tables']['event_products']['Row'] & {
@@ -109,9 +109,9 @@ export const generateBudgetPDF = (
   doc.text('Email:', 20, currentY + 14);
   
   doc.setFont(undefined, 'normal');
-  doc.text(event.clients?.name || 'N/A', 40, currentY);
-  doc.text(event.clients?.phone || 'N/A', 40, currentY + 7);
-  doc.text(event.clients?.email || 'N/A', 40, currentY + 14);
+  doc.text(event.client?.name || 'N/A', 40, currentY);
+  doc.text(event.client?.phone || 'N/A', 40, currentY + 7);
+  doc.text(event.client?.email || 'N/A', 40, currentY + 14);
   
   doc.setFont(undefined, 'bold');
   doc.text('Fecha:', pageWidth / 2, currentY);
@@ -210,7 +210,7 @@ export const generateBudgetPDF = (
   const pageHeight = doc.internal.pageSize.height;
   doc.text('Este presupuesto tiene una validez de 15 días.', 20, pageHeight - 10);
   
-  doc.save(`Presupuesto_${event.clients?.name || 'Cliente'}.pdf`);
+  doc.save(`Presupuesto_${event.client?.name || 'Cliente'}.pdf`);
 };
 
 export const generateContractPDF = (
@@ -226,7 +226,7 @@ export const generateContractPDF = (
   const city = event.city || profile?.business_name || 'la ciudad';
   const dateStr = format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es });
   const providerName = profile?.business_name || profile?.name || 'EL PROVEEDOR';
-  const clientName = event.clients?.name || 'EL CLIENTE';
+  const clientName = event.client?.name || 'EL CLIENTE';
   
   const eventDate = new Date(event.event_date);
   const userTimezoneOffset = eventDate.getTimezoneOffset() * 60000;
@@ -269,7 +269,7 @@ Ambas partes aceptan los términos y condiciones del presente contrato.`;
   doc.text('EL CLIENTE', 160, signY + 5, { align: 'center' });
   doc.text(clientName, 160, signY + 10, { align: 'center', maxWidth: 60 });
   
-  doc.save(`Contrato_${event.clients?.name || 'Cliente'}.pdf`);
+  doc.save(`Contrato_${event.client?.name || 'Cliente'}.pdf`);
 };
 
 export const generateShoppingListPDF = (
@@ -333,7 +333,7 @@ export const generatePaymentReportPDF = (
   const localDate = new Date(eventDate.getTime() + userTimezoneOffset);
 
   // Left Column
-  doc.text(`Cliente: ${event.clients?.name || 'N/A'}`, 20, currentY);
+  doc.text(`Cliente: ${event.client?.name || 'N/A'}`, 20, currentY);
   doc.text(`Evento: ${event.service_type}`, 20, currentY + 5);
   
   // Right Column

@@ -177,7 +177,7 @@ export const CalendarView: React.FC = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div className="min-w-0 flex-1 mr-2">
                         <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-brand-orange transition-colors truncate">
-                            {event.clients?.name}
+                            {event.client?.name}
                         </h3>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-tight">
                             {event.service_type}
@@ -221,7 +221,7 @@ export const CalendarView: React.FC = () => {
                       <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/50">
                         <div className="flex items-center text-[11px] text-gray-500 dark:text-gray-500">
                             <Phone className="h-3 w-3 mr-1" />
-                            <span>{event.clients?.phone || 'Sin tel.'}</span>
+                            <span>{event.client?.phone || 'Sin tel.'}</span>
                         </div>
                         <div className="flex items-center text-xs font-bold text-gray-900 dark:text-gray-100">
                             <DollarIcon className="h-3 w-3 mr-0.5 text-green-600" />

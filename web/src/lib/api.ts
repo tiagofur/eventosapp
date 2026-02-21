@@ -23,10 +23,6 @@ class ApiClient {
       url += `?${searchParams.toString()}`;
     }
 
-    console.log(`API Request: ${options.method || 'GET'} ${url}`);
-    if (init.body) console.log('Request Body:', init.body);
-    console.log('Request Headers:', this.getHeaders());
-
     const response = await fetch(url, {
       ...init,
       headers: {

@@ -5,6 +5,7 @@
 ## Código de Conducta
 
 Este proyecto sigue un código de conducta simple:
+
 - Sé respetuoso con todos
 - Construye constructivamente
 - Acepta críticas gracefully
@@ -116,13 +117,13 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary';
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  label, 
-  onClick, 
-  variant = 'primary' 
+export const Button: React.FC<ButtonProps> = ({
+  label,
+  onClick,
+  variant = 'primary'
 }) => {
   return (
-    <button 
+    <button
       className={cn(styles.button, styles[variant])}
       onClick={onClick}
     >
@@ -149,17 +150,17 @@ interface CreateClientRequest {
 
 export const clientService = {
   async create(data: CreateClientRequest): Promise<Client> {
-    return api.post<Client>('/clients', data);
+    return api.post<Client>("/clients", data);
   },
-  
+
   async getById(id: string): Promise<Client> {
     return api.get<Client>(`/clients/${id}`);
-  }
+  },
 };
 
 // ❌ Evitar
 export function createClient(data) {
-  return api.post('/clients', data);
+  return api.post("/clients", data);
 }
 ```
 
@@ -171,11 +172,11 @@ export const useClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
+
   useEffect(() => {
     fetchClients();
   }, []);
-  
+
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -187,7 +188,7 @@ export const useClients = () => {
       setLoading(false);
     }
   };
-  
+
   return { clients, loading, error, refetch: fetchClients };
 };
 ```
@@ -204,7 +205,7 @@ package handlers
 
 import (
     "net/http"
-    
+
     "github.com/go-chi/chi/v5"
 )
 
@@ -219,13 +220,13 @@ func NewClientHandler(repo repository.ClientRepository) *ClientHandler {
 func (h *ClientHandler) GetByID(w http.ResponseWriter, r *http.Request) {
     id := chi.URLParam(r, "id")
     userID := middleware.GetUserID(r.Context())
-    
+
     client, err := h.repo.GetByID(r.Context(), id, userID)
     if err != nil {
         writeError(w, http.StatusNotFound, "client not found")
         return
     }
-    
+
     writeJSON(w, http.StatusOK, client)
 }
 ```
@@ -298,7 +299,7 @@ go test -cover ./...
 - Actualiza el README si agregas features significativos
 - Documenta funciones públicas con comentarios GoDoc/TS Doc
 - Actualiza CHANGELOG.md con tus cambios
-- Si cambias la API, actualiza docs/web/api-integration.md
+- Si cambias la API, actualiza docs/architecture/system-overview.md
 
 ## Revisión de Código
 

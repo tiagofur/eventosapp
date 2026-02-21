@@ -280,9 +280,15 @@ func (h *CRUDHandler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CRUDHandler) GetEventProducts(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+	// Verify event belongs to user
+	if _, err := h.eventRepo.GetByID(r.Context(), eventID, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
 		return
 	}
 	products, err := h.eventRepo.GetProducts(r.Context(), eventID)
@@ -294,9 +300,15 @@ func (h *CRUDHandler) GetEventProducts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CRUDHandler) GetEventExtras(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+	// Verify event belongs to user
+	if _, err := h.eventRepo.GetByID(r.Context(), eventID, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
 		return
 	}
 	extras, err := h.eventRepo.GetExtras(r.Context(), eventID)
@@ -308,9 +320,15 @@ func (h *CRUDHandler) GetEventExtras(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+	// Verify event belongs to user
+	if _, err := h.eventRepo.GetByID(r.Context(), eventID, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
 		return
 	}
 
@@ -410,9 +428,15 @@ func (h *CRUDHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CRUDHandler) GetProductIngredients(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid product ID")
+		return
+	}
+	// Verify product belongs to user
+	if _, err := h.productRepo.GetByID(r.Context(), id, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Product not found")
 		return
 	}
 	ingredients, err := h.productRepo.GetIngredients(r.Context(), id)
@@ -424,9 +448,15 @@ func (h *CRUDHandler) GetProductIngredients(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *CRUDHandler) UpdateProductIngredients(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid product ID")
+		return
+	}
+	// Verify product belongs to user
+	if _, err := h.productRepo.GetByID(r.Context(), id, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Product not found")
 		return
 	}
 	var req struct {
@@ -582,7 +612,12 @@ func (h *CRUDHandler) ListPayments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, []interface{}{})
+	payments, err := h.paymentRepo.GetAll(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch payments")
+		return
+	}
+	writeJSON(w, http.StatusOK, payments)
 }
 
 func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {

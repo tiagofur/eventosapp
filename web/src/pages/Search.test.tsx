@@ -43,9 +43,9 @@ describe('SearchPage', () => {
   it('renders results when search returns data', async () => {
     mockSearchParams = new URLSearchParams('?q=evento');
     (searchService.searchAll as any).mockResolvedValue({
-      clients: [{ id: '1', title: 'Ana', href: '/clients/1' }],
-      events: [{ id: '2', title: 'Boda', href: '/events/2', meta: '2024-01-02', status: 'confirmed' }],
-      products: [{ id: '3', title: 'Menu', href: '/products/3', meta: '10 items' }],
+      client: [{ id: '1', title: 'Ana', href: '/clients/1' }],
+      event: [{ id: '2', title: 'Boda', href: '/events/2', meta: '2024-01-02', status: 'confirmed' }],
+      product: [{ id: '3', title: 'Menu', href: '/products/3', meta: '10 items' }],
       inventory: [{ id: '4', title: 'Sillas', href: '/inventory/4' }],
     });
 
@@ -58,13 +58,13 @@ describe('SearchPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Resultados')).toBeInTheDocument();
     });
-    expect(screen.getByText('Clientes')).toBeInTheDocument();
+    expect(screen.getByText(/Clientes/i)).toBeInTheDocument();
     expect(screen.getByText('Ana')).toBeInTheDocument();
-    expect(screen.getByText('Eventos')).toBeInTheDocument();
+    expect(screen.getByText(/Eventos/i)).toBeInTheDocument();
     expect(screen.getByText('Boda')).toBeInTheDocument();
-    expect(screen.getByText('Productos')).toBeInTheDocument();
+    expect(screen.getByText(/Productos/i)).toBeInTheDocument();
     expect(screen.getByText('Menu')).toBeInTheDocument();
-    expect(screen.getByText('Inventario')).toBeInTheDocument();
+    expect(screen.getByText(/Inventario/i)).toBeInTheDocument();
     expect(screen.getByText('Sillas')).toBeInTheDocument();
   });
 

@@ -64,7 +64,7 @@ type Event struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 
 	// Joined data (populated by queries with joins)
-	Client *Client `json:"clients,omitempty"`
+	Client *Client `json:"client,omitempty"`
 }
 
 type Product struct {

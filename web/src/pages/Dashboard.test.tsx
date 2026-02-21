@@ -54,7 +54,7 @@ describe('Dashboard', () => {
         tax_amount: 160,
         requires_invoice: true,
         event_date: '2024-01-20',
-        clients: { name: 'Ana' },
+        client: { name: 'Ana' },
         service_type: 'Boda',
         num_people: 100,
       },
@@ -63,7 +63,7 @@ describe('Dashboard', () => {
       {
         id: 'event-2',
         event_date: '2024-01-25',
-        clients: { name: 'Luis' },
+        client: { name: 'Luis' },
         service_type: 'XV',
         num_people: 80,
       },

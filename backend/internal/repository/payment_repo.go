@@ -21,6 +21,12 @@ func NewPaymentRepo(pool *pgxpool.Pool) *PaymentRepo {
 	return &PaymentRepo{pool: pool}
 }
 
+func (r *PaymentRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Payment, error) {
+	query := `SELECT ` + paymentSelectFields + `
+		FROM payments WHERE user_id = $1 ORDER BY payment_date DESC`
+	return r.queryPayments(ctx, query, userID)
+}
+
 func (r *PaymentRepo) GetByEventID(ctx context.Context, userID, eventID uuid.UUID) ([]models.Payment, error) {
 	query := `SELECT ` + paymentSelectFields + `
 		FROM payments WHERE user_id = $1 AND event_id = $2 ORDER BY payment_date DESC`

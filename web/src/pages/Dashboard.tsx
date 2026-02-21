@@ -558,7 +558,7 @@ export const Dashboard: React.FC = () => {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                                            {event.clients?.name}
+                                            {event.client?.name}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
                                             <span className="inline-block px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 mr-2 uppercase tracking-tight text-[10px] font-bold">

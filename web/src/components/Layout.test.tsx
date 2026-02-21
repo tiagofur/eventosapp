@@ -13,7 +13,7 @@ let mockTheme = 'light';
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     signOut: mockSignOut,
-    profile: { name: 'Ana', email: 'ana@example.com' },
+    user: { name: 'Ana', email: 'ana@example.com' },
   }),
 }));
 

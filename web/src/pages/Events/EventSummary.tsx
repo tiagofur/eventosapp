@@ -317,7 +317,7 @@ export const EventSummary: React.FC = () => {
           <div className="border-b dark:border-gray-700 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {event.clients?.name} - {event.service_type}
+                {event.client?.name} - {event.service_type}
               </h1>
 
               {/* Status Badge + Dropdown */}
@@ -395,7 +395,7 @@ export const EventSummary: React.FC = () => {
               <div className="text-right">
                 <p>
                   <span className="font-semibold">Cliente:</span>{" "}
-                  {event.clients?.name}
+                  {event.client?.name}
                 </p>
                 <p>
                   <span className="font-semibold">Factura:</span>{" "}
@@ -405,7 +405,7 @@ export const EventSummary: React.FC = () => {
                 </p>
                 <p>
                   <span className="font-semibold">Teléfono:</span>{" "}
-                  {event.clients?.phone}
+                  {event.client?.phone}
                 </p>
               </div>
             </div>
@@ -624,7 +624,7 @@ export const EventSummary: React.FC = () => {
                 {profile?.business_name || profile?.name || user?.email}
               </strong>{" "}
               (en adelante "EL PROVEEDOR"), y por la otra parte{" "}
-              <strong>{event.clients?.name}</strong> (en adelante "EL CLIENTE"),
+              <strong>{event.client?.name}</strong> (en adelante "EL CLIENTE"),
               quienes convienen en celebrar el presente Contrato de Prestación
               de Servicios, sujeto a las siguientes cláusulas:
             </p>
@@ -656,7 +656,7 @@ export const EventSummary: React.FC = () => {
               </li>
               <li>
                 <strong>Ubicación:</strong>{" "}
-                {event.location || event.clients?.address || "A definir"}
+                {event.location || event.client?.address || "A definir"}
               </li>
               <li>
                 <strong>Factura:</strong>{" "}
@@ -719,7 +719,7 @@ export const EventSummary: React.FC = () => {
               </p>
             </div>
             <div className="text-center border-t border-gray-400 dark:border-gray-500 pt-4">
-              <p className="font-bold">{event.clients?.name}</p>
+              <p className="font-bold">{event.client?.name}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Firma de EL CLIENTE
               </p>

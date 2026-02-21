@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -186,7 +187,7 @@ func (r *EventRepo) Create(ctx context.Context, e *models.Event) error {
 		e.DepositPercent, e.CancellationDays, e.RefundPercent, e.Notes,
 	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
 	if err != nil {
-		fmt.Printf("Error creating event: %v\n", err)
+		slog.Error("Error creating event", "error", err)
 		return err
 	}
 	return nil

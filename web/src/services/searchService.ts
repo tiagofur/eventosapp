@@ -9,8 +9,6 @@ type Event = Database['public']['Tables']['events']['Row'];
 type Product = Database['public']['Tables']['products']['Row'];
 type InventoryItem = Database['public']['Tables']['inventory']['Row'];
 
-type EventWithClient = Event & { clients?: { name: string } | null };
-
 type SearchEntity = 'client' | 'event' | 'product' | 'inventory';
 
 export type SearchResult = {
@@ -24,16 +22,16 @@ export type SearchResult = {
 };
 
 export type SearchResults = {
-  clients: SearchResult[];
-  events: SearchResult[];
-  products: SearchResult[];
+  client: SearchResult[];
+  event: SearchResult[];
+  product: SearchResult[];
   inventory: SearchResult[];
 };
 
 const EMPTY_RESULTS: SearchResults = {
-  clients: [],
-  events: [],
-  products: [],
+  client: [],
+  event: [],
+  product: [],
   inventory: [],
 };
 
@@ -79,7 +77,7 @@ const mapEventResults = (events: any[]): SearchResult[] =>
     id: event.id,
     type: 'event',
     title: event.service_type,
-    subtitle: event.clients?.name || event.client?.name || undefined, // Handle both structures if needed
+    subtitle: event.client?.name || undefined,
     meta: event.event_date,
     status: event.status,
     href: `/events/${event.id}/summary`,
@@ -117,15 +115,14 @@ export const searchService = {
     const filteredEvents = events.filter((e: any) => 
       e.service_type.toLowerCase().includes(term) || 
       e.location?.toLowerCase().includes(term) ||
-      e.clients?.name?.toLowerCase().includes(term) ||
       e.client?.name?.toLowerCase().includes(term)
     );
 
     return {
-      clients: limitResults(mapClientResults(filteredClients), limit),
-      products: limitResults(mapProductResults(filteredProducts), limit),
+      client: limitResults(mapClientResults(filteredClients), limit),
+      product: limitResults(mapProductResults(filteredProducts), limit),
       inventory: limitResults(mapInventoryResults(filteredInventory), limit),
-      events: limitResults(mapEventResults(filteredEvents), limit),
+      event: limitResults(mapEventResults(filteredEvents), limit),
     };
   },
 };

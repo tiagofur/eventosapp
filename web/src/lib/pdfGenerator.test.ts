@@ -50,7 +50,7 @@ describe('pdfGenerator', () => {
         tax_amount: 160,
         tax_rate: 16,
         requires_invoice: true,
-        clients: { name: 'Ana', phone: '555', email: 'ana@example.com' } as any,
+        client: { name: 'Ana', phone: '555', email: 'ana@example.com' } as any,
       } as any,
       { name: 'Eventos Ana', business_name: 'Eventos Ana' } as any,
       [
@@ -80,7 +80,7 @@ describe('pdfGenerator', () => {
         num_people: 100,
         total_amount: 500,
         requires_invoice: false,
-        clients: { name: 'Ana' } as any,
+        client: { name: 'Ana' } as any,
       } as any,
       null,
       [],
@@ -109,7 +109,7 @@ describe('pdfGenerator', () => {
         deposit_percent: 50,
         cancellation_days: 10,
         refund_percent: 10,
-        clients: { name: 'Ana' } as any,
+        client: { name: 'Ana' } as any,
       } as any,
       { name: 'Eventos Ana', business_name: 'Eventos Ana' } as any
     );

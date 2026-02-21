@@ -10,6 +10,7 @@ vi.mock('../../services/eventService', () => ({
     getById: vi.fn(),
     getProducts: vi.fn(),
     getExtras: vi.fn(),
+    getPayments: vi.fn(),
   },
 }));
 
@@ -56,7 +57,7 @@ describe('EventSummary', () => {
       tax_amount: 160,
       requires_invoice: true,
       tax_rate: 16,
-      clients: { name: 'Ana', phone: '555' },
+      client: { name: 'Ana', phone: '555' },
       start_time: '10:00',
       end_time: '12:00',
       deposit_percent: 50,
@@ -74,6 +75,7 @@ describe('EventSummary', () => {
     (eventService.getExtras as any).mockResolvedValue([
       { description: 'Transporte', price: 50, cost: 20 },
     ]);
+    (eventService.getPayments as any).mockResolvedValue([]);
     (productService.getIngredientsForProducts as any).mockResolvedValue([
       { product_id: 'p1', inventory_id: 'i1', quantity_required: 1, ingredient_name: 'Harina', unit: 'kg', unit_cost: 2 },
     ]);
@@ -87,12 +89,12 @@ describe('EventSummary', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Compras/i }));
-    expect(screen.getByText(/Lista de Compras/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Lista de Compras/i)[0]).toBeInTheDocument();
     expect(screen.getByText('Harina')).toBeInTheDocument();
     expect(screen.getByText('kg')).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Contrato' })[0]);
-    expect(screen.getByText(/Contrato de Servicios/i)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByText('Contrato')[0]);
+    expect(screen.getAllByText(/Contrato de Servicios/i)[0]).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Pagos/i }));
     expect(screen.getByText('PAYMENTS_VIEW')).toBeInTheDocument();
@@ -108,7 +110,10 @@ describe('EventSummary', () => {
     fireEvent.click(screen.getByRole('button', { name: /Presupuesto/i }));
     expect(generateBudgetPDF).toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Contrato' })[1]);
+    // Switch to contrato view to reveal the download button
+    fireEvent.click(screen.getAllByText('Contrato')[0]);
+    
+    fireEvent.click(screen.getByTitle('Descargar Contrato en PDF'));
     expect(generateContractPDF).toHaveBeenCalled();
   });
 
