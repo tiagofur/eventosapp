@@ -16,6 +16,12 @@ type ProductRepo struct {
 func NewProductRepo(pool *pgxpool.Pool) *ProductRepo {
 	return &ProductRepo{pool: pool}
 }
+func (r *ProductRepo) CountByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM products WHERE user_id = $1`
+	err := r.pool.QueryRow(ctx, query, userID).Scan(&count)
+	return count, err
+}
 
 func (r *ProductRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Product, error) {
 	query := `SELECT id, user_id, name, category, base_price, recipe, is_active, created_at, updated_at

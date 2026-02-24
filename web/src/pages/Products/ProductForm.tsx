@@ -9,6 +9,8 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ArrowLeft, Save, Plus, Trash2, ChefHat } from "lucide-react";
 import { Database } from "../../types/supabase";
 import { logError } from "../../lib/errorHandler";
+import { usePlanLimits } from "../../hooks/usePlanLimits";
+import { UpgradeBanner } from "../../components/UpgradeBanner";
 
 type InventoryItem = Database['public']['Tables']['inventory']['Row'];
 
@@ -27,6 +29,8 @@ export const ProductForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  const { canCreateCatalogItem, catalogCount, catalogLimit, loading: limitsLoading } = usePlanLimits();
+
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [recipeIngredients, setRecipeIngredients] = useState<{inventory_id: string, quantity_required: number, unit_cost: number, unit: string}[]>([]);
 
@@ -165,6 +169,31 @@ export const ProductForm: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (limitsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange"></div>
+      </div>
+    );
+  }
+
+  if (!id && !canCreateCatalogItem) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Regresar
+        </button>
+        <div className="flex justify-center mt-12">
+          <UpgradeBanner type="limit-reached" resource="catalog" currentUsage={catalogCount} limit={catalogLimit} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

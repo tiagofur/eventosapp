@@ -7,11 +7,15 @@ import {
   Building,
   FileText,
   Image as ImageIcon,
+  ExternalLink,
+  Zap,
+  CheckCircle,
 } from "lucide-react";
 import { logError } from "../lib/errorHandler";
+import { subscriptionService } from "../services/subscriptionService";
 
 export const Settings: React.FC = () => {
-  const { user: profile, updateProfile } = useAuth();
+  const { user: profile, updateProfile, checkAuth } = useAuth();
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
   const [businessName, setBusinessName] = useState(
     profile?.business_name || "",
@@ -30,6 +34,9 @@ export const Settings: React.FC = () => {
   const [showBusinessName, setShowBusinessName] = useState(
     profile?.show_business_name_in_pdf ?? true
   );
+  const [isPortalLoading, setIsPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+  const [isDebugLoading, setIsDebugLoading] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -108,6 +115,34 @@ export const Settings: React.FC = () => {
       setIsEditingContract(false);
     } catch (error) {
       logError("Error updating contract settings", error);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      setIsPortalLoading(true);
+      setPortalError(null);
+      const { url } = await subscriptionService.createPortalSession();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (err: unknown) {
+      logError("Error opening billing portal", err);
+      setPortalError("No se pudo abrir el portal. Asegúrate de tener una suscripción activa con Stripe.");
+    } finally {
+      setIsPortalLoading(false);
+    }
+  };
+
+  const handleDebugDowngrade = async () => {
+    try {
+      setIsDebugLoading(true);
+      await subscriptionService.debugDowngrade();
+      await checkAuth();
+    } catch (err: unknown) {
+      logError("Error debug downgrade", err);
+    } finally {
+      setIsDebugLoading(false);
     }
   };
 
@@ -304,21 +339,80 @@ export const Settings: React.FC = () => {
                 <CreditCard className="h-4 w-4 mr-2" /> Plan Actual
               </dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                <span
-                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    profile?.plan === "premium"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                  }`}
-                >
-                  {profile?.plan === "premium" ? "Premium" : "Básico"}
-                </span>
-                {profile?.plan === "basic" && (
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    El plan básico permite hasta 10 clientes y 20 eventos
-                    mensuales.
-                  </p>
-                )}
+                <div className="flex flex-col gap-3">
+                  {/* Badge del plan */}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-2.5 py-0.5 inline-flex items-center gap-1.5 text-xs leading-5 font-semibold rounded-full ${
+                        profile?.plan === "pro" || profile?.plan === "premium"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <CheckCircle className="h-3 w-3" />
+                      {profile?.plan === "pro" || profile?.plan === "premium" ? "Pro / Premium" : "Básico"}
+                    </span>
+                  </div>
+
+                  {/* Descripción del plan */}
+                  {profile?.plan === "basic" && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      El plan básico tiene límites en eventos y clientes mensuales.
+                      Actualiza a Pro para acceder a todas las funciones sin límites.
+                    </p>
+                  )}
+
+                  {/* Sección de gestión para usuarios Pro con Stripe */}
+                  {(profile?.plan === "pro" || profile?.plan === "premium") && (
+                    <div className="mt-1 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <p className="text-xs text-green-700 dark:text-green-300 mb-2">
+                        Tienes acceso completo a todas las funciones Pro. Puedes gestionar tu suscripción, cambiar tu método de pago o cancelar cuando quieras.
+                      </p>
+                      {portalError && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mb-2">{portalError}</p>
+                      )}
+                      <button
+                        id="btn-manage-subscription"
+                        onClick={handleManageSubscription}
+                        disabled={isPortalLoading}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 transition-colors"
+                      >
+                        {isPortalLoading ? (
+                          "Abriendo portal..."
+                        ) : (
+                          <>
+                            <ExternalLink className="h-3 w-3" />
+                            Gestionar suscripción
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Botones de debug (solo en desarrollo) */}
+                  {import.meta.env.MODE === "development" && (
+                    <div className="flex gap-2 flex-wrap mt-1">
+                      {(profile?.plan === "pro" || profile?.plan === "premium") && (
+                        <button
+                          onClick={handleDebugDowngrade}
+                          disabled={isDebugLoading}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:bg-orange-900/20"
+                        >
+                          [Dev] Degradar a Básico
+                        </button>
+                      )}
+                      {profile?.plan === "basic" && (
+                        <a
+                          href="/pricing"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-brand-orange text-brand-orange hover:bg-orange-50"
+                        >
+                          <Zap className="h-3 w-3" />
+                          Ver planes
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
               </dd>
             </div>
           </dl>

@@ -16,6 +16,12 @@ type InventoryRepo struct {
 func NewInventoryRepo(pool *pgxpool.Pool) *InventoryRepo {
 	return &InventoryRepo{pool: pool}
 }
+func (r *InventoryRepo) CountByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM inventory WHERE user_id = $1`
+	err := r.pool.QueryRow(ctx, query, userID).Scan(&count)
+	return count, err
+}
 
 func (r *InventoryRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.InventoryItem, error) {
 	query := `SELECT id, user_id, ingredient_name, current_stock, minimum_stock, unit, unit_cost, type, last_updated

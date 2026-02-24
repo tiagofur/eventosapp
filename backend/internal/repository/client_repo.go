@@ -16,6 +16,12 @@ type ClientRepo struct {
 func NewClientRepo(pool *pgxpool.Pool) *ClientRepo {
 	return &ClientRepo{pool: pool}
 }
+func (r *ClientRepo) CountByUserID(ctx context.Context, userID uuid.UUID) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM clients WHERE user_id = $1`
+	err := r.pool.QueryRow(ctx, query, userID).Scan(&count)
+	return count, err
+}
 
 func (r *ClientRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Client, error) {
 	query := `SELECT id, user_id, name, phone, email, address, city, notes,

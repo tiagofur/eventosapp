@@ -7,6 +7,8 @@ import { clientService } from "../../services/clientService";
 import { useAuth } from "../../contexts/AuthContext";
 import { ArrowLeft, Save } from "lucide-react";
 import { logError } from "../../lib/errorHandler";
+import { usePlanLimits } from "../../hooks/usePlanLimits";
+import { UpgradeBanner } from "../../components/UpgradeBanner";
 
 const clientSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -25,6 +27,8 @@ export const ClientForm: React.FC = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { canCreateClient, clientsCount, clientLimit, loading: limitsLoading } = usePlanLimits();
 
   const {
     register,
@@ -92,6 +96,31 @@ export const ClientForm: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  if (limitsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange"></div>
+      </div>
+    );
+  }
+
+  if (!id && !canCreateClient) {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Regresar
+        </button>
+        <div className="flex justify-center mt-12">
+          <UpgradeBanner type="limit-reached" resource="clients" currentUsage={clientsCount} limit={clientLimit} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

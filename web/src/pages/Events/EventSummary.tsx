@@ -23,12 +23,9 @@ import {
   generateShoppingListPDF,
 } from "../../lib/pdfGenerator";
 import { logError } from "../../lib/errorHandler";
-import {
-  getEventNetSales,
-  getEventTaxAmount,
-  getEventTotalCharged,
-} from "../../lib/finance";
+import { getEventTotalCharged, getEventTaxAmount, getEventNetSales } from "../../lib/finance";
 import { Payments } from "./components/Payments";
+import { usePlanLimits } from "../../hooks/usePlanLimits";
 
 type ViewMode = "summary" | "ingredients" | "contract" | "payments";
 
@@ -86,6 +83,7 @@ export const EventSummary: React.FC = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const { addToast } = useToast();
+  const { isBasicPlan } = usePlanLimits();
 
   useEffect(() => {
     if (id) {
@@ -293,10 +291,13 @@ export const EventSummary: React.FC = () => {
 
           {viewMode === "summary" && (
             <button
-              onClick={() =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onClick={() => {
+                if (isBasicPlan) {
+                  addToast("La generación de PDFs es exclusiva del plan Pro.", "error");
+                  return;
+                }
                 generateBudgetPDF(event, profile as any, products, extras)
-              }
+              }}
               className="flex items-center px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-sm hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium shadow-xs transition-colors"
               title="Descargar Presupuesto en PDF"
             >
@@ -307,10 +308,13 @@ export const EventSummary: React.FC = () => {
 
           {viewMode === "ingredients" && (
             <button
-              onClick={() =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onClick={() => {
+                if (isBasicPlan) {
+                  addToast("La generación de PDFs es exclusiva del plan Pro.", "error");
+                  return;
+                }
                 generateShoppingListPDF(event, profile as any, ingredients)
-              }
+              }}
               className="flex items-center px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-sm hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium shadow-xs transition-colors"
               title="Descargar Lista de Compras en PDF"
             >
@@ -321,7 +325,13 @@ export const EventSummary: React.FC = () => {
 
           {viewMode === "contract" && (
             <button
-              onClick={() => generateContractPDF(event, profile as any)}
+              onClick={() => {
+                if (isBasicPlan) {
+                  addToast("La generación de PDFs es exclusiva del plan Pro.", "error");
+                  return;
+                }
+                generateContractPDF(event, profile as any)
+              }}
               className="flex items-center px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-sm hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium shadow-xs transition-colors"
               title="Descargar Contrato en PDF"
             >

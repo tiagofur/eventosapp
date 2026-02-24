@@ -77,6 +77,25 @@ func (h *CRUDHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+	// Check limits
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user limits")
+		return
+	}
+
+	if user.Plan == "basic" {
+		count, err := h.clientRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify client limits")
+			return
+		}
+		if count >= 50 {
+			writeError(w, http.StatusForbidden, "Client limits for basic plan reached. Please upgrade to Pro.")
+			return
+		}
+	}
+
 	client.UserID = userID
 	if err := h.clientRepo.Create(r.Context(), &client); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to create client")
@@ -408,6 +427,30 @@ func (h *CRUDHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+	// Check limits
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user limits")
+		return
+	}
+
+	if user.Plan == "basic" {
+		productCount, err := h.productRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify product limits")
+			return
+		}
+		inventoryCount, err := h.inventoryRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify inventory limits")
+			return
+		}
+		if productCount+inventoryCount >= 20 {
+			writeError(w, http.StatusForbidden, "Catalog limits for basic plan reached. Please upgrade to Pro.")
+			return
+		}
+	}
+
 	product.UserID = userID
 	if err := h.productRepo.Create(r.Context(), &product); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to create product")
@@ -533,6 +576,30 @@ func (h *CRUDHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+	// Check limits
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user limits")
+		return
+	}
+
+	if user.Plan == "basic" {
+		productCount, err := h.productRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify product limits")
+			return
+		}
+		inventoryCount, err := h.inventoryRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify inventory limits")
+			return
+		}
+		if productCount+inventoryCount >= 20 {
+			writeError(w, http.StatusForbidden, "Catalog limits for basic plan reached. Please upgrade to Pro.")
+			return
+		}
+	}
+
 	item.UserID = userID
 	if err := h.inventoryRepo.Create(r.Context(), &item); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to create inventory item")

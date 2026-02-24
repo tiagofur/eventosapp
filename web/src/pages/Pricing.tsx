@@ -41,35 +41,37 @@ export const Pricing: React.FC = () => {
 
   const featuresFree = [
     'Hasta 3 eventos por mes',
-    'Catálogo de productos e inventario',
-    'Gestión de clientes básica',
-    'Generación de cotizaciones PDF estándar',
+    'Hasta 50 clientes registrados',
+    'Hasta 20 ítems en catálogo',
+    'Gestión básica de clientes',
+    'Calendario de eventos',
   ];
 
   const featuresPro = [
     'Eventos ilimitados',
+    'Clientes y catálogo ilimitados',
+    'Generación de cotizaciones PDF',
     'Control de pagos e ingresos en múltiples plazos',
-    'Integración con calendario de Google',
     'Reportes y analíticas avanzadas',
     'Soporte prioritario',
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+      <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight sm:text-5xl lg:text-6xl">
           Potencia tu negocio de eventos
         </h1>
-        <p className="mt-5 text-xl text-gray-500">
+        <p className="mt-5 text-xl text-gray-500 dark:text-gray-300">
           Elige el plan que se adapte al tamaño y crecimiento de tus eventos.
         </p>
       </div>
 
       {error && (
-        <div className="mb-8 max-w-max mx-auto bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
+        <div className="mb-8 max-w-max mx-auto bg-red-50 dark:bg-red-900 border-l-4 border-red-400 p-4 rounded-md">
           <div className="flex">
             <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
             </div>
           </div>
         </div>
@@ -77,28 +79,28 @@ export const Pricing: React.FC = () => {
 
       <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         {/* Free Plan */}
-        <div className="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden flex flex-col">
-          <div className="p-8">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2">Básico</h3>
-            <p className="text-gray-500 mb-6">Perfecto para empezar y organizar eventos pequeños.</p>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+          <div className="p-8 sm:p-10">
+            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Básico</h3>
+            <p className="text-gray-500 dark:text-gray-300 mb-6">Perfecto para empezar y organizar eventos pequeños.</p>
             <div className="flex items-baseline mb-8">
-              <span className="text-5xl font-extrabold text-gray-900">$0</span>
-              <span className="text-xl text-gray-500 ml-2">/mes</span>
+              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">$0</span>
+              <span className="text-xl text-gray-500 dark:text-gray-300 ml-2">/mes</span>
             </div>
             
             <button 
               disabled
-              className="w-full bg-gray-100 text-gray-500 font-medium py-3 px-4 rounded-xl cursor-not-allowed"
+              className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium py-3 px-4 rounded-xl cursor-not-allowed"
             >
               Plan Actual
             </button>
           </div>
-          <div className="bg-gray-50 p-8 flex-1 border-t border-gray-100">
+          <div className="bg-gray-50 dark:bg-gray-700 p-8 sm:p-10 flex-1 border-t border-gray-100 dark:border-gray-600">
             <ul className="space-y-4">
               {featuresFree.map((feature, i) => (
                 <li key={i} className="flex items-start">
                   <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mr-3" />
-                  <span className="text-gray-600">{feature}</span>
+                  <span className="text-gray-600 dark:text-gray-200">{feature}</span>
                 </li>
               ))}
             </ul>
@@ -106,65 +108,70 @@ export const Pricing: React.FC = () => {
         </div>
 
         {/* Pro Plan */}
-        <div className="bg-brand-900 rounded-2xl shadow-xl overflow-hidden flex flex-col transform transition-all hover:-translate-y-1 relative ring-4 ring-brand-500 ring-opacity-50">
-          <div className="absolute top-0 right-0 bg-linear-to-l from-brand-400 to-brand-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+        <div className="bg-linear-to-br from-orange-500 via-brand-orange to-orange-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all hover:-translate-y-1 relative" style={{background: 'linear-gradient(135deg, #FF8C42 0%, #FF6B35 45%, #D94F1E 100%)'}}>
+          <div className="absolute top-0 right-0 bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-widest">
             Recomendado
           </div>
-          <div className="p-8">
+          <div className="p-8 sm:p-10">
             <div className="flex items-center mb-2">
               <h3 className="text-2xl font-semibold text-white">Pro</h3>
               <Star className="h-5 w-5 text-yellow-400 ml-2 fill-current" />
             </div>
-            <p className="text-brand-100 mb-6">Todas las herramientas para escalar tu negocio sin límites.</p>
-            <div className="flex items-baseline mb-8">
-              <span className="text-5xl font-extrabold text-white">$499</span>
-              <span className="text-xl text-brand-200 ml-2">MXN/mes</span>
+            <p className="text-orange-100 mb-4">Todas las herramientas para escalar tu negocio sin límites.</p>
+            {/* Promo badge */}
+            <div className="inline-flex items-center gap-1.5 bg-yellow-400/20 text-yellow-200 text-xs font-bold px-3 py-1 rounded-full mb-4">
+              🎉 Precio de lanzamiento — ¡Por tiempo limitado!
+            </div>
+            <div className="flex items-baseline gap-3 mb-8">
+              <span className="text-xl text-orange-300 line-through opacity-75">$199</span>
+              <span className="text-6xl font-black text-white drop-shadow-sm">$99</span>
+              <span className="text-lg text-orange-200 font-medium">MXN/mes</span>
             </div>
             
-            {user?.plan === 'premium' ? (
-              <button 
+            {(user?.plan === 'premium' || user?.plan === 'pro') ? (
+              <button
                 disabled
-                className="w-full bg-brand-800 text-brand-100 font-medium py-3 px-4 rounded-xl cursor-not-allowed shadow-inner flex items-center justify-center"
+                className="w-full bg-white/20 backdrop-blur-sm text-white font-semibold py-3 px-4 rounded-xl cursor-not-allowed border border-white/30 flex items-center justify-center gap-2"
               >
-                <Shield className="h-5 w-5 mr-2" />
+                <Shield className="h-5 w-5" />
                 Tu plan actual
               </button>
             ) : (
-              <button 
+              <button
                 onClick={handleUpgrade}
                 disabled={loading}
-                className="w-full bg-white text-brand-600 hover:bg-gray-50 font-bold py-3 px-4 rounded-xl shadow-md transition duration-150 ease-in-out flex items-center justify-center disabled:opacity-75"
+                className="w-full bg-white text-orange-600 hover:bg-orange-50 font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-75 hover:shadow-xl"
               >
                 {loading ? 'Procesando...' : (
                   <>
-                    <Zap className="h-5 w-5 mr-2 text-yellow-500" />
-                    Obtener Premium <ArrowRight className="h-4 w-4 ml-1" />
+                    <Zap className="h-5 w-5 text-yellow-500" />
+                    Obtener Pro <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </button>
             )}
             
             {/* Desarrollo: Botón para simular upgrade sin stripe */}
-            {import.meta.env.MODE === 'development' && user?.plan !== 'premium' && (
-              <button 
+            {import.meta.env.MODE === 'development' && user?.plan !== 'premium' && user?.plan !== 'pro' && (
+              <button
                 onClick={handleDebugUpgrade}
                 disabled={loading}
-                className="w-full mt-3 bg-brand-800 text-brand-200 hover:text-white font-medium py-2 px-4 rounded-lg text-sm border border-brand-700"
+                className="w-full mt-3 bg-black/20 hover:bg-black/30 text-white/80 hover:text-white font-medium py-2 px-4 rounded-lg text-sm border border-white/20 transition-colors"
               >
                 [Dev] Upgrade (Mode Debug)
               </button>
             )}
           </div>
-          <div className="bg-brand-800 p-8 flex-1 border-t border-brand-700">
+          <div className="bg-black/20 backdrop-blur-sm p-8 sm:p-10 flex-1 border-t border-white/20">
             <ul className="space-y-4">
               <li className="flex items-start">
-                <CheckCircle className="h-6 w-6 text-brand-300 shrink-0 mr-3" />
-                <span className="text-white font-medium">Todo lo del plan básico, y además:</span>
+                <CheckCircle className="h-5 w-5 text-white shrink-0 mr-3 mt-0.5" />
+                <span className="text-white font-semibold">Todo lo del plan básico, y además:</span>
               </li>
               {featuresPro.map((feature, i) => (
                 <li key={i} className="flex items-start">
-                  <CheckCircle className="h-6 w-6 text-brand-400 shrink-0 mr-3" />
-                  <span className="text-brand-100">{feature}</span>
+                  <CheckCircle className="h-5 w-5 text-orange-200 shrink-0 mr-3 mt-0.5" />
+                  <span className="text-white">{feature}</span>
                 </li>
               ))}
             </ul>

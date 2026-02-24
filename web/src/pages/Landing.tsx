@@ -139,15 +139,18 @@ const testimonials = [
 
 const plans = [
   {
-    name: 'Starter',
+    name: 'Básico',
     price: 'Gratis',
+    originalPrice: null,
     period: '',
     description: 'Perfecto para empezar',
+    promo: null,
     features: [
-      'Hasta 10 eventos/mes',
-      '50 clientes',
-      'Calendario básico',
-      'Soporte por email',
+      'Hasta 3 eventos por mes',
+      'Hasta 50 clientes registrados',
+      'Hasta 20 ítems en catálogo',
+      'Gestión básica de clientes',
+      'Calendario de eventos',
     ],
     cta: 'Comenzar Gratis',
     href: '/register',
@@ -155,39 +158,24 @@ const plans = [
   },
   {
     name: 'Pro',
-    price: '$299',
-    period: '/mes',
+    price: '$99',
+    originalPrice: '$199',
+    period: 'MXN/mes',
     description: 'Para profesionales en crecimiento',
+    promo: '🎉 Precio de lanzamiento',
     features: [
-      'Eventos ilimitados',
-      'Clientes ilimitados',
-      'Control de inventario',
-      'Reportes avanzados',
-      'Cotizaciones PDF',
+      'Eventos, clientes y catálogo ilimitados',
+      'Generación de cotizaciones PDF',
+      'Control de pagos en múltiples plazos',
+      'Reportes y analíticas avanzadas',
       'Soporte prioritario',
     ],
-    cta: 'Comenzar Prueba Gratis',
+    cta: 'Comenzar Ahora',
     href: '/register',
     highlighted: true,
   },
-  {
-    name: 'Business',
-    price: '$699',
-    period: '/mes',
-    description: 'Para agencias y equipos',
-    features: [
-      'Todo lo de Pro',
-      'Múltiples usuarios',
-      'API access',
-      'Reportes personalizados',
-      'Integraciones avanzadas',
-      'Gerente de cuenta dedicado',
-    ],
-    cta: 'Contactar Ventas',
-    href: '/register',
-    highlighted: false,
-  },
 ];
+
 
 const faqs = [
   {
@@ -462,11 +450,11 @@ export const Landing: React.FC = () => {
               Planes para cada etapa de tu negocio
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Comienza gratis y escala cuando lo necesites. Sin sorpresas en tu factura.
-            </p>
+            Comienza gratis y activa el plan Pro cuando lo necesites. Precio de lanzamiento por tiempo limitado.
+          </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 items-start">
+          <div className="grid md:grid-cols-2 gap-8 items-start max-w-3xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.name}
@@ -476,8 +464,13 @@ export const Landing: React.FC = () => {
                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
                 }`}
               >
+                {plan.highlighted && plan.promo && (
+                  <div className="inline-flex items-center bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-3">
+                    {plan.promo}
+                  </div>
+                )}
                 {plan.highlighted && (
-                  <div className="inline-flex items-center bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
+                  <div className="inline-flex items-center bg-yellow-400/20 text-yellow-200 text-xs font-bold px-3 py-1 rounded-full mb-4 ml-2">
                     ⭐ Más popular
                   </div>
                 )}
@@ -487,7 +480,12 @@ export const Landing: React.FC = () => {
                 <p className={`text-sm mb-4 ${plan.highlighted ? 'text-orange-100' : 'text-gray-500 dark:text-gray-400'}`}>
                   {plan.description}
                 </p>
-                <div className="flex items-baseline gap-1 mb-6">
+                <div className="flex items-baseline gap-2 mb-6">
+                  {plan.originalPrice && (
+                    <span className={`text-lg line-through opacity-60 ${plan.highlighted ? 'text-orange-200' : 'text-gray-400'}`}>
+                      {plan.originalPrice}
+                    </span>
+                  )}
                   <span className={`text-4xl font-extrabold ${plan.highlighted ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                     {plan.price}
                   </span>

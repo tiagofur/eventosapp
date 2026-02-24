@@ -6,6 +6,7 @@ interface UpgradeBannerProps {
   type: 'limit-reached' | 'upsell';
   currentUsage?: number;
   limit?: number;
+  resource?: 'events' | 'clients' | 'catalog';
   className?: string;
 }
 
@@ -13,24 +14,32 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
   type, 
   currentUsage = 0, 
   limit = 3,
+  resource = 'events',
   className = ''
 }) => {
+  const resourceNames = {
+    events: { title: 'Eventos', plural: 'eventos mensuales', metric: 'Eventos este mes' },
+    clients: { title: 'Clientes', plural: 'clientes', metric: 'Clientes registrados' },
+    catalog: { title: 'Catálogo', plural: 'productos e ítems de inventario', metric: 'Ítems en catálogo' }
+  };
+  const texts = resourceNames[resource];
+
   if (type === 'limit-reached') {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-red-200 dark:border-red-900/30 overflow-hidden relative ${className}`}>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-red-100 dark:bg-red-900/20 rounded-full blur-3xl -mx-20 -my-20 opacity-50 point-events-none"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-red-100 dark:bg-red-900/20 rounded-full blur-3xl -mx-20 -my-20 opacity-50 pointer-events-none"></div>
         <div className="relative p-8 flex flex-col items-center text-center">
             <div className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
                 <Lock className="h-8 w-8 text-red-600 dark:text-red-400" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Límite de Eventos Alcanzado</h3>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Límite de {texts.title} Alcanzado</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
-                Has alcanzado el límite de {limit} eventos mensuales de tu plan Gratis. Para seguir creciendo tu negocio y crear más eventos, mejora a nuestro plan Pro.
+                Has alcanzado el límite de {limit} {texts.plural} de tu plan Básico. Para seguir creciendo tu negocio, mejora a nuestro plan Pro.
             </p>
             
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 w-full max-w-sm mb-8 border border-gray-100 dark:border-gray-700">
                 <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Eventos este mes</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">{texts.metric}</span>
                     <span className="font-bold text-red-600 dark:text-red-400">{currentUsage} / {limit}</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
