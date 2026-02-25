@@ -108,49 +108,35 @@ Documento generado para dar continuidad al trabajo de corrección.
 
 ---
 
-## PENDIENTES (Para futuro)
+## RESUELTOS — Commit 3 (Issues P1–P6)
 
-### P1. Rate limiting en endpoints de auth
-- **Archivo:** `backend/internal/router/router.go`
-- **Riesgo:** Los endpoints `/api/auth/login` y `/api/auth/register` no tienen rate limiting, vulnerables a fuerza bruta.
-- **Recomendación:** Agregar middleware de rate limiting (ej: `golang.org/x/time/rate` o `github.com/ulule/limiter`). Mínimo 5 intentos/minuto por IP en login.
+### P1. Rate limiting en endpoints de auth — CORREGIDO
+- **Archivos:** `backend/internal/middleware/ratelimit.go` (nuevo), `backend/internal/router/router.go`
+- **Fix:** Creado middleware `RateLimit` basado en IP con ventana deslizante (10 req/min para auth). Limpieza automática de entradas stale cada 5 min. Aplicado al grupo `/api/auth`.
 
-### P2. N+1 queries en ingredientes de productos
-- **Archivo:** `web/src/services/productService.ts:45-58`
-- **Problema:** `getIngredientsForProducts()` hace una llamada API individual por cada producto (`Promise.all` con N requests). Con 20 productos = 20 API calls.
-- **Recomendación:** Crear un endpoint batch en el backend: `POST /api/products/ingredients/batch` que acepte un array de product IDs.
+### P2. N+1 queries en ingredientes de productos — CORREGIDO
+- **Archivos:** `backend/internal/handlers/crud_handler.go`, `backend/internal/router/router.go`, `web/src/services/productService.ts`, `web/src/services/productService.test.ts`
+- **Fix:** Creado handler `GetBatchProductIngredients` y ruta `POST /api/products/ingredients/batch`. El frontend ahora hace 1 sola llamada en lugar de N. El repositorio ya tenía `GetIngredientsForProducts` con `ANY($1)`.
 
-### P3. Casts `as any` en resolvers de formularios
-- **Archivos:**
-  - `web/src/pages/Events/EventForm.tsx:111` — `zodResolver(eventSchema) as any`
-  - `web/src/pages/Products/ProductForm.tsx:43` — `zodResolver(productSchema) as any`
-  - `web/src/pages/Inventory/InventoryForm.tsx:46` — `zodResolver(inventorySchema) as any`
-- **Problema:** Pérdida de type safety. El cast existe porque los tipos de zod no coinciden exactamente con los de react-hook-form.
-- **Recomendación:** Investigar si actualizar `@hookform/resolvers` resuelve la incompatibilidad, o crear tipos wrapper.
+### P3. Casts `as any` en resolvers de formularios — CORREGIDO
+- **Archivos:** `EventForm.tsx`, `ProductForm.tsx`, `InventoryForm.tsx`
+- **Fix:** Reemplazado `as any` con `as Resolver<FormDataType>` — mantiene type safety real. El cast es necesario porque `z.coerce.number()` genera un tipo intermedio `unknown` incompatible con react-hook-form.
 
-### P4. Composite indexes faltantes en la base de datos
-- **Archivos:** `backend/internal/database/migrations/`
-- **Problema:** Las queries más frecuentes filtran por `(user_id, event_date)` pero no hay un composite index.
-- **Recomendación:** Crear migración `014_add_composite_indexes.up.sql`:
-  ```sql
-  CREATE INDEX IF NOT EXISTS idx_events_user_date ON events(user_id, event_date);
-  CREATE INDEX IF NOT EXISTS idx_clients_user_name ON clients(user_id, name);
-  ```
+### P4. Composite indexes faltantes — CORREGIDO
+- **Archivo:** `backend/internal/database/migrations/014_add_indexes_and_cascade.up.sql` (nuevo)
+- **Fix:** Agregados indexes compuestos:
+  - `events(user_id, event_date)` — queries de calendario
+  - `events(user_id, status)` — filtros de dashboard
+  - `payments(user_id, event_id)` — lookups de pagos
+  - `product_ingredients(product_id, inventory_id)` — constraint UNIQUE para evitar duplicados
 
-### P5. `ON DELETE CASCADE` faltante en payments
-- **Archivo:** `backend/internal/database/migrations/007_create_payments_subscriptions.up.sql:5`
-- **Problema:** `user_id UUID NOT NULL REFERENCES users(id)` sin `ON DELETE CASCADE`. Si se elimina un usuario, los pagos quedan huérfanos. Inconsistente con las demás tablas que sí usan CASCADE.
-- **Recomendación:** Crear migración para agregar el CASCADE:
-  ```sql
-  ALTER TABLE payments DROP CONSTRAINT payments_user_id_fkey;
-  ALTER TABLE payments ADD CONSTRAINT payments_user_id_fkey
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-  ```
+### P5. `ON DELETE CASCADE` faltante en payments — CORREGIDO
+- **Archivo:** `backend/internal/database/migrations/014_add_indexes_and_cascade.up.sql`
+- **Fix:** Migración altera FK `payments.user_id` para agregar `ON DELETE CASCADE`, consistente con el resto de tablas.
 
-### P6. Carga de calendario sin paginación
-- **Archivo:** `web/src/pages/Calendar/CalendarView.tsx:45-46`
-- **Problema:** Carga todos los eventos de 2 años (año anterior + año siguiente). Con muchos eventos puede ser lento.
-- **Recomendación:** Cargar solo el mes visible + 1 mes de buffer a cada lado, y hacer fetch dinámico al navegar.
+### P6. Carga de calendario sin paginación — CORREGIDO
+- **Archivo:** `web/src/pages/Calendar/CalendarView.tsx`
+- **Fix:** `fetchAllEvents()` reducida de 2 años a ±6 meses usando `subMonths`/`addMonths` de date-fns. El modo calendario ya cargaba solo el mes visible.
 
 ---
 
@@ -176,6 +162,21 @@ web/src/pages/ForgotPassword.tsx
 web/src/pages/Login.tsx
 web/src/pages/Register.tsx
 web/src/pages/Search.tsx
+```
+
+### Commit 3 — Issues P1–P6
+```
+backend/internal/middleware/ratelimit.go (nuevo)
+backend/internal/router/router.go
+backend/internal/handlers/crud_handler.go
+backend/internal/database/migrations/014_add_indexes_and_cascade.up.sql (nuevo)
+backend/internal/database/migrations/014_add_indexes_and_cascade.down.sql (nuevo)
+web/src/services/productService.ts
+web/src/services/productService.test.ts
+web/src/pages/Events/EventForm.tsx
+web/src/pages/Products/ProductForm.tsx
+web/src/pages/Inventory/InventoryForm.tsx
+web/src/pages/Calendar/CalendarView.tsx
 ```
 
 ### Branch: `claude/code-review-improvements-aF2ks`

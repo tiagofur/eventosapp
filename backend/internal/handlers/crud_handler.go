@@ -549,6 +549,43 @@ func (h *CRUDHandler) UpdateProductIngredients(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
+func (h *CRUDHandler) GetBatchProductIngredients(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	var req struct {
+		ProductIDs []string `json:"product_ids"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if len(req.ProductIDs) == 0 {
+		writeJSON(w, http.StatusOK, []models.ProductIngredient{})
+		return
+	}
+
+	// Parse and verify ownership of all product IDs
+	var productUUIDs []uuid.UUID
+	for _, idStr := range req.ProductIDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid product ID: "+idStr)
+			return
+		}
+		if _, err := h.productRepo.GetByID(r.Context(), id, userID); err != nil {
+			writeError(w, http.StatusNotFound, "Product not found: "+idStr)
+			return
+		}
+		productUUIDs = append(productUUIDs, id)
+	}
+
+	ingredients, err := h.productRepo.GetIngredientsForProducts(r.Context(), productUUIDs)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch ingredients")
+		return
+	}
+	writeJSON(w, http.StatusOK, ingredients)
+}
+
 // ===================
 // INVENTORY
 // ===================

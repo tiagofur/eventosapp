@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useForm, FormProvider, useWatch } from "react-hook-form";
+import { useForm, FormProvider, useWatch, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { eventService } from "../../services/eventService";
@@ -108,7 +108,7 @@ export const EventForm: React.FC = () => {
   }>({});
 
   const methods = useForm<EventFormData>({
-    resolver: zodResolver(eventSchema) as any,
+    resolver: zodResolver(eventSchema) as Resolver<EventFormData>,
     defaultValues: {
       client_id: "",
       service_type: "",
