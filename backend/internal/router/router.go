@@ -17,6 +17,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 
 	// Global middleware
 	r.Use(mw.CORS(corsOrigins))
+	r.Use(mw.SecurityHeaders) // Security headers (X-Frame-Options, CSP, HSTS, etc.)
 	r.Use(mw.Logger)
 
 	// Health check
