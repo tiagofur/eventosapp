@@ -33,6 +33,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 			r.Use(mw.RateLimit(10, 1*time.Minute))
 			r.Post("/register", authHandler.Register)
 			r.Post("/login", authHandler.Login)
+			r.Post("/logout", authHandler.Logout) // Clear httpOnly cookie
 			r.Post("/refresh", authHandler.RefreshToken)
 			r.Post("/forgot-password", authHandler.ForgotPassword)
 

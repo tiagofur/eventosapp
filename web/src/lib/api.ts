@@ -6,8 +6,10 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private getHeaders(): HeadersInit {
+    // MIGRATION NOTE: Auth tokens are now sent via httpOnly cookies (SECURE)
+    // localStorage token handling is maintained for backward compatibility only
+    // TODO: Remove localStorage logic after full migration (all users have cookies)
     const token = localStorage.getItem('auth_token');
-    // console.log('API Request Token:', token ? token.substring(0, 10) + '...' : 'none');
     return {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -16,7 +18,7 @@ class ApiClient {
 
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { params, ...init } = options;
-    
+
     let url = `${API_URL}${endpoint}`;
     if (params) {
       const searchParams = new URLSearchParams(params);
@@ -25,6 +27,7 @@ class ApiClient {
 
     const response = await fetch(url, {
       ...init,
+      credentials: 'include', // CRITICAL: Send httpOnly cookies automatically
       headers: {
         ...this.getHeaders(),
         ...init.headers,

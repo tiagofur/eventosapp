@@ -92,6 +92,19 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set httpOnly cookie for auth token (SECURE)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokens.AccessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https", // True in production
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   24 * 60 * 60, // 24 hours
+	})
+
+	// Also return tokens in response for gradual migration
+	// TODO: Remove tokens from response body after frontend migration
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"user":   user,
 		"tokens": tokens,
@@ -132,6 +145,19 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set httpOnly cookie for auth token (SECURE)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokens.AccessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https", // True in production
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   24 * 60 * 60, // 24 hours
+	})
+
+	// Also return tokens in response for gradual migration
+	// TODO: Remove tokens from response body after frontend migration
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"user":   user,
 		"tokens": tokens,
@@ -174,7 +200,37 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set httpOnly cookie for new access token (SECURE)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    tokens.AccessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   24 * 60 * 60, // 24 hours
+	})
+
+	// Also return tokens in response for backward compatibility
 	writeJSON(w, http.StatusOK, tokens)
+}
+
+// Logout handles POST /api/auth/logout - Clears httpOnly cookie
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	// Clear the auth cookie by setting MaxAge to -1
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   -1, // Delete cookie
+	})
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Logged out successfully",
+	})
 }
 
 // ForgotPassword handles POST /api/auth/forgot-password

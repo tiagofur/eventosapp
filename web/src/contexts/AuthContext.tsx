@@ -73,10 +73,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('auth:logout', handleLogout);
   }, []);
 
-  const signOut = () => {
-    localStorage.removeItem('auth_token');
-    setUser(null);
-    window.location.href = '/login';
+  const signOut = async () => {
+    try {
+      // Call logout endpoint to clear httpOnly cookie
+      await api.post('/auth/logout', {});
+    } catch (error) {
+      // Even if logout fails, clear local state
+      console.error('Logout error:', error);
+    } finally {
+      // Clear localStorage token (backward compatibility)
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      window.location.href = '/login';
+    }
   };
 
   const updateProfile = async (data: Partial<User>) => {
