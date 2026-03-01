@@ -111,7 +111,12 @@
       "Bash(npx expo install expo-store-review 2>&1 | tail -5)",
       "Bash(node -e \"console.log\\(require\\('@sentry/react-native/package.json'\\).version\\)\" 2>&1)",
       "Bash(node -e \"try { require.resolve\\('expo-constants'\\); console.log\\('installed'\\); } catch { console.log\\('not installed'\\); }\")",
-      "Bash(npx expo install expo-constants 2>&1 | tail -3)"
+      "Bash(npx expo install expo-constants 2>&1 | tail -3)",
+      "Bash(cd /Users/tiagofur/Desktop/creapolis/eventosapp && git status -u)",
+      "Bash(git reset HEAD web/coverage/ .gga)",
+      "Bash(git reset HEAD \"docs/images/Simulator Screenshot - iPhone 17 - 2026-02-27 at 23.58.36.png\")",
+      "Bash(git status -u --short)",
+      "Bash(git rm -r --cached web/coverage/ 2>&1 | tail -3)"
     ]
   }
 }

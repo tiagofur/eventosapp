@@ -11,6 +11,7 @@ import {
   Zap,
   CheckCircle,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { logError } from "../lib/errorHandler";
 import { subscriptionService } from "../services/subscriptionService";
 
@@ -146,444 +147,313 @@ export const Settings: React.FC = () => {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuración</h1>
-      </div>
+  const [activeTab, setActiveTab] = useState<"profile" | "business" | "subscription" | "contracts">("profile");
 
-      <div className="bg-white dark:bg-gray-800 shadow-sm overflow-hidden sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-            Perfil de Usuario
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Detalles de la cuenta y suscripción.
+  return (
+    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">
+            Configuración
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium">
+            Personaliza tu experiencia y gestiona tu negocio.
           </p>
         </div>
-        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-0">
-          <dl className="sm:divide-y sm:divide-gray-200 dark:sm:divide-gray-700">
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <User className="h-4 w-4 mr-2" aria-hidden="true" /> Nombre
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                {profile?.name}
-              </dd>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* ── SIDEBAR NAVIGATION ── */}
+        <div className="lg:w-64 space-y-2">
+          {[
+            { id: "profile", label: "Mi Cuenta", icon: User },
+            { id: "business", label: "Mi Negocio", icon: Building },
+            { id: "subscription", label: "Suscripción", icon: CreditCard },
+            { id: "contracts", label: "Contratos", icon: FileText },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
+                activeTab === tab.id
+                  ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              }`}
+            >
+              <tab.icon className="h-5 w-5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── CONTENT AREA ── */}
+        <div className="flex-1 space-y-6">
+          {activeTab === "profile" && (
+            <div className="glass-card rounded-3xl p-6 sm:p-8 premium-shadow space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">
+                  Perfil de Usuario
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Información básica de tu cuenta personal.
+                </p>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-8">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre</label>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{profile?.name}</p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</label>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{profile?.email}</p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+                <button className="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all">
+                  Cambiar contraseña <ExternalLink className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <Shield className="h-4 w-4 mr-2" aria-hidden="true" /> Email
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                {profile?.email}
-              </dd>
-            </div>
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <Building className="h-4 w-4 mr-2" aria-hidden="true" /> Nombre Comercial (Razón
-                Social)
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2 flex items-center justify-between">
+          )}
+
+          {activeTab === "business" && (
+            <div className="glass-card rounded-3xl p-6 sm:p-8 premium-shadow space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">
+                  Identidad de Negocio
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Personaliza cómo te ven tus clientes en presupuestos y contratos.
+                </p>
+              </div>
+
+              {/* Business Name */}
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre Comercial</label>
                 {isEditingBusiness ? (
-                  <div className="flex gap-2 w-full max-w-md">
+                  <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
                     <input
-                      id="business-name"
                       type="text"
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
-                      placeholder="Ej. Eventos Fantásticos S.A. de C.V."
-                      className="flex-1 shadow-xs focus:ring-brand-orange focus:border-brand-orange block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-1 border"
-                      aria-label="Nombre comercial o razón social"
+                      className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                      placeholder="Ej. Mi Evento Pro"
                     />
-                    <button
-                      type="button"
-                      onClick={handleUpdateBusinessName}
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                      aria-label="Guardar nombre comercial"
-                    >
-                      Guardar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingBusiness(false);
-                        setBusinessName(profile?.business_name || "");
-                      }}
-                      className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                      aria-label="Cancelar edición de nombre comercial"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <span>
-                      {profile?.business_name ||
-                        "No configurado (se usará tu nombre)"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingBusiness(true);
-                        setBusinessName(profile?.business_name || "");
-                      }}
-                      className="text-brand-orange hover:text-orange-700 text-xs font-medium"
-                      aria-label="Editar nombre comercial"
-                    >
-                      Editar
-                    </button>
-                  </>
-                )}
-              </dd>
-            </div>
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <div
-                  className="h-4 w-4 mr-2 rounded-full border border-gray-300 dark:border-gray-600 shadow-inner"
-                  style={{ backgroundColor: profile?.brand_color || "#FF6B35" }}
-                />
-                Color de Marca para PDFs
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2 flex items-center justify-between">
-                {isEditingColor ? (
-                  <div className="flex gap-2 w-full max-w-md items-center">
-                    <input
-                      id="brand-color-picker"
-                      type="color"
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      className="h-8 w-14 p-0 border-0 rounded-sm cursor-pointer"
-                      aria-label="Selector de color de marca"
-                    />
-                    <input
-                      id="brand-color-hex"
-                      type="text"
-                      value={brandColor}
-                      onChange={(e) => setBrandColor(e.target.value)}
-                      className="w-24 shadow-xs focus:ring-brand-orange focus:border-brand-orange sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-1 border uppercase font-mono"
-                      aria-label="Código hexadecimal del color"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleUpdateBrandColor}
-                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 ml-auto"
-                      aria-label="Guardar color de marca"
-                    >
-                      Guardar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingColor(false);
-                        setBrandColor(profile?.brand_color || "#FF6B35");
-                      }}
-                      className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                      aria-label="Cancelar edición de color"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <span className="font-mono uppercase">
-                      {profile?.brand_color || "#FF6B35"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingColor(true);
-                        setBrandColor(profile?.brand_color || "#FF6B35");
-                      }}
-                      className="text-brand-orange hover:text-orange-700 text-xs font-medium"
-                      aria-label="Editar color de marca"
-                    >
-                      Editar
-                    </button>
-                  </>
-                )}
-              </dd>
-            </div>
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <ImageIcon className="h-4 w-4 mr-2" aria-hidden="true" /> Logo para Contratos y PDFs
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                <div className="flex items-center gap-4">
-                  {profile?.logo_url ? (
-                    <div className="relative h-16 w-16 rounded-sm overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                      <img src={profile.logo_url} alt="Logo de la empresa" className="h-full w-full object-contain" />
-                    </div>
-                  ) : (
-                    <div className="h-16 w-16 rounded-sm border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400" aria-hidden="true">
-                      <ImageIcon className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                  )}
-                  <div>
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      accept=".png,.jpg,.jpeg"
-                      onChange={handleLogoUpload}
-                      disabled={isUploadingLogo}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 dark:file:bg-gray-700 file:text-gray-700 dark:file:text-gray-200 hover:file:bg-gray-200 dark:hover:file:bg-gray-600 cursor-pointer disabled:opacity-50"
-                      aria-label="Subir logo de la empresa (PNG o JPG, máximo 2MB)"
-                    />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Formatos: PNG transparente o JPG (Máx. 2MB).
-                    </p>
-                    {isUploadingLogo && (
-                      <p className="mt-1 text-xs text-brand-orange animate-pulse" role="status" aria-live="polite">Subiendo...</p>
-                    )}
-                  </div>
-                </div>
-                
-                {profile?.logo_url && (
-                  <div className="mt-4 flex items-center">
-                    <input
-                      type="checkbox"
-                      id="showBusinessName"
-                      checked={showBusinessName}
-                      onChange={(e) => handleToggleShowBusinessName(e.target.checked)}
-                      className="h-4 w-4 text-brand-orange focus:ring-brand-orange border-gray-300 rounded-sm"
-                    />
-                    <label htmlFor="showBusinessName" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                      Mostrar nombre comercial junto al logo en PDFs
-                    </label>
-                  </div>
-                )}
-              </dd>
-            </div>
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <CreditCard className="h-4 w-4 mr-2" aria-hidden="true" /> Plan Actual
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                <div className="flex flex-col gap-3">
-                  {/* Badge del plan */}
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2.5 py-0.5 inline-flex items-center gap-1.5 text-xs leading-5 font-semibold rounded-full ${
-                        profile?.plan === "pro" || profile?.plan === "premium"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
-                      }`}
-                    >
-                      <CheckCircle className="h-3 w-3" aria-hidden="true" />
-                      {profile?.plan === "pro" || profile?.plan === "premium" ? "Pro / Premium" : "Básico"}
-                    </span>
-                  </div>
-
-                  {/* Descripción del plan */}
-                  {profile?.plan === "basic" && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      El plan básico tiene límites en eventos y clientes mensuales.
-                      Actualiza a Pro para acceder a todas las funciones sin límites.
-                    </p>
-                  )}
-
-                  {/* Sección de gestión para usuarios Pro con Stripe */}
-                  {(profile?.plan === "pro" || profile?.plan === "premium") && (
-                    <div className="mt-1 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                      <p className="text-xs text-green-700 dark:text-green-300 mb-2">
-                        Tienes acceso completo a todas las funciones Pro. Puedes gestionar tu suscripción, cambiar tu método de pago o cancelar cuando quieras.
-                      </p>
-                      {portalError && (
-                        <p className="text-xs text-red-600 dark:text-red-400 mb-2" role="alert">{portalError}</p>
-                      )}
+                    <div className="flex gap-2">
                       <button
-                        type="button"
-                        id="btn-manage-subscription"
-                        onClick={handleManageSubscription}
-                        disabled={isPortalLoading}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 transition-colors"
-                        aria-label={isPortalLoading ? "Abriendo portal de gestión de suscripción..." : "Abrir portal de gestión de suscripción"}
-                      >
-                        {isPortalLoading ? (
-                          "Abriendo portal..."
-                        ) : (
-                          <>
-                            <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                            Gestionar suscripción
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Botones de debug (solo en desarrollo) */}
-                  {import.meta.env.MODE === "development" && (
-                    <div className="flex gap-2 flex-wrap mt-1">
-                      {(profile?.plan === "pro" || profile?.plan === "premium") && (
-                        <button
-                          type="button"
-                          onClick={handleDebugDowngrade}
-                          disabled={isDebugLoading}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-orange-300 text-orange-700 bg-orange-50 hover:bg-orange-100 dark:border-orange-700 dark:text-orange-300 dark:bg-orange-900/20"
-                          aria-label="Degradar plan a básico (solo desarrollo)"
-                        >
-                          [Dev] Degradar a Básico
-                        </button>
-                      )}
-                      {profile?.plan === "basic" && (
-                        <a
-                          href="/pricing"
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded border border-brand-orange text-brand-orange hover:bg-orange-50"
-                          aria-label="Ver planes de suscripción disponibles"
-                        >
-                          <Zap className="h-3 w-3" aria-hidden="true" />
-                          Ver planes
-                        </a>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </dd>
-            </div>
-          </dl>
-        </div>
-
-        <div className="px-4 py-5 sm:px-6 border-t border-gray-200 dark:border-gray-700 mt-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-            Configuración de Contratos
-          </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Valores por defecto para nuevos eventos.
-          </p>
-        </div>
-        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-0">
-          <dl className="sm:divide-y sm:divide-gray-200 dark:sm:divide-gray-700">
-            <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                <FileText className="h-4 w-4 mr-2" aria-hidden="true" /> Valores Predeterminados
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white sm:mt-0 sm:col-span-2">
-                {isEditingContract ? (
-                  <div className="space-y-4 max-w-md">
-                    <div>
-                      <label htmlFor="contract-deposit" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Anticipo (%)
-                      </label>
-                      <input
-                        id="contract-deposit"
-                        type="number"
-                        value={contractSettings.deposit}
-                        onChange={(e) =>
-                          setContractSettings({
-                            ...contractSettings,
-                            deposit: Number(e.target.value),
-                          })
-                        }
-                        className="mt-1 shadow-xs focus:ring-brand-orange focus:border-brand-orange block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-1 border"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="contract-cancellation" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Días para Cancelación
-                      </label>
-                      <input
-                        id="contract-cancellation"
-                        type="number"
-                        value={contractSettings.cancellation}
-                        onChange={(e) =>
-                          setContractSettings({
-                            ...contractSettings,
-                            cancellation: Number(e.target.value),
-                          })
-                        }
-                        className="mt-1 shadow-xs focus:ring-brand-orange focus:border-brand-orange block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-1 border"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="contract-refund" className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                        Reembolso Anticipo (%)
-                      </label>
-                      <input
-                        id="contract-refund"
-                        type="number"
-                        value={contractSettings.refund}
-                        onChange={(e) =>
-                          setContractSettings({
-                            ...contractSettings,
-                            refund: Number(e.target.value),
-                          })
-                        }
-                        className="mt-1 shadow-xs focus:ring-brand-orange focus:border-brand-orange block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md p-1 border"
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={handleUpdateContractSettings}
-                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                        aria-label="Guardar configuración de contratos"
+                        onClick={handleUpdateBusinessName}
+                        className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:scale-105 transition-all shadow-lg shadow-primary/20"
                       >
                         Guardar
                       </button>
                       <button
-                        type="button"
-                        onClick={() => {
-                          setIsEditingContract(false);
-                          setContractSettings({
-                            deposit: profile?.default_deposit_percent ?? 50,
-                            cancellation:
-                              profile?.default_cancellation_days ?? 15,
-                            refund: profile?.default_refund_percent ?? 0,
-                          });
-                        }}
-                        className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        aria-label="Cancelar edición de contratos"
+                        onClick={() => setIsEditingBusiness(false)}
+                        className="bg-surface-alt text-text font-bold px-6 py-3 rounded-xl border border-border hover:bg-border transition-all"
                       >
                         Cancelar
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <p>
-                        Anticipo:{" "}
-                        <strong>
-                          {profile?.default_deposit_percent || 50}%
-                        </strong>
-                      </p>
-                      <p>
-                        Cancelación:{" "}
-                        <strong>
-                          {profile?.default_cancellation_days || 15} días
-                        </strong>{" "}
-                        antes
-                      </p>
-                      <p>
-                        Reembolso:{" "}
-                        <strong>{profile?.default_refund_percent || 0}%</strong>{" "}
-                        del anticipo
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border group hover:border-primary/30 transition-all">
+                    <span className="text-lg font-bold">
+                      {profile?.business_name || "No configurado"}
+                    </span>
                     <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingContract(true);
-                        setContractSettings({
-                          deposit: profile?.default_deposit_percent || 50,
-                          cancellation:
-                            profile?.default_cancellation_days || 15,
-                          refund: profile?.default_refund_percent || 0,
-                        });
-                      }}
-                      className="text-brand-orange hover:text-orange-700 text-xs font-medium"
-                      aria-label="Editar configuración de contratos"
+                      onClick={() => setIsEditingBusiness(true)}
+                      className="text-primary font-bold text-sm bg-primary/10 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                     >
                       Editar
                     </button>
                   </div>
                 )}
-              </dd>
+              </div>
+
+              {/* Logo Upload */}
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logo de Marca</label>
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-surface-alt/30 rounded-3xl border-2 border-dashed border-border hover:border-primary/50 transition-all text-center sm:text-left">
+                  <div className="relative h-24 w-24 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
+                    {profile?.logo_url ? (
+                      <img src={profile.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
+                    ) : (
+                      <ImageIcon className="h-10 w-10 text-gray-300" />
+                    )}
+                    {isUploadingLogo && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Zap className="h-6 w-6 text-white animate-pulse" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <h4 className="font-bold">Sube tu logo profesional</h4>
+                    <p className="text-xs text-gray-500">PNG transparente recomendado. Máx 2MB.</p>
+                    <label className="inline-block bg-white dark:bg-gray-800 text-text font-bold text-sm px-6 py-2.5 rounded-xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer">
+                      Seleccionar archivo
+                      <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Brand Color */}
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Color de Marca</label>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    onBlur={handleUpdateBrandColor}
+                    className="h-12 w-12 rounded-xl border-4 border-white dark:border-gray-800 shadow-xl cursor-pointer"
+                  />
+                  <div className="flex-1 px-4 py-3 bg-surface-alt/50 rounded-xl border border-border font-mono font-bold uppercase">
+                    {brandColor}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 italic">
+                  Este color se aplicará automáticamente a tus presupuestos y contratos en PDF.
+                </p>
+              </div>
             </div>
-          </dl>
+          )}
+
+          {activeTab === "subscription" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="premium-gradient rounded-[2.5rem] p-8 sm:p-12 text-white premium-shadow relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
+                      Plan Actual
+                    </div>
+                    <h2 className="text-4xl sm:text-6xl font-black tracking-tight capitalize">
+                      {profile?.plan || "Básico"}
+                    </h2>
+                    <p className="text-white/80 font-medium text-lg max-w-md leading-relaxed">
+                      {profile?.plan === "pro" 
+                        ? "Disfrutas de acceso ilimitado a todas nuestras herramientas profesionales."
+                        : "Potencia tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    {profile?.plan !== "pro" && (
+                      <Link
+                        to="/pricing"
+                        className="bg-white text-primary px-8 py-4 rounded-2xl font-black text-xl shadow-xl hover:scale-105 transition-all text-center"
+                      >
+                        Subir a Pro
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={isPortalLoading}
+                      className="bg-white/10 backdrop-blur-md border border-white/30 text-white px-8 py-4 rounded-2xl font-black text-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isPortalLoading ? "Cargando..." : (
+                        <>Gestionar <ExternalLink className="h-5 w-5" /></>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {/* Decorative blob */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-3xl rounded-full -mr-20 -mt-20 z-0" />
+              </div>
+
+              {/* Limits / Usage section (Simulated for now based on plans) */}
+              <div className="glass-card rounded-[2rem] p-8 premium-shadow">
+                <h3 className="text-xl font-black mb-6">Uso de este mes</h3>
+                <div className="grid sm:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-gray-500">Eventos</span>
+                      <span>Ilimitados</span>
+                    </div>
+                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
+                      <div className="h-full bg-primary w-full" />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-gray-500">Clientes</span>
+                      <span>Ilimitados</span>
+                    </div>
+                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
+                      <div className="h-full bg-brand-green w-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "contracts" && (
+            <div className="glass-card rounded-3xl p-6 sm:p-8 premium-shadow space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <h3 className="text-xl font-black text-gray-900 dark:text-white mb-1">
+                  Valores Predeterminados
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Configura los valores que aparecerán por defecto en tus nuevos eventos.
+                </p>
+              </div>
+
+              <div className="space-y-8">
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Anticipo Sugerido</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        value={contractSettings.deposit}
+                        onChange={(e) => setContractSettings({...contractSettings, deposit: Number(e.target.value)})}
+                        className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
+                      />
+                      <span className="text-2xl font-black text-gray-300">%</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Días para cancelar</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        value={contractSettings.cancellation}
+                        onChange={(e) => setContractSettings({...contractSettings, cancellation: Number(e.target.value)})}
+                        className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
+                      />
+                      <span className="text-lg font-bold text-gray-300 uppercase">Días</span>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Reembolso</label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        value={contractSettings.refund}
+                        onChange={(e) => setContractSettings({...contractSettings, refund: Number(e.target.value)})}
+                        className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
+                      />
+                      <span className="text-2xl font-black text-gray-300">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleUpdateContractSettings}
+                    className="bg-primary text-white font-black px-10 py-4 rounded-2xl shadow-xl hover:scale-105 transition-all text-lg"
+                  >
+                    Guardar Cambios
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
     </div>
   );
 };
