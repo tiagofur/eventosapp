@@ -5,6 +5,7 @@ import { clientService } from '../services/clientService';
 import { productService } from '../services/productService';
 import { eventService } from '../services/eventService';
 import { CheckCircle2, Circle, X, Users, Package, CalendarPlus, ChevronRight } from 'lucide-react';
+import { logError } from '../lib/errorHandler';
 
 export const OnboardingChecklist: React.FC = () => {
   const { user } = useAuth();
@@ -56,7 +57,7 @@ export const OnboardingChecklist: React.FC = () => {
           localStorage.setItem(hideKey, 'true');
         }
       } catch (error) {
-        console.error("Error checking onboarding status", error);
+        logError("Error checking onboarding status", error);
       } finally {
         setLoading(false);
       }

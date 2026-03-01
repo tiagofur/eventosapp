@@ -16,10 +16,11 @@ interface FormInputProps extends RNTextInputProps {
   error?: string;
   icon?: React.ReactNode;
   prefix?: string;
+  rightElement?: React.ReactNode;
 }
 
 const FormInput = React.forwardRef<RNTextInput, FormInputProps>(
-  ({ label, error, icon, prefix, style, onFocus, onBlur, ...props }, ref) => {
+  ({ label, error, icon, prefix, rightElement, style, onFocus, onBlur, ...props }, ref) => {
     const [focused, setFocused] = useState(false);
     const { isDark } = useTheme();
     const palette = isDark ? colors.dark : colors.light;
@@ -57,6 +58,7 @@ const FormInput = React.forwardRef<RNTextInput, FormInputProps>(
             }}
             {...props}
           />
+          {rightElement && <View style={styles.rightElement}>{rightElement}</View>}
         </View>
         {error && <Text style={styles.errorText}>{error}</Text>}
       </View>
@@ -108,6 +110,9 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
   },
   inputWithPrefix: {
     paddingLeft: spacing.xs,
+  },
+  rightElement: {
+    paddingRight: spacing.sm + 4,
   },
   prefix: {
     ...typography.body,

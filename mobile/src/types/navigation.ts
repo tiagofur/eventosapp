@@ -59,6 +59,8 @@ export type SettingsStackParamList = {
     ContractDefaults: undefined;
     Pricing: undefined;
     About: undefined;
+    PrivacyPolicy: undefined;
+    Terms: undefined;
 };
 
 // Bottom tab navigator

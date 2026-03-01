@@ -16,10 +16,10 @@ const inventorySchema = z.object({
     .min(2, "El nombre debe tener al menos 2 caracteres"),
   type: z.enum(["ingredient", "equipment"]),
   current_stock: z.coerce
-    .number({ invalid_type_error: "Debe ser un número (ej: 10, 5.5)" })
+    .number()
     .min(0, "El stock no puede ser negativo"),
   minimum_stock: z.coerce
-    .number({ invalid_type_error: "Debe ser un número (ej: 5, 2.5)" })
+    .number()
     .min(0, "El stock mínimo no puede ser negativo"),
   unit: z.string().min(1, "La unidad es requerida"),
   unit_cost: z.coerce
@@ -149,18 +149,18 @@ export const InventoryForm: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/inventory")}
-            className="mr-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+            className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary transition-colors"
             aria-label="Volver a la lista de inventario"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-text">
             {id ? "Editar Ingrediente" : "Nuevo Ingrediente"}
           </h1>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-xs border border-gray-100 dark:border-gray-700 px-4 py-5 rounded-3xl sm:p-6">
+      <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4" role="alert">
@@ -176,176 +176,165 @@ export const InventoryForm: React.FC = () => {
             <div className="sm:col-span-4">
               <label
                 htmlFor="ingredient_name"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Nombre del Ítem *
               </label>
-              <div className="mt-1">
-                <input
-                  id="ingredient_name"
-                  type="text"
-                  {...register("ingredient_name")}
-                  className="shadow-xs rounded-xl p-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20"
-                  aria-required="true"
-                  aria-invalid={errors.ingredient_name ? "true" : "false"}
-                  aria-describedby={errors.ingredient_name ? "ingredient_name-error" : undefined}
-                />
-                {errors.ingredient_name && (
-                  <p id="ingredient_name-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.ingredient_name.message}
-                  </p>
-                )}
-              </div>
+              <input
+                id="ingredient_name"
+                type="text"
+                {...register("ingredient_name")}
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                aria-required="true"
+                aria-invalid={errors.ingredient_name ? "true" : "false"}
+                aria-describedby={errors.ingredient_name ? "ingredient_name-error" : undefined}
+              />
+              {errors.ingredient_name && (
+                <p id="ingredient_name-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {errors.ingredient_name.message}
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2">
               <label
                 htmlFor="type"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Tipo *
               </label>
-              <div className="mt-1">
-                <select
-                  id="type"
-                  {...register("type")}
-                  className="shadow-xs rounded-xl p-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20"
-                  aria-required="true"
-                  aria-invalid={errors.type ? "true" : "false"}
-                  aria-describedby={errors.type ? "type-error" : undefined}
-                >
-                  <option value="ingredient">Ingrediente (Consumible)</option>
-                  <option value="equipment">
-                    Activo / Equipo (Retornable)
-                  </option>
-                </select>
-                {errors.type && (
-                  <p id="type-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.type.message}
-                  </p>
-                )}
-              </div>
+              <select
+                id="type"
+                {...register("type")}
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                aria-required="true"
+                aria-invalid={errors.type ? "true" : "false"}
+                aria-describedby={errors.type ? "type-error" : undefined}
+              >
+                <option value="ingredient">Ingrediente (Consumible)</option>
+                <option value="equipment">
+                  Activo / Equipo (Retornable)
+                </option>
+              </select>
+              {errors.type && (
+                <p id="type-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {errors.type.message}
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2">
               <label
                 htmlFor="unit"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Unidad (kg, l, pza, etc.) *
               </label>
-              <div className="mt-1">
-                <input
-                  id="unit"
-                  type="text"
-                  {...register("unit")}
-                  className="shadow-xs rounded-xl p-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20"
-                  aria-required="true"
-                  aria-invalid={errors.unit ? "true" : "false"}
-                  aria-describedby={errors.unit ? "unit-error" : undefined}
-                />
-                {errors.unit && (
-                  <p id="unit-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.unit.message}
-                  </p>
-                )}
-              </div>
+              <input
+                id="unit"
+                type="text"
+                {...register("unit")}
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                placeholder="Ej. kg, Litros"
+                aria-required="true"
+                aria-invalid={errors.unit ? "true" : "false"}
+                aria-describedby={errors.unit ? "unit-error" : undefined}
+              />
+              {errors.unit && (
+                <p id="unit-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {errors.unit.message}
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2">
               <label
                 htmlFor="current_stock"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Stock Actual *
               </label>
-              <div className="mt-1">
-                <input
-                  id="current_stock"
-                  type="number"
-                  step="0.01"
-                  {...register("current_stock")}
-                  className="shadow-xs rounded-xl p-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20"
-                  aria-required="true"
-                  aria-invalid={errors.current_stock ? "true" : "false"}
-                  aria-describedby={errors.current_stock ? "current_stock-error" : undefined}
-                />
-                {errors.current_stock && (
-                  <p id="current_stock-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.current_stock.message}
-                  </p>
-                )}
-              </div>
+              <input
+                id="current_stock"
+                type="number"
+                step="0.01"
+                {...register("current_stock")}
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                aria-required="true"
+                aria-invalid={errors.current_stock ? "true" : "false"}
+                aria-describedby={errors.current_stock ? "current_stock-error" : undefined}
+              />
+              {errors.current_stock && (
+                <p id="current_stock-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {errors.current_stock.message}
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2">
               <label
                 htmlFor="minimum_stock"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Stock Mínimo *
               </label>
-              <div className="mt-1">
-                <input
-                  id="minimum_stock"
-                  type="number"
-                  step="0.01"
-                  {...register("minimum_stock")}
-                  className="shadow-xs rounded-xl p-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20"
-                  aria-required="true"
-                  aria-invalid={errors.minimum_stock ? "true" : "false"}
-                  aria-describedby={errors.minimum_stock ? "minimum_stock-error" : undefined}
-                />
-                {errors.minimum_stock && (
-                  <p id="minimum_stock-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.minimum_stock.message}
-                  </p>
-                )}
-              </div>
+              <input
+                id="minimum_stock"
+                type="number"
+                step="0.01"
+                {...register("minimum_stock")}
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                aria-required="true"
+                aria-invalid={errors.minimum_stock ? "true" : "false"}
+                aria-describedby={errors.minimum_stock ? "minimum_stock-error" : undefined}
+              />
+              {errors.minimum_stock && (
+                <p id="minimum_stock-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {errors.minimum_stock.message}
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2">
               <label
                 htmlFor="unit_cost"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="block text-sm font-medium text-text-secondary mb-2"
               >
                 Costo Unitario ($)
               </label>
-              <div className="mt-1">
-                <input
-                  id="unit_cost"
-                  type="number"
-                  step="0.01"
-                  {...register("unit_cost")}
-                  className="shadow-xs rounded-xl p-2 border bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20"
-                  aria-invalid={errors.unit_cost ? "true" : "false"}
-                  aria-describedby={errors.unit_cost ? "unit_cost-error" : undefined}
-                />
-                {errors.unit_cost && (
-                  <p id="unit_cost-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    {errors.unit_cost.message}
-                  </p>
-                )}
-              </div>
+              <input
+                id="unit_cost"
+                type="number"
+                step="0.01"
+                {...register("unit_cost")}
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                aria-invalid={errors.unit_cost ? "true" : "false"}
+                aria-describedby={errors.unit_cost ? "unit_cost-error" : undefined}
+              />
+              {errors.unit_cost && (
+                <p id="unit_cost-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                  {errors.unit_cost.message}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3 pt-6 border-t border-border">
             <button
               type="button"
               onClick={() => navigate("/inventory")}
-              className="bg-white dark:bg-gray-700 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-xl shadow-xs text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange mr-3 transition-colors"
+              className="bg-card py-2.5 px-6 border border-border rounded-xl shadow-sm text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-xs text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
+              className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
               aria-label={isLoading ? "Guardando ingrediente..." : "Guardar ingrediente"}
             >
               <Save className="h-5 w-5 mr-2" aria-hidden="true" />
-              {isLoading ? "Guardando..." : "Guardar"}
+              {isLoading ? "Guardando..." : "Guardar Ingrediente"}
             </button>
           </div>
         </form>

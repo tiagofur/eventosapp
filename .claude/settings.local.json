@@ -116,7 +116,24 @@
       "Bash(git reset HEAD web/coverage/ .gga)",
       "Bash(git reset HEAD \"docs/images/Simulator Screenshot - iPhone 17 - 2026-02-27 at 23.58.36.png\")",
       "Bash(git status -u --short)",
-      "Bash(git rm -r --cached web/coverage/ 2>&1 | tail -3)"
+      "Bash(git rm -r --cached web/coverage/ 2>&1 | tail -3)",
+      "Bash(go get:*)",
+      "Bash(go:*)",
+      "Bash(npx expo:*)",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(npm start:*)",
+      "Bash(lsof -i :8081)",
+      "Bash(xargs kill -9)",
+      "Bash(kill:*)",
+      "Bash(node:*)",
+      "Bash(xcrun simctl:*)",
+      "mcp__plugin_engram_engram__mem_session_summary",
+      "Bash(open:*)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(done)",
+      "Bash(ls:*)"
     ]
   }
 }

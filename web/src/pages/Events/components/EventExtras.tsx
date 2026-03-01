@@ -23,10 +23,10 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white">Extras (Transporte, Personal, etc.)</h3>
+      <h3 className="text-lg font-medium text-text">Extras (Transporte, Personal, etc.)</h3>
 
       {extras.map((item, index) => (
-        <div key={index} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl relative group mb-3 border border-gray-100 dark:border-gray-600 shadow-xs">
+        <div key={index} className="bg-surface-alt p-4 rounded-xl relative group mb-3 border border-border shadow-xs">
           <button
             type="button"
             onClick={() => onRemoveExtra(index)}
@@ -37,14 +37,14 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
           </button>
 
           <div className="mb-2 pr-6">
-            <label htmlFor={`extra-description-${index}`} className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Descripción</label>
+            <label htmlFor={`extra-description-${index}`} className="block text-xs text-text-secondary mb-1">Descripción</label>
             <input
               id={`extra-description-${index}`}
               type="text"
               placeholder="Descripción"
               value={item.description}
               onChange={(e) => onExtraChange(index, 'description', e.target.value)}
-              className="block w-full text-sm border-gray-300 dark:border-gray-600 rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-white dark:bg-gray-600 text-gray-900 dark:text-white p-2 border"
+              className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-card text-text p-2 border"
               aria-label={`Descripción del extra ${index + 1}`}
             />
           </div>
@@ -55,36 +55,36 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
               type="checkbox"
               checked={item.exclude_utility || false}
               onChange={(e) => onExtraChange(index, 'exclude_utility', e.target.checked)}
-              className="h-4 w-4 text-brand-orange focus:ring-brand-orange border-gray-300 dark:border-gray-600 rounded-sm bg-white dark:bg-gray-600"
+              className="h-4 w-4 text-brand-orange focus:ring-brand-orange border-border rounded-sm bg-card"
               aria-describedby={`extra-exclude-utility-label-${index}`}
             />
-            <label id={`extra-exclude-utility-label-${index}`} htmlFor={`extra-exclude-utility-${index}`} className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+            <label id={`extra-exclude-utility-label-${index}`} htmlFor={`extra-exclude-utility-${index}`} className="ml-2 text-xs text-text-secondary">
               Solo cobrar costo (Sin utilidad)
             </label>
           </div>
 
           <div className="flex gap-2">
             <div className="w-1/2">
-              <label htmlFor={`extra-cost-${index}`} className="text-xs text-gray-500 dark:text-gray-400">Costo (Gasto)</label>
+              <label htmlFor={`extra-cost-${index}`} className="text-xs text-text-secondary">Costo (Gasto)</label>
               <input
                 id={`extra-cost-${index}`}
                 type="number"
                 value={item.cost}
                 onChange={(e) => onExtraChange(index, 'cost', Number(e.target.value))}
-                className="block w-full text-sm border-gray-300 dark:border-gray-600 rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-white dark:bg-gray-600 text-gray-900 dark:text-white p-2 border"
+                className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-card text-text p-2 border"
                 aria-label={`Costo del extra ${index + 1}`}
               />
             </div>
             <div className="w-1/2">
-              <label htmlFor={`extra-price-${index}`} className="text-xs text-gray-500 dark:text-gray-400">Precio (Cobro)</label>
+              <label htmlFor={`extra-price-${index}`} className="text-xs text-text-secondary">Precio (Cobro)</label>
               <input
                 id={`extra-price-${index}`}
                 type="number"
                 value={item.price}
                 disabled={item.exclude_utility}
                 onChange={(e) => onExtraChange(index, 'price', Number(e.target.value))}
-                className={`block w-full text-sm border-gray-300 dark:border-gray-600 rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-white dark:bg-gray-600 text-gray-900 dark:text-white p-2 border ${
-                  item.exclude_utility ? 'bg-gray-100 dark:bg-gray-700' : ''
+                className={`block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-card text-text p-2 border ${
+                  item.exclude_utility ? 'bg-surface-alt' : ''
                 }`}
                 aria-label={`Precio de cobro del extra ${index + 1}`}
               />
@@ -96,15 +96,15 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
       <button
         type="button"
         onClick={onAddExtra}
-        className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-xs text-sm font-medium rounded-xl text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+        className="w-full flex items-center justify-center px-4 py-2 border border-border shadow-xs text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
         aria-label="Agregar un extra adicional"
       >
         <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar Extra
       </button>
 
       <div className="mt-4 text-right">
-        <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Subtotal Extras:</span>
-        <span className="text-lg font-bold text-gray-900 dark:text-white">
+        <span className="text-sm text-text-secondary mr-2">Subtotal Extras:</span>
+        <span className="text-lg font-bold text-text">
           ${extras.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
         </span>
       </div>

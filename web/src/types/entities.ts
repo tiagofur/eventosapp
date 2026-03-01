@@ -48,11 +48,12 @@ export interface Client {
 }
 
 export type ClientInsert =
-    Omit<Client, 'id' | 'created_at' | 'updated_at' | 'email' | 'address' | 'city' | 'notes' | 'total_events' | 'total_spent'> & {
+    Omit<Client, 'id' | 'created_at' | 'updated_at' | 'email' | 'address' | 'city' | 'notes' | 'photo_url' | 'total_events' | 'total_spent'> & {
         email?: string | null
         address?: string | null
         city?: string | null
         notes?: string | null
+        photo_url?: string | null
         total_events?: number | null
         total_spent?: number | null
     }
@@ -86,7 +87,7 @@ export interface Event {
 }
 
 export type EventInsert =
-    Omit<Event, 'id' | 'created_at' | 'updated_at' | 'start_time' | 'end_time' | 'location' | 'city' | 'deposit_percent' | 'cancellation_days' | 'refund_percent' | 'notes'> & {
+    Omit<Event, 'id' | 'created_at' | 'updated_at' | 'start_time' | 'end_time' | 'location' | 'city' | 'deposit_percent' | 'cancellation_days' | 'refund_percent' | 'notes' | 'photos'> & {
         start_time?: string | null
         end_time?: string | null
         location?: string | null
@@ -95,6 +96,7 @@ export type EventInsert =
         cancellation_days?: number | null
         refund_percent?: number | null
         notes?: string | null
+        photos?: string | null
     }
 export type EventUpdate = Partial<Omit<Event, 'id' | 'created_at' | 'updated_at'>>
 

@@ -104,6 +104,25 @@ func TestAuthMiddleware(t *testing.T) {
 			t.Fatalf("status = %d, want %d", rr.Code, http.StatusNoContent)
 		}
 	})
+
+	t.Run("GivenValidCookie_WhenRequest_ThenContextContainsUserData", func(t *testing.T) {
+		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if gotID := GetUserID(r.Context()); gotID != userID {
+				t.Fatalf("GetUserID() = %v, want %v", gotID, userID)
+			}
+			w.WriteHeader(http.StatusNoContent)
+		})
+
+		handler := Auth(authService)(next)
+		req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+		req.AddCookie(&http.Cookie{Name: "auth_token", Value: tokens.AccessToken})
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != http.StatusNoContent {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusNoContent)
+		}
+	})
 }
 
 func TestContextGettersWithMissingValues(t *testing.T) {

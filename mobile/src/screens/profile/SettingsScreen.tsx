@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -19,6 +20,7 @@ import {
   CreditCard,
   ChevronRight,
   RefreshCw,
+  Moon,
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -89,7 +91,7 @@ export default function SettingsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<SettingsStackParamList>>();
   const { addToast } = useToast();
-  const { isDark } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
   const palette = isDark ? colors.dark : colors.light;
   const styles = getStyles(palette);
   const [showLogout, setShowLogout] = useState(false);
@@ -202,6 +204,23 @@ export default function SettingsScreen() {
             label="Valores de Contrato"
             onPress={() => navigation.navigate("ContractDefaults")}
             trailing={chevron}
+          />
+        </View>
+
+        {/* Apariencia section */}
+        <Text style={styles.sectionTitle}>Apariencia</Text>
+        <View style={styles.section}>
+          <SettingsRow
+            icon={<Moon color={palette.textTertiary} size={20} />}
+            label="Modo Oscuro"
+            trailing={
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: palette.separator, true: palette.primary }}
+                thumbColor="#ffffff"
+              />
+            }
           />
         </View>
 

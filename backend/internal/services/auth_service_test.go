@@ -170,3 +170,34 @@ func TestAuthServiceConcurrentTokenGenerationAndValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestResetTokens(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "reset@test.dev"
+
+	tokenStr, err := svc.GenerateResetToken(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateResetToken failed: %v", err)
+	}
+
+	claims, err := svc.ValidateResetToken(tokenStr)
+	if err != nil {
+		t.Fatalf("ValidateResetToken failed: %v", err)
+	}
+
+	if claims.UserID != userID {
+		t.Fatalf("userid mismatch")
+	}
+
+	if claims.Subject != "password-reset" {
+		t.Fatalf("subject mismatch")
+	}
+
+	// Try validating access token as a reset token
+	pair, _ := svc.GenerateTokenPair(userID, email)
+	_, err = svc.ValidateResetToken(pair.AccessToken)
+	if err == nil || err.Error() != "token is not a password reset token" {
+		t.Fatalf("expected error validating access token as reset token, got %v", err)
+	}
+}

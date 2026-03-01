@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/entities';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { logError } from '../../lib/errorHandler';
 import Empty from '../../components/Empty';
@@ -12,6 +12,7 @@ import { Pagination } from '../../components/Pagination';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 
 export const ProductList: React.FC = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -101,7 +102,9 @@ export const ProductList: React.FC = () => {
         }}
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Productos</h1>
+        <h1 className="text-2xl font-bold text-text">
+          Productos
+        </h1>
         <Link
           to="/products/new"
           className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
@@ -114,103 +117,117 @@ export const ProductList: React.FC = () => {
       <div className="relative max-w-md">
         <label htmlFor="product-search" className="sr-only">Buscar productos</label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
         </div>
         <input
           id="product-search"
           type="search"
-          className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm transition duration-150 ease-in-out"
+          className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm transition duration-150 ease-in-out"
           placeholder="Buscar producto..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          aria-label="Buscar productos por nombre o categoría"
         />
       </div>
 
       <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         {loading ? (
-          <div className="p-4 text-center text-gray-500 dark:text-gray-400" role="status" aria-live="polite">Cargando productos...</div>
+          <div className="p-8 text-center text-text-secondary">Cargando productos...</div>
         ) : filteredProducts.length === 0 ? (
           <Empty 
-            title="No se encontraron productos" 
-            description={searchTerm ? "Intenta ajustar los términos de búsqueda." : "Comienza agregando tu primer producto."}
-            action={
-              !searchTerm ? (
-                <Link
-                  to="/products/new"
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-orange hover:bg-orange-600 shadow-xs"
-                >
-                  <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-                  Agregar Producto
-                </Link>
-              ) : undefined
-            }
+            title="No hay productos" 
+            description={searchTerm ? "No se encontraron productos con ese criterio." : "Comienza agregando tu primer producto."}
+            action={!searchTerm ? (
+              <Link
+                to="/products/new"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Agregar Producto
+              </Link>
+            ) : undefined}
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700" aria-label="Tabla de productos">
-              <caption className="sr-only">
-                Lista de productos con {totalItems} resultados. Mostrando página {currentPage} de {totalPages}.
-              </caption>
-              <thead className="bg-gray-50 dark:bg-gray-700">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-surface-alt">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort('name')}
                     aria-sort={getSortAriaSort('name')}
                   >
-                    Producto {renderSortIcon('name')}
+                    Nombre {renderSortIcon('name')}
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    onClick={() => handleSort('base_price')}
+                    aria-sort={getSortAriaSort('base_price')}
+                  >
+                    Precio {renderSortIcon('base_price')}
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort('category')}
                     aria-sort={getSortAriaSort('category')}
                   >
                     Categoría {renderSortIcon('category')}
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                    onClick={() => handleSort('base_price')}
-                    aria-sort={getSortAriaSort('base_price')}
-                  >
-                    Precio Base {renderSortIcon('base_price')}
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
+                  <th scope="col" className="relative px-6 py-3 text-text-secondary">
                     <span className="sr-only">Acciones</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-card divide-y divide-border">
                 {paginatedProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <tr 
+                    key={product.id} 
+                    className="hover:bg-surface-alt/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/products/${product.id}`)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</div>
+                      <div className="flex items-center">
+                        <div className="shrink-0 h-10 w-10">
+                          {product.image_url ? (
+                            <img className="h-10 w-10 rounded-lg object-cover" src={product.image_url} alt="" />
+                          ) : (
+                            <div className="h-10 w-10 rounded-lg bg-surface-alt flex items-center justify-center">
+                              <Package className="h-5 w-5 text-text-secondary" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-text">{product.name}</div>
+                          <div className="text-sm text-text-secondary">{product.category}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                      <div className="text-sm text-text">${product.base_price.toFixed(2)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full bg-brand-orange/10 text-brand-orange border border-brand-orange/20">
                         {product.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      ${product.base_price.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td 
+                      className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex justify-end space-x-2">
                         <Link
                           to={`/products/${product.id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                          aria-label={`Editar producto ${product.name}`}
+                          className="p-1.5 text-text-secondary hover:text-brand-orange hover:bg-surface-alt rounded-lg transition-colors inline-block"
+                          aria-label={`Editar ${product.name}`}
                         >
                           <Edit className="h-5 w-5" aria-hidden="true" />
                         </Link>
                         <button
-                          type="button"
                           onClick={() => requestDelete(product.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          aria-label={`Eliminar producto ${product.name}`}
+                          className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors inline-block"
+                          aria-label={`Eliminar ${product.name}`}
                         >
                           <Trash2 className="h-5 w-5" aria-hidden="true" />
                         </button>
@@ -223,7 +240,7 @@ export const ProductList: React.FC = () => {
           </div>
         )}
         {!loading && filteredProducts.length > 0 && (
-          <Pagination 
+          <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}

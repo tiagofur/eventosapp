@@ -439,7 +439,7 @@ export const EventForm: React.FC = () => {
               <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="mb-6 flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                  className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
               >
                   <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
                   Regresar
@@ -458,12 +458,12 @@ export const EventForm: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/calendar")}
-            className="mr-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+            className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary"
             aria-label="Volver al calendario"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-text">
             {id ? "Editar Evento" : "Nuevo Evento"}
           </h1>
         </div>
@@ -480,7 +480,7 @@ export const EventForm: React.FC = () => {
       </div>
 
       <nav aria-label="Progreso del formulario de evento">
-        <ol role="list" className="bg-white dark:bg-gray-800 rounded-3xl shadow-xs md:flex md:divide-y-0 md:divide-x dark:divide-gray-700 overflow-hidden border border-gray-100 dark:border-gray-700">
+        <ol role="list" className="bg-card rounded-3xl shadow-sm md:flex md:divide-y-0 md:divide-x divide-border overflow-hidden border border-border">
           {STEPS.map((step, stepIdx) => (
             <li key={step.id} className="relative md:flex-1 md:flex">
               <button
@@ -498,7 +498,7 @@ export const EventForm: React.FC = () => {
                         ? "bg-brand-orange border-brand-orange"
                         : activeStep === step.id
                         ? "border-brand-orange text-brand-orange"
-                        : "border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400"
+                        : "border-border text-text-secondary"
                     }`}
                   >
                     {activeStep > step.id ? (
@@ -508,7 +508,7 @@ export const EventForm: React.FC = () => {
                     )}
                   </span>
                   <span className={`ml-4 text-sm font-medium ${
-                    activeStep >= step.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
+                    activeStep >= step.id ? 'text-text' : 'text-text-secondary'
                   }`}>
                     {step.title}
                   </span>
@@ -516,7 +516,7 @@ export const EventForm: React.FC = () => {
               </button>
               {stepIdx !== STEPS.length - 1 && (
                 <div className="hidden md:block absolute top-0 right-0 h-full w-5" aria-hidden="true">
-                  <svg className="h-full w-full text-gray-300 dark:text-gray-700" viewBox="0 0 22 80" fill="none" preserveAspectRatio="none">
+                  <svg className="h-full w-full text-border" viewBox="0 0 22 80" fill="none" preserveAspectRatio="none">
                     <path d="M0 -2L20 40L0 82" vectorEffect="non-scaling-stroke" stroke="currentcolor" strokeLinejoin="round" />
                   </svg>
                 </div>
@@ -563,7 +563,7 @@ export const EventForm: React.FC = () => {
             }
           }}
         >
-          <div className="bg-white dark:bg-gray-800 shadow-xs border border-gray-100 dark:border-gray-700 p-6 rounded-3xl">
+          <div className="bg-card shadow-sm border border-border p-6 rounded-3xl">
             {activeStep === 1 && (
               <EventGeneralInfo clients={clients as any} clientIdValue={clientIdValue} onClientCreated={handleClientCreated as any} />
             )}
@@ -599,7 +599,7 @@ export const EventForm: React.FC = () => {
               type="button"
               onClick={prevStep}
               disabled={activeStep === 1}
-              className={`px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-xs text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors ${activeStep === 1 ? 'invisible' : ''}`}
+              className={`px-4 py-2 border border-border rounded-xl shadow-sm text-sm font-medium text-text-secondary bg-card hover:bg-surface-alt transition-colors ${activeStep === 1 ? 'invisible' : ''}`}
               aria-label="Volver al paso anterior del formulario"
             >
               Anterior

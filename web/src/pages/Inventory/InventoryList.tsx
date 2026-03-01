@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { inventoryService } from "../../services/inventoryService";
 import { InventoryItem } from "../../types/entities";
 import { Plus, Search, Edit, Trash2, AlertTriangle } from "lucide-react";
@@ -13,11 +13,14 @@ import { Pagination } from "../../components/Pagination";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
 export const InventoryList: React.FC = () => {
+  const navigate = useNavigate();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
+  const [adjustmentValue, setAdjustmentValue] = useState<string>("");
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -57,6 +60,34 @@ export const InventoryList: React.FC = () => {
     } catch (error) {
       logError("Error deleting item", error);
       addToast("Error al eliminar el ítem de inventario.", "error");
+    }
+  };
+
+  const handleAdjustStock = async () => {
+    if (!adjustingItem || !adjustmentValue) return;
+    
+    const change = parseFloat(adjustmentValue);
+    if (isNaN(change)) {
+      addToast("Por favor ingresa un número válido.", "error");
+      return;
+    }
+
+    try {
+      const newStock = Math.max(0, adjustingItem.current_stock + change);
+      await inventoryService.update(adjustingItem.id, {
+        current_stock: newStock
+      });
+      
+      setItems(prev => prev.map(item => 
+        item.id === adjustingItem.id ? { ...item, current_stock: newStock } : item
+      ));
+      
+      addToast(`Stock de ${adjustingItem.ingredient_name} actualizado.`, "success");
+      setAdjustingItem(null);
+      setAdjustmentValue("");
+    } catch (error) {
+      logError("Error adjusting stock", error);
+      addToast("Error al actualizar el stock.", "error");
     }
   };
 
@@ -111,7 +142,7 @@ export const InventoryList: React.FC = () => {
         }}
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-text">
           Inventario
         </h1>
         <Link
@@ -155,12 +186,12 @@ export const InventoryList: React.FC = () => {
           Buscar ingredientes
         </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+          <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
         </div>
         <input
           id="inventory-search"
           type="search"
-          className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm transition duration-150 ease-in-out"
+          className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm transition duration-150 ease-in-out"
           placeholder="Buscar ingrediente..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -171,7 +202,7 @@ export const InventoryList: React.FC = () => {
       <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         {loading ? (
           <div
-            className="p-4 text-center text-gray-500 dark:text-gray-400"
+            className="p-8 text-center text-text-secondary"
             role="status"
             aria-live="polite"
           >
@@ -200,18 +231,18 @@ export const InventoryList: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table
-              className="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+              className="min-w-full divide-y divide-border"
               aria-label="Tabla de inventario"
             >
               <caption className="sr-only">
                 Lista de inventario con {totalItems} resultados. Mostrando
                 página {currentPage} de {totalPages}.
               </caption>
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-surface-alt">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("ingredient_name")}
                     aria-sort={getSortAriaSort("ingredient_name")}
                   >
@@ -219,7 +250,7 @@ export const InventoryList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("type")}
                     aria-sort={getSortAriaSort("type")}
                   >
@@ -227,7 +258,7 @@ export const InventoryList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("current_stock")}
                     aria-sort={getSortAriaSort("current_stock")}
                   >
@@ -235,7 +266,7 @@ export const InventoryList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("minimum_stock")}
                     aria-sort={getSortAriaSort("minimum_stock")}
                   >
@@ -243,40 +274,41 @@ export const InventoryList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("unit_cost")}
                     aria-sort={getSortAriaSort("unit_cost")}
                   >
                     Costo Unitario {renderSortIcon("unit_cost")}
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
+                  <th scope="col" className="relative px-6 py-3 text-text-secondary">
                     <span className="sr-only">Acciones</span>
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-card divide-y divide-border">
                 {paginatedItems.map((item) => {
                   const isLowStock = item.current_stock <= item.minimum_stock;
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className="hover:bg-surface-alt/50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/inventory/${item.id}`)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="text-sm font-medium text-text">
                           {item.ingredient_name}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-sm text-text-secondary">
                           Unidad: {item.unit}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={clsx(
-                            "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
+                            "px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full border",
                             item.type === "equipment"
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                              : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+                              ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
+                              : "bg-brand-orange/10 text-brand-orange border-brand-orange/20",
                           )}
                         >
                           {item.type === "equipment" ? "Equipo" : "Ingrediente"}
@@ -289,7 +321,7 @@ export const InventoryList: React.FC = () => {
                               "text-sm font-medium",
                               isLowStock
                                 ? "text-red-600 dark:text-red-400 font-bold"
-                                : "text-gray-900 dark:text-white",
+                                : "text-text",
                             )}
                           >
                             {item.current_stock}
@@ -302,17 +334,31 @@ export const InventoryList: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                         {item.minimum_stock}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                         ${item.unit_cost?.toFixed(2) || "0.00"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td 
+                        className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex justify-end space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAdjustingItem(item);
+                              setAdjustmentValue("");
+                            }}
+                            className="text-brand-orange hover:bg-brand-orange/10 p-1.5 rounded-lg transition-colors mr-1"
+                            title="Ajustar Stock"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
                           <Link
                             to={`/inventory/${item.id}/edit`}
-                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            className="p-1.5 text-text-secondary hover:text-brand-orange hover:bg-surface-alt rounded-lg transition-colors inline-block"
                             aria-label={`Editar ${item.ingredient_name}`}
                           >
                             <Edit className="h-5 w-5" aria-hidden="true" />
@@ -320,7 +366,7 @@ export const InventoryList: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => requestDelete(item.id)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors inline-block"
                             aria-label={`Eliminar ${item.ingredient_name}`}
                           >
                             <Trash2 className="h-5 w-5" aria-hidden="true" />
@@ -344,6 +390,55 @@ export const InventoryList: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Stock Adjustment Modal (Simpler version for now) */}
+      {adjustingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-card w-full max-w-sm rounded-3xl border border-border shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
+            <h2 className="text-xl font-bold text-text mb-2">Ajustar Stock</h2>
+            <p className="text-sm text-text-secondary mb-4">
+              {adjustingItem.ingredient_name} ({adjustingItem.current_stock} {adjustingItem.unit})
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
+                  Cantidad a sumar/restar
+                </label>
+                <input
+                  type="number"
+                  autoFocus
+                  className="w-full bg-surface-alt border border-border rounded-xl p-3 text-text focus:ring-2 focus:ring-brand-orange/20 outline-none"
+                  placeholder="Ej: +10 o -5"
+                  value={adjustmentValue}
+                  onChange={(e) => setAdjustmentValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAdjustStock();
+                    if (e.key === 'Escape') setAdjustingItem(null);
+                  }}
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAdjustingItem(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAdjustStock}
+                  className="flex-1 py-2.5 rounded-xl bg-brand-orange text-white text-sm font-semibold hover:bg-orange-600 transition-colors shadow-lg shadow-brand-orange/20"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

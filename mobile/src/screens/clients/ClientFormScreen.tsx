@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -48,6 +49,7 @@ export default function ClientFormScreen({ navigation, route }: Props) {
   const { isDark } = useTheme();
   const palette = isDark ? colors.dark : colors.light;
   const styles = getStyles(palette);
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [loadingData, setLoadingData] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
@@ -160,7 +162,7 @@ export default function ClientFormScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -320,7 +322,7 @@ export default function ClientFormScreen({ navigation, route }: Props) {
         </ScrollView>
 
         {/* Save Button */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: tabBarHeight + spacing.sm }]}>
           <TouchableOpacity
             style={[styles.saveButton, submitting && styles.saveButtonDisabled]}
             activeOpacity={0.8}

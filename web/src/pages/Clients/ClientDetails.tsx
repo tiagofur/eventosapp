@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import { logError } from "../../lib/errorHandler";
 import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import clsx from "clsx";
 
 export const ClientDetails: React.FC = () => {
   const { id } = useParams();
@@ -71,10 +72,11 @@ export const ClientDetails: React.FC = () => {
   if (loading) {
     return (
       <div
-        className="text-center p-8 text-gray-900 dark:text-white"
+        className="flex justify-center items-center h-64 p-8 text-text-secondary"
         role="status"
         aria-live="polite"
       >
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange mr-3" aria-hidden="true"></div>
         Cargando detalles...
       </div>
     );
@@ -100,7 +102,7 @@ export const ClientDetails: React.FC = () => {
 
   if (!client) {
     return (
-      <div className="text-center p-8 text-gray-900 dark:text-white">
+      <div className="text-center p-8 text-text">
         Cliente no encontrado
       </div>
     );
@@ -113,19 +115,19 @@ export const ClientDetails: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/clients")}
-            className="mr-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
+            className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary transition-colors"
             aria-label="Volver a la lista de clientes"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-text">
             {client.name}
           </h1>
         </div>
         <div className="flex items-center space-x-2">
           <Link
             to={`/clients/${client.id}/edit`}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl shadow-xs text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-border rounded-xl shadow-sm text-sm font-medium text-text-secondary bg-card hover:bg-surface-alt transition-colors"
             aria-label="Editar información del cliente"
           >
             <Edit className="h-5 w-5 mr-2" aria-hidden="true" />
@@ -134,7 +136,7 @@ export const ClientDetails: React.FC = () => {
           <button
             type="button"
             onClick={() => setConfirmDeleteOpen(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-red-600 hover:bg-red-700 shadow-xs transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors"
             aria-label="Eliminar cliente permanentemente"
           >
             <Trash2 className="h-5 w-5 mr-2" aria-hidden="true" />
@@ -143,55 +145,55 @@ export const ClientDetails: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-xs overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-700">
+      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+          <h3 className="text-lg leading-6 font-medium text-text">
             Información del Cliente
           </h3>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 max-w-2xl text-sm text-text-secondary">
             Detalles personales y de contacto.
           </p>
         </div>
-        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:px-6">
+        <div className="border-t border-border px-4 py-5 sm:px-6">
           <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+              <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <Phone className="h-4 w-4 mr-2" aria-hidden="true" /> Teléfono
               </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-text">
                 {client.phone}
               </dd>
             </div>
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+              <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <Mail className="h-4 w-4 mr-2" aria-hidden="true" /> Email
               </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-text">
                 {client.email || "No registrado"}
               </dd>
             </div>
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+              <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <MapPin className="h-4 w-4 mr-2" aria-hidden="true" /> Dirección
               </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-text">
                 {client.address || "No registrada"}
               </dd>
             </div>
             <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+              <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" aria-hidden="true" /> Total
                 Gastado
               </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white font-semibold">
+              <dd className="mt-1 text-sm text-text font-semibold">
                 ${(client.total_spent ?? 0).toFixed(2)}
               </dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
+              <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <FileText className="h-4 w-4 mr-2" aria-hidden="true" /> Notas
               </dt>
-              <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+              <dd className="mt-1 text-sm text-text">
                 {client.notes || "Sin notas adicionales."}
               </dd>
             </div>
@@ -199,28 +201,28 @@ export const ClientDetails: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-xs overflow-hidden rounded-3xl border border-gray-100 dark:border-gray-700">
+      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
           <div>
-            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+            <h3 className="text-lg leading-6 font-medium text-text">
               Historial de Eventos
             </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 max-w-2xl text-sm text-text-secondary">
               Lista de eventos pasados y futuros.
             </p>
           </div>
           <Link
             to={`/events/new?clientId=${client.id}`}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-sm transition-colors"
           >
             Nuevo Evento
           </Link>
         </div>
-        <div className="border-t border-gray-200 dark:border-gray-700">
+        <div className="border-t border-border">
           {events.length === 0 ? (
-            <div className="px-4 py-5 sm:p-6 text-center text-gray-500 dark:text-gray-400">
+            <div className="px-4 py-5 sm:p-6 text-center text-text-secondary">
               <Calendar
-                className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-400"
+                className="mx-auto h-12 w-12 text-text-secondary"
                 aria-hidden="true"
               />
               <p className="mt-2">
@@ -228,12 +230,12 @@ export const ClientDetails: React.FC = () => {
               </p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            <ul className="divide-y divide-border">
               {events.map((event) => (
                 <li key={event.id}>
                   <Link
                     to={`/events/${event.id}/summary`}
-                    className="block hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="block hover:bg-surface-alt/50 transition-colors"
                   >
                     <div className="px-4 py-4 sm:px-6">
                       <div className="flex items-center justify-between">
@@ -242,15 +244,16 @@ export const ClientDetails: React.FC = () => {
                         </p>
                         <div className="ml-2 shrink-0 flex">
                           <p
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            className={clsx(
+                              "px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full border",
                               event.status === "confirmed"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                ? "bg-brand-green/10 text-brand-green border-brand-green/20"
                                 : event.status === "completed"
-                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                  ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
                                   : event.status === "cancelled"
-                                    ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                    : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                            }`}
+                                    ? "bg-red-500/10 text-red-500 border-red-500/20"
+                                    : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                            )}
                           >
                             {event.status === "quoted"
                               ? "Cotizado"
@@ -264,9 +267,9 @@ export const ClientDetails: React.FC = () => {
                       </div>
                       <div className="mt-2 sm:flex sm:justify-between">
                         <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                          <p className="flex items-center text-sm text-text-secondary">
                             <Calendar
-                              className="shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-400"
+                              className="shrink-0 mr-1.5 h-5 w-5 text-text-secondary"
                               aria-hidden="true"
                             />
                             {format(
@@ -275,17 +278,17 @@ export const ClientDetails: React.FC = () => {
                               { locale: es },
                             )}
                           </p>
-                          <p className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0 sm:ml-6">
+                          <p className="mt-2 flex items-center text-sm text-text-secondary sm:mt-0 sm:ml-6">
                             <Clock
-                              className="shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-400"
+                              className="shrink-0 mr-1.5 h-5 w-5 text-text-secondary"
                               aria-hidden="true"
                             />
                             {event.num_people} personas
                           </p>
                         </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:mt-0">
+                        <div className="mt-2 flex items-center text-sm text-text-secondary sm:mt-0">
                           <DollarSign
-                            className="shrink-0 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-400"
+                            className="shrink-0 mr-1.5 h-5 w-5 text-text-secondary"
                             aria-hidden="true"
                           />
                           {(event.total_amount ?? 0).toFixed(2)}

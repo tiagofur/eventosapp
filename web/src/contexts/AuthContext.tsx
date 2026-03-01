@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = await api.get<User>('/auth/me');
       setUser(userData);
     } catch (error) {
-      console.error('Auth check failed', error);
+      logError('Auth check failed', error);
       localStorage.removeItem('auth_token');
       setUser(null);
     } finally {
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await api.post('/auth/logout', {});
     } catch (error) {
       // Even if logout fails, clear local state
-      console.error('Logout error:', error);
+      logError('Logout error', error);
     } finally {
       // Clear localStorage token (backward compatibility)
       localStorage.removeItem('auth_token');

@@ -5,6 +5,7 @@ import { clientService } from '../services/clientService';
 import { productService } from '../services/productService';
 import { inventoryService } from '../services/inventoryService';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { logError } from '../lib/errorHandler';
 
 const FREE_PLAN_LIMIT = 3;
 const CLIENT_LIMIT = 50;
@@ -50,7 +51,7 @@ export function usePlanLimits() {
         }
 
       } catch (error) {
-        console.error("Error fetching plan limits", error);
+        logError("Error fetching plan limits", error);
       } finally {
         setLoading(false);
       }

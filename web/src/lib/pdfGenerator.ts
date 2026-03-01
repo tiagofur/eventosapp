@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { Event, Client, User, EventProduct, EventExtra, Payment } from '../types/entities';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { logError } from './errorHandler';
 
 type EventWithClient = Event & {
   client?: Client | null;
@@ -62,7 +63,7 @@ const addHeader = (doc: jsPDF, profile: UserProfile | null, title: string): numb
       doc.addImage(profile.logo_url, imgProps.fileType, 20, yPos, width, height, undefined, 'FAST');
       startX = 20 + width + 5; // Shift text to right of logo dynamically
     } catch (error) {
-      console.error('Error adding logo to PDF', error);
+      logError('Error adding logo to PDF', error);
       // Fallback: don't shift text if logo fails
     }
   }

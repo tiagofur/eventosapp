@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -92,6 +93,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
   const { isDark } = useTheme();
   const palette = isDark ? colors.dark : colors.light;
   const styles = getStyles(palette);
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(isEditing);
@@ -399,7 +401,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
   const selectedClient = clients.find(c => c.id === formData.client_id);
 
   return (
-    <SafeAreaView style={styles.container} edges={["bottom"]}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.stepIndicator}>
         {STEPS.map((s, index) => (
           <React.Fragment key={s.id}>
@@ -760,7 +762,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
         )}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: tabBarHeight + spacing.sm }]}>
         <TouchableOpacity
           style={[styles.navButton, step === 1 && styles.navButtonDisabled]}
           onPress={handlePrev}

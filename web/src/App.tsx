@@ -15,6 +15,8 @@ import { ProductList } from './pages/Products/ProductList';
 import { ProductForm } from './pages/Products/ProductForm';
 import { InventoryList } from './pages/Inventory/InventoryList';
 import { InventoryForm } from './pages/Inventory/InventoryForm';
+import { InventoryDetails } from './pages/Inventory/InventoryDetails';
+import { ProductDetails } from './pages/Products/ProductDetails';
 import { CalendarView } from './pages/Calendar/CalendarView';
 import { EventForm } from './pages/Events/EventForm';
 import { EventSummary } from './pages/Events/EventSummary';
@@ -60,11 +62,13 @@ function App() {
           {/* Rutas de Productos */}
           <Route path="/products" element={<ProductList />} />
           <Route path="/products/new" element={<ProductForm />} />
+          <Route path="/products/:id" element={<ProductDetails />} />
           <Route path="/products/:id/edit" element={<ProductForm />} />
 
           {/* Rutas de Inventario */}
           <Route path="/inventory" element={<InventoryList />} />
           <Route path="/inventory/new" element={<InventoryForm />} />
+          <Route path="/inventory/:id" element={<InventoryDetails />} />
           <Route path="/inventory/:id/edit" element={<InventoryForm />} />
 
           <Route path="/settings" element={<Settings />} />

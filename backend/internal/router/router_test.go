@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"os"
+	"path/filepath"
+
 	"github.com/tiagofur/eventosapp-backend/internal/handlers"
 	"github.com/tiagofur/eventosapp-backend/internal/services"
 )
@@ -47,8 +50,24 @@ func TestNewRouter(t *testing.T) {
 			t.Fatalf("body = %q, expected auth error", rr.Body.String())
 		}
 	})
-}
 
+	t.Run("GivenUploadsEndpoint_WhenRequest_ThenSetsCacheControl", func(t *testing.T) {
+		tempDir := t.TempDir()
+		testFilePath := filepath.Join(tempDir, "test.png")
+		_ = os.WriteFile(testFilePath, []byte("fake image data"), 0644)
+
+		h := New(&handlers.AuthHandler{}, &handlers.CRUDHandler{}, &handlers.SubscriptionHandler{}, &handlers.SearchHandler{}, &handlers.EventPaymentHandler{}, handlers.NewUploadHandler(tempDir), authService, []string{"http://allowed.com"}, tempDir)
+
+		req := httptest.NewRequest(http.MethodGet, "/api/uploads/test.png", nil)
+		rr := httptest.NewRecorder()
+
+		h.ServeHTTP(rr, req)
+
+		if got := rr.Header().Get("Cache-Control"); got != "public, max-age=31536000" {
+			t.Fatalf("Cache-Control = %q, want %q, status=%v", got, "public, max-age=31536000", rr.Code)
+		}
+	})
+}
 func TestProtectedRoutesRequireValidBearerToken(t *testing.T) {
 	authService := services.NewAuthService("test-secret", 1)
 	h := New(&handlers.AuthHandler{}, &handlers.CRUDHandler{}, &handlers.SubscriptionHandler{}, &handlers.SearchHandler{}, &handlers.EventPaymentHandler{}, handlers.NewUploadHandler(t.TempDir()), authService, []string{"http://allowed.com"}, t.TempDir())

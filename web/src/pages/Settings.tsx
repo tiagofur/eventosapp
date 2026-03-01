@@ -3,20 +3,28 @@ import { useAuth } from "../contexts/AuthContext";
 import {
   User,
   CreditCard,
-  Shield,
   Building,
   FileText,
   Image as ImageIcon,
   ExternalLink,
   Zap,
-  CheckCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import clsx from "clsx";
 import { logError } from "../lib/errorHandler";
 import { subscriptionService } from "../services/subscriptionService";
+import { usePlanLimits } from "../hooks/usePlanLimits";
 
 export const Settings: React.FC = () => {
-  const { user: profile, updateProfile, checkAuth } = useAuth();
+  const { user: profile, updateProfile } = useAuth();
+  const { 
+    eventsThisMonth, 
+    limit: eventLimit, 
+    clientsCount, 
+    clientLimit, 
+    isBasicPlan 
+  } = usePlanLimits();
+
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
   const [businessName, setBusinessName] = useState(
     profile?.business_name || "",
@@ -26,18 +34,11 @@ export const Settings: React.FC = () => {
     cancellation: profile?.default_cancellation_days || 15,
     refund: profile?.default_refund_percent || 0,
   });
-  const [isEditingContract, setIsEditingContract] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [isEditingColor, setIsEditingColor] = useState(false);
   const [brandColor, setBrandColor] = useState(
     profile?.brand_color || "#FF6B35"
   );
-  const [showBusinessName, setShowBusinessName] = useState(
-    profile?.show_business_name_in_pdf ?? true
-  );
   const [isPortalLoading, setIsPortalLoading] = useState(false);
-  const [portalError, setPortalError] = useState<string | null>(null);
-  const [isDebugLoading, setIsDebugLoading] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -48,7 +49,6 @@ export const Settings: React.FC = () => {
         refund: profile.default_refund_percent ?? 0,
       });
       setBrandColor(profile.brand_color || "#FF6B35");
-      setShowBusinessName(profile.show_business_name_in_pdf ?? true);
     }
   }, [profile]);
 
@@ -65,20 +65,8 @@ export const Settings: React.FC = () => {
   const handleUpdateBrandColor = async () => {
     try {
       await updateProfile({ brand_color: brandColor });
-      setIsEditingColor(false);
     } catch (error) {
       logError("Error updating brand color", error);
-    }
-  };
-
-  const handleToggleShowBusinessName = async (checked: boolean) => {
-    try {
-      setShowBusinessName(checked);
-      await updateProfile({ show_business_name_in_pdf: checked });
-    } catch (error) {
-      logError("Error updating show business name toggle", error);
-      // Revert local state on error
-      setShowBusinessName(!checked);
     }
   };
 
@@ -113,7 +101,6 @@ export const Settings: React.FC = () => {
         default_cancellation_days: contractSettings.cancellation,
         default_refund_percent: contractSettings.refund,
       });
-      setIsEditingContract(false);
     } catch (error) {
       logError("Error updating contract settings", error);
     }
@@ -122,28 +109,14 @@ export const Settings: React.FC = () => {
   const handleManageSubscription = async () => {
     try {
       setIsPortalLoading(true);
-      setPortalError(null);
       const { url } = await subscriptionService.createPortalSession();
       if (url) {
         window.location.href = url;
       }
     } catch (err: unknown) {
       logError("Error opening billing portal", err);
-      setPortalError("No se pudo abrir el portal. Asegúrate de tener una suscripción activa con Stripe.");
     } finally {
       setIsPortalLoading(false);
-    }
-  };
-
-  const handleDebugDowngrade = async () => {
-    try {
-      setIsDebugLoading(true);
-      await subscriptionService.debugDowngrade();
-      await checkAuth();
-    } catch (err: unknown) {
-      logError("Error debug downgrade", err);
-    } finally {
-      setIsDebugLoading(false);
     }
   };
 
@@ -163,32 +136,36 @@ export const Settings: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* ── SIDEBAR NAVIGATION ── */}
-        <div className="lg:w-64 space-y-2">
+      <div className="flex justify-center w-full">
+        <div className="inline-flex bg-surface-alt dark:bg-gray-800/50 rounded-2xl p-1 overflow-x-auto border border-border" role="tablist">
           {[
             { id: "profile", label: "Mi Cuenta", icon: User },
             { id: "business", label: "Mi Negocio", icon: Building },
-            { id: "subscription", label: "Suscripción", icon: CreditCard },
             { id: "contracts", label: "Contratos", icon: FileText },
+            { id: "subscription", label: "Suscripción", icon: CreditCard },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
+              className={clsx(
+                "px-6 py-2.5 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 activeTab === tab.id
-                  ? "bg-surface-alt dark:bg-gray-700 text-primary"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-              }`}
+                  ? "bg-white dark:bg-gray-700 text-brand-orange shadow-sm border border-border/50"
+                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-800/50"
+              )}
+              role="tab"
+              aria-selected={activeTab === tab.id}
             >
-              <tab.icon className="h-5 w-5" />
+              <tab.icon className="h-4 w-4 mr-2" />
               {tab.label}
             </button>
           ))}
         </div>
+      </div>
 
+      <div className="space-y-6">
         {/* ── CONTENT AREA ── */}
-        <div className="flex-1 space-y-6">
+        <div className="w-full">
           {activeTab === "profile" && (
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
@@ -220,7 +197,7 @@ export const Settings: React.FC = () => {
           )}
 
           {activeTab === "business" && (
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-gray-200 dark:border-gray-700">
+            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                   Identidad de Negocio
@@ -276,7 +253,7 @@ export const Settings: React.FC = () => {
               <div className="space-y-4">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logo de Marca</label>
                 <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-surface-alt/30 rounded-3xl border-2 border-dashed border-border hover:border-primary/50 transition-all text-center sm:text-left">
-                  <div className="relative h-24 w-24 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
+                  <div className="relative h-24 w-24 shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
                     {profile?.logo_url ? (
                       <img src={profile.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
                     ) : (
@@ -321,75 +298,8 @@ export const Settings: React.FC = () => {
             </div>
           )}
 
-          {activeTab === "subscription" && (
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 shadow-sm rounded-3xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700 relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Plan Actual
-                    </div>
-                    <h2 className="text-4xl font-bold tracking-tight capitalize text-gray-900 dark:text-white">
-                      {profile?.plan || "Básico"}
-                    </h2>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium text-sm max-w-md">
-                      {profile?.plan === "pro" 
-                        ? "Disfrutas de acceso ilimitado a todas nuestras herramientas profesionales."
-                        : "Potencia tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
-                    </p>
-                  </div>
-                  
-                  <div className="flex flex-col gap-3">
-                    {profile?.plan !== "pro" && (
-                      <Link
-                        to="/pricing"
-                        className="bg-primary text-white px-6 py-3 rounded-md font-medium text-center shadow-sm hover:bg-orange-600 transition-colors"
-                      >
-                        Subir a Pro
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleManageSubscription}
-                      disabled={isPortalLoading}
-                      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-md font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      {isPortalLoading ? "Cargando..." : (
-                        <>Gestionar <ExternalLink className="h-4 w-4" /></>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Limits / Usage section (Simulated for now based on plans) */}
-              <div className="bg-white dark:bg-gray-800 shadow-sm rounded-3xl p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Uso de este mes</h3>
-                <div className="grid sm:grid-cols-2 gap-8">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-gray-500">Eventos</span>
-                      <span>Ilimitados</span>
-                    </div>
-                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
-                      <div className="h-full bg-primary w-full" />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-gray-500">Clientes</span>
-                      <span>Ilimitados</span>
-                    </div>
-                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
-                      <div className="h-full bg-brand-green w-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {activeTab === "contracts" && (
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-gray-200 dark:border-gray-700">
+            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
                   Valores Predeterminados
@@ -446,6 +356,83 @@ export const Settings: React.FC = () => {
                   >
                     Guardar Cambios
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "subscription" && (
+            <div className="space-y-6">
+              <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border relative overflow-hidden">
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                      Plan Actual
+                    </div>
+                    <h2 className="text-4xl font-bold tracking-tight capitalize text-gray-900 dark:text-white">
+                      {profile?.plan || "Básico"}
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400 font-medium text-sm max-w-md">
+                      {profile?.plan === "pro" 
+                        ? "Disfrutas de acceso ilimitado a todas nuestras herramientas profesionales."
+                        : "Potencia tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3">
+                    {profile?.plan !== "pro" && (
+                      <Link
+                        to="/pricing"
+                        className="bg-primary text-white px-6 py-3 rounded-md font-medium text-center shadow-sm hover:bg-orange-600 transition-colors"
+                      >
+                        Subir a Pro
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleManageSubscription}
+                      disabled={isPortalLoading}
+                      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-md font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {isPortalLoading ? "Cargando..." : (
+                        <>Gestionar <ExternalLink className="h-4 w-4" /></>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Limits / Usage section (Simulated for now based on plans) */}
+              <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Uso de este mes</h3>
+                <div className="grid sm:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-gray-500">Eventos este mes</span>
+                      <span>
+                        {isBasicPlan ? `${eventsThisMonth} / ${eventLimit}` : 'Ilimitados'}
+                      </span>
+                    </div>
+                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary transition-all duration-1000" 
+                        style={{ width: isBasicPlan ? `${Math.min((eventsThisMonth / eventLimit) * 100, 100)}%` : '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-bold">
+                      <span className="text-gray-500">Clientes totales</span>
+                      <span>
+                        {isBasicPlan ? `${clientsCount} / ${clientLimit}` : 'Ilimitados'}
+                      </span>
+                    </div>
+                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-brand-green transition-all duration-1000" 
+                        style={{ width: isBasicPlan ? `${Math.min((clientsCount / clientLimit) * 100, 100)}%` : '100%' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

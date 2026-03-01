@@ -238,14 +238,14 @@ export const Dashboard: React.FC = () => {
         <div className="flex space-x-2">
           <Link
             to="/events/new"
-            className="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark transition-colors"
+            className="hidden sm:inline-flex items-center justify-center px-4 py-2 rounded-full shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark transition-colors"
             aria-label="Crear nuevo evento"
           >
             + Evento
           </Link>
           <Link
             to="/clients/new"
-            className="hidden sm:inline-flex items-center justify-center px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-text bg-card hover:bg-surface-alt transition-colors"
+            className="hidden sm:inline-flex items-center justify-center px-4 py-2 border border-border rounded-full shadow-sm text-sm font-medium text-text bg-card hover:bg-surface-alt transition-colors"
             aria-label="Crear nuevo cliente"
           >
             + Cliente
@@ -692,7 +692,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Low Stock Items Section */}
         {lowStockItems.length > 0 && (
-          <div className="bg-card shadow-sm border border-border rounded-3xl p-6 transition-colors lg:col-span-2 overflow-hidden">
+          <div className="bg-card shadow-sm border border-border rounded-3xl p-6 transition-colors xl:col-span-2 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-text flex items-center">
                 <AlertTriangle
@@ -767,7 +767,7 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Upcoming Events List */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl p-6 transition-colors overflow-hidden">
+        <div className="bg-card shadow-sm border border-border rounded-3xl p-6 transition-colors xl:col-span-2 overflow-hidden">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg leading-6 font-semibold text-text">
               Próximos Eventos

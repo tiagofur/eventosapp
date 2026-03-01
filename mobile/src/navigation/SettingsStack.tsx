@@ -7,6 +7,8 @@ import BusinessSettingsScreen from "../screens/profile/BusinessSettingsScreen";
 import ContractDefaultsScreen from "../screens/profile/ContractDefaultsScreen";
 import PricingScreen from "../screens/profile/PricingScreen";
 import AboutScreen from "../screens/profile/AboutScreen";
+import PrivacyPolicyScreen from "../screens/profile/PrivacyPolicyScreen";
+import TermsScreen from "../screens/profile/TermsScreen";
 import DrawerMenuButton from "../components/navigation/DrawerMenuButton";
 
 const Stack = createNativeStackNavigator<SettingsStackParamList>();
@@ -50,6 +52,16 @@ export default function SettingsStack() {
       <Stack.Screen
         name="About"
         component={AboutScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

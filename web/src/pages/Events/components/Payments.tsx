@@ -2,11 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { paymentService } from "../../../services/paymentService";
 import { Payment } from "../../../types/entities";
-import { Plus, Trash2, DollarSign, CheckCircle, AlertCircle, Download } from "lucide-react";
+import { Plus, Trash2, DollarSign, CheckCircle, AlertCircle, Calendar, CreditCard, Banknote } from "lucide-react";
 import { logError } from "../../../lib/errorHandler";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
-import { generatePaymentReportPDF } from "../../../lib/pdfGenerator";
 import { useToast } from "../../../hooks/useToast";
+import clsx from "clsx";
 
 interface PaymentsProps {
   eventId: string;
@@ -24,8 +24,6 @@ export const Payments: React.FC<PaymentsProps> = ({
   userId,
   eventStatus,
   onStatusChange,
-  eventData,
-  profile
 }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [, setLoading] = useState(true);
@@ -72,17 +70,16 @@ export const Payments: React.FC<PaymentsProps> = ({
         notes: data.notes,
       });
 
-      // Check for auto-confirmation: if any payment is made and status is quoted
       if (newPaymentAmount > 0 && eventStatus === "quoted" && onStatusChange) {
         onStatusChange("confirmed");
         setStatusMessage("✅ Pago registrado. El evento ha sido marcado como Confirmado.");
-        // Clear message after 5 seconds
         setTimeout(() => setStatusMessage(null), 5000);
       }
 
       setIsAdding(false);
       reset();
       loadPayments();
+      addToast("Pago registrado correctamente.", "success");
     } catch (err) {
       logError("Error creating payment", err);
       addToast("Error al registrar el pago.", "error");
@@ -106,123 +103,153 @@ export const Payments: React.FC<PaymentsProps> = ({
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const balance = totalAmount - totalPaid;
   const progress = totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 0;
-  const isFullyPaid = balance <= 0.01; // Small threshold for float precision
+  const isFullyPaid = balance <= 0.01;
+
+  const getMethodIcon = (method: string) => {
+    switch (method) {
+      case 'card': return <CreditCard className="h-3.5 w-3.5" />;
+      case 'transfer': return <CreditCard className="h-3.5 w-3.5" />;
+      case 'cash': return <Banknote className="h-3.5 w-3.5" />;
+      default: return <DollarSign className="h-3.5 w-3.5" />;
+    }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {statusMessage && (
-        <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md p-4 flex items-center text-green-800 dark:text-green-200 animate-fade-in" role="status" aria-live="polite">
-          <CheckCircle className="h-5 w-5 mr-2 shrink-0" aria-hidden="true" />
-          <p>{statusMessage}</p>
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center text-emerald-600 dark:text-emerald-400" role="status">
+          <CheckCircle className="h-5 w-5 mr-3 shrink-0" aria-hidden="true" />
+          <p className="font-bold text-sm">{statusMessage}</p>
         </div>
       )}
 
       {isFullyPaid && eventStatus === "quoted" && !statusMessage && (
-        <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-md p-4 flex items-start text-amber-800 dark:text-amber-200" role="alert">
-          <AlertCircle className="h-5 w-5 mr-2 shrink-0 mt-0.5" aria-hidden="true" />
+        <div className="bg-brand-orange/10 border border-brand-orange/20 rounded-2xl p-4 flex items-start text-brand-orange" role="alert">
+          <AlertCircle className="h-5 w-5 mr-3 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
-            <p className="font-medium">El evento está totalmente pagado pero sigue como "Cotizado".</p>
+            <p className="font-bold text-sm">El evento está totalmente pagado pero sigue como "Cotizado".</p>
             <button
               type="button"
               onClick={() => onStatusChange && onStatusChange("confirmed")}
-              className="text-sm underline hover:text-amber-900 dark:hover:text-amber-100 mt-1"
-              aria-label="Cambiar estado del evento a Confirmado"
+              className="text-xs font-black uppercase tracking-wider underline mt-1"
             >
-              Cambiar estado a "Confirmado"
+              Confirmar ahora
             </button>
           </div>
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xs p-6 border dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
-            <DollarSign className="h-5 w-5 mr-2 text-green-600" aria-hidden="true" />
-            Pagos y Saldo
-          </h2>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
-            <DollarSign className="h-5 w-5 mr-2 text-green-600" aria-hidden="true" />
-            Pagos y Saldo
-          </h2>
-        </div>
+      <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-text uppercase tracking-tight flex items-center gap-2">
+              <DollarSign className="h-6 w-6 text-brand-orange" aria-hidden="true" />
+              Pagos y Saldo
+            </h2>
+            <p className="text-text-tertiary text-xs font-bold uppercase tracking-widest mt-1">Control de ingresos del evento</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {!isAdding && (
+              <button
+                type="button"
+                onClick={() => { reset(); setIsAdding(true); }}
+                className="inline-flex items-center px-5 py-2.5 bg-brand-orange text-white text-sm font-black rounded-2xl hover:bg-brand-orange/90 shadow-lg shadow-brand-orange/20 transition-all active:scale-95 uppercase tracking-tighter"
+              >
+                <Plus className="h-4 w-4 mr-2" /> 
+                Registrar Pago
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
-             <span className="text-sm text-gray-500 dark:text-gray-400 block">Total a Pagar</span>
-             <span className="text-xl font-bold text-gray-900 dark:text-white">${totalAmount.toFixed(2)}</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-surface-alt/50 p-6 rounded-2xl border border-border/50">
+             <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter mb-1">Total del Evento</p>
+             <p className="text-2xl font-black text-text">${totalAmount.toFixed(2)}</p>
           </div>
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md">
-             <span className="text-sm text-green-600 dark:text-green-400 block">Pagado</span>
-             <span className="text-xl font-bold text-green-700 dark:text-green-300">
-               ${totalPaid.toFixed(2)}
-             </span>
+          <div className="bg-emerald-500/5 p-6 rounded-2xl border border-emerald-500/10">
+             <p className="text-[10px] font-black text-emerald-600/70 uppercase tracking-tighter mb-1">Total Pagado</p>
+             <p className="text-2xl font-black text-emerald-500">${totalPaid.toFixed(2)}</p>
           </div>
-          <div className={`p-4 rounded-md ${balance > 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'}`}>
-             <span className={`text-sm block ${balance > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-               {balance > 0 ? 'Saldo Pendiente' : 'Saldo Favor / Completado'}
-             </span>
-             <span className={`text-xl font-bold ${balance > 0 ? 'text-red-700 dark:text-red-300' : 'text-green-700 dark:text-green-300'}`}>
+          <div className={clsx(
+            "p-6 rounded-2xl border",
+            balance > 0.01 
+              ? "bg-red-500/5 border-red-500/10" 
+              : "bg-blue-500/5 border-blue-500/10"
+          )}>
+             <p className={clsx(
+               "text-[10px] font-black uppercase tracking-tighter mb-1",
+               balance > 0.01 ? "text-red-500/70" : "text-blue-500/70"
+             )}>
+               {balance > 0.01 ? 'Saldo Pendiente' : 'Saldo Liquidado'}
+             </p>
+             <p className={clsx(
+               "text-2xl font-black",
+               balance > 0.01 ? "text-red-500" : "text-blue-500"
+             )}>
                ${Math.abs(balance).toFixed(2)}
-             </span>
+             </p>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-6">
+        <div className="w-full bg-surface-alt rounded-full h-3 mb-10 overflow-hidden relative">
           <div
-            className={`h-2.5 rounded-full transition-all duration-500 ${isFullyPaid ? 'bg-green-600' : 'bg-brand-orange'}`}
+            className={clsx(
+              "h-full rounded-full transition-all duration-1000 ease-out",
+              isFullyPaid ? 'bg-emerald-500' : 'bg-brand-orange'
+            )}
             style={{ width: `${Math.min(progress, 100)}%` }}
             role="progressbar"
-            aria-valuenow={Math.min(progress, 100)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Progreso de pagos: ${Math.min(progress, 100).toFixed(1)}% completado`}
-          ></div>
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+             <span className="text-[9px] font-black text-white mix-blend-difference uppercase tracking-widest">
+               {Math.min(progress, 100).toFixed(0)}% Completado
+             </span>
+          </div>
         </div>
 
-        {/* Payment List */}
-        <div className="overflow-hidden shadow-sm ring-1 ring-black ring-opacity-5 md:rounded-lg mb-4">
-          <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600" aria-label="Lista de pagos registrados">
-            <caption className="sr-only">Historial de pagos del evento con fecha, método, nota y monto</caption>
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white sm:pl-6">Fecha</th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Método</th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white">Nota</th>
-                <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 dark:text-white">Monto</th>
-                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                  <span className="sr-only">Acciones</span>
-                </th>
+        <div className="bg-surface-alt/30 rounded-2xl border border-border overflow-hidden">
+          <table className="min-w-full text-sm" aria-label="Historial de pagos">
+            <thead>
+              <tr className="text-left text-[10px] font-black text-text-tertiary uppercase tracking-wider border-b border-border bg-surface-alt/50">
+                <th scope="col" className="py-4 px-6">Fecha</th>
+                <th scope="col" className="py-4 px-6">Método</th>
+                <th scope="col" className="py-4 px-6">Nota</th>
+                <th scope="col" className="py-4 px-6 text-right">Monto</th>
+                <th scope="col" className="py-4 px-6 text-right">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+            <tbody className="divide-y divide-border/50">
               {payments.map((payment) => (
-                <tr key={payment.id}>
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-6">
+                <tr key={payment.id} className="group hover:bg-surface-alt/50 transition-colors">
+                  <td className="py-4 px-6 font-bold text-text flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5 text-text-tertiary" />
                     {new Date(payment.payment_date).toLocaleDateString()}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    {payment.payment_method === 'cash' ? 'Efectivo' :
-                     payment.payment_method === 'transfer' ? 'Transferencia' :
-                     payment.payment_method === 'card' ? 'Tarjeta' : payment.payment_method}
+                  <td className="py-4 px-6">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-card border border-border text-[10px] font-black uppercase tracking-tight text-text-secondary">
+                      {getMethodIcon(payment.payment_method)}
+                      {payment.payment_method === 'cash' ? 'Efectivo' :
+                       payment.payment_method === 'transfer' ? 'Transferencia' :
+                       payment.payment_method === 'card' ? 'Tarjeta' : payment.payment_method}
+                    </span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                  <td className="py-4 px-6 text-text-secondary italic text-xs">
                     {payment.notes || '-'}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium text-gray-900 dark:text-white">
+                  <td className="py-4 px-6 text-right font-black text-text">
                     ${payment.amount.toFixed(2)}
                   </td>
-                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <td className="py-4 px-6 text-right">
                     <button
                       type="button"
                       onClick={() => {
                         setDeleteId(payment.id);
                         setConfirmOpen(true);
                       }}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      aria-label={`Eliminar pago de $${payment.amount.toFixed(2)} del ${new Date(payment.payment_date).toLocaleDateString()}`}
+                      className="p-2 text-text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                      aria-label="Eliminar pago"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
                     </button>
@@ -231,8 +258,8 @@ export const Payments: React.FC<PaymentsProps> = ({
               ))}
               {payments.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                    No hay pagos registrados.
+                  <td colSpan={5} className="py-12 text-center text-text-tertiary italic">
+                    No hay pagos registrados para este evento.
                   </td>
                 </tr>
               )}
@@ -240,132 +267,107 @@ export const Payments: React.FC<PaymentsProps> = ({
           </table>
         </div>
 
-        {!isAdding ? (
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => { reset(); setIsAdding(true); }}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-brand-orange bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/30 dark:hover:bg-orange-900/50 focus:outline-hidden transition-colors"
-              aria-label="Abrir formulario para registrar un nuevo pago"
+        {isAdding && (
+          <div className="mt-8 animate-in zoom-in-95 fade-in duration-300">
+            <form 
+              onSubmit={handleSubmit(onSubmit)} 
+              className="bg-surface-alt/50 p-8 rounded-3xl border border-brand-orange/20 relative overflow-hidden"
             >
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Registrar Nuevo Pago
-            </button>
-
-            {balance > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  reset();
-                  setValue("amount", parseFloat(balance.toFixed(2)));
-                  setIsAdding(true);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shadow-xs focus:outline-hidden transition-colors"
-                aria-label={`Liquidar saldo faltante de $${balance.toFixed(2)}`}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" aria-hidden="true" /> Liquidar Faltante (${balance.toFixed(2)})
-              </button>
-            )}
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-md border dark:border-gray-600 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="payment-amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Monto *</label>
-                <div className="flex gap-2 items-center mt-1">
-                  <div className="relative rounded-md shadow-xs w-full">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <span className="text-gray-500 sm:text-sm">$</span>
-                    </div>
+              <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                <Plus className="h-24 w-24 text-brand-orange" />
+              </div>
+              
+              <h3 className="text-lg font-black text-text uppercase tracking-tight mb-6">Nuevo Pago</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div>
+                  <label htmlFor="payment-amount" className="block text-[10px] font-black text-text-tertiary uppercase tracking-widest mb-2">Monto *</label>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary font-bold">$</span>
                     <input
                       id="payment-amount"
                       type="number"
                       step="0.01"
                       {...register("amount", { required: "Monto requerido", min: 0.01 })}
-                      className="block w-full rounded-md border-gray-300 dark:border-gray-600 pl-7 pr-12 focus:border-brand-orange focus:ring-brand-orange sm:text-sm p-2 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                      className="block w-full bg-card border border-border rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all"
                       placeholder="0.00"
-                      aria-required="true"
-                      aria-invalid={errors.amount ? "true" : "false"}
-                      aria-describedby={errors.amount ? "payment-amount-error" : undefined}
                     />
+                    {balance > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setValue("amount", parseFloat(balance.toFixed(2)))}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-[9px] font-black bg-emerald-500 text-white rounded-md hover:bg-emerald-600 transition-colors uppercase"
+                      >
+                        Saldo
+                      </button>
+                    )}
                   </div>
-                  {balance > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setValue("amount", parseFloat(balance.toFixed(2)))}
-                      className="px-2 py-1.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded-sm border border-green-200 dark:border-green-800 hover:bg-green-200 dark:hover:bg-green-900/60 whitespace-nowrap"
-                      aria-label="Llenar con el saldo faltante completo"
-                    >
-                      Max
-                    </button>
-                  )}
+                  {errors.amount && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.amount.message as string}</p>}
                 </div>
-                {errors.amount && <p id="payment-amount-error" className="text-xs text-red-500 mt-1" role="alert">{errors.amount.message as string}</p>}
+
+                <div>
+                  <label htmlFor="payment-date" className="block text-[10px] font-black text-text-tertiary uppercase tracking-widest mb-2">Fecha *</label>
+                  <input
+                    id="payment-date"
+                    type="date"
+                    {...register("payment_date", { required: true })}
+                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="payment-method" className="block text-[10px] font-black text-text-tertiary uppercase tracking-widest mb-2">Método *</label>
+                  <select
+                    id="payment-method"
+                    {...register("payment_method")}
+                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="cash">Efectivo 💵</option>
+                    <option value="transfer">Transferencia 🏦</option>
+                    <option value="card">Tarjeta 💳</option>
+                    <option value="check">Cheque 📝</option>
+                    <option value="other">Otro 🏷️</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="payment-notes" className="block text-[10px] font-black text-text-tertiary uppercase tracking-widest mb-2">Nota</label>
+                  <input
+                    id="payment-notes"
+                    type="text"
+                    {...register("notes")}
+                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all"
+                    placeholder="Ref. de pago..."
+                  />
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="payment-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Fecha *</label>
-                <input
-                  id="payment-date"
-                  type="date"
-                  {...register("payment_date", { required: true })}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-xs focus:border-brand-orange focus:ring-brand-orange sm:text-sm p-2 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
-                  aria-required="true"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="payment-method" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Método *</label>
-                <select
-                  id="payment-method"
-                  {...register("payment_method")}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-xs focus:border-brand-orange focus:ring-brand-orange sm:text-sm p-2 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
-                  aria-required="true"
+              <div className="flex justify-end gap-3 pt-6 border-t border-border/50">
+                <button
+                  type="button"
+                  onClick={() => setIsAdding(false)}
+                  className="px-6 py-2.5 text-xs font-black text-text-tertiary uppercase tracking-widest hover:text-text transition-colors"
                 >
-                  <option value="cash">Efectivo</option>
-                  <option value="transfer">Transferencia</option>
-                  <option value="card">Tarjeta</option>
-                  <option value="check">Cheque</option>
-                  <option value="other">Otro</option>
-                </select>
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-8 py-2.5 bg-brand-orange text-white text-xs font-black rounded-xl hover:bg-brand-orange/90 shadow-lg shadow-brand-orange/20 transition-all uppercase tracking-widest"
+                >
+                  Confirmar Pago
+                </button>
               </div>
-
-              <div>
-                <label htmlFor="payment-notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nota (Opcional)</label>
-                <input
-                  id="payment-notes"
-                  type="text"
-                  {...register("notes")}
-                  className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-xs focus:border-brand-orange focus:ring-brand-orange sm:text-sm p-2 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
-                  placeholder="Referencia, folio, etc."
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-xs hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-hidden"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="inline-flex justify-center rounded-md border border-transparent bg-brand-orange px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-brand-orange focus:ring-offset-2"
-              >
-                Guardar Pago
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         )}
       </div>
 
       <ConfirmDialog
         open={confirmOpen}
         title="Eliminar Pago"
-        description="¿Estás seguro de que deseas eliminar este pago? Esto afectará el saldo pendiente."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        description="¿Estás seguro de que deseas eliminar este registro de pago? El saldo pendiente se actualizará automáticamente."
+        confirmText="Eliminar permanentemente"
+        cancelText="Conservar"
         onConfirm={handleDelete}
         onCancel={() => setConfirmOpen(false)}
       />

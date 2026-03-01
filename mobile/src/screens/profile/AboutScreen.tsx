@@ -65,10 +65,10 @@ export default function AboutScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.infoRow}
-            onPress={() => openURL("mailto:hola@creapolis.dev")}
+            onPress={() => openURL("mailto:creapolis.mx@gmail.com")}
           >
             <Mail color={palette.primary} size={20} />
-            <Text style={styles.linkText}>hola@creapolis.dev</Text>
+            <Text style={styles.linkText}>creapolis.mx@gmail.com</Text>
           </TouchableOpacity>
         </View>
 
@@ -77,7 +77,7 @@ export default function AboutScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.infoRow}
-            onPress={() => openURL("https://www.creapolis.dev/terms")}
+            onPress={() => navigation.navigate("Terms")}
           >
             <FileText color={palette.primary} size={20} />
             <Text style={styles.linkText}>T&#xE9;rminos y Condiciones</Text>
@@ -85,7 +85,7 @@ export default function AboutScreen({ navigation }: Props) {
 
           <TouchableOpacity
             style={styles.infoRow}
-            onPress={() => openURL("https://www.creapolis.dev/privacy")}
+            onPress={() => navigation.navigate("PrivacyPolicy")}
           >
             <Shield color={palette.primary} size={20} />
             <Text style={styles.linkText}>Pol&#xED;tica de Privacidad</Text>

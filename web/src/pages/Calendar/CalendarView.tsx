@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
+import "react-day-picker/style.css";
 import { eventService } from "../../services/eventService";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -134,16 +134,16 @@ export const CalendarView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-text">
             Eventos
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Gestiona tu agenda y el histórico de reservas.
           </p>
         </div>
         <div className="flex items-center space-x-3">
           <div
-            className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700"
+            className="flex bg-surface-alt p-1 rounded-xl border border-border"
             role="group"
             aria-label="Modo de visualización de eventos"
           >
@@ -153,10 +153,10 @@ export const CalendarView: React.FC = () => {
               aria-pressed={viewMode === "calendar"}
               aria-label="Ver eventos en calendario"
               className={clsx(
-                "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                "flex items-center px-3 py-1.5 text-sm font-medium rounded-xl transition-all",
                 viewMode === "calendar"
-                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
+                  ? "bg-card text-text shadow-sm"
+                  : "text-text-secondary hover:text-text",
               )}
             >
               <CalendarDays className="h-4 w-4 mr-2" aria-hidden="true" />
@@ -168,10 +168,10 @@ export const CalendarView: React.FC = () => {
               aria-pressed={viewMode === "list"}
               aria-label="Ver eventos en lista"
               className={clsx(
-                "flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                "flex items-center px-3 py-1.5 text-sm font-medium rounded-xl transition-all",
                 viewMode === "list"
-                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white",
+                  ? "bg-card text-text shadow-sm"
+                  : "text-text-secondary hover:text-text",
               )}
             >
               <ListIcon className="h-4 w-4 mr-2" aria-hidden="true" />
@@ -180,7 +180,7 @@ export const CalendarView: React.FC = () => {
           </div>
           <Link
             to={`/events/new${viewMode === "calendar" && selectedDate ? `?date=${format(selectedDate, "yyyy-MM-dd")}` : ""}`}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
             aria-label="Crear nuevo evento"
           >
             <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
@@ -192,12 +192,12 @@ export const CalendarView: React.FC = () => {
       {viewMode === "calendar" ? (
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 fade-in">
           {/* Calendar Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-xs rounded-3xl p-4 sm:p-8 xl:col-span-3 border border-gray-100 dark:border-gray-700 transition-colors">
+          <div className="bg-card shadow-sm rounded-3xl p-4 sm:p-8 xl:col-span-3 border border-border transition-colors">
             <style>{`
-            .rdp {
+            .rdp-root {
                 --rdp-cell-size: 45px;
                 --rdp-accent-color: #FF6B35;
-                --rdp-background-color: rgba(255, 107, 53, 0.1);
+                --rdp-accent-background-color: rgba(255, 107, 53, 0.1);
                 margin: 0;
                 width: 100%;
             }
@@ -213,17 +213,31 @@ export const CalendarView: React.FC = () => {
                 width: 100%;
                 max-width: 100%;
             }
-            .rdp-day_selected:not([disabled]) { 
-                background-color: var(--rdp-accent-color);
+            .rdp-selected .rdp-day_button:not([disabled]) { 
+                background-color: var(--rdp-accent-color) !important;
                 font-weight: bold;
-                color: white;
+                color: white !important;
+                border: 2px solid var(--rdp-accent-color) !important;
+                border-radius: 50% !important;
             }
-            .rdp-day_selected:hover:not([disabled]) { 
-                background-color: #e55a2b; 
+            .rdp-selected .rdp-day_button:hover:not([disabled]) { 
+                background-color: #e55a2b !important; 
+                border-color: #e55a2b !important;
             }
-            .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
-                background-color: var(--rdp-background-color);
-                color: var(--rdp-accent-color);
+            .rdp-today:not(.rdp-selected) .rdp-day_button {
+                font-weight: bold;
+                color: var(--rdp-accent-color) !important;
+                background-color: transparent !important;
+                border: 2px solid var(--rdp-accent-color) !important;
+                border-radius: 50% !important;
+            }
+            .rdp-day_button:hover:not([disabled]):not(.rdp-selected .rdp-day_button) {
+                background-color: var(--rdp-background-color) !important;
+                color: var(--rdp-accent-color) !important;
+            }
+            .rdp-day_button:focus-visible:not([disabled]) {
+                outline: none !important;
+                box-shadow: 0 0 0 2px var(--rdp-background-color), 0 0 0 4px var(--rdp-accent-color) !important;
             }
             .rdp-head_cell {
                 text-transform: uppercase;
@@ -267,9 +281,9 @@ export const CalendarView: React.FC = () => {
           </div>
 
           {/* Events List Card */}
-          <div className="bg-white dark:bg-gray-800 shadow-xs rounded-3xl p-6 xl:col-span-2 border border-gray-100 dark:border-gray-700 flex flex-col transition-colors">
+          <div className="bg-card shadow-sm rounded-3xl p-6 xl:col-span-2 border border-border flex flex-col transition-colors">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h2 className="text-lg font-bold text-text">
                 Eventos del{" "}
                 {selectedDate
                   ? format(selectedDate, "d 'de' MMMM", { locale: es })
@@ -290,15 +304,15 @@ export const CalendarView: React.FC = () => {
                   role="status"
                 >
                   <div
-                    className="h-16 w-16 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mb-4"
+                    className="h-16 w-16 bg-surface-alt rounded-full flex items-center justify-center mb-4"
                     aria-hidden="true"
                   >
                     <Calendar
-                      className="h-8 w-8 text-gray-300 dark:text-gray-500"
+                      className="h-8 w-8 text-text-tertiary"
                       aria-hidden="true"
                     />
                   </div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                  <p className="text-text-secondary text-sm font-medium">
                     No hay eventos para este día.
                   </p>
                   <Link
@@ -316,7 +330,7 @@ export const CalendarView: React.FC = () => {
                       key={event.id}
                       role="button"
                       tabIndex={0}
-                      className="group border border-gray-100 dark:border-gray-700 rounded-2xl p-4 hover:border-brand-orange dark:hover:border-brand-orange bg-gray-50/50 dark:bg-gray-900/30 hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-all shadow-xs hover:shadow-md flex flex-col h-full"
+                      className="group border border-border rounded-2xl p-4 hover:border-brand-orange bg-surface hover:bg-surface-alt cursor-pointer transition-all shadow-sm flex flex-col h-full"
                       onClick={() => navigate(`/events/${event.id}/summary`)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -328,10 +342,10 @@ export const CalendarView: React.FC = () => {
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="min-w-0 flex-1 mr-2">
-                          <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-brand-orange transition-colors truncate">
+                          <h3 className="text-sm font-bold text-text group-hover:text-brand-orange transition-colors truncate">
                             {event.client?.name}
                           </h3>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-tight">
+                          <p className="text-[10px] text-text-secondary font-medium uppercase tracking-tight">
                             {event.service_type}
                           </p>
                         </div>
@@ -358,7 +372,7 @@ export const CalendarView: React.FC = () => {
 
                       <div className="space-y-2.5 mt-auto">
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="flex items-center text-[11px] text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center text-[11px] text-text-secondary">
                             <Clock
                               className="h-3.5 w-3.5 mr-1.5 text-brand-orange opacity-70"
                               aria-hidden="true"
@@ -369,7 +383,7 @@ export const CalendarView: React.FC = () => {
                               {event.end_time || ""}
                             </span>
                           </div>
-                          <div className="flex items-center text-[11px] text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center text-[11px] text-text-secondary">
                             <Users
                               className="h-3.5 w-3.5 mr-1.5 text-brand-orange opacity-70"
                               aria-hidden="true"
@@ -379,7 +393,7 @@ export const CalendarView: React.FC = () => {
                         </div>
 
                         {event.location && (
-                          <div className="flex items-start text-[11px] text-gray-600 dark:text-gray-400">
+                          <div className="flex items-start text-[11px] text-text-secondary">
                             <MapPin
                               className="h-3.5 w-3.5 mr-1.5 mt-0.5 text-brand-orange opacity-70 shrink-0"
                               aria-hidden="true"
@@ -390,15 +404,15 @@ export const CalendarView: React.FC = () => {
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700/50">
-                          <div className="flex items-center text-[11px] text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                          <div className="flex items-center text-[11px] text-text-secondary">
                             <Phone
                               className="h-3 w-3 mr-1"
                               aria-hidden="true"
                             />
                             <span>{event.client?.phone || "Sin tel."}</span>
                           </div>
-                          <div className="flex items-center text-xs font-bold text-gray-900 dark:text-gray-100">
+                          <div className="flex items-center text-xs font-bold text-text">
                             <DollarIcon
                               className="h-3 w-3 mr-0.5 text-green-600"
                               aria-hidden="true"
@@ -429,7 +443,7 @@ export const CalendarView: React.FC = () => {
               <input
                 id="event-search"
                 type="search"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-hidden focus:ring-brand-orange sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-card text-text placeholder-text-tertiary focus:outline-hidden focus:ring-brand-orange sm:text-sm"
                 placeholder="Buscar por cliente o servicio..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -445,7 +459,7 @@ export const CalendarView: React.FC = () => {
               </div>
               <select
                 id="status-filter"
-                className="block w-full pl-10 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="block w-full pl-10 pr-10 py-2 text-base border-border focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm rounded-md bg-card text-text"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 aria-label="Filtrar eventos por estado"
@@ -459,7 +473,7 @@ export const CalendarView: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow-sm overflow-hidden sm:rounded-lg">
+          <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
             {loading ? (
               <div
                 className="p-12 text-center text-gray-500 flex flex-col items-center"
@@ -492,7 +506,7 @@ export const CalendarView: React.FC = () => {
                     Lista de eventos con {totalItems} resultados. Mostrando
                     página {currentPage} de {totalPages}.
                   </caption>
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                  <thead className="bg-surface-alt">
                     <tr>
                       <th
                         scope="col"
@@ -520,17 +534,17 @@ export const CalendarView: React.FC = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
                       >
                         Total
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-card divide-y divide-border">
                     {paginatedEvents.map((event) => (
                       <tr
                         key={event.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        className="hover:bg-surface-alt cursor-pointer transition-colors"
                         onClick={() => navigate(`/events/${event.id}/summary`)}
                         role="button"
                         tabIndex={0}
@@ -543,32 +557,32 @@ export const CalendarView: React.FC = () => {
                         aria-label={`Ver detalles del evento de ${event.client?.name} el ${format(parseISO(event.event_date), "d MMM yyyy", { locale: es })}`}
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <div className="text-sm font-semibold text-text">
                             {format(parseISO(event.event_date), "d MMM yyyy", {
                               locale: es,
                             })}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm font-bold text-gray-900 dark:text-white">
+                          <div className="text-sm font-bold text-text">
                             {event.client?.name}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                          <div className="text-sm text-text-secondary capitalize">
                             {event.service_type} • {event.num_people} pax
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white flex items-center">
+                          <div className="text-sm text-text flex items-center">
                             <Clock
-                              className="h-3 w-3 mr-1 text-gray-400"
+                              className="h-3 w-3 mr-1 text-text-secondary"
                               aria-hidden="true"
                             />
                             {event.start_time || "--"} a{" "}
                             {event.end_time || "--"}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px] flex items-center mt-1">
+                          <div className="text-sm text-text-secondary truncate max-w-[200px] flex items-center mt-1">
                             <MapPin
-                              className="h-3 w-3 mr-1 text-gray-400 shrink-0"
+                              className="h-3 w-3 mr-1 text-text-secondary shrink-0"
                               aria-hidden="true"
                             />
                             {event.location || "Sin locación"}
@@ -595,7 +609,7 @@ export const CalendarView: React.FC = () => {
                                   : "Cotizado"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">
                           $
                           {event.total_amount?.toLocaleString("es-MX", {
                             minimumFractionDigits: 0,

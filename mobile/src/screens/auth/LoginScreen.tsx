@@ -13,7 +13,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Mail, Lock } from "lucide-react-native";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react-native";
 import { AuthStackParamList } from "../../types/navigation";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTheme } from "../../hooks/useTheme";
@@ -35,6 +35,7 @@ export default function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { isDark } = useTheme();
   const palette = isDark ? colors.dark : colors.light;
   const styles = getStyles(palette);
@@ -109,10 +110,17 @@ export default function LoginScreen({ navigation }: Props) {
               onChangeText={onChange}
               onBlur={onBlur}
               error={errors.password?.message}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               textContentType="password"
               autoComplete="password"
               icon={<Lock color={palette.textTertiary} size={20} />}
+              rightElement={
+                <TouchableOpacity onPress={() => setShowPassword(v => !v)} hitSlop={8}>
+                  {showPassword
+                    ? <EyeOff color={palette.textTertiary} size={18} />
+                    : <Eye color={palette.textTertiary} size={18} />}
+                </TouchableOpacity>
+              }
             />
           )}
         />

@@ -370,7 +370,7 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: spacing.xl,
+    bottom: 96,
     right: spacing.lg,
     width: 56,
     height: 56,

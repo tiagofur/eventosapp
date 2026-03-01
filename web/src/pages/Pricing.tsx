@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Zap, CheckCircle, ArrowRight, Star } from 'lucide-react';
 import { subscriptionService } from '../services/subscriptionService';
 import { useAuth } from '../contexts/AuthContext';
+import { logError } from '../lib/errorHandler';
 
 export const Pricing: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ export const Pricing: React.FC = () => {
         window.location.href = url;
       }
     } catch (err: unknown) {
-      console.error('Failed to create checkout session:', err);
+      logError('Failed to create checkout session', err);
       setError('Hubo un error al iniciar el proceso de pago. Por favor intenta nuevamente.');
     } finally {
       setLoading(false);
@@ -32,7 +33,7 @@ export const Pricing: React.FC = () => {
       await checkAuth(); // Refrescar contexto para obtener el nuevo plan
       alert('Plan actualizado a Premium (Modo Debug)');
     } catch (err: unknown) {
-      console.error('Failed to debug upgrade:', err);
+      logError('Failed to debug upgrade', err);
       setError('Error al actualizar plan en modo debug.');
     } finally {
       setLoading(false);

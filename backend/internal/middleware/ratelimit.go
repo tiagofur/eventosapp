@@ -13,6 +13,11 @@ type visitor struct {
 	windowStart time.Time
 }
 
+var RateLimitCleanupInterval = 5 * time.Minute
+
+// RateLimitStopFunc holds the function to stop the background loop of the latest created RateLimit.
+var RateLimitStopFunc func()
+
 // RateLimit creates a middleware that limits requests per IP address.
 // maxRequests is the maximum number of requests allowed within the given window duration.
 // The cleanup goroutine stops when the returned stop function is called.
@@ -21,9 +26,11 @@ func RateLimit(maxRequests int, window time.Duration) func(http.Handler) http.Ha
 	visitors := make(map[string]*visitor)
 	done := make(chan struct{})
 
-	// Background cleanup of stale entries every 5 minutes
+	RateLimitStopFunc = func() { close(done) }
+
+	// Background cleanup of stale entries
 	go func() {
-		ticker := time.NewTicker(5 * time.Minute)
+		ticker := time.NewTicker(RateLimitCleanupInterval)
 		defer ticker.Stop()
 		for {
 			select {
