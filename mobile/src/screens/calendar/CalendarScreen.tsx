@@ -22,7 +22,7 @@ import {
   parseISO,
 } from "date-fns";
 import { es } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from "lucide-react-native";
 import { CalendarStackParamList } from "../../types/navigation";
 import { Event } from "../../types/entities";
 import { eventService } from "../../services/eventService";
@@ -180,6 +180,21 @@ export default function CalendarScreen({ navigation }: Props) {
             <Text style={styles.emptyDayText}>
               No hay eventos programados
             </Text>
+            {selectedDate && (
+              <TouchableOpacity
+                style={styles.createEventButton}
+                activeOpacity={0.7}
+                onPress={() =>
+                  (navigation as any).navigate("HomeTab", {
+                    screen: "EventForm",
+                    params: { eventDate: format(selectedDate, "yyyy-MM-dd") },
+                  })
+                }
+              >
+                <Plus color={colors.light.textInverse} size={16} />
+                <Text style={styles.createEventText}>Crear Evento</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <ScrollView
@@ -334,6 +349,21 @@ const styles = StyleSheet.create({
   emptyDayText: {
     ...typography.body,
     color: colors.light.textSecondary,
+  },
+  createEventButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    backgroundColor: colors.light.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.borderRadius.full,
+    marginTop: spacing.sm,
+  },
+  createEventText: {
+    ...typography.subheadline,
+    color: colors.light.textInverse,
+    fontWeight: "600",
   },
   eventCard: {
     flexDirection: "row",

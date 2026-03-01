@@ -14,14 +14,14 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Save, Package } from "lucide-react-native";
+import { Save, Package, ChevronDown, Check } from "lucide-react-native";
 import { InventoryStackParamList } from "../../types/navigation";
 import { InventoryItem } from "../../types/entities";
 import { inventoryService } from "../../services/inventoryService";
 import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../contexts/AuthContext";
 import { logError } from "../../lib/errorHandler";
-import { LoadingSpinner, FormInput } from "../../components/shared";
+import { LoadingSpinner, FormInput, AppBottomSheet } from "../../components/shared";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
@@ -37,6 +37,12 @@ const inventorySchema = z.object({
 
 type InventoryFormData = z.infer<typeof inventorySchema>;
 
+const UNIT_GROUPS = [
+  { label: "Peso", units: ["kg", "g", "oz", "lb"] },
+  { label: "Volumen", units: ["L", "ml", "galón"] },
+  { label: "Conteo", units: ["piezas", "unidades", "docenas", "porciones"] },
+];
+
 type Props = NativeStackScreenProps<InventoryStackParamList, "InventoryForm">;
 
 export default function InventoryFormScreen({ navigation, route }: Props) {
@@ -48,11 +54,14 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [itemType, setItemType] = useState<"ingredient" | "equipment">("ingredient");
+  const [showUnitPicker, setShowUnitPicker] = useState(false);
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<InventoryFormData>({
     resolver: zodResolver(inventorySchema),
@@ -189,20 +198,30 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
             </View>
           </View>
 
-          <Controller
-            control={control}
-            name="unit"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormInput
-                label="Unidad"
-                placeholder="Ej: kg, litros, piezas"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.unit?.message}
-              />
+          <View>
+            <Text style={styles.inputLabel}>Unidad</Text>
+            <TouchableOpacity
+              style={[
+                styles.unitPickerButton,
+                errors.unit && styles.unitPickerButtonError,
+              ]}
+              onPress={() => setShowUnitPicker(true)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.unitPickerText,
+                  !watch("unit") && styles.unitPickerPlaceholder,
+                ]}
+              >
+                {watch("unit") || "Seleccionar unidad..."}
+              </Text>
+              <ChevronDown color={colors.light.textTertiary} size={18} />
+            </TouchableOpacity>
+            {errors.unit && (
+              <Text style={styles.unitPickerError}>{errors.unit.message}</Text>
             )}
-          />
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -290,6 +309,46 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
           )}
         </TouchableOpacity>
       </View>
+      <AppBottomSheet
+        visible={showUnitPicker}
+        onClose={() => setShowUnitPicker(false)}
+        snapPoints={['50%']}
+        scrollable
+      >
+        <View style={styles.unitSheetHeader}>
+          <Text style={styles.unitSheetTitle}>Seleccionar Unidad</Text>
+        </View>
+        {UNIT_GROUPS.map((group) => (
+          <View key={group.label}>
+            <Text style={styles.unitGroupLabel}>{group.label}</Text>
+            <View style={styles.unitChipsRow}>
+              {group.units.map((unit) => (
+                <TouchableOpacity
+                  key={unit}
+                  style={[
+                    styles.unitChip,
+                    watch("unit") === unit && styles.unitChipActive,
+                  ]}
+                  onPress={() => {
+                    setValue("unit", unit, { shouldValidate: true });
+                    setShowUnitPicker(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.unitChipText,
+                      watch("unit") === unit && styles.unitChipTextActive,
+                    ]}
+                  >
+                    {unit}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
+      </AppBottomSheet>
     </SafeAreaView>
   );
 }
@@ -371,5 +430,75 @@ const styles = StyleSheet.create({
   saveButtonText: {
     ...typography.button,
     color: colors.light.textInverse,
+  },
+  unitPickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.light.surface,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  unitPickerButtonError: {
+    borderColor: colors.light.error,
+  },
+  unitPickerText: {
+    ...typography.body,
+    color: colors.light.text,
+  },
+  unitPickerPlaceholder: {
+    color: colors.light.textMuted,
+  },
+  unitPickerError: {
+    ...typography.caption,
+    color: colors.light.error,
+    marginTop: 2,
+  },
+  unitSheetHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  unitSheetTitle: {
+    ...typography.h3,
+    color: colors.light.text,
+  },
+  unitGroupLabel: {
+    ...typography.caption,
+    color: colors.light.textTertiary,
+    fontWeight: "600",
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  unitChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  unitChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.borderRadius.md,
+    backgroundColor: colors.light.surface,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  unitChipActive: {
+    backgroundColor: colors.light.primary,
+    borderColor: colors.light.primary,
+  },
+  unitChipText: {
+    ...typography.body,
+    color: colors.light.textSecondary,
+  },
+  unitChipTextActive: {
+    color: colors.light.textInverse,
+    fontWeight: "600",
   },
 });

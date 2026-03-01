@@ -82,7 +82,7 @@ type SelectedExtra = {
 };
 
 export default function EventFormScreen({ navigation, route }: Props) {
-  const { id, clientId } = route.params;
+  const { id, clientId, eventDate } = route.params;
   const isEditing = !!id;
   const addToast = useToast((s) => s.addToast);
   const { user } = useAuth();
@@ -118,7 +118,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
 
   const [formData, setFormData] = useState({
     client_id: clientId || "",
-    event_date: new Date().toISOString().split("T")[0],
+    event_date: eventDate || new Date().toISOString().split("T")[0],
     start_time: "",
     end_time: "",
     service_type: "",
@@ -397,37 +397,51 @@ export default function EventFormScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <View style={styles.stepIndicator}>
-        {STEPS.map((s) => (
-          <View key={s.id} style={styles.stepItem}>
-            <View
-              style={[
-                styles.stepCircle,
-                step === s.id && styles.stepCircleActive,
-                step > s.id && styles.stepCircleComplete,
-              ]}
-            >
-              {step > s.id ? (
-                <Check color={colors.light.textInverse} size={14} />
-              ) : (
-                <Text
+        {STEPS.map((s, index) => (
+          <React.Fragment key={s.id}>
+            {index > 0 && (
+              <View style={styles.stepLineWrapper}>
+                <View
                   style={[
-                    styles.stepNumber,
-                    (step === s.id || step > s.id) && styles.stepNumberActive,
+                    styles.stepLine,
+                    step > s.id - 1
+                      ? styles.stepLineComplete
+                      : styles.stepLinePending,
                   ]}
-                >
-                  {s.id}
-                </Text>
-              )}
+                />
+              </View>
+            )}
+            <View style={styles.stepItem}>
+              <View
+                style={[
+                  styles.stepCircle,
+                  step === s.id && styles.stepCircleActive,
+                  step > s.id && styles.stepCircleComplete,
+                ]}
+              >
+                {step > s.id ? (
+                  <Check color={colors.light.textInverse} size={14} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.stepNumber,
+                      (step === s.id || step > s.id) && styles.stepNumberActive,
+                    ]}
+                  >
+                    {s.id}
+                  </Text>
+                )}
+              </View>
+              <Text
+                style={[
+                  styles.stepTitle,
+                  step === s.id && styles.stepTitleActive,
+                ]}
+              >
+                {s.title}
+              </Text>
             </View>
-            <Text
-              style={[
-                styles.stepTitle,
-                step === s.id && styles.stepTitleActive,
-              ]}
-            >
-              {s.title}
-            </Text>
-          </View>
+          </React.Fragment>
         ))}
       </View>
 
@@ -886,7 +900,7 @@ const styles = StyleSheet.create({
   },
   stepIndicator: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "flex-start",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     backgroundColor: colors.light.card,
@@ -895,7 +909,21 @@ const styles = StyleSheet.create({
   },
   stepItem: {
     alignItems: "center",
+  },
+  stepLineWrapper: {
     flex: 1,
+    justifyContent: "center",
+    paddingTop: 14,
+  },
+  stepLine: {
+    height: 2,
+    borderRadius: 1,
+  },
+  stepLineComplete: {
+    backgroundColor: colors.light.success,
+  },
+  stepLinePending: {
+    backgroundColor: colors.light.border,
   },
   stepCircle: {
     width: 28,

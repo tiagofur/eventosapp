@@ -65,9 +65,7 @@ export default function DashboardScreen({ navigation }: Props) {
   const [vatOutstandingThisMonth, setVatOutstandingThisMonth] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
 
-  const [loadingMonth, setLoadingMonth] = useState(true);
-  const [loadingUpcoming, setLoadingUpcoming] = useState(true);
-  const [loadingInventory, setLoadingInventory] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadDashboardData = useCallback(async () => {
@@ -75,88 +73,79 @@ export default function DashboardScreen({ navigation }: Props) {
     const start = format(startOfMonth(today), "yyyy-MM-dd");
     const end = format(endOfMonth(today), "yyyy-MM-dd");
 
-    setLoadingMonth(true);
-    setLoadingUpcoming(true);
-    setLoadingInventory(true);
+    setLoading(true);
 
-    const clients = await clientService.getAll();
-    const clientMap: Record<string, Client> = {};
-    (clients || []).forEach((c) => {
-      clientMap[c.id] = c;
-    });
+    try {
+      const [clients, monthEvents, upcoming, inventory] = await Promise.all([
+        clientService.getAll().catch((err) => { logError("Error loading clients", err); return []; }),
+        eventService.getByDateRange(start, end).catch((err) => { logError("Error loading month events", err); return []; }),
+        eventService.getUpcoming(5).catch((err) => { logError("Error loading upcoming events", err); return []; }),
+        inventoryService.getAll().catch((err) => { logError("Error loading inventory", err); return []; }),
+      ]);
 
-    const addClientToEvents = (events: Event[]) => {
-      return (events || []).map((e) => ({
-        ...e,
-        clients: e.client_id ? { name: clientMap[e.client_id]?.name || "Cliente" } : null,
-      }));
-    };
+      const clientMap: Record<string, Client> = {};
+      (clients || []).forEach((c) => { clientMap[c.id] = c; });
 
-    eventService
-      .getByDateRange(start, end)
-      .then(async (data) => {
-        const eventsWithClients = addClientToEvents(data || []);
-        setEventsThisMonthList(eventsWithClients);
+      const addClientToEvents = (events: Event[]) =>
+        (events || []).map((e) => ({
+          ...e,
+          clients: e.client_id ? { name: clientMap[e.client_id]?.name || "Cliente" } : null,
+        }));
 
-        const realized = eventsWithClients.filter(
-          (e) => e.status === "confirmed" || e.status === "completed",
-        );
-        const netSales = realized.reduce(
-          (sum, event) => sum + getEventNetSales(event),
-          0,
-        );
-        setNetSalesThisMonth(netSales);
+      // Month events + financials
+      const eventsWithClients = addClientToEvents(monthEvents || []);
+      setEventsThisMonthList(eventsWithClients);
 
-        const eventIds = realized.map((e) => e.id);
-        const payments = await paymentService.getByEventIds(eventIds);
-        const paidByEvent: Record<string, number> = {};
-        payments.forEach((p: any) => {
-          paidByEvent[p.event_id] =
-            (paidByEvent[p.event_id] || 0) + Number(p.amount || 0);
-        });
+      const realized = eventsWithClients.filter(
+        (e) => e.status === "confirmed" || e.status === "completed",
+      );
+      const netSales = realized.reduce(
+        (sum, event) => sum + getEventNetSales(event),
+        0,
+      );
+      setNetSalesThisMonth(netSales);
 
-        const paymentsInMonth = await paymentService.getByPaymentDateRange(
-          start,
-          end,
-        );
-        const cashInMonth = (paymentsInMonth || []).reduce(
-          (sum: number, p: any) => sum + Number(p.amount || 0),
-          0,
-        );
-        setCashCollectedThisMonth(cashInMonth);
+      const eventIds = realized.map((e) => e.id);
+      const [payments, paymentsInMonth] = await Promise.all([
+        paymentService.getByEventIds(eventIds).catch(() => []),
+        paymentService.getByPaymentDateRange(start, end).catch(() => []),
+      ]);
 
-        const vatOutstanding = realized.reduce((sum, event) => {
-          const totalCharged = getEventTotalCharged(event);
-          const paid = paidByEvent[event.id] || 0;
-          const ratio = totalCharged > 0 ? Math.min(paid / totalCharged, 1) : 0;
-          const vat = getEventTaxAmount(event);
-          return sum + (vat - vat * ratio);
-        }, 0);
-        setVatOutstandingThisMonth(vatOutstanding);
-      })
-      .catch((err) => logError("Error loading month events", err))
-      .finally(() => setLoadingMonth(false));
+      const paidByEvent: Record<string, number> = {};
+      payments.forEach((p: any) => {
+        paidByEvent[p.event_id] = (paidByEvent[p.event_id] || 0) + Number(p.amount || 0);
+      });
 
-    eventService
-      .getUpcoming(5)
-      .then((data) => {
-        const eventsWithClients = addClientToEvents(data || []);
-        setUpcomingEvents(eventsWithClients);
-      })
-      .catch((err) => logError("Error loading upcoming events", err))
-      .finally(() => setLoadingUpcoming(false));
+      const cashInMonth = (paymentsInMonth || []).reduce(
+        (sum: number, p: any) => sum + Number(p.amount || 0),
+        0,
+      );
+      setCashCollectedThisMonth(cashInMonth);
 
-    inventoryService
-      .getAll()
-      .then((data) => {
-        const items = (data || []).filter(
-          (item) => item.current_stock <= item.minimum_stock,
-        );
-        setLowStockCount(items.length);
-        setLowStockItems(items.slice(0, 5));
-      })
-      .catch((err) => logError("Error loading inventory", err))
-      .finally(() => setLoadingInventory(false));
+      const vatOutstanding = realized.reduce((sum, event) => {
+        const totalCharged = getEventTotalCharged(event);
+        const paid = paidByEvent[event.id] || 0;
+        const ratio = totalCharged > 0 ? Math.min(paid / totalCharged, 1) : 0;
+        const vat = getEventTaxAmount(event);
+        return sum + (vat - vat * ratio);
+      }, 0);
+      setVatOutstandingThisMonth(vatOutstanding);
+
+      // Upcoming events
+      const upcomingWithClients = addClientToEvents(upcoming || []);
+      setUpcomingEvents(upcomingWithClients);
+
+      // Low stock
+      const lowItems = (inventory || []).filter(
+        (item) => item.current_stock <= item.minimum_stock,
+      );
+      setLowStockCount(lowItems.length);
+      setLowStockItems(lowItems.slice(0, 5));
+    } catch (err) {
+      logError("Error loading dashboard", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -270,7 +259,7 @@ export default function DashboardScreen({ navigation }: Props) {
             iconBgColor={colors.light.kpiGreenBg}
             title="Ventas netas"
             value={formatCurrency(netSalesThisMonth)}
-            loading={loadingMonth}
+            loading={loading}
             footer="Confirmados/Completados"
           />
           <KPICard
@@ -278,21 +267,21 @@ export default function DashboardScreen({ navigation }: Props) {
             iconBgColor={colors.light.kpiOrangeBg}
             title="Cobrado (mes)"
             value={formatCurrency(cashCollectedThisMonth)}
-            loading={loadingMonth}
+            loading={loading}
           />
           <KPICard
             icon={<FileCheck color={colors.light.kpiBlue} size={20} />}
             iconBgColor={colors.light.kpiBlueBg}
             title="IVA por cobrar"
             value={formatCurrency(vatOutstandingThisMonth)}
-            loading={loadingMonth}
+            loading={loading}
           />
           <KPICard
             icon={<Calendar color={colors.light.kpiOrange} size={20} />}
             iconBgColor={colors.light.kpiOrangeBg}
             title="Eventos del mes"
-            value={String(loadingMonth ? "..." : eventsThisMonthList.length)}
-            loading={loadingMonth}
+            value={String(loading ? "..." : eventsThisMonthList.length)}
+            loading={loading}
           />
           <KPICard
             icon={
@@ -304,13 +293,13 @@ export default function DashboardScreen({ navigation }: Props) {
             iconBgColor={lowStockCount > 0 ? colors.light.errorBg : colors.light.kpiGreenBg}
             title="Alertas Stock"
             value={
-              loadingInventory
+              loading
                 ? "..."
                 : lowStockCount > 0
                   ? `${lowStockCount} ítems`
                   : "Todo OK"
             }
-            loading={loadingInventory}
+            loading={loading}
             valueColor={lowStockCount > 0 ? colors.light.error : undefined}
           />
         </ScrollView>
@@ -380,7 +369,7 @@ export default function DashboardScreen({ navigation }: Props) {
             <Text style={styles.sectionTitle}>Próximos Eventos</Text>
           </View>
 
-          {loadingUpcoming ? (
+          {loading ? (
             <Text style={styles.placeholder}>Cargando...</Text>
           ) : upcomingEvents.length > 0 ? (
             upcomingEvents.map((event) => (

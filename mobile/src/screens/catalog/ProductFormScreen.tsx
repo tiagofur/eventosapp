@@ -16,7 +16,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Image } from "expo-image";
-import { ArrowLeft, Save, Plus, Trash2, Package, Camera } from "lucide-react-native";
+import { ArrowLeft, Save, Plus, Trash2, Package, Camera, ChevronDown, Check } from "lucide-react-native";
 import { ProductStackParamList } from "../../types/navigation";
 import { Product, InventoryItem, ProductIngredient } from "../../types/entities";
 import { productService } from "../../services/productService";
@@ -26,7 +26,7 @@ import { useToast } from "../../hooks/useToast";
 import { useAuth } from "../../contexts/AuthContext";
 import { useImagePicker } from "../../hooks/useImagePicker";
 import { logError } from "../../lib/errorHandler";
-import { LoadingSpinner, FormInput } from "../../components/shared";
+import { LoadingSpinner, FormInput, AppBottomSheet } from "../../components/shared";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
@@ -60,11 +60,16 @@ export default function ProductFormScreen({ navigation, route }: Props) {
     inventory?: InventoryItem;
   }[]>([]);
   const [isActive, setIsActive] = useState(true);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [customCategory, setCustomCategory] = useState("");
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -81,8 +86,19 @@ export default function ProductFormScreen({ navigation, route }: Props) {
 
   const loadData = async () => {
     try {
-      const [invItems] = await Promise.all([inventoryService.getAll()]);
+      const [invItems, allProducts] = await Promise.all([
+        inventoryService.getAll(),
+        productService.getAll(),
+      ]);
       setInventoryItems(invItems || []);
+
+      // Extract unique categories from existing products
+      const categories = [...new Set(
+        (allProducts || [])
+          .map((p) => p.category)
+          .filter((c): c is string => !!c && c.trim().length > 0)
+      )].sort();
+      setExistingCategories(categories);
 
       if (id) {
         const product = await productService.getById(id);
@@ -273,15 +289,31 @@ export default function ProductFormScreen({ navigation, route }: Props) {
           <Controller
             control={control}
             name="category"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <FormInput
-                label="Categoría"
-                placeholder="Ej: Comida, Bebida, Postre"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.category?.message}
-              />
+            render={({ field: { onChange, value } }) => (
+              <View>
+                <Text style={styles.pickerLabel}>Categoría</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pickerButton,
+                    errors.category && styles.pickerButtonError,
+                  ]}
+                  onPress={() => setShowCategoryPicker(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.pickerButtonText,
+                      !value && styles.pickerButtonPlaceholder,
+                    ]}
+                  >
+                    {value || "Seleccionar categoría..."}
+                  </Text>
+                  <ChevronDown color={colors.light.textTertiary} size={18} />
+                </TouchableOpacity>
+                {errors.category && (
+                  <Text style={styles.pickerError}>{errors.category.message}</Text>
+                )}
+              </View>
             )}
           />
 
@@ -422,6 +454,58 @@ export default function ProductFormScreen({ navigation, route }: Props) {
           )}
         </TouchableOpacity>
       </View>
+      <AppBottomSheet
+        visible={showCategoryPicker}
+        onClose={() => { setShowCategoryPicker(false); setCustomCategory(""); }}
+        snapPoints={['50%']}
+        scrollable
+      >
+        <View style={styles.categorySheetHeader}>
+          <Text style={styles.categorySheetTitle}>Seleccionar Categoría</Text>
+        </View>
+        {existingCategories.map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            style={styles.categorySheetItem}
+            onPress={() => {
+              setValue("category", cat, { shouldValidate: true });
+              setShowCategoryPicker(false);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.categorySheetItemText}>{cat}</Text>
+            {watch("category") === cat && (
+              <Check color={colors.light.primary} size={18} />
+            )}
+          </TouchableOpacity>
+        ))}
+        <View style={styles.categoryCustomRow}>
+          <TextInput
+            style={styles.categoryCustomInput}
+            placeholder="Nueva categoría..."
+            placeholderTextColor={colors.light.textMuted}
+            value={customCategory}
+            onChangeText={setCustomCategory}
+            autoCapitalize="words"
+          />
+          <TouchableOpacity
+            style={[
+              styles.categoryCustomBtn,
+              !customCategory.trim() && styles.categoryCustomBtnDisabled,
+            ]}
+            onPress={() => {
+              if (customCategory.trim()) {
+                setValue("category", customCategory.trim(), { shouldValidate: true });
+                setShowCategoryPicker(false);
+                setCustomCategory("");
+              }
+            }}
+            disabled={!customCategory.trim()}
+          >
+            <Plus color={colors.light.textInverse} size={16} />
+          </TouchableOpacity>
+        </View>
+      </AppBottomSheet>
     </SafeAreaView>
   );
 }
@@ -606,5 +690,85 @@ const styles = StyleSheet.create({
   saveButtonText: {
     ...typography.button,
     color: colors.light.textInverse,
+  },
+  pickerLabel: {
+    ...typography.caption,
+    color: colors.light.textSecondary,
+    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  pickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.light.surface,
+    borderRadius: spacing.borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.light.border,
+  },
+  pickerButtonError: {
+    borderColor: colors.light.error,
+  },
+  pickerButtonText: {
+    ...typography.body,
+    color: colors.light.text,
+  },
+  pickerButtonPlaceholder: {
+    color: colors.light.textMuted,
+  },
+  pickerError: {
+    ...typography.caption,
+    color: colors.light.error,
+    marginTop: 2,
+  },
+  categorySheetHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  categorySheetTitle: {
+    ...typography.h3,
+    color: colors.light.text,
+  },
+  categorySheetItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.light.separator,
+  },
+  categorySheetItemText: {
+    ...typography.body,
+    color: colors.light.text,
+  },
+  categoryCustomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  categoryCustomInput: {
+    flex: 1,
+    backgroundColor: colors.light.surface,
+    borderRadius: spacing.borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    ...typography.body,
+    color: colors.light.text,
+  },
+  categoryCustomBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.light.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  categoryCustomBtnDisabled: {
+    opacity: 0.4,
   },
 });

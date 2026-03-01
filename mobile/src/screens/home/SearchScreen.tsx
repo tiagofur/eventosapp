@@ -134,7 +134,7 @@ export default function SearchScreen() {
           break;
         case "product":
           (navigation as any).navigate("ProductStack", {
-            screen: "ProductForm",
+            screen: "ProductDetail",
             params: { id: item.id },
           });
           break;
