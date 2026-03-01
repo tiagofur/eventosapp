@@ -34,6 +34,5 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-secure-store",
     "expo-sharing",
     "@react-native-community/datetimepicker",
-    "react-native-purchases",
   ],
 });

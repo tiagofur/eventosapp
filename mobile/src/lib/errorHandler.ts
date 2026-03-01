@@ -1,4 +1,6 @@
-import { ErrorUtils } from "react-native";
+// ErrorUtils is a React Native global, not a stable module export
+// Access via global to safely handle Expo Go environments
+declare const global: Record<string, any>;
 
 /**
  * Safely logs errors without exposing sensitive user data
@@ -53,23 +55,30 @@ export const getErrorMessage = (error: unknown, defaultMessage: string = 'Ocurri
  * Call once from App.tsx on mount.
  */
 export const setupGlobalErrorHandlers = (): void => {
-    // Capture unhandled JS errors
-    const previousHandler = ErrorUtils.getGlobalHandler();
-    ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
-        logError(isFatal ? 'Fatal JS Error' : 'Uncaught JS Error', error);
-        // Call the previous handler so React Native's default behavior is preserved
-        if (previousHandler) {
-            previousHandler(error, isFatal);
-        }
-    });
+    const errorUtils = global.ErrorUtils;
+
+    // Capture unhandled JS errors (guard: ErrorUtils may not be ready in Expo Go)
+    if (errorUtils?.getGlobalHandler && errorUtils?.setGlobalHandler) {
+        const previousHandler = errorUtils.getGlobalHandler();
+        errorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+            logError(isFatal ? 'Fatal JS Error' : 'Uncaught JS Error', error);
+            if (previousHandler) {
+                previousHandler(error, isFatal);
+            }
+        });
+    }
 
     // Capture unhandled promise rejections
-    const rejectionTracking = require('promise/setimmediate/rejection-tracking');
-    rejectionTracking.enable({
-        allRejections: true,
-        onUnhandled: (_id: number, error: unknown) => {
-            logError('Unhandled Promise Rejection', error);
-        },
-        onHandled: () => {},
-    });
+    try {
+        const rejectionTracking = require('promise/setimmediate/rejection-tracking');
+        rejectionTracking.enable({
+            allRejections: true,
+            onUnhandled: (_id: number, error: unknown) => {
+                logError('Unhandled Promise Rejection', error);
+            },
+            onHandled: () => {},
+        });
+    } catch {
+        // rejection-tracking not available in this environment
+    }
 };

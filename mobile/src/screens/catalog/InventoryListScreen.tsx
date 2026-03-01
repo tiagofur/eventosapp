@@ -101,14 +101,6 @@ export default function InventoryListScreen({ navigation }: Props) {
     item => item.current_stock <= item.minimum_stock
   ).length;
 
-  if (loading && items.length === 0) {
-    return (
-      <SafeAreaView style={styles.container} edges={[]}>
-        <SkeletonList count={6} />
-      </SafeAreaView>
-    );
-  }
-
   const renderItem = useCallback(
     ({ item, index }: { item: InventoryItem; index: number }) => {
       const isLowStock = item.current_stock <= item.minimum_stock;
@@ -159,6 +151,14 @@ export default function InventoryListScreen({ navigation }: Props) {
     },
     [navigation],
   );
+
+  if (loading && items.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={[]}>
+        <SkeletonList count={6} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={[]}>

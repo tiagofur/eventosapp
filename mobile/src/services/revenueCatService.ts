@@ -1,11 +1,24 @@
-import { Platform } from 'react-native';
-import Purchases, {
+import { Platform, NativeModules } from 'react-native';
+import type {
     PurchasesPackage,
     CustomerInfo,
     PurchasesError,
-    PURCHASES_ERROR_CODE,
 } from 'react-native-purchases';
 import { subscriptionService } from './subscriptionService';
+
+// react-native-purchases requires native code — not available in Expo Go.
+// Check for the native module before loading the JS bridge to avoid crashes.
+let Purchases: any = null;
+let PURCHASES_ERROR_CODE: any = {};
+if (NativeModules.RNPurchases) {
+    try {
+        const pkg = require('react-native-purchases');
+        Purchases = pkg.default ?? pkg;
+        PURCHASES_ERROR_CODE = pkg.PURCHASES_ERROR_CODE ?? {};
+    } catch {
+        // Unsupported environment — fallback mode
+    }
+}
 
 const RC_API_KEY_IOS = process.env.EXPO_PUBLIC_RC_API_KEY_IOS || '';
 const RC_API_KEY_ANDROID = process.env.EXPO_PUBLIC_RC_API_KEY_ANDROID || '';
@@ -34,7 +47,7 @@ export const revenueCatService = {
     async initialize(userId: string): Promise<void> {
         const apiKey = getApiKey();
 
-        if (!apiKey) {
+        if (!apiKey || !Purchases) {
             isConfigured = false;
             return;
         }

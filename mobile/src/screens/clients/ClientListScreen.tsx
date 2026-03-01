@@ -137,14 +137,6 @@ export default function ClientListScreen({ navigation }: Props) {
       ? `$${n.toLocaleString("es-MX", { minimumFractionDigits: 0 })}`
       : "$0";
 
-  if (loading && clients.length === 0) {
-    return (
-      <SafeAreaView style={styles.container} edges={[]}>
-        <SkeletonList count={6} showAvatar />
-      </SafeAreaView>
-    );
-  }
-
   const renderClient = useCallback(
     ({ item, index }: { item: Client; index: number }) => (
       <Animated.View entering={FadeInDown.delay(Math.min(index, 10) * 50).springify()}>
@@ -195,6 +187,14 @@ export default function ClientListScreen({ navigation }: Props) {
     ),
     [navigation],
   );
+
+  if (loading && clients.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={[]}>
+        <SkeletonList count={6} showAvatar />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={[]}>

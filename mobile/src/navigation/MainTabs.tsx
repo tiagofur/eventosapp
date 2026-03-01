@@ -2,6 +2,7 @@ import React from "react";
 import { View, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MainTabParamList } from "../types/navigation";
 import HomeStack from "./HomeStack";
@@ -28,6 +29,9 @@ function EmptyScreen() {
 export default function MainTabs() {
   const { isDark } = useTheme();
   const palette = isDark ? colors.dark : colors.light;
+  const insets = useSafeAreaInsets();
+  // Tab bar height = 49 (icon+label area) + safe area bottom inset (home indicator)
+  const tabBarHeight = 49 + insets.bottom;
 
   return (
     <Tab.Navigator
@@ -42,6 +46,7 @@ export default function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: palette.tabBar.active,
         tabBarInactiveTintColor: palette.tabBar.inactive,
+        contentStyle: { paddingBottom: tabBarHeight },
         tabBarStyle: {
           position: "absolute",
           borderTopWidth: 0,

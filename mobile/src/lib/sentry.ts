@@ -1,15 +1,19 @@
-import * as Sentry from "@sentry/react-native";
+import { NativeModules } from "react-native";
 
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN || "";
 
-/**
- * Initialize Sentry for crash reporting.
- * Skips silently if no DSN is configured (e.g. local dev).
- */
-export function initSentry(): void {
-  if (!SENTRY_DSN) {
-    return;
+// Sentry crashes in Expo Go — only load in production standalone builds
+let Sentry: any = null;
+if (!__DEV__ && SENTRY_DSN && NativeModules.RNSentry) {
+  try {
+    Sentry = require("@sentry/react-native");
+  } catch {
+    // no-op
   }
+}
+
+export function initSentry(): void {
+  if (!SENTRY_DSN || !Sentry) return;
 
   Sentry.init({
     dsn: SENTRY_DSN,
@@ -19,15 +23,11 @@ export function initSentry(): void {
   });
 }
 
-/**
- * Capture an exception to Sentry with optional context.
- * No-ops if Sentry is not initialized.
- */
 export function captureException(error: unknown, context?: string): void {
-  if (!SENTRY_DSN) return;
+  if (!SENTRY_DSN || !Sentry) return;
 
   if (context) {
-    Sentry.withScope((scope) => {
+    Sentry.withScope((scope: any) => {
       scope.setTag("context", context);
       Sentry.captureException(error);
     });
@@ -36,8 +36,7 @@ export function captureException(error: unknown, context?: string): void {
   }
 }
 
-/**
- * Wrap the root App component with Sentry's error boundary.
- * Returns the component as-is if no DSN is configured.
- */
-export const wrapWithSentry = SENTRY_DSN ? Sentry.wrap : <T,>(component: T) => component;
+export const wrapWithSentry = (component: any) => {
+  if (SENTRY_DSN && Sentry) return Sentry.wrap(component);
+  return component;
+};
