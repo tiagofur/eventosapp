@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,7 @@ import { z } from "zod";
 import { productService } from "../../services/productService";
 import { inventoryService } from "../../services/inventoryService";
 import { useAuth } from "../../contexts/AuthContext";
-import { ArrowLeft, Save, Plus, Trash2, ChefHat } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, ChefHat, Camera, X } from "lucide-react";
 import { InventoryItem } from "../../types/entities";
 import { logError } from "../../lib/errorHandler";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
@@ -26,6 +26,10 @@ export const ProductForm: React.FC = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { canCreateCatalogItem, catalogCount, catalogLimit, loading: limitsLoading } = usePlanLimits();
 
@@ -75,6 +79,10 @@ export const ProductForm: React.FC = () => {
         category: product.category || "",
         base_price: product.base_price || 0,
       });
+      if (product.image_url) {
+        setImageUrl(product.image_url);
+        setImagePreview(product.image_url);
+      }
 
       // Load recipe ingredients
       const ingredients = await productService.getIngredients(productId);
@@ -93,6 +101,38 @@ export const ProductForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("La imagen es demasiado grande (máximo 10MB).");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      setIsUploadingImage(true);
+      const result = await productService.uploadImage(file);
+      setImageUrl(result.url);
+    } catch (err) {
+      logError("Error uploading product image", err);
+      setError("Error al subir la imagen.");
+      setImagePreview(imageUrl);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setImageUrl(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleAddIngredient = () => {
@@ -139,12 +179,12 @@ export const ProductForm: React.FC = () => {
       let productId = id;
 
       if (id) {
-        await productService.update(id, { ...data, image_url: null });
+        await productService.update(id, { ...data, image_url: imageUrl || null });
       } else {
         const newProduct = await productService.create({
           ...data,
           user_id: user.id,
-          image_url: null,
+          image_url: imageUrl || null,
           is_active: true,
           recipe: null,
         });
@@ -232,6 +272,49 @@ export const ProductForm: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 gap-y-8 gap-x-6 sm:grid-cols-6">
+                <div className="sm:col-span-6 flex justify-center">
+                  <div className="relative">
+                    <div
+                      className="h-24 w-24 rounded-2xl bg-surface-alt flex items-center justify-center overflow-hidden border-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => fileInputRef.current?.click()}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+                      aria-label="Subir imagen del producto"
+                    >
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Imagen del producto" className="h-full w-full object-cover" />
+                      ) : (
+                        <Camera className="h-8 w-8 text-text-secondary" aria-hidden="true" />
+                      )}
+                      {isUploadingImage && (
+                        <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                        </div>
+                      )}
+                    </div>
+                    {imagePreview && (
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
+                        aria-label="Eliminar imagen"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageChange}
+                      aria-label="Seleccionar imagen del producto"
+                    />
+                    <p className="text-xs text-text-secondary text-center mt-2">Foto (opcional)</p>
+                  </div>
+                </div>
+
                 <div className="sm:col-span-6">
                 <label
                     htmlFor="name"

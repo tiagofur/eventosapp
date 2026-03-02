@@ -14,6 +14,7 @@ import {
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { logError } from "../lib/errorHandler";
+import { api } from "../lib/api";
 import { subscriptionService } from "../services/subscriptionService";
 import { usePlanLimits } from "../hooks/usePlanLimits";
 
@@ -76,22 +77,20 @@ export const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("El archivo es demasiado grande (máximo 2MB).");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("El archivo es demasiado grande (máximo 10MB).");
       return;
     }
 
     try {
       setIsUploadingLogo(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        await updateProfile({ logo_url: base64 });
-        setIsUploadingLogo(false);
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await api.postFormData<{ url: string }>('/uploads/image', formData);
+      await updateProfile({ logo_url: result.url });
     } catch (error) {
       logError("Error uploading logo", error);
+    } finally {
       setIsUploadingLogo(false);
     }
   };
@@ -269,7 +268,7 @@ export const Settings: React.FC = () => {
                   </div>
                   <div className="flex-1 space-y-2">
                     <h4 className="font-bold">Sube tu logo profesional</h4>
-                    <p className="text-xs text-gray-500">PNG transparente recomendado. Máx 2MB.</p>
+                    <p className="text-xs text-gray-500">PNG transparente recomendado. Máx 10MB.</p>
                     <label className="inline-block bg-white dark:bg-gray-800 text-text font-bold text-sm px-6 py-2.5 rounded-xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer">
                       Seleccionar archivo
                       <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />

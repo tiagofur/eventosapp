@@ -2,6 +2,12 @@ import { api } from '../lib/api';
 import { Product, ProductInsert, ProductUpdate } from '../types/entities';
 
 export const productService = {
+  async uploadImage(file: File): Promise<{ url: string; thumbnail_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.postFormData<{ url: string; thumbnail_url: string }>('/uploads/image', formData);
+  },
+
   async getAll(): Promise<Product[]> {
     return api.get<Product[]>('/products');
   },
