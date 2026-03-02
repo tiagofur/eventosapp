@@ -5,5 +5,5 @@ bin/
 tmp/
 uploads/
 .DS_Store
-main
-server
+/main
+/server
