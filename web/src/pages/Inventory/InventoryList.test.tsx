@@ -362,7 +362,7 @@ describe('InventoryList', () => {
 
     renderList();
 
-    expect(screen.getByText('Cargando inventario...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /cargando/i })).toBeInTheDocument();
   });
 
   it('shows search-specific empty state message when search has no results', async () => {

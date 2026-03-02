@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { eventService } from "../../services/eventService";
 import { productService } from "../../services/productService";
 import { paymentService } from "../../services/paymentService";
+import { eventPaymentService } from "../../services/eventPaymentService";
+import { api } from "../../lib/api";
 import {
   ArrowLeft,
   FileText,
@@ -16,6 +18,10 @@ import {
   MoreVertical,
   Building,
   Zap,
+  CreditCard,
+  Camera,
+  X,
+  ImagePlus,
 } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -33,7 +39,7 @@ import { Payments } from "./components/Payments";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import clsx from "clsx";
 
-type ViewMode = "summary" | "ingredients" | "contract" | "payments";
+type ViewMode = "summary" | "ingredients" | "contract" | "payments" | "photos";
 
 type EventStatus = "quoted" | "confirmed" | "completed" | "cancelled";
 
@@ -91,6 +97,10 @@ export const EventSummary: React.FC = () => {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const { addToast } = useToast();
   const { isBasicPlan } = usePlanLimits();
+  const [eventPhotos, setEventPhotos] = useState<string[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -125,6 +135,18 @@ export const EventSummary: React.FC = () => {
       setProducts(productsData || []);
       setExtras(extrasData || []);
       setPayments(paymentsData || []);
+
+      // Parse photos JSONB
+      if (eventData.photos) {
+        try {
+          const parsed = typeof eventData.photos === 'string' ? JSON.parse(eventData.photos) : eventData.photos;
+          setEventPhotos(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          setEventPhotos([]);
+        }
+      } else {
+        setEventPhotos([]);
+      }
 
       const productQuantities = new Map<string, number>();
       (productsData || []).forEach((p: any) => {
@@ -201,7 +223,62 @@ export const EventSummary: React.FC = () => {
     }
   };
 
-  // handlePayNow removed — Pay Now button is hidden (requires per-user Stripe config)
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !id) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) {
+          addToast(`${file.name} es demasiado grande (máximo 10MB)`, "error");
+          continue;
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        const result = await api.postFormData<{ url: string }>('/uploads/image', formData);
+        newUrls.push(result.url);
+      }
+
+      if (newUrls.length > 0) {
+        const updated = [...eventPhotos, ...newUrls];
+        await eventService.update(id, { photos: JSON.stringify(updated) });
+        setEventPhotos(updated);
+        addToast(`${newUrls.length} foto(s) agregada(s)`, "success");
+      }
+    } catch (err) {
+      logError("Error uploading event photos", err);
+      addToast("Error al subir fotos.", "error");
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
+  const handleRemovePhoto = async (photoUrl: string) => {
+    if (!id) return;
+    try {
+      const updated = eventPhotos.filter(p => p !== photoUrl);
+      await eventService.update(id, { photos: JSON.stringify(updated) });
+      setEventPhotos(updated);
+      addToast("Foto eliminada.", "success");
+    } catch (err) {
+      logError("Error removing photo", err);
+      addToast("Error al eliminar la foto.", "error");
+    }
+  };
+
+  const handlePayOnline = async () => {
+    if (!id) return;
+    try {
+      const { url } = await eventPaymentService.createCheckoutSession(id);
+      window.location.href = url;
+    } catch (error) {
+      logError("Error creating checkout session", error);
+      addToast("Error al iniciar el pago en línea. Verifica la configuración de Stripe.", "error");
+    }
+  };
 
   if (loading) {
     return (
@@ -316,6 +393,26 @@ export const EventSummary: React.FC = () => {
               <FileCheck className="h-4 w-4 mr-2" aria-hidden="true" />
               Contrato
             </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("photos")}
+              className={clsx(
+                "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
+                viewMode === "photos"
+                  ? "bg-white dark:bg-gray-600 text-brand-orange shadow-sm"
+                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-600/30"
+              )}
+              aria-pressed={viewMode === "photos"}
+              aria-label="Ver fotos del evento"
+            >
+              <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
+              Fotos
+              {eventPhotos.length > 0 && (
+                <span className="ml-1.5 bg-brand-orange/10 text-brand-orange text-xs font-bold rounded-full px-1.5 py-0.5">
+                  {eventPhotos.length}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -428,6 +525,26 @@ export const EventSummary: React.FC = () => {
                     <Download className="h-4 w-4 mr-3 text-text-secondary" />
                     Reporte de Pagos
                   </button>
+                )}
+                {remainingValue > 0 && currentStatus !== "cancelled" && (
+                  <>
+                    <div className="my-1 border-t border-border"></div>
+                    <p className="px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+                      Cobro en Línea
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handlePayOnline();
+                        setActionsDropdownOpen(false);
+                      }}
+                      className="w-full flex items-center px-4 py-2 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
+                      role="menuitem"
+                    >
+                      <CreditCard className="h-4 w-4 mr-3 text-text-secondary" />
+                      Pagar con Stripe
+                    </button>
+                  </>
                 )}
                 <div className="my-1 border-t border-border"></div>
                 <button
@@ -683,6 +800,41 @@ export const EventSummary: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Payment Progress Bar */}
+              {totalCharged > 0 && (
+                <div className="mt-8 pt-6 border-t border-border relative z-10">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Progreso de Cobro</span>
+                    <span className="text-sm font-bold text-text">
+                      {Math.min(100, ((totalPaid / totalCharged) * 100)).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                    <div
+                      className={clsx(
+                        "h-full rounded-full transition-all duration-500",
+                        totalPaid >= totalCharged ? "bg-emerald-500" : "bg-brand-orange"
+                      )}
+                      style={{ width: `${Math.min(100, (totalPaid / totalCharged) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-xs text-text-secondary">
+                    <span>Cobrado: ${totalPaid.toFixed(2)}</span>
+                    <span>Total: ${totalCharged.toFixed(2)}</span>
+                  </div>
+                  {remainingValue > 0 && currentStatus !== "cancelled" && (
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("payments")}
+                      className="mt-3 flex items-center gap-2 px-4 py-2 bg-brand-orange/10 text-brand-orange rounded-xl text-sm font-bold hover:bg-brand-orange/20 transition-colors"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      Registrar pago por ${remainingValue.toFixed(2)}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -890,6 +1042,96 @@ export const EventSummary: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
+
+      {viewMode === "photos" && (
+        <div className="bg-card shadow-sm rounded-3xl border border-border p-6 print:hidden">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-text">Fotos del Evento</h2>
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={isUploadingPhoto}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-sm transition-colors disabled:opacity-50"
+            >
+              {isUploadingPhoto ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Subiendo...
+                </>
+              ) : (
+                <>
+                  <ImagePlus className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Agregar Fotos
+                </>
+              )}
+            </button>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+          </div>
+
+          {eventPhotos.length === 0 ? (
+            <div className="text-center py-12">
+              <Camera className="mx-auto h-12 w-12 text-text-secondary mb-3" aria-hidden="true" />
+              <p className="text-text-secondary">No hay fotos del evento.</p>
+              <p className="text-sm text-text-secondary mt-1">
+                Agrega fotos para documentar tu trabajo.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {eventPhotos.map((url, idx) => (
+                <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden bg-surface-alt">
+                  <img
+                    src={url}
+                    alt={`Foto ${idx + 1} del evento`}
+                    className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxPhoto(url)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(url)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    aria-label={`Eliminar foto ${idx + 1}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxPhoto(null)}
+          role="dialog"
+          aria-label="Vista ampliada de foto"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxPhoto(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+            aria-label="Cerrar vista ampliada"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <img
+            src={lightboxPhoto}
+            alt="Foto ampliada del evento"
+            className="max-w-full max-h-[90vh] rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
 
       <div className="mt-12 text-center text-xs text-gray-400 dark:text-gray-400 print:mt-12">

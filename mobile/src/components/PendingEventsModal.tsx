@@ -119,7 +119,7 @@ export default function PendingEventsModal() {
               <View key={event.id} style={styles.eventCard}>
                 <View style={styles.eventInfo}>
                   <Text style={styles.eventName} numberOfLines={1}>
-                    {(event as any).client_name || event.service_type}
+                    {event.client?.name || event.service_type}
                   </Text>
                   <Text style={styles.eventDate}>
                     {format(

@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'refresh_token';
 
 interface RequestOptions extends RequestInit {
     params?: Record<string, string>;
@@ -12,6 +13,7 @@ type UnauthorizedCallback = () => void;
 
 class ApiClient {
     private onUnauthorizedCallback?: UnauthorizedCallback;
+    private refreshPromise: Promise<boolean> | null = null;
 
     /**
      * Register a callback to be invoked on 401 responses.
@@ -29,7 +31,33 @@ class ApiClient {
         };
     }
 
-    private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    private async attemptRefresh(): Promise<boolean> {
+        const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+        if (!refreshToken) return false;
+
+        try {
+            const response = await fetch(`${API_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh_token: refreshToken }),
+            });
+
+            if (!response.ok) return false;
+
+            const tokens = await response.json();
+            if (tokens.access_token) {
+                await SecureStore.setItemAsync(TOKEN_KEY, tokens.access_token);
+            }
+            if (tokens.refresh_token) {
+                await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, tokens.refresh_token);
+            }
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    private async request<T>(endpoint: string, options: RequestOptions = {}, isRetry = false): Promise<T> {
         const { params, ...init } = options;
 
         let url = `${API_URL}${endpoint}`;
@@ -48,8 +76,26 @@ class ApiClient {
             },
         });
 
-        if (response.status === 401) {
-            await SecureStore.deleteItemAsync(TOKEN_KEY);
+        if (response.status === 401 && !isRetry) {
+            // Attempt token refresh before logging out
+            if (!this.refreshPromise) {
+                this.refreshPromise = this.attemptRefresh().finally(() => {
+                    this.refreshPromise = null;
+                });
+            }
+
+            const refreshed = await this.refreshPromise;
+            if (refreshed) {
+                return this.request<T>(endpoint, options, true);
+            }
+
+            // Refresh failed — logout
+            await clearAuthTokens();
+            this.onUnauthorizedCallback?.();
+        }
+
+        if (response.status === 401 && isRetry) {
+            await clearAuthTokens();
             this.onUnauthorizedCallback?.();
         }
 
@@ -86,7 +132,7 @@ class ApiClient {
 export const api = new ApiClient();
 
 /**
- * Helper to store the auth token after login/register.
+ * Helper to store auth tokens after login/register.
  */
 export async function setAuthToken(token: unknown): Promise<void> {
     if (!token) {
@@ -105,6 +151,17 @@ export async function setAuthToken(token: unknown): Promise<void> {
     }
 }
 
+export async function setRefreshToken(token: unknown): Promise<void> {
+    if (!token) return;
+    const tokenString = String(token);
+    if (!tokenString || tokenString === 'undefined' || tokenString === 'null') return;
+    try {
+        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, tokenString);
+    } catch (error) {
+        console.error("Error saving refresh token:", error);
+    }
+}
+
 /**
  * Helper to retrieve the current auth token.
  */
@@ -117,4 +174,12 @@ export async function getAuthToken(): Promise<string | null> {
  */
 export async function clearAuthToken(): Promise<void> {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
+
+/**
+ * Helper to clear all auth tokens on logout.
+ */
+export async function clearAuthTokens(): Promise<void> {
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
 }

@@ -263,7 +263,7 @@ describe('ProductList', () => {
 
     renderList();
 
-    expect(screen.getByText('Cargando productos...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /cargando/i })).toBeInTheDocument();
   });
 
   it('shows error toast when delete fails', async () => {

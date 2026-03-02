@@ -98,7 +98,7 @@ describe('ClientForm', () => {
         city: '',
         notes: '',
         user_id: 'user-1',
-        photo_url: '',
+        photo_url: null,
       });
     });
     expect(mockNavigate).toHaveBeenCalledWith('/clients');
@@ -136,6 +136,7 @@ describe('ClientForm', () => {
         address: 'Calle 1',
         city: 'CDMX',
         notes: 'VIP',
+        photo_url: null,
       });
     });
     expect(mockNavigate).toHaveBeenCalledWith('/clients');
@@ -202,6 +203,7 @@ describe('ClientForm', () => {
         address: '',
         city: '',
         notes: '',
+        photo_url: null,
       });
     });
   });
@@ -375,7 +377,7 @@ describe('ClientForm', () => {
       expect(clientService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           email: null,
-          photo_url: '',
+          photo_url: null,
         })
       );
     });
@@ -434,7 +436,7 @@ describe('ClientForm', () => {
         city: 'CDMX',
         notes: 'Cliente VIP',
         user_id: 'user-1',
-        photo_url: '',
+        photo_url: null,
       });
     });
   });

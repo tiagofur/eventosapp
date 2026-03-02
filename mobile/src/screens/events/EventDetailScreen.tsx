@@ -31,6 +31,7 @@ import {
   ChevronDown,
   Plus,
   Check,
+  Camera,
 } from "lucide-react-native";
 import { EventsStackParamList } from "../../types/navigation";
 import { Event } from "../../types/entities";
@@ -49,7 +50,9 @@ import {
   generatePaymentReportPDF,
   generateInvoicePDF,
 } from "../../lib/pdfGenerator";
-import { LoadingSpinner, ConfirmDialog, EmptyState, AppBottomSheet } from "../../components/shared";
+import { LoadingSpinner, ConfirmDialog, EmptyState, AppBottomSheet, PhotoGallery } from "../../components/shared";
+import { uploadService } from "../../services/uploadService";
+import { useImagePicker } from "../../hooks/useImagePicker";
 import { useStoreReview } from "../../hooks/useStoreReview";
 import { useTheme } from "../../hooks/useTheme";
 import { colors } from "../../theme/colors";
@@ -102,6 +105,9 @@ export default function EventDetailScreen({ navigation, route }: Props) {
   const [paymentNotes, setPaymentNotes] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
+  const [eventPhotos, setEventPhotos] = useState<string[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const { pickFromGallery } = useImagePicker({ allowsMultiple: true });
 
   const totalPaid = useMemo(
     () => payments.reduce((sum, p) => sum + Number(p.amount || 0), 0),
@@ -132,6 +138,18 @@ export default function EventDetailScreen({ navigation, route }: Props) {
       setProducts(productsData || []);
       setExtras(extrasData || []);
       setPayments(paymentsData || []);
+
+      // Parse photos JSONB
+      if (eventData.photos) {
+        try {
+          const parsed = typeof eventData.photos === 'string' ? JSON.parse(eventData.photos) : eventData.photos;
+          setEventPhotos(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          setEventPhotos([]);
+        }
+      } else {
+        setEventPhotos([]);
+      }
     } catch (err) {
       logError("Error loading event detail", err);
       addToast("Error al cargar evento", "error");
@@ -231,6 +249,44 @@ export default function EventDetailScreen({ navigation, route }: Props) {
     setPaymentAmount(remaining > 0 ? remaining.toFixed(2) : "");
     setShowPaymentModal(true);
   }, [remaining]);
+
+  const handleAddPhotos = useCallback(async () => {
+    const result = await pickFromGallery();
+    if (!result || result.length === 0) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const newUrls: string[] = [];
+      for (const img of result) {
+        const uploadResult = await uploadService.uploadImage(img.uri);
+        newUrls.push(uploadResult.url);
+      }
+
+      if (newUrls.length > 0) {
+        const updated = [...eventPhotos, ...newUrls];
+        await eventService.update(id, { photos: JSON.stringify(updated) });
+        setEventPhotos(updated);
+        addToast(`${newUrls.length} foto(s) agregada(s)`, "success");
+      }
+    } catch (err) {
+      logError("Error uploading event photos", err);
+      addToast("Error al subir fotos", "error");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }, [id, eventPhotos, pickFromGallery, addToast]);
+
+  const handleRemovePhoto = useCallback(async (index: number) => {
+    try {
+      const updated = eventPhotos.filter((_, i) => i !== index);
+      await eventService.update(id, { photos: JSON.stringify(updated) });
+      setEventPhotos(updated);
+      addToast("Foto eliminada", "success");
+    } catch (err) {
+      logError("Error removing photo", err);
+      addToast("Error al eliminar foto", "error");
+    }
+  }, [id, eventPhotos, addToast]);
 
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
 
@@ -571,6 +627,26 @@ export default function EventDetailScreen({ navigation, route }: Props) {
             <Text style={styles.notesText}>{event.notes}</Text>
           </View>
         )}
+
+        <View style={styles.section}>
+          <View style={styles.photoSectionHeader}>
+            <Text style={styles.sectionTitle}>Fotos</Text>
+            {isUploadingPhoto && <ActivityIndicator size="small" color={palette.primary} />}
+          </View>
+          {eventPhotos.length > 0 || true ? (
+            <PhotoGallery
+              photos={eventPhotos}
+              editable
+              onAdd={handleAddPhotos}
+              onRemove={handleRemovePhoto}
+            />
+          ) : null}
+          {eventPhotos.length === 0 && !isUploadingPhoto && (
+            <Text style={styles.photosEmptyText}>
+              Toca "Agregar" para documentar tu evento con fotos.
+            </Text>
+          )}
+        </View>
 
         <View style={styles.actions}>
           <TouchableOpacity
@@ -1033,6 +1109,17 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
   notesText: {
     ...typography.body,
     color: palette.text,
+  },
+  photoSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  photosEmptyText: {
+    ...typography.bodySmall,
+    color: palette.textTertiary,
+    marginTop: spacing.xs,
   },
   actions: {
     flexDirection: "row",

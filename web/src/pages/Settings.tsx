@@ -8,6 +8,8 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Zap,
+  Info,
+  Shield,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
@@ -437,6 +439,39 @@ export const Settings: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── LEGAL LINKS ── */}
+        <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            Informacion Legal
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Conoce mas sobre EventosApp y nuestras politicas.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              to="/about"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
+            >
+              <Info className="h-4 w-4 text-brand-orange" />
+              Acerca de EventosApp
+            </Link>
+            <Link
+              to="/terms"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
+            >
+              <FileText className="h-4 w-4 text-brand-orange" />
+              Terminos y Condiciones
+            </Link>
+            <Link
+              to="/privacy"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
+            >
+              <Shield className="h-4 w-4 text-brand-orange" />
+              Politica de Privacidad
+            </Link>
+          </div>
         </div>
       </div>
     </div>

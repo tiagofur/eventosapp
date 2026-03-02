@@ -120,6 +120,17 @@ export const ClientDetails: React.FC = () => {
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
+          {client.photo_url ? (
+            <img
+              src={client.photo_url}
+              alt={client.name}
+              className="h-10 w-10 rounded-full object-cover mr-3"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-brand-green/10 dark:bg-brand-green/20 flex items-center justify-center text-brand-green dark:text-green-400 font-bold mr-3" aria-hidden="true">
+              {client.name.charAt(0).toUpperCase()}
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-text">
             {client.name}
           </h1>
@@ -160,16 +171,36 @@ export const ClientDetails: React.FC = () => {
               <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <Phone className="h-4 w-4 mr-2" aria-hidden="true" /> Teléfono
               </dt>
-              <dd className="mt-1 text-sm text-text">
-                {client.phone}
+              <dd className="mt-1 text-sm">
+                {client.phone ? (
+                  <a
+                    href={`tel:${client.phone}`}
+                    className="text-brand-orange hover:text-orange-600 transition-colors"
+                    aria-label={`Llamar a ${client.name} al ${client.phone}`}
+                  >
+                    {client.phone}
+                  </a>
+                ) : (
+                  <span className="text-text">No registrado</span>
+                )}
               </dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <Mail className="h-4 w-4 mr-2" aria-hidden="true" /> Email
               </dt>
-              <dd className="mt-1 text-sm text-text">
-                {client.email || "No registrado"}
+              <dd className="mt-1 text-sm">
+                {client.email ? (
+                  <a
+                    href={`mailto:${client.email}`}
+                    className="text-brand-orange hover:text-orange-600 transition-colors"
+                    aria-label={`Enviar email a ${client.name} a ${client.email}`}
+                  >
+                    {client.email}
+                  </a>
+                ) : (
+                  <span className="text-text">No registrado</span>
+                )}
               </dd>
             </div>
             <div className="sm:col-span-1">

@@ -13,3 +13,6 @@ export { SkeletonLine, SkeletonCircle, SkeletonCard, SkeletonList } from './Skel
 export { AnimatedPressable } from './AnimatedPressable';
 export { SwipeableRow } from './SwipeableRow';
 export { SegmentedControl } from './SegmentedControl';
+export { QuickClientSheet } from './QuickClientSheet';
+export { SortSelector } from './SortSelector';
+export type { SortOption } from './SortSelector';

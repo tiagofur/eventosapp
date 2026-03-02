@@ -15,7 +15,9 @@ import {
   CalendarDays,
   Search,
   Filter,
+  Download,
 } from "lucide-react";
+import { exportToCsv } from "../../lib/exportCsv";
 import {
   format,
   startOfMonth,
@@ -142,6 +144,33 @@ export const CalendarView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          {events.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                const statusLabel = (s: string) =>
+                  s === 'confirmed' ? 'Confirmado' : s === 'completed' ? 'Completado' : s === 'cancelled' ? 'Cancelado' : 'Cotizado';
+                exportToCsv(
+                  'eventos',
+                  ['Fecha', 'Tipo de Servicio', 'Cliente', 'Personas', 'Status', 'Total', 'Ubicación'],
+                  events.map(e => [
+                    e.event_date,
+                    e.service_type,
+                    (e as any).client?.name || (e as any).clients?.name || '',
+                    e.num_people,
+                    statusLabel(e.status),
+                    e.total_amount?.toFixed(2),
+                    e.location,
+                  ]),
+                );
+              }}
+              className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
+              aria-label="Exportar eventos a CSV"
+            >
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              CSV
+            </button>
+          )}
           <div
             className="flex bg-surface-alt p-1 rounded-xl border border-border"
             role="group"

@@ -5,6 +5,8 @@ interface RequestOptions extends RequestInit {
 }
 
 class ApiClient {
+  private refreshPromise: Promise<boolean> | null = null;
+
   private getHeaders(): HeadersInit {
     // MIGRATION NOTE: Auth tokens are now sent via httpOnly cookies (SECURE)
     // localStorage token handling is maintained for backward compatibility only
@@ -16,7 +18,34 @@ class ApiClient {
     };
   }
 
-  private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  private async attemptRefresh(): Promise<boolean> {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) return false;
+
+    try {
+      const response = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+
+      if (!response.ok) return false;
+
+      const tokens = await response.json();
+      if (tokens.access_token) {
+        localStorage.setItem('auth_token', tokens.access_token);
+      }
+      if (tokens.refresh_token) {
+        localStorage.setItem('refresh_token', tokens.refresh_token);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async request<T>(endpoint: string, options: RequestOptions = {}, isRetry = false): Promise<T> {
     const { params, ...init } = options;
 
     let url = `${API_URL}${endpoint}`;
@@ -34,10 +63,29 @@ class ApiClient {
       },
     });
 
-    if (response.status === 401) {
-      // Handle unauthorized (logout)
+    if (response.status === 401 && !isRetry) {
+      // Attempt token refresh before logging out
+      // Deduplicate concurrent refresh attempts
+      if (!this.refreshPromise) {
+        this.refreshPromise = this.attemptRefresh().finally(() => {
+          this.refreshPromise = null;
+        });
+      }
+
+      const refreshed = await this.refreshPromise;
+      if (refreshed) {
+        return this.request<T>(endpoint, options, true);
+      }
+
+      // Refresh failed — logout
       localStorage.removeItem('auth_token');
-      // Optional: Redirect to login or dispatch event
+      localStorage.removeItem('refresh_token');
+      window.dispatchEvent(new Event('auth:logout'));
+    }
+
+    if (response.status === 401 && isRetry) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
       window.dispatchEvent(new Event('auth:logout'));
     }
 
@@ -68,6 +116,17 @@ class ApiClient {
 
   delete<T>(endpoint: string) {
     return this.request<T>(endpoint, { method: 'DELETE' });
+  }
+
+  postFormData<T>(endpoint: string, formData: FormData) {
+    const token = localStorage.getItem('auth_token');
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
   }
 }
 

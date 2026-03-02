@@ -15,10 +15,11 @@ EventosApp es una aplicación SaaS para organizadores de eventos (catering, banq
 ### Stack Tecnológico
 
 - **Frontend Web**: React 19 + TypeScript + Vite + Tailwind CSS
+- **Frontend Mobile**: React Native 0.83 + Expo 55 + TypeScript
 - **Backend**: Go 1.25 + Chi router + PostgreSQL + pgx
-- **State Management**: Zustand (web), React Hook Form + Zod (forms)
+- **State Management**: Zustand (web y mobile), React Hook Form + Zod (forms)
 - **Testing**: Vitest + Testing Library (unit), Playwright (E2E)
-- **Despliegue**: Docker Compose, Vercel-ready (web)
+- **Despliegue**: Docker Compose, Vercel-ready (web), Expo (mobile)
 
 ---
 
@@ -53,23 +54,29 @@ web/
 └── tests/             # Tests E2E con Playwright
 ```
 
-### Frontend Mobile (`flutter/`)
+### Frontend Mobile (`mobile/`)
 
 ```
-flutter/
-├── lib/
-│   ├── core/          # Configuración, API, Storage
-│   ├── features/      # Features del negocio (Clean Arch)
-│   │   ├── auth/
-│   │   ├── dashboard/
-│   │   ├── events/
-│   │   ├── clients/
-│   │   ├── products/
-│   │   └── inventory/
-│   ├── shared/        # Widgets y providers compartidos
-│   └── config/        # Configuración global
-├── test/              # Tests unit, widget, integration
-└── pubspec.yaml       # Dependencias
+mobile/
+├── src/
+│   ├── components/       # Componentes reutilizables (shared/, navigation/)
+│   ├── contexts/         # Contextos React (AuthContext)
+│   ├── hooks/            # Custom hooks (useHaptics, useImagePicker, usePlanLimits, etc.)
+│   ├── lib/              # Utilidades compartidas (api, errorHandler, finance, pdfGenerator, sentry)
+│   ├── navigation/       # Navegación (React Navigation: stacks, tabs, drawer)
+│   ├── screens/          # Pantallas organizadas por dominio
+│   │   ├── auth/         # Login, Register, ForgotPassword, ResetPassword
+│   │   ├── home/         # Dashboard, Search
+│   │   ├── events/       # EventDetail, EventForm
+│   │   ├── clients/      # ClientList, ClientDetail, ClientForm
+│   │   ├── catalog/      # ProductList, ProductDetail, ProductForm, InventoryList, InventoryForm
+│   │   ├── calendar/     # CalendarScreen
+│   │   └── profile/      # Settings, EditProfile, BusinessSettings, Pricing, etc.
+│   ├── services/         # Servicios de API (uno por dominio)
+│   ├── theme/            # Tema (colors, typography, spacing, shadows)
+│   └── types/            # Tipos TypeScript (entities, navigation)
+├── app.json              # Configuración de Expo
+└── package.json          # Dependencias
 ```
 
 ---
@@ -93,24 +100,27 @@ npm run test:e2e:ui
 npm run build
 ```
 
-### Mobile (Flutter)
+### Mobile (React Native / Expo)
 
 ```bash
 # Instalar dependencias
-cd flutter && flutter pub get
+cd mobile && npm install
 
-# Ejecutar app
-flutter run
+# Iniciar servidor de desarrollo
+npx expo start
 
-# Tests
-flutter test
+# Ejecutar en Android
+npx expo start --android
 
-# Build
-flutter build apk --release
-flutter build ios --release
+# Ejecutar en iOS
+npx expo start --ios
 
-# Code generation (si usas json_serializable)
-flutter pub run build_runner build
+# Ejecutar en web (preview)
+npx expo start --web
+
+# Build de producción con EAS
+npx eas build --platform android
+npx eas build --platform ios
 ```
 
 ---
@@ -125,13 +135,14 @@ flutter pub run build_runner build
 - **Constantes**: `UPPER_SNAKE_CASE`
 - **Interfaces/Types**: `PascalCase` con prefijo `I` (opcional) o sin prefijo
 
-### Dart (Flutter)
+### TypeScript (Mobile - React Native)
 
-- **Nombres de archivos**: `snake_case.dart`
-- **Clases**: `PascalCase`
-- **Variables/Métodos**: `camelCase`
-- **Constantes**: `lowerCamelCase` o `UPPER_SNAKE_CASE` (globales)
-- **Privados**: `_camelCase`
+- **Nombres de archivos**: `PascalCase.tsx` (pantallas/componentes) o `camelCase.ts` (utilidades/servicios)
+- **Componentes/Pantallas**: `PascalCase` (e.g., `DashboardScreen.tsx`, `FormInput.tsx`)
+- **Variables/Funciones**: `camelCase`
+- **Constantes**: `UPPER_SNAKE_CASE`
+- **Hooks**: `use` + `PascalCase` (e.g., `useHaptics.ts`, `usePlanLimits.ts`)
+- **Servicios**: `camelCase` (e.g., `clientService.ts`, `eventService.ts`)
 
 ---
 
@@ -207,106 +218,95 @@ flutter pub run build_runner build
 
 6. **Agregar ruta en `App.tsx`**
 
-### Agregar Nueva Feature (Flutter)
+### Agregar Nueva Feature (Mobile - React Native)
 
-1. **Crear estructura de feature**:
-   ```
-   lib/features/my_feature/
-   ├── data/
-   │   ├── models/my_feature_model.dart
-   │   └── repositories/my_feature_repository_impl.dart
-   ├── domain/
-   │   ├── entities/my_feature_entity.dart
-   │   ├── repositories/my_feature_repository.dart
-   │   └── usecases/get_my_features_usecase.dart
-   └── presentation/
-       ├── pages/my_feature_page.dart
-       ├── providers/my_feature_provider.dart
-       └── widgets/my_feature_card.dart
-   ```
-
-2. **Crear Entity en `domain/entities/`**:
-   ```dart
-   class MyFeatureEntity {
-     final String id;
-     final String name;
-
-     const MyFeatureEntity({
-       required this.id,
-       required this.name,
-     });
+1. **Crear tipo en `types/entities.ts`** (si es nueva entidad):
+   ```typescript
+   // src/types/entities.ts
+   export interface MyFeature {
+     id: string;
+     name: string;
+     // ...
    }
    ```
 
-3. **Crear Model en `data/models/`**:
-   ```dart
-   class MyFeatureModel {
-     final String id;
-     final String name;
+2. **Crear servicio en `services/`**:
+   ```typescript
+   // src/services/myFeatureService.ts
+   import { api } from '../lib/api';
 
-     MyFeatureModel({required this.id, required this.name});
+   export const myFeatureService = {
+     async getAll(): Promise<MyFeature[]> {
+       return api.get('/my-feature');
+     },
+     async getById(id: string): Promise<MyFeature> {
+       return api.get(`/my-feature/${id}`);
+     },
+   };
+   ```
 
-     factory MyFeatureModel.fromJson(Map<String, dynamic> json) {
-       return MyFeatureModel(
-         id: json['id'],
-         name: json['name'],
-       );
-     }
+3. **Crear hook en `hooks/`** (opcional):
+   ```typescript
+   // src/hooks/useMyFeature.ts
+   import { useState, useEffect } from 'react';
+   import { myFeatureService } from '../services/myFeatureService';
 
-     MyFeatureEntity toEntity() {
-       return MyFeatureEntity(id: id, name: name);
-     }
+   export function useMyFeature() {
+     const [data, setData] = useState<MyFeature[]>([]);
+     const [loading, setLoading] = useState(true);
+
+     useEffect(() => {
+       myFeatureService.getAll()
+         .then(setData)
+         .finally(() => setLoading(false));
+     }, []);
+
+     return { data, loading };
    }
    ```
 
-4. **Crear Repository interface en `domain/repositories/`**:
-   ```dart
-   abstract class MyFeatureRepository {
-     Future<List<MyFeatureEntity>> getAll();
+4. **Crear pantalla en `screens/`**:
+   ```typescript
+   // src/screens/myFeature/MyFeatureListScreen.tsx
+   import { View, FlatList, Text } from 'react-native';
+   import { useMyFeature } from '../../hooks/useMyFeature';
+   import { LoadingSpinner } from '../../components/shared';
+
+   export function MyFeatureListScreen() {
+     const { data, loading } = useMyFeature();
+
+     if (loading) return <LoadingSpinner />;
+
+     return (
+       <FlatList
+         data={data}
+         keyExtractor={(item) => item.id}
+         renderItem={({ item }) => (
+           <Text>{item.name}</Text>
+         )}
+       />
+     );
    }
    ```
 
-5. **Crear Repository implementation en `data/repositories/`**:
-   ```dart
-   class MyFeatureRepositoryImpl implements MyFeatureRepository {
-     final ApiClient _apiClient;
+5. **Crear stack de navegacion en `navigation/`** (si aplica):
+   ```typescript
+   // src/navigation/MyFeatureStack.tsx
+   import { createNativeStackNavigator } from '@react-navigation/native-stack';
+   import { MyFeatureListScreen } from '../screens/myFeature/MyFeatureListScreen';
 
-     MyFeatureRepositoryImpl(this._apiClient);
+   const Stack = createNativeStackNavigator();
 
-     @override
-     Future<List<MyFeatureEntity>> getAll() async {
-       final response = await _apiClient.get('/my-feature');
-       return response.map((e) => MyFeatureModel.fromJson(e).toEntity()).toList();
-     }
+   export function MyFeatureStack() {
+     return (
+       <Stack.Navigator>
+         <Stack.Screen name="MyFeatureList" component={MyFeatureListScreen} />
+       </Stack.Navigator>
+     );
    }
    ```
 
-6. **Crear Provider en `presentation/providers/`**:
-   ```dart
-   final myFeatureProvider = FutureProvider.autoDispose<List<MyFeatureEntity>>((ref) async {
-     final repository = ref.watch(myFeatureRepositoryProvider);
-     return repository.getAll();
-   });
-   ```
-
-7. **Crear Page en `presentation/pages/`**:
-   ```dart
-   class MyFeaturePage extends ConsumerWidget {
-     @override
-     Widget build(BuildContext context, WidgetRef ref) {
-       final features = ref.watch(myFeatureProvider);
-
-       return features.when(
-         data: (data) => ListView.builder(
-           itemCount: data.length,
-           itemBuilder: (context, index) => ListTile(title: Text(data[index].name)),
-         ),
-         loading: () => Center(child: CircularProgressIndicator()),
-         error: (error, stack) => Center(child: Text('Error')),
-       );
-     }
-   }
-   ```
+6. **Registrar en navegacion** (`MainTabs.tsx` o `DrawerNavigator.tsx`)
 
 ---
 
@@ -331,35 +331,48 @@ flutter pub run build_runner build
    npm run test:e2e:ui  # Interactivo
    ```
 
-### Tests Flutter
+### Tests Mobile (React Native)
 
-1. **Unit tests**:
-   ```dart
-   // test/unit/my_feature_test.dart
-   test('should calculate total correctly', () {
-     final entity = MyFeatureEntity(id: '1', name: 'Test');
-     expect(entity.name, 'Test');
+1. **Unit tests** (con Jest):
+   ```typescript
+   // src/services/__tests__/myFeatureService.test.ts
+   import { myFeatureService } from '../myFeatureService';
+
+   describe('myFeatureService', () => {
+     it('should fetch all features', async () => {
+       const data = await myFeatureService.getAll();
+       expect(data).toBeDefined();
+       expect(Array.isArray(data)).toBe(true);
+     });
    });
    ```
 
-2. **Widget tests**:
-   ```dart
-   // test/widgets/my_feature_widget_test.dart
-   testWidgets('should display name', (tester) async {
-     await tester.pumpWidget(MyFeatureWidget(name: 'Test'));
-     expect(find.text('Test'), findsOneWidget);
+2. **Component tests** (con React Native Testing Library):
+   ```typescript
+   // src/screens/myFeature/__tests__/MyFeatureListScreen.test.tsx
+   import { render, screen } from '@testing-library/react-native';
+   import { MyFeatureListScreen } from '../MyFeatureListScreen';
+
+   describe('MyFeatureListScreen', () => {
+     it('should display feature name', () => {
+       render(<MyFeatureListScreen />);
+       expect(screen.getByText('Test Feature')).toBeTruthy();
+     });
    });
    ```
 
-3. **Integration tests**:
-   ```dart
-   // test_integration/app_test.dart
-   testWidgets('should navigate to dashboard', (tester) async {
-     await tester.pumpWidget(MyApp());
-     await tester.tap(find.text('Iniciar'));
-     await tester.pumpAndSettle();
-     expect(find.text('Dashboard'), findsOneWidget);
-   });
+3. **Ejecutar tests**:
+   ```bash
+   cd mobile
+
+   # Todos los tests
+   npm test
+
+   # Un archivo específico
+   npx jest src/services/__tests__/myFeatureService.test.ts
+
+   # Watch mode
+   npx jest --watch
    ```
 
 ---
@@ -367,7 +380,7 @@ flutter pub run build_runner build
 ## 🔒 Seguridad Importante
 
 - **Nunca** exponer credenciales en código
-- **Siempre** usar RLS (Row Level Security) en Supabase
+- **Siempre** filtrar por `user_id` en queries del backend (multi-tenant)
 - **Validar** inputs en frontend y backend
 - **Sanitizar** datos antes de mostrarlos
 - **Usar** parámetros en queries SQL (evitar concatenación)
@@ -379,7 +392,6 @@ flutter pub run build_runner build
 ### Documentación del Proyecto
 
 - [README principal](../README.md)
-- [Documentación Flutter](../docs/flutter/README.md)
 - [Arquitectura del sistema](../docs/README.md)
 - [Guía de despliegue](../docs/deploy.md)
 - [Checklist MVP](../docs/mvp-checklist.md)
@@ -388,9 +400,9 @@ flutter pub run build_runner build
 
 - [React docs](https://react.dev)
 - [TypeScript docs](https://www.typescriptlang.org/docs)
-- [Flutter docs](https://docs.flutter.dev)
-- [Riverpod docs](https://riverpod.dev)
-- [Supabase docs](https://supabase.com/docs)
+- [React Native docs](https://reactnative.dev/docs/getting-started)
+- [Expo docs](https://docs.expo.dev)
+- [React Navigation docs](https://reactnavigation.org/docs/getting-started)
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [Playwright docs](https://playwright.dev)
 
@@ -399,12 +411,12 @@ flutter pub run build_runner build
 ## ✅ Checklist Antes de Commits
 
 - [ ] Código sigue convenciones del proyecto
-- [ ] Tests pasan (`npm test` o `flutter test`)
-- [ ] Sin console.log en producción
+- [ ] Tests pasan (`npm test` en web y mobile)
+- [ ] Sin console.log en produccion
 - [ ] Types de TypeScript sin errores
-- [ ] Linting pasa (`npm run lint` o `flutter analyze`)
-- [ ] Documentación actualizada si aplica
-- [ ] Cambios en `package.json`/`pubspec.yaml` documentados
+- [ ] Linting pasa (`npm run lint`)
+- [ ] Documentacion actualizada si aplica
+- [ ] Cambios en `package.json` documentados
 
 ---
 
@@ -415,7 +427,7 @@ flutter pub run build_runner build
 3. **Comportamiento esperado vs actual**
 4. **Screenshots/videos** si aplica
 5. **Stack trace** de errores
-6. **Environment** (OS, navegador, Flutter version)
+6. **Environment** (OS, navegador, version de Expo/React Native)
 
 ---
 
@@ -439,4 +451,4 @@ Para dudas o problemas con este proyecto:
 
 ---
 
-Última actualización: 2026-02-17
+Ultima actualizacion: 2026-03-02

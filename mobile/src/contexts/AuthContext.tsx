@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { api, setAuthToken, getAuthToken, clearAuthToken } from "../lib/api";
+import { api, setAuthToken, setRefreshToken, getAuthToken, clearAuthTokens } from "../lib/api";
 import { logError } from "../lib/errorHandler";
 import { revenueCatService } from "../services/revenueCatService";
 
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       revenueCatService.initialize(userData.id);
     } catch (error) {
       console.error("Auth check failed", error);
-      await clearAuthToken();
+      await clearAuthTokens();
       setUser(null);
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Register 401 handler so api.ts can trigger logout
     api.setOnUnauthorized(async () => {
-      await clearAuthToken();
+      await clearAuthTokens();
       setUser(null);
     });
 
@@ -79,20 +79,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const response = await api.post<{ token: string; user: User }>(
+    const response = await api.post<{ token?: string; tokens?: { access_token: string; refresh_token: string }; user: User }>(
       "/auth/login",
       {
         email,
         password,
       },
     );
-    await setAuthToken(response.token);
+    // Support both legacy (token) and new (tokens.access_token) response format
+    const accessToken = response.tokens?.access_token || response.token;
+    await setAuthToken(accessToken);
+    if (response.tokens?.refresh_token) {
+      await setRefreshToken(response.tokens.refresh_token);
+    }
     setUser(response.user);
     revenueCatService.initialize(response.user.id);
   };
 
   const signUp = async (name: string, email: string, password: string) => {
-    const response = await api.post<{ token: string; user: User }>(
+    const response = await api.post<{ token?: string; tokens?: { access_token: string; refresh_token: string }; user: User }>(
       "/auth/register",
       {
         name,
@@ -100,13 +105,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
       },
     );
-    await setAuthToken(response.token);
+    const accessToken = response.tokens?.access_token || response.token;
+    await setAuthToken(accessToken);
+    if (response.tokens?.refresh_token) {
+      await setRefreshToken(response.tokens.refresh_token);
+    }
     setUser(response.user);
     revenueCatService.initialize(response.user.id);
   };
 
   const signOut = async () => {
-    await clearAuthToken();
+    try {
+      await api.post("/auth/logout", {});
+    } catch {
+      // Even if logout endpoint fails, clear local state
+    }
+    await clearAuthTokens();
     setUser(null);
   };
 

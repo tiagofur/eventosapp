@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   View,
@@ -34,6 +34,7 @@ import {
   Avatar,
   SkeletonList,
   SwipeableRow,
+  SortSelector,
 } from "../../components/shared";
 import { useTheme } from "../../hooks/useTheme";
 import { colors } from "../../theme/colors";
@@ -57,16 +58,21 @@ export default function ClientListScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
+  const [sortKey, setSortKey] = useState("updated_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  const clientSortOptions = useMemo(() => [
+    { key: "updated_at", label: "Fecha de actualización" },
+    { key: "name", label: "Nombre" },
+    { key: "total_events", label: "Total de eventos" },
+    { key: "total_spent", label: "Total gastado" },
+    { key: "created_at", label: "Fecha de creación" },
+  ], []);
 
   const loadClients = useCallback(async () => {
     try {
       const data = await clientService.getAll();
-      const sorted = (data || []).sort(
-        (a, b) =>
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-      );
-      setClients(sorted);
-      setFilteredClients(sorted);
+      setClients(data || []);
     } catch (err) {
       logError("Error loading clients", err);
       addToast("Error al cargar clientes", "error");
@@ -83,21 +89,43 @@ export default function ClientListScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
-    if (!search.trim()) {
-      setFilteredClients(clients);
-    } else {
+    let filtered = clients;
+    if (search.trim()) {
       const q = search.toLowerCase();
-      setFilteredClients(
-        clients.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.phone?.toLowerCase().includes(q) ||
-            c.email?.toLowerCase().includes(q) ||
-            c.city?.toLowerCase().includes(q),
-        ),
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.phone?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          c.city?.toLowerCase().includes(q),
       );
     }
-  }, [search, clients]);
+
+    const sorted = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "name":
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case "total_events":
+          cmp = (a.total_events ?? 0) - (b.total_events ?? 0);
+          break;
+        case "total_spent":
+          cmp = (a.total_spent ?? 0) - (b.total_spent ?? 0);
+          break;
+        case "created_at":
+          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case "updated_at":
+        default:
+          cmp = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+          break;
+      }
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+
+    setFilteredClients(sorted);
+  }, [search, clients, sortKey, sortOrder]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -203,15 +231,23 @@ export default function ClientListScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          <Search color={palette.textTertiary} size={18} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar clientes..."
-            placeholderTextColor={palette.textTertiary}
-            value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
+        <View style={styles.searchRow}>
+          <View style={[styles.searchBox, { flex: 1 }]}>
+            <Search color={palette.textTertiary} size={18} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar clientes..."
+              placeholderTextColor={palette.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              autoCorrect={false}
+            />
+          </View>
+          <SortSelector
+            options={clientSortOptions}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+            onSort={(key, order) => { setSortKey(key); setSortOrder(order); }}
           />
         </View>
       </View>
@@ -289,6 +325,11 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   searchBox: {
     flexDirection: "row",

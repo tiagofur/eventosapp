@@ -42,7 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuth = async () => {
     const token = localStorage.getItem('auth_token');
-    if (!token) {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!token && !refreshToken) {
       setUser(null);
       setLoading(false);
       return;
@@ -54,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       logError('Auth check failed', error);
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -67,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleLogout = () => {
       setUser(null);
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
     };
     
     window.addEventListener('auth:logout', handleLogout);
@@ -81,8 +84,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Even if logout fails, clear local state
       logError('Logout error', error);
     } finally {
-      // Clear localStorage token (backward compatibility)
+      // Clear localStorage tokens (backward compatibility)
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
       setUser(null);
       window.location.href = '/login';
     }

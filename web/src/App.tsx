@@ -20,11 +20,14 @@ import { ProductDetails } from './pages/Products/ProductDetails';
 import { CalendarView } from './pages/Calendar/CalendarView';
 import { EventForm } from './pages/Events/EventForm';
 import { EventSummary } from './pages/Events/EventSummary';
-// import EventPaymentSuccess from './pages/Events/EventPaymentSuccess'; // HIDDEN: Requires per-user Stripe config
+import EventPaymentSuccess from './pages/Events/EventPaymentSuccess';
 import { Settings } from './pages/Settings';
 import { Pricing } from './pages/Pricing';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
+import { About } from './pages/About';
+import { Privacy } from './pages/Privacy';
+import { Terms } from './pages/Terms';
 import { NotFound } from './pages/NotFound';
 
 function App() {
@@ -36,7 +39,10 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<Register />} />
-        
+        <Route path="/about" element={<About />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+
         <Route element={
           <ProtectedRoute>
             <Layout />
@@ -50,8 +56,7 @@ function App() {
           <Route path="/events/new" element={<EventForm />} />
           <Route path="/events/:id/edit" element={<EventForm />} />
           <Route path="/events/:id/summary" element={<EventSummary />} />
-          {/* <Route path="/events/:id/payment-success" element={<EventPaymentSuccess />} /> */}
-          {/* HIDDEN: Event payment via Stripe requires per-user Stripe configuration */}
+          <Route path="/events/:id/payment-success" element={<EventPaymentSuccess />} />
 
           {/* Rutas de Clientes */}
           <Route path="/clients" element={<ClientList />} />

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   View,
@@ -28,7 +28,7 @@ import { productService } from "../../services/productService";
 import { uploadService } from "../../services/uploadService";
 import { useToast } from "../../hooks/useToast";
 import { logError } from "../../lib/errorHandler";
-import { EmptyState, ConfirmDialog, SkeletonList, SwipeableRow } from "../../components/shared";
+import { EmptyState, ConfirmDialog, SkeletonList, SwipeableRow, SortSelector } from "../../components/shared";
 import { useTheme } from "../../hooks/useTheme";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
@@ -50,12 +50,19 @@ export default function ProductListScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const productSortOptions = useMemo(() => [
+    { key: "name", label: "Nombre" },
+    { key: "base_price", label: "Precio" },
+    { key: "category", label: "Categoría" },
+  ], []);
 
   const loadProducts = useCallback(async () => {
     try {
       const data = await productService.getAll();
-      const sorted = (data || []).sort((a, b) => a.name.localeCompare(b.name));
-      setProducts(sorted);
+      setProducts(data || []);
     } catch (err) {
       logError("Error loading products", err);
       addToast("Error al cargar productos", "error");
@@ -78,19 +85,34 @@ export default function ProductListScreen({ navigation }: Props) {
       filtered = filtered.filter(p => p.category === selectedCategory);
     }
 
-    if (!search.trim()) {
-      setFilteredProducts(filtered);
-    } else {
+    if (search.trim()) {
       const q = search.toLowerCase();
-      setFilteredProducts(
-        filtered.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.category.toLowerCase().includes(q),
-        ),
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q),
       );
     }
-  }, [search, products, selectedCategory]);
+
+    const sorted = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "base_price":
+          cmp = a.base_price - b.base_price;
+          break;
+        case "category":
+          cmp = a.category.localeCompare(b.category);
+          break;
+        case "name":
+        default:
+          cmp = a.name.localeCompare(b.name);
+          break;
+      }
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+
+    setFilteredProducts(sorted);
+  }, [search, products, selectedCategory, sortKey, sortOrder]);
 
   const categories = React.useMemo(() => {
     const cats = new Set(products.map(p => p.category).filter(Boolean));
@@ -181,22 +203,30 @@ export default function ProductListScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar productos..."
-            placeholderTextColor={palette.textTertiary}
-            value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
+        <View style={styles.searchRow}>
+          <View style={[styles.searchBox, { flex: 1 }]}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar productos..."
+              placeholderTextColor={palette.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              autoCorrect={false}
+            />
+            {search.length > 0 ? (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <X color={palette.textTertiary} size={18} />
+              </TouchableOpacity>
+            ) : (
+              <Search color={palette.textTertiary} size={18} />
+            )}
+          </View>
+          <SortSelector
+            options={productSortOptions}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+            onSort={(key, order) => { setSortKey(key); setSortOrder(order); }}
           />
-          {search.length > 0 ? (
-            <TouchableOpacity onPress={() => setSearch("")}>
-              <X color={palette.textTertiary} size={18} />
-            </TouchableOpacity>
-          ) : (
-            <Search color={palette.textTertiary} size={18} />
-          )}
         </View>
       </View>
 
@@ -297,6 +327,11 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   searchBox: {
     flexDirection: "row",

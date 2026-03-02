@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { inventoryService } from "../../services/inventoryService";
 import { InventoryItem } from "../../types/entities";
-import { Plus, Search, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Search, Edit, Trash2, AlertTriangle, Download } from "lucide-react";
+import { exportToCsv } from "../../lib/exportCsv";
 import clsx from "clsx";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { logError } from "../../lib/errorHandler";
@@ -11,6 +12,7 @@ import { useToast } from "../../hooks/useToast";
 import { usePagination } from "../../hooks/usePagination";
 import { Pagination } from "../../components/Pagination";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { SkeletonTable } from "../../components/Skeleton";
 
 export const InventoryList: React.FC = () => {
   const navigate = useNavigate();
@@ -145,13 +147,37 @@ export const InventoryList: React.FC = () => {
         <h1 className="text-2xl font-bold text-text">
           Inventario
         </h1>
-        <Link
-          to="/inventory/new"
-          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
-        >
-          <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-          Nuevo Ingrediente
-        </Link>
+        <div className="flex items-center gap-2">
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => exportToCsv(
+                'inventario',
+                ['Nombre', 'Tipo', 'Stock Actual', 'Stock Mínimo', 'Unidad', 'Costo Unitario'],
+                items.map(i => [
+                  i.ingredient_name,
+                  i.type === 'equipment' ? 'Equipo' : 'Ingrediente',
+                  i.current_stock,
+                  i.minimum_stock,
+                  i.unit,
+                  i.unit_cost?.toFixed(2),
+                ]),
+              )}
+              className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
+              aria-label="Exportar inventario a CSV"
+            >
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              CSV
+            </button>
+          )}
+          <Link
+            to="/inventory/new"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
+          >
+            <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
+            Nuevo Ingrediente
+          </Link>
+        </div>
       </div>
 
       {lowStockItems.length > 0 && (
@@ -201,13 +227,17 @@ export const InventoryList: React.FC = () => {
 
       <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         {loading ? (
-          <div
-            className="p-8 text-center text-text-secondary"
-            role="status"
-            aria-live="polite"
-          >
-            Cargando inventario...
-          </div>
+          <SkeletonTable
+            rows={6}
+            columns={[
+              { width: "w-40" },
+              { width: "w-24", badge: true },
+              { width: "w-20" },
+              { width: "w-20" },
+              { width: "w-24" },
+              { width: "w-20" },
+            ]}
+          />
         ) : filteredItems.length === 0 ? (
           <Empty
             title="No se encontraron ingredientes"

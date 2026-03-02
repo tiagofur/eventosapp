@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/entities';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Download } from 'lucide-react';
+import { exportToCsv } from '../../lib/exportCsv';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { logError } from '../../lib/errorHandler';
 import Empty from '../../components/Empty';
@@ -10,6 +11,7 @@ import { useToast } from '../../hooks/useToast';
 import { usePagination } from '../../hooks/usePagination';
 import { Pagination } from '../../components/Pagination';
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import { SkeletonTable } from '../../components/Skeleton';
 
 export const ProductList: React.FC = () => {
   const navigate = useNavigate();
@@ -105,13 +107,30 @@ export const ProductList: React.FC = () => {
         <h1 className="text-2xl font-bold text-text">
           Productos
         </h1>
-        <Link
-          to="/products/new"
-          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
-        >
-          <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-          Nuevo Producto
-        </Link>
+        <div className="flex items-center gap-2">
+          {products.length > 0 && (
+            <button
+              type="button"
+              onClick={() => exportToCsv(
+                'productos',
+                ['Nombre', 'Categoría', 'Precio Base', 'Activo'],
+                products.map(p => [p.name, p.category, p.base_price.toFixed(2), p.is_active ? 'Sí' : 'No']),
+              )}
+              className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
+              aria-label="Exportar productos a CSV"
+            >
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              CSV
+            </button>
+          )}
+          <Link
+            to="/products/new"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
+          >
+            <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
+            Nuevo Producto
+          </Link>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -131,7 +150,15 @@ export const ProductList: React.FC = () => {
 
       <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         {loading ? (
-          <div className="p-8 text-center text-text-secondary">Cargando productos...</div>
+          <SkeletonTable
+            rows={6}
+            columns={[
+              { width: "w-48", avatar: true },
+              { width: "w-24" },
+              { width: "w-24", badge: true },
+              { width: "w-20" },
+            ]}
+          />
         ) : filteredProducts.length === 0 ? (
           <Empty 
             title="No hay productos" 

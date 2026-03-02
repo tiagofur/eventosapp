@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
   View,
@@ -24,7 +24,7 @@ import { InventoryItem } from "../../types/entities";
 import { inventoryService } from "../../services/inventoryService";
 import { useToast } from "../../hooks/useToast";
 import { logError } from "../../lib/errorHandler";
-import { EmptyState, SkeletonList, SwipeableRow, SegmentedControl } from "../../components/shared";
+import { EmptyState, SkeletonList, SwipeableRow, SegmentedControl, SortSelector } from "../../components/shared";
 import { useTheme } from "../../hooks/useTheme";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
@@ -47,14 +47,21 @@ export default function InventoryListScreen({ navigation }: Props) {
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [typeFilterIndex, setTypeFilterIndex] = useState(0);
   const typeSegments = ["Todos", "Ingredientes", "Equipo"];
+  const [sortKey, setSortKey] = useState("ingredient_name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const inventorySortOptions = useMemo(() => [
+    { key: "ingredient_name", label: "Nombre" },
+    { key: "current_stock", label: "Stock actual" },
+    { key: "minimum_stock", label: "Stock mínimo" },
+    { key: "unit_cost", label: "Costo unitario" },
+    { key: "type", label: "Tipo" },
+  ], []);
 
   const loadItems = useCallback(async () => {
     try {
       const data = await inventoryService.getAll();
-      const sorted = (data || []).sort((a, b) =>
-        a.ingredient_name.localeCompare(b.ingredient_name)
-      );
-      setItems(sorted);
+      setItems(data || []);
     } catch (err) {
       logError("Error loading inventory", err);
       addToast("Error al cargar inventario", "error");
@@ -92,8 +99,31 @@ export default function InventoryListScreen({ navigation }: Props) {
       );
     }
 
-    setFilteredItems(filtered);
-  }, [search, items, showLowStockOnly, typeFilterIndex]);
+    const sorted = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "current_stock":
+          cmp = a.current_stock - b.current_stock;
+          break;
+        case "minimum_stock":
+          cmp = a.minimum_stock - b.minimum_stock;
+          break;
+        case "unit_cost":
+          cmp = (a.unit_cost ?? 0) - (b.unit_cost ?? 0);
+          break;
+        case "type":
+          cmp = a.type.localeCompare(b.type);
+          break;
+        case "ingredient_name":
+        default:
+          cmp = a.ingredient_name.localeCompare(b.ingredient_name);
+          break;
+      }
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+
+    setFilteredItems(sorted);
+  }, [search, items, showLowStockOnly, typeFilterIndex, sortKey, sortOrder]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -167,15 +197,23 @@ export default function InventoryListScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={[]}>
       <View style={styles.searchContainer}>
-        <View style={styles.searchBox}>
-          <Search color={palette.textTertiary} size={18} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar inventario..."
-            placeholderTextColor={palette.textTertiary}
-            value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
+        <View style={styles.searchRow}>
+          <View style={[styles.searchBox, { flex: 1 }]}>
+            <Search color={palette.textTertiary} size={18} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar inventario..."
+              placeholderTextColor={palette.textTertiary}
+              value={search}
+              onChangeText={setSearch}
+              autoCorrect={false}
+            />
+          </View>
+          <SortSelector
+            options={inventorySortOptions}
+            sortKey={sortKey}
+            sortOrder={sortOrder}
+            onSort={(key, order) => { setSortKey(key); setSortOrder(order); }}
           />
         </View>
       </View>
@@ -255,6 +293,11 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   searchBox: {
     flexDirection: "row",

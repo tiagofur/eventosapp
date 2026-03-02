@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { clientService } from "../../services/clientService";
 import { Client } from "../../types/entities";
-import { Plus, Search, Edit, Trash2, Phone, Mail } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Phone, Mail, Download } from "lucide-react";
+import { exportToCsv } from "../../lib/exportCsv";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { logError } from "../../lib/errorHandler";
 import Empty from "../../components/Empty";
@@ -10,6 +11,7 @@ import { useToast } from "../../hooks/useToast";
 import { usePagination } from "../../hooks/usePagination";
 import { Pagination } from "../../components/Pagination";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { SkeletonTable } from "../../components/Skeleton";
 
 export const ClientList: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -112,13 +114,30 @@ export const ClientList: React.FC = () => {
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-text">Clientes</h1>
-        <Link
-          to="/clients/new"
-          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-sm transition-colors"
-        >
-          <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-          Nuevo Cliente
-        </Link>
+        <div className="flex items-center gap-2">
+          {clients.length > 0 && (
+            <button
+              type="button"
+              onClick={() => exportToCsv(
+                'clientes',
+                ['Nombre', 'Teléfono', 'Email', 'Dirección', 'Ciudad', 'Eventos', 'Total Gastado', 'Notas'],
+                clients.map(c => [c.name, c.phone, c.email, c.address, c.city, c.total_events, c.total_spent?.toFixed(2), c.notes]),
+              )}
+              className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
+              aria-label="Exportar clientes a CSV"
+            >
+              <Download className="h-4 w-4 mr-2" aria-hidden="true" />
+              CSV
+            </button>
+          )}
+          <Link
+            to="/clients/new"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-sm transition-colors"
+          >
+            <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
+            Nuevo Cliente
+          </Link>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -141,13 +160,16 @@ export const ClientList: React.FC = () => {
 
       <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         {loading ? (
-          <div
-            className="p-8 text-center text-text-secondary"
-            role="status"
-            aria-live="polite"
-          >
-            Cargando clientes...
-          </div>
+          <SkeletonTable
+            rows={6}
+            columns={[
+              { width: "w-48", avatar: true },
+              { width: "w-36" },
+              { width: "w-24", badge: true },
+              { width: "w-28" },
+              { width: "w-20" },
+            ]}
+          />
         ) : filteredClients.length === 0 ? (
           <Empty
             title="No se encontraron clientes"
@@ -224,12 +246,20 @@ export const ClientList: React.FC = () => {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div
-                          className="h-10 w-10 rounded-full bg-brand-green/10 dark:bg-brand-green/20 flex items-center justify-center text-brand-green dark:text-green-400 font-bold"
-                          aria-hidden="true"
-                        >
-                          {client.name.charAt(0).toUpperCase()}
-                        </div>
+                        {client.photo_url ? (
+                          <img
+                            src={client.photo_url}
+                            alt=""
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="h-10 w-10 rounded-full bg-brand-green/10 dark:bg-brand-green/20 flex items-center justify-center text-brand-green dark:text-green-400 font-bold"
+                            aria-hidden="true"
+                          >
+                            {client.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div className="ml-4">
                           <div className="text-sm font-medium text-text">
                             {client.name}
@@ -241,20 +271,34 @@ export const ClientList: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-text flex items-center">
+                      <div className="text-sm flex items-center">
                         <Phone
                           className="h-4 w-4 mr-1 text-text-secondary"
                           aria-hidden="true"
                         />
-                        {client.phone}
+                        <a
+                          href={`tel:${client.phone}`}
+                          className="text-brand-orange hover:text-orange-600 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Llamar a ${client.name} al ${client.phone}`}
+                        >
+                          {client.phone}
+                        </a>
                       </div>
                       {client.email && (
-                        <div className="text-sm text-text-secondary flex items-center mt-1">
+                        <div className="text-sm flex items-center mt-1">
                           <Mail
                             className="h-4 w-4 mr-1 text-text-secondary"
                             aria-hidden="true"
                           />
-                          {client.email}
+                          <a
+                            href={`mailto:${client.email}`}
+                            className="text-brand-orange hover:text-orange-600 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Enviar email a ${client.name} a ${client.email}`}
+                          >
+                            {client.email}
+                          </a>
                         </div>
                       )}
                     </td>

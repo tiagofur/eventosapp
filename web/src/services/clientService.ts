@@ -20,5 +20,11 @@ export const clientService = {
 
   async delete(id: string): Promise<void> {
     return api.delete(`/clients/${id}`);
-  }
+  },
+
+  async uploadPhoto(file: File): Promise<{ url: string; thumbnail_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.postFormData<{ url: string; thumbnail_url: string }>('/uploads/image', formData);
+  },
 };

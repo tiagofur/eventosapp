@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { clientService } from "../../services/clientService";
 import { useAuth } from "../../contexts/AuthContext";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Camera, X } from "lucide-react";
 import { logError } from "../../lib/errorHandler";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
@@ -27,6 +27,10 @@ export const ClientForm: React.FC = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { canCreateClient, clientsCount, clientLimit, loading: limitsLoading } = usePlanLimits();
 
@@ -61,12 +65,49 @@ export const ClientForm: React.FC = () => {
         city: client.city || "",
         notes: client.notes || "",
       });
+      if (client.photo_url) {
+        setPhotoUrl(client.photo_url);
+        setPhotoPreview(client.photo_url);
+      }
     } catch (err) {
       logError("Error loading client", err);
       setError("Error al cargar el cliente");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("La foto es demasiado grande (máximo 5MB).");
+      return;
+    }
+
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    try {
+      setIsUploadingPhoto(true);
+      const result = await clientService.uploadPhoto(file);
+      setPhotoUrl(result.url);
+    } catch (err) {
+      logError("Error uploading photo", err);
+      setError("Error al subir la foto.");
+      setPhotoPreview(photoUrl); // revert preview
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const removePhoto = () => {
+    setPhotoUrl(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const onSubmit = async (data: ClientFormData) => {
@@ -79,14 +120,15 @@ export const ClientForm: React.FC = () => {
       if (id) {
         await clientService.update(id, {
           ...data,
-          email: data.email || null, // Convert empty string to null
+          email: data.email || null,
+          photo_url: photoUrl || null,
         });
       } else {
         await clientService.create({
           ...data,
           user_id: user.id,
           email: data.email || null,
-          photo_url: "",
+          photo_url: photoUrl || null,
         });
       }
       navigate("/clients");
@@ -157,6 +199,49 @@ export const ClientForm: React.FC = () => {
           )}
 
           <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-6">
+            <div className="sm:col-span-6 flex justify-center">
+              <div className="relative">
+                <div
+                  className="h-24 w-24 rounded-full bg-surface-alt flex items-center justify-center overflow-hidden border-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => fileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+                  aria-label="Subir foto del cliente"
+                >
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Foto del cliente" className="h-full w-full object-cover" />
+                  ) : (
+                    <Camera className="h-8 w-8 text-text-secondary" aria-hidden="true" />
+                  )}
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
+                    </div>
+                  )}
+                </div>
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={removePhoto}
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
+                    aria-label="Eliminar foto"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                  aria-label="Seleccionar foto del cliente"
+                />
+                <p className="text-xs text-text-secondary text-center mt-2">Foto (opcional)</p>
+              </div>
+            </div>
+
             <div className="sm:col-span-6">
               <label htmlFor="name" className="block text-sm font-medium text-text-secondary mb-2">
                 Nombre Completo *

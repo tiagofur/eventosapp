@@ -30,6 +30,7 @@ import {
   Plus,
   Trash2,
   Search,
+  UserPlus,
 } from "lucide-react-native";
 import { Image } from "expo-image";
 import { EventsStackParamList } from "../../types/navigation";
@@ -43,7 +44,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { logError } from "../../lib/errorHandler";
 import { useStoreReview } from "../../hooks/useStoreReview";
 import { useTheme } from "../../hooks/useTheme";
-import { LoadingSpinner, UpgradeBanner, AppBottomSheet, Avatar } from "../../components/shared";
+import { LoadingSpinner, UpgradeBanner, AppBottomSheet, Avatar, QuickClientSheet } from "../../components/shared";
 import { uploadService } from "../../services/uploadService";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
@@ -106,6 +107,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
   
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showClientPicker, setShowClientPicker] = useState(false);
+  const [showQuickClient, setShowQuickClient] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [productSearch, setProductSearch] = useState("");
@@ -460,15 +462,24 @@ export default function EventFormScreen({ navigation, route }: Props) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Información General</Text>
 
-            <TouchableOpacity
-              style={styles.selector}
-              onPress={() => setShowClientPicker(true)}
-            >
-              <Text style={styles.selectorLabel}>Cliente</Text>
-              <Text style={styles.selectorValue}>
-                {selectedClient?.name || "Seleccionar cliente..."}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.clientRow}>
+              <TouchableOpacity
+                style={[styles.selector, { flex: 1, marginBottom: 0 }]}
+                onPress={() => setShowClientPicker(true)}
+              >
+                <Text style={styles.selectorLabel}>Cliente</Text>
+                <Text style={styles.selectorValue}>
+                  {selectedClient?.name || "Seleccionar cliente..."}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.quickClientBtn}
+                onPress={() => setShowQuickClient(true)}
+                activeOpacity={0.7}
+              >
+                <UserPlus color={palette.textInverse} size={18} />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.selector}
@@ -845,6 +856,17 @@ export default function EventFormScreen({ navigation, route }: Props) {
         ))}
       </AppBottomSheet>
 
+      <QuickClientSheet
+        visible={showQuickClient}
+        onClose={() => setShowQuickClient(false)}
+        userId={user?.id || ""}
+        onClientCreated={(newClient) => {
+          setClients((prev) => [newClient, ...prev]);
+          setFormData({ ...formData, client_id: newClient.id });
+          setShowQuickClient(false);
+        }}
+      />
+
       <AppBottomSheet
         visible={showProductPicker}
         onClose={() => { setShowProductPicker(false); setProductSearch(""); }}
@@ -987,6 +1009,19 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     ...typography.h3,
     color: palette.text,
     marginBottom: spacing.sm,
+  },
+  clientRow: {
+    flexDirection: "row" as const,
+    alignItems: "stretch" as const,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  quickClientBtn: {
+    backgroundColor: palette.primary,
+    borderRadius: spacing.borderRadius.md,
+    width: 48,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   selector: {
     backgroundColor: palette.surface,

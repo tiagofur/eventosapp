@@ -37,13 +37,16 @@ export const Register: React.FC = () => {
     setError(null);
 
     try {
-      const res = await api.post<{ tokens: { access_token: string } }>('/auth/register', {
+      const res = await api.post<{ tokens: { access_token: string; refresh_token: string } }>('/auth/register', {
         name: data.name,
         email: data.email,
         password: data.password,
       });
 
       localStorage.setItem('auth_token', res.tokens.access_token);
+      if (res.tokens.refresh_token) {
+        localStorage.setItem('refresh_token', res.tokens.refresh_token);
+      }
       await checkAuth();
       navigate('/dashboard');
     } catch (err: any) {

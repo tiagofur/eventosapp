@@ -35,6 +35,7 @@ EventosApp is a SaaS platform for event organizers (catering, banquets, parties)
 ```
 eventosapp/
 ├── web/                  # React SPA (primary frontend)
+├── mobile/               # React Native / Expo mobile app (iOS & Android)
 ├── backend/              # Go REST API
 ├── docs/                 # Project documentation
 ├── docker-compose.yml    # Full-stack deployment (backend + frontend + Postgres)
@@ -45,23 +46,25 @@ eventosapp/
     └── copilot-instructions.md
 ```
 
-> **Note:** A Flutter mobile app (`flutter/`) existed previously but was removed. References to it in docs are outdated.
-
 ## Tech Stack
 
 | Layer    | Technology                                                            |
 | -------- | --------------------------------------------------------------------- |
 | Frontend | React 19, TypeScript ~5.9, Vite 7, Tailwind CSS 4, React Router 7     |
-| State    | Zustand (global), React Hook Form + Zod (forms)                       |
+| Mobile   | React Native 0.83, Expo SDK 55, TypeScript ~5.9                        |
+| Mobile Nav | React Navigation 7 (native-stack, bottom-tabs, drawer)              |
+| Mobile UI | Lucide React Native icons, Reanimated 4, Gesture Handler, Bottom Sheet |
+| State    | Zustand (global), React Hook Form + Zod (forms) — shared across web & mobile |
 | Backend  | Go 1.25, Chi v5 router, pgx v5 (PostgreSQL driver)                    |
 | Database | PostgreSQL 15 with file-based migrations                              |
-| Auth     | JWT (golang-jwt), bcrypt, stored in localStorage as `auth_token`      |
-| Payments | Stripe (web), RevenueCat (mobile webhooks)                            |
+| Auth     | JWT (golang-jwt), bcrypt, stored in localStorage (web) / SecureStore (mobile) |
+| Payments | Stripe (web), RevenueCat (mobile via react-native-purchases)           |
 | Testing  | Vitest + Testing Library (unit), Playwright (E2E), Go `testing` (API) |
-| Styling  | Tailwind CSS, Lucide React icons, clsx + tailwind-merge               |
-| PDF      | jspdf + jspdf-autotable, @react-pdf/renderer                          |
+| Styling  | Tailwind CSS (web), StyleSheet + custom theme system (mobile), Lucide icons |
+| PDF      | jspdf + jspdf-autotable (web), expo-print + expo-sharing (mobile)      |
+| Monitoring | Sentry (mobile via @sentry/react-native)                             |
 | CI       | GitHub Actions (type-check, lint, unit tests, coverage, E2E)          |
-| Deploy   | Docker Compose (self-hosted), Vercel-ready (web)                      |
+| Deploy   | Docker Compose (self-hosted), Vercel-ready (web), EAS Build (mobile)  |
 
 ## Build, Lint, and Test Commands
 
@@ -108,6 +111,29 @@ npx playwright test tests/e2e/login.spec.ts
 # Install Playwright browsers
 npm run test:e2e:install
 ```
+
+### Mobile (`mobile/`)
+
+```bash
+cd mobile
+
+# Install dependencies
+npm install
+
+# Start Expo dev server (opens QR code for Expo Go)
+npm start
+
+# Start on Android emulator/device
+npm run android
+
+# Start on iOS simulator/device
+npm run ios
+
+# Start for web (Expo web)
+npm run web
+```
+
+> **Note:** The mobile app uses Expo managed workflow. For development builds with native modules (e.g., `react-native-purchases`), you may need `eas build` or a development client.
 
 ### Backend (`backend/`)
 
@@ -183,6 +209,92 @@ src/
 - Routes are split: public (`/`, `/login`, `/register`, `/forgot-password`) and authenticated (wrapped in `ProtectedRoute` + `Layout`).
 - Path alias `@/*` maps to `./src/*` (configured in tsconfig.json and vite).
 - Test files are co-located with source files (e.g., `Dashboard.test.tsx` next to `Dashboard.tsx`).
+
+### Mobile App (`mobile/src/`)
+
+```
+src/
+├── contexts/            # React contexts (AuthContext)
+├── hooks/               # Custom hooks
+│   ├── useTheme.tsx     # Dark/light mode with system detection
+│   ├── usePagination.ts # Infinite scroll pagination
+│   ├── usePlanLimits.ts # Subscription plan feature gating
+│   ├── useToast.ts      # Toast notification system
+│   ├── useHaptics.ts    # Haptic feedback wrapper
+│   ├── useImagePicker.ts # Camera/gallery image selection
+│   └── useStoreReview.ts # App Store review prompts
+├── lib/                 # Core utilities
+│   ├── api.ts           # HTTP client (ApiClient class) — mirrors web/src/lib/api.ts
+│   ├── errorHandler.ts  # Centralized error logging (Sentry integration)
+│   ├── finance.ts       # Financial calculations (shared logic with web)
+│   ├── pdfGenerator.ts  # PDF generation via expo-print + expo-sharing
+│   └── sentry.ts        # Sentry initialization and configuration
+├── navigation/          # React Navigation setup
+│   ├── RootNavigator.tsx    # Auth vs Main switch (NavigationContainer)
+│   ├── AuthStack.tsx        # Login, Register, ForgotPassword, ResetPassword
+│   ├── DrawerNavigator.tsx  # Side drawer (wraps MainTabs)
+│   ├── MainTabs.tsx         # Bottom tab navigator (Home, Calendar, Clients, + FAB)
+│   ├── HomeStack.tsx        # Dashboard, Search
+│   ├── CalendarStack.tsx    # Calendar view
+│   ├── ClientStack.tsx      # Client CRUD screens
+│   ├── ProductStack.tsx     # Product & Inventory CRUD screens
+│   ├── InventoryStack.tsx   # Inventory standalone screens
+│   └── SettingsStack.tsx    # Profile, Business, Contract, Pricing, Legal screens
+├── screens/             # Screen components organized by domain
+│   ├── auth/            # LoginScreen, RegisterScreen, ForgotPasswordScreen, ResetPasswordScreen
+│   ├── home/            # DashboardScreen, SearchScreen
+│   ├── calendar/        # CalendarScreen
+│   ├── clients/         # ClientListScreen, ClientFormScreen, ClientDetailScreen
+│   ├── events/          # EventFormScreen, EventDetailScreen
+│   ├── catalog/         # ProductListScreen, ProductFormScreen, ProductDetailScreen,
+│   │                    #   InventoryListScreen, InventoryFormScreen
+│   └── profile/         # SettingsScreen, EditProfileScreen, BusinessSettingsScreen,
+│                        #   ContractDefaultsScreen, PricingScreen, AboutScreen,
+│                        #   TermsScreen, PrivacyPolicyScreen
+├── services/            # API service modules (mirrors web/src/services/)
+│   ├── clientService.ts
+│   ├── eventService.ts
+│   ├── eventPaymentService.ts
+│   ├── productService.ts
+│   ├── inventoryService.ts
+│   ├── paymentService.ts
+│   ├── searchService.ts
+│   ├── subscriptionService.ts
+│   ├── revenueCatService.ts  # RevenueCat in-app purchase management
+│   └── uploadService.ts      # Image upload handling
+├── components/          # Shared UI components
+│   ├── shared/          # Reusable components (FormInput, EmptyState, Skeleton,
+│   │                    #   LoadingSpinner, ConfirmDialog, SwipeableRow, Avatar,
+│   │                    #   KPICard, SegmentedControl, PhotoGallery, UpgradeBanner,
+│   │                    #   AnimatedPressable, AppBottomSheet, ImagePickerSheet,
+│   │                    #   ToastContainer)
+│   ├── navigation/      # CustomDrawerContent, DrawerMenuButton
+│   ├── ErrorBoundary.tsx
+│   ├── OnboardingChecklist.tsx
+│   └── PendingEventsModal.tsx
+├── theme/               # Design system
+│   ├── colors.ts        # Light/dark color palettes
+│   ├── typography.ts    # Font sizes, weights, line heights
+│   ├── spacing.ts       # Spacing scale
+│   ├── shadows.ts       # Platform-specific shadow styles
+│   └── index.ts         # Theme barrel export
+└── types/
+    ├── entities.ts      # TypeScript type definitions for domain entities
+    └── navigation.ts    # Navigation param list types
+```
+
+**Key patterns:**
+
+- The mobile app mirrors the web architecture: `lib/api.ts` singleton, `services/` per domain, `contexts/AuthContext`.
+- Auth token is stored in `expo-secure-store` (not localStorage). On 401, `api.ts` dispatches `auth:logout` event, caught by `AuthContext`.
+- Navigation uses React Navigation 7: RootNavigator switches between AuthStack and DrawerNavigator based on auth state.
+- The theme system (`theme/`) provides light/dark palettes, typography, spacing, and shadows — used throughout via `useTheme` hook.
+- Forms use React Hook Form with Zod validation (same as web).
+- State management: Zustand for global state, React context for auth/theme.
+- In-app purchases are managed via RevenueCat (`revenueCatService.ts`) using `react-native-purchases`.
+- PDF generation uses `expo-print` to render HTML and `expo-sharing` to share the resulting PDF.
+- Error monitoring via Sentry (`@sentry/react-native`), configured in `lib/sentry.ts`.
+- Deep linking configured with `eventosapp://` scheme (for password reset flows).
 
 ### Backend API (`backend/internal/`)
 
@@ -273,6 +385,17 @@ GitHub Actions workflow (`.github/workflows/test.yml`) runs on pushes/PRs to `ma
 - Forms use React Hook Form with Zod validation.
 - State management: Zustand for app-wide state, React context for auth/theme.
 
+### React Native / Mobile
+
+- Screen files: `PascalCaseScreen.tsx` (e.g., `ClientListScreen.tsx`). Organized by domain in `screens/`.
+- Component files: `PascalCase.tsx`. Shared components live in `components/shared/`.
+- Services follow the same object-literal pattern as web (`const xxxService = { async method() { ... } }`).
+- Use the custom theme system (`theme/`) for colors, typography, spacing, and shadows — never hardcode style values.
+- Use `useTheme` hook to access `isDark` and current color palette.
+- Navigation types are defined in `types/navigation.ts` — always type navigation props.
+- No path aliases — use relative imports (e.g., `import { api } from '../lib/api'`).
+- TypeScript is configured with `strict: true` (stricter than web).
+
 ### Go
 
 - Follow standard Go conventions (`gofmt`, `golint`).
@@ -286,7 +409,7 @@ GitHub Actions workflow (`.github/workflows/test.yml`) runs on pushes/PRs to `ma
 - Frontend objects use camelCase, backend JSON uses snake_case.
 - When sending nested arrays to the API (event items, product ingredients), map to snake_case keys:
   - `productId` → `product_id`, `unitPrice` → `unit_price`, `inventoryId` → `inventory_id`, etc.
-- Auth token: `Authorization: Bearer <token>` header, token stored as `auth_token` in localStorage.
+- Auth token: `Authorization: Bearer <token>` header, token stored as `auth_token` in localStorage (web) or `expo-secure-store` (mobile).
 
 ### Commits
 
@@ -357,6 +480,12 @@ main
 
 - `VITE_API_URL` — backend API base URL (default: `http://localhost:8080/api`)
 
+### Mobile
+
+- API base URL is configured in `mobile/src/lib/api.ts` (defaults to `http://localhost:8080/api`; update for production builds).
+- RevenueCat API keys are configured in `mobile/src/services/revenueCatService.ts`.
+- Sentry DSN is configured in `mobile/src/lib/sentry.ts`.
+
 ## Security Notes
 
 - Never commit `.env` files or credentials.
@@ -385,6 +514,15 @@ main
 5. Add migration in `database/migrations/` with next sequence number.
 6. Write tests (`*_test.go`).
 
+### Adding a new mobile screen
+
+1. Create type definitions in `types/entities.ts` (if new entity, or reuse existing).
+2. Create service in `services/xxxService.ts` using `api.ts` (mirrors web service pattern).
+3. Create screen component(s) in `screens/xxx/XxxScreen.tsx`.
+4. Add screen to the appropriate navigation stack in `navigation/` (or create a new stack).
+5. Add navigation param types in `types/navigation.ts`.
+6. Use the theme system (`useTheme`, `colors`, `typography`, `spacing`) for styling.
+
 ### Adding a new database migration
 
 1. Create `NNN_description.up.sql` and `NNN_description.down.sql` in `backend/internal/database/migrations/`.
@@ -396,6 +534,13 @@ main
 ```bash
 cd web && npm run check && npm run lint && npm run test:run
 cd ../backend && go test ./...
+```
+
+### Running the mobile app locally
+
+```bash
+cd mobile && npm install && npm start
+# Scan the QR code with Expo Go (Android/iOS) or press 'a'/'i' for emulator
 ```
 
 ---
