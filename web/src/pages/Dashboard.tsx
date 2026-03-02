@@ -635,6 +635,7 @@ export const Dashboard: React.FC = () => {
               </div>
             ) : chartData.length > 0 ? (
               <div
+                className="h-full w-full"
                 role="img"
                 aria-label="Gráfico de barras mostrando la distribución de estados de eventos del mes actual"
               >

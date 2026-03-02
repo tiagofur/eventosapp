@@ -42,7 +42,11 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		writeError(w, http.StatusBadRequest, "File too large (max 10MB)")
+		if err.Error() == "http: request body too large" {
+			writeError(w, http.StatusBadRequest, "File too large (max 10MB)")
+		} else {
+			writeError(w, http.StatusBadRequest, "Invalid multipart form data")
+		}
 		return
 	}
 

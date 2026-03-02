@@ -54,16 +54,25 @@ class ApiClient {
       url += `?${searchParams.toString()}`;
     }
 
+    const isFormData = init.body instanceof FormData;
+    const defaultHeaders = this.getHeaders();
+    if (isFormData) {
+      delete (defaultHeaders as Record<string, string>)['Content-Type'];
+    }
+
     const response = await fetch(url, {
       ...init,
       credentials: 'include', // CRITICAL: Send httpOnly cookies automatically
       headers: {
-        ...this.getHeaders(),
+        ...defaultHeaders,
         ...init.headers,
       },
     });
 
-    if (response.status === 401 && !isRetry) {
+    // Skip refresh/logout logic for auth endpoints — 401 there means bad credentials, not expired token
+    const isAuthEndpoint = endpoint.startsWith('/auth/');
+
+    if (response.status === 401 && !isRetry && !isAuthEndpoint) {
       // Attempt token refresh before logging out
       // Deduplicate concurrent refresh attempts
       if (!this.refreshPromise) {
