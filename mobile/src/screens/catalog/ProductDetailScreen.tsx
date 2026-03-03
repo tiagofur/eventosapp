@@ -157,15 +157,15 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
               <View key={index} style={styles.ingredientRow}>
                 <View style={styles.ingredientInfo}>
                   <Text style={styles.ingredientName}>
-                    {ing.inventory?.ingredient_name || "Ingrediente"}
+                    {ing.ingredient_name || "Ingrediente"}
                   </Text>
                   <Text style={styles.ingredientUnit}>
-                    {ing.quantity_required} {ing.inventory?.unit || "und"}
+                    {ing.quantity_required} {ing.unit || "und"}
                   </Text>
                 </View>
                 <Text style={styles.ingredientCost}>
-                  {ing.inventory?.unit_cost
-                    ? formatCurrency(ing.quantity_required * ing.inventory.unit_cost)
+                  {ing.unit_cost
+                    ? formatCurrency(ing.quantity_required * ing.unit_cost)
                     : "-"}
                 </Text>
               </View>
@@ -178,7 +178,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
               <Text style={styles.totalValue}>
                 {formatCurrency(
                   ingredients.reduce((sum, ing: any) => {
-                    const cost = ing.inventory?.unit_cost || 0;
+                    const cost = ing.unit_cost || 0;
                     return sum + ing.quantity_required * cost;
                   }, 0)
                 )}

@@ -10,13 +10,12 @@ import {
   Tag,
   Trash2,
   ChefHat,
-  AlertTriangle,
   Layers,
 } from "lucide-react";
 import { logError } from "../../lib/errorHandler";
 import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import clsx from "clsx";
+
 
 export const ProductDetails: React.FC = () => {
   const { id } = useParams();
@@ -194,36 +193,25 @@ export const ProductDetails: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {ingredients.map((ing) => {
-                    const isLowStock = (ing.inventory?.current_stock ?? 0) <= (ing.inventory?.minimum_stock ?? 0);
-                    return (
+                  {ingredients.map((ing) => (
                       <tr key={ing.inventory_id} className="hover:bg-surface-alt/50 transition-colors">
                         <td className="px-6 py-4">
                           <Link to={`/inventory/${ing.inventory_id}`} className="text-sm font-medium text-text hover:text-brand-orange transition-colors">
-                            {ing.inventory?.ingredient_name || "Ingrediente desconocido"}
+                            {ing.ingredient_name || "Ingrediente desconocido"}
                           </Link>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm text-text font-bold">
-                            {ing.quantity_required} {ing.inventory?.unit}
+                            {ing.quantity_required} {ing.unit || ""}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end">
-                            <span className={clsx(
-                              "text-sm font-medium",
-                              isLowStock ? "text-error" : "text-text"
-                            )}>
-                              {ing.inventory?.current_stock ?? 0} {ing.inventory?.unit}
-                            </span>
-                            {isLowStock && (
-                              <AlertTriangle className="h-4 w-4 text-error ml-2" />
-                            )}
-                          </div>
+                          <span className="text-sm font-medium text-text">
+                            —
+                          </span>
                         </td>
                       </tr>
-                    );
-                  })}
+                  ))}
                 </tbody>
               </table>
             )}

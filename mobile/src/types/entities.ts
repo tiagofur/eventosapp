@@ -177,6 +177,10 @@ export interface ProductIngredient {
     inventory_id: string
     quantity_required: number
     created_at: string
+    // Joined from inventory (flattened by backend)
+    ingredient_name?: string | null
+    unit?: string | null
+    unit_cost?: number | null
 }
 
 export type ProductIngredientInsert = Omit<ProductIngredient, 'id' | 'created_at'>

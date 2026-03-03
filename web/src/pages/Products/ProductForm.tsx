@@ -90,8 +90,8 @@ export const ProductForm: React.FC = () => {
           setRecipeIngredients(ingredients.map((i: any) => ({
               inventory_id: i.inventory_id,
               quantity_required: i.quantity_required,
-              unit_cost: i.inventory?.unit_cost || 0,
-              unit: i.inventory?.unit || ''
+              unit_cost: i.unit_cost || 0,
+              unit: i.unit || ''
           })));
       }
 
