@@ -662,7 +662,7 @@ export const EventSummary: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Horario</p>
-                <p className="font-bold text-text">{timeRange || "No definido"}</p>
+                <p className="font-bold text-text">{event.start_time && event.end_time ? `${event.start_time.slice(0, 5)} - ${event.end_time.slice(0, 5)}` : "No definido"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider">Personas</p>
