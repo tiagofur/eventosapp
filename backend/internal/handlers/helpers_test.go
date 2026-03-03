@@ -36,6 +36,23 @@ func TestWriteError(t *testing.T) {
 	}
 }
 
+func TestWriteJSON_EncodingError(t *testing.T) {
+	rr := httptest.NewRecorder()
+
+	// Channels cannot be JSON-encoded, so json.Encoder.Encode will fail.
+	writeJSON(rr, http.StatusOK, map[string]interface{}{
+		"bad": make(chan int),
+	})
+
+	// The status code is still set even though encoding fails.
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+	if got := rr.Header().Get("Content-Type"); got != "application/json" {
+		t.Fatalf("Content-Type = %q, want %q", got, "application/json")
+	}
+}
+
 func TestDecodeJSON(t *testing.T) {
 	t.Run("GivenValidJSON_WhenDecode_ThenPopulateStruct", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"name":"john"}`))
@@ -57,6 +74,17 @@ func TestDecodeJSON(t *testing.T) {
 
 		if err := decodeJSON(req, &dst); err == nil {
 			t.Fatalf("decodeJSON() expected error for invalid JSON")
+		}
+	})
+
+	t.Run("GivenOversizedBody_WhenDecode_ThenReturnError", func(t *testing.T) {
+		// Create a body that exceeds the 1MB limit.
+		bigBody := strings.Repeat("a", 1<<20+1)
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(bigBody))
+		var dst map[string]string
+
+		if err := decodeJSON(req, &dst); err == nil {
+			t.Fatalf("decodeJSON() expected error for oversized body")
 		}
 	})
 }

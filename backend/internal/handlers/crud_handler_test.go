@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/tiagofur/eventosapp-backend/internal/middleware"
+	"github.com/tiagofur/eventosapp-backend/internal/models"
 )
 
 func TestCRUDHandlerValidationPaths(t *testing.T) {
@@ -192,6 +195,128 @@ func TestCRUDHandlerValidationPaths(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantBody:   "Invalid event_ids",
 		},
+		// Equipment handler validation
+		{
+			name:       "GivenInvalidEventID_WhenGetEventEquipment_ThenBadRequest",
+			method:     http.MethodGet,
+			path:       "/api/events/bad/equipment",
+			idParam:    "bad",
+			call:       (*CRUDHandler).GetEventEquipment,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid event ID",
+		},
+		{
+			name:       "GivenInvalidEventBody_WhenCreateEvent_ThenBadRequest",
+			method:     http.MethodPost,
+			path:       "/api/events",
+			body:       `{"event_date":}`,
+			call:       (*CRUDHandler).CreateEvent,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid request body",
+		},
+		{
+			name:       "GivenInvalidUpdateClientBody_WhenUpdateClient_ThenBadRequest",
+			method:     http.MethodPut,
+			path:       "/api/clients/" + uuid.New().String(),
+			idParam:    uuid.New().String(),
+			body:       `{"name":}`,
+			call:       (*CRUDHandler).UpdateClient,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid request body",
+		},
+		{
+			name:       "GivenInvalidDeleteClientID_WhenDeleteClient_ThenBadRequest",
+			method:     http.MethodDelete,
+			path:       "/api/clients/bad",
+			idParam:    "bad",
+			call:       (*CRUDHandler).DeleteClient,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid client ID",
+		},
+		{
+			name:       "GivenInvalidDeleteEventID_WhenDeleteEvent_ThenBadRequest",
+			method:     http.MethodDelete,
+			path:       "/api/events/bad",
+			idParam:    "bad",
+			call:       (*CRUDHandler).DeleteEvent,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid event ID",
+		},
+		{
+			name:       "GivenInvalidProductID_WhenUpdateProduct_ThenBadRequest",
+			method:     http.MethodPut,
+			path:       "/api/products/bad",
+			idParam:    "bad",
+			body:       `{}`,
+			call:       (*CRUDHandler).UpdateProduct,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid product ID",
+		},
+		{
+			name:       "GivenInvalidDeleteProductID_WhenDeleteProduct_ThenBadRequest",
+			method:     http.MethodDelete,
+			path:       "/api/products/bad",
+			idParam:    "bad",
+			call:       (*CRUDHandler).DeleteProduct,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid product ID",
+		},
+		{
+			name:       "GivenInvalidProductID_WhenGetIngredients_ThenBadRequest",
+			method:     http.MethodGet,
+			path:       "/api/products/bad/ingredients",
+			idParam:    "bad",
+			call:       (*CRUDHandler).GetProductIngredients,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid product ID",
+		},
+		{
+			name:       "GivenInvalidProductID_WhenUpdateIngredients_ThenBadRequest",
+			method:     http.MethodPut,
+			path:       "/api/products/bad/ingredients",
+			idParam:    "bad",
+			body:       `{}`,
+			call:       (*CRUDHandler).UpdateProductIngredients,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid product ID",
+		},
+		{
+			name:       "GivenInvalidInventoryID_WhenUpdateInventory_ThenBadRequest",
+			method:     http.MethodPut,
+			path:       "/api/inventory/bad",
+			idParam:    "bad",
+			body:       `{}`,
+			call:       (*CRUDHandler).UpdateInventoryItem,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid inventory ID",
+		},
+		{
+			name:       "GivenInvalidDeleteInventoryID_WhenDeleteInventory_ThenBadRequest",
+			method:     http.MethodDelete,
+			path:       "/api/inventory/bad",
+			idParam:    "bad",
+			call:       (*CRUDHandler).DeleteInventoryItem,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid inventory ID",
+		},
+		{
+			name:       "GivenInvalidEventID_WhenGetEventProducts_ThenBadRequest",
+			method:     http.MethodGet,
+			path:       "/api/events/bad/products",
+			idParam:    "bad",
+			call:       (*CRUDHandler).GetEventProducts,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid event ID",
+		},
+		{
+			name:       "GivenInvalidEventID_WhenGetEventExtras_ThenBadRequest",
+			method:     http.MethodGet,
+			path:       "/api/events/bad/extras",
+			idParam:    "bad",
+			call:       (*CRUDHandler).GetEventExtras,
+			wantStatus: http.StatusBadRequest,
+			wantBody:   "Invalid event ID",
+		},
 	}
 
 	for _, tc := range tests {
@@ -294,9 +419,690 @@ func TestUpdateHandlersInvalidBodyWithValidIDs(t *testing.T) {
 	t.Skip("Skipping unit test that requires DB setup; use integration tests instead.")
 }
 
+func TestCheckEquipmentConflictsValidation(t *testing.T) {
+	h := &CRUDHandler{}
+
+	t.Run("InvalidBody", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-conflicts", strings.NewReader(`{bad`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.CheckEquipmentConflicts(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("EmptyDateOrIDs", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-conflicts", strings.NewReader(`{"event_date":"","inventory_ids":[]}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.CheckEquipmentConflicts(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+		}
+	})
+
+	t.Run("InvalidInventoryID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-conflicts", strings.NewReader(`{"event_date":"2026-01-01","inventory_ids":["bad-id"]}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.CheckEquipmentConflicts(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("InvalidExcludeEventID", func(t *testing.T) {
+		invID := uuid.New().String()
+		badExclude := "bad-id"
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-conflicts", strings.NewReader(`{"event_date":"2026-01-01","inventory_ids":["`+invID+`"],"exclude_event_id":"`+badExclude+`"}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.CheckEquipmentConflicts(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+}
+
+func TestGetEquipmentSuggestionsValidation(t *testing.T) {
+	h := &CRUDHandler{}
+
+	t.Run("InvalidBody", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-suggestions", strings.NewReader(`{bad`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetEquipmentSuggestions(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("EmptyProductIDs", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-suggestions", strings.NewReader(`{"product_ids":[]}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetEquipmentSuggestions(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+		}
+	})
+
+	t.Run("InvalidProductID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/events/equipment-suggestions", strings.NewReader(`{"product_ids":["bad-id"]}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetEquipmentSuggestions(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+}
+
+func TestGetBatchProductIngredientsValidation(t *testing.T) {
+	h := &CRUDHandler{}
+
+	t.Run("InvalidBody", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/products/batch-ingredients", strings.NewReader(`{bad`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetBatchProductIngredients(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("EmptyProductIDs", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/products/batch-ingredients", strings.NewReader(`{"product_ids":[]}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetBatchProductIngredients(rr, req)
+		if rr.Code != http.StatusOK {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+		}
+	})
+
+	t.Run("TooManyProductIDs", func(t *testing.T) {
+		var ids []string
+		for i := 0; i < 101; i++ {
+			ids = append(ids, `"`+uuid.New().String()+`"`)
+		}
+		body := `{"product_ids":[` + strings.Join(ids, ",") + `]}`
+		req := httptest.NewRequest(http.MethodPost, "/api/products/batch-ingredients", strings.NewReader(body))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetBatchProductIngredients(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("InvalidProductID", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/products/batch-ingredients", strings.NewReader(`{"product_ids":["bad-id"]}`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+		rr := httptest.NewRecorder()
+		h.GetBatchProductIngredients(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+}
+
 func withURLParam(req *http.Request, key, value string) *http.Request {
 	routeCtx := chi.NewRouteContext()
 	routeCtx.URLParams.Add(key, value)
 	ctx := context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx)
 	return req.WithContext(ctx)
+}
+
+// ===================
+// Validation tests (no DB required)
+// ===================
+
+func TestCreateEventValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	clientID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "NumPeopleZero",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":0,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":0}`,
+			wantBody: "num_people: must be at least 1",
+		},
+		{
+			name:     "InvalidStatus",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"badstatus","tax_rate":16,"tax_amount":0,"total_amount":0}`,
+			wantBody: "status: must be one of",
+		},
+		{
+			name:     "DiscountOver100",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","discount":101,"tax_rate":16,"tax_amount":0,"total_amount":0}`,
+			wantBody: "discount: must be between 0 and 100",
+		},
+		{
+			name:     "NegativeTaxRate",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","tax_rate":-1,"tax_amount":0,"total_amount":0}`,
+			wantBody: "tax_rate: must be between 0 and 100",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/events", strings.NewReader(tc.body))
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.CreateEvent(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestUpdateEventValidation(t *testing.T) {
+	// UpdateEvent calls GetByID first (requires live repo), so we cannot reach
+	// its ValidateEvent path with a nil handler. Instead we verify the same
+	// ValidateEvent rules via CreateEvent (which validates before any repo call).
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	clientID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "NumPeopleZero",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":0,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":0}`,
+			wantBody: "num_people: must be at least 1",
+		},
+		{
+			name:     "InvalidStatus",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"badstatus","tax_rate":16,"tax_amount":0,"total_amount":0}`,
+			wantBody: "status: must be one of",
+		},
+		{
+			name:     "NegativeDiscount",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","discount":-5,"tax_rate":16,"tax_amount":0,"total_amount":0}`,
+			wantBody: "discount: must be between 0 and 100",
+		},
+		{
+			name:     "NegativeTotalAmount",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":-1}`,
+			wantBody: "total_amount: must be greater than or equal to 0",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/events", strings.NewReader(tc.body))
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.CreateEvent(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestCreateProductValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "EmptyName",
+			body:     `{"name":"","category":"appetizer","base_price":10}`,
+			wantBody: "name: is required",
+		},
+		{
+			name:     "EmptyCategory",
+			body:     `{"name":"Tacos","category":"","base_price":10}`,
+			wantBody: "category: is required",
+		},
+		{
+			name:     "NegativeBasePrice",
+			body:     `{"name":"Tacos","category":"appetizer","base_price":-5}`,
+			wantBody: "base_price: must be greater than or equal to 0",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/products", strings.NewReader(tc.body))
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.CreateProduct(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestCreateInventoryItemValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "EmptyIngredientName",
+			body:     `{"ingredient_name":"","current_stock":10,"minimum_stock":1,"unit":"kg","type":"ingredient"}`,
+			wantBody: "ingredient_name: is required",
+		},
+		{
+			name:     "EmptyUnit",
+			body:     `{"ingredient_name":"Flour","current_stock":10,"minimum_stock":1,"unit":"","type":"ingredient"}`,
+			wantBody: "unit: is required",
+		},
+		{
+			name:     "InvalidType",
+			body:     `{"ingredient_name":"Flour","current_stock":10,"minimum_stock":1,"unit":"kg","type":"badtype"}`,
+			wantBody: "type: must be one of: ingredient, equipment",
+		},
+		{
+			name:     "NegativeCurrentStock",
+			body:     `{"ingredient_name":"Flour","current_stock":-1,"minimum_stock":1,"unit":"kg","type":"ingredient"}`,
+			wantBody: "current_stock: must be greater than or equal to 0",
+		},
+		{
+			name:     "NegativeMinimumStock",
+			body:     `{"ingredient_name":"Flour","current_stock":10,"minimum_stock":-1,"unit":"kg","type":"ingredient"}`,
+			wantBody: "minimum_stock: must be greater than or equal to 0",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/inventory", strings.NewReader(tc.body))
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.CreateInventoryItem(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestCreatePaymentValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	eventID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "ZeroAmount",
+			body:     `{"event_id":"` + eventID + `","amount":0,"payment_date":"2026-01-01","payment_method":"cash"}`,
+			wantBody: "amount: must be greater than 0",
+		},
+		{
+			name:     "NegativeAmount",
+			body:     `{"event_id":"` + eventID + `","amount":-10,"payment_date":"2026-01-01","payment_method":"cash"}`,
+			wantBody: "amount: must be greater than 0",
+		},
+		{
+			name:     "EmptyPaymentMethod",
+			body:     `{"event_id":"` + eventID + `","amount":100,"payment_date":"2026-01-01","payment_method":""}`,
+			wantBody: "payment_method: is required",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/payments", strings.NewReader(tc.body))
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.CreatePayment(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestUpdatePaymentValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	paymentID := uuid.New().String()
+	eventID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "ZeroAmount",
+			body:     `{"event_id":"` + eventID + `","amount":0,"payment_date":"2026-01-01","payment_method":"cash"}`,
+			wantBody: "amount: must be greater than 0",
+		},
+		{
+			name:     "EmptyPaymentMethod",
+			body:     `{"event_id":"` + eventID + `","amount":100,"payment_date":"2026-01-01","payment_method":""}`,
+			wantBody: "payment_method: is required",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, "/api/payments/"+paymentID, strings.NewReader(tc.body))
+			req = withURLParam(req, "id", paymentID)
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.UpdatePayment(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestUpdateEventItemsValidation(t *testing.T) {
+	// UpdateEventItems calls GetByID first to verify event ownership, so
+	// we cannot reach product/extra validation without a live repo.
+	// Instead, we test the validation functions directly.
+	t.Run("ValidateEventProduct_ZeroQuantity", func(t *testing.T) {
+		ep := &models.EventProduct{Quantity: 0, UnitPrice: 10}
+		err := ValidateEventProduct(ep)
+		if err == nil {
+			t.Fatal("expected error for zero quantity")
+		}
+		if !strings.Contains(err.Error(), "quantity") {
+			t.Fatalf("error = %q, expected to mention quantity", err.Error())
+		}
+	})
+
+	t.Run("ValidateEventProduct_NegativeUnitPrice", func(t *testing.T) {
+		ep := &models.EventProduct{Quantity: 1, UnitPrice: -5}
+		err := ValidateEventProduct(ep)
+		if err == nil {
+			t.Fatal("expected error for negative unit_price")
+		}
+		if !strings.Contains(err.Error(), "unit_price") {
+			t.Fatalf("error = %q, expected to mention unit_price", err.Error())
+		}
+	})
+
+	t.Run("ValidateEventProduct_DiscountOver100", func(t *testing.T) {
+		ep := &models.EventProduct{Quantity: 1, UnitPrice: 10, Discount: 101}
+		err := ValidateEventProduct(ep)
+		if err == nil {
+			t.Fatal("expected error for discount over 100")
+		}
+		if !strings.Contains(err.Error(), "discount") {
+			t.Fatalf("error = %q, expected to mention discount", err.Error())
+		}
+	})
+
+	t.Run("ValidateEventExtra_EmptyDescription", func(t *testing.T) {
+		ee := &models.EventExtra{Description: "", Cost: 10, Price: 20}
+		err := ValidateEventExtra(ee)
+		if err == nil {
+			t.Fatal("expected error for empty description")
+		}
+		if !strings.Contains(err.Error(), "description") {
+			t.Fatalf("error = %q, expected to mention description", err.Error())
+		}
+	})
+
+	t.Run("ValidateEventExtra_NegativeCost", func(t *testing.T) {
+		ee := &models.EventExtra{Description: "Setup", Cost: -1, Price: 20}
+		err := ValidateEventExtra(ee)
+		if err == nil {
+			t.Fatal("expected error for negative cost")
+		}
+		if !strings.Contains(err.Error(), "cost") {
+			t.Fatalf("error = %q, expected to mention cost", err.Error())
+		}
+	})
+
+	t.Run("ValidateEventExtra_NegativePrice", func(t *testing.T) {
+		ee := &models.EventExtra{Description: "Setup", Cost: 10, Price: -1}
+		err := ValidateEventExtra(ee)
+		if err == nil {
+			t.Fatal("expected error for negative price")
+		}
+		if !strings.Contains(err.Error(), "price") {
+			t.Fatalf("error = %q, expected to mention price", err.Error())
+		}
+	})
+
+	t.Run("ValidateEventEquipment_ZeroQuantity", func(t *testing.T) {
+		eq := &models.EventEquipment{Quantity: 0}
+		err := ValidateEventEquipment(eq)
+		if err == nil {
+			t.Fatal("expected error for zero equipment quantity")
+		}
+		if !strings.Contains(err.Error(), "quantity") {
+			t.Fatalf("error = %q, expected to mention quantity", err.Error())
+		}
+	})
+
+	t.Run("ValidateProductIngredient_ZeroQuantityRequired", func(t *testing.T) {
+		pi := &models.ProductIngredient{QuantityRequired: 0}
+		err := ValidateProductIngredient(pi)
+		if err == nil {
+			t.Fatal("expected error for zero quantity_required")
+		}
+		if !strings.Contains(err.Error(), "quantity_required") {
+			t.Fatalf("error = %q, expected to mention quantity_required", err.Error())
+		}
+	})
+
+	t.Run("ValidateProductIngredient_NegativeQuantityRequired", func(t *testing.T) {
+		pi := &models.ProductIngredient{QuantityRequired: -1}
+		err := ValidateProductIngredient(pi)
+		if err == nil {
+			t.Fatal("expected error for negative quantity_required")
+		}
+		if !strings.Contains(err.Error(), "quantity_required") {
+			t.Fatalf("error = %q, expected to mention quantity_required", err.Error())
+		}
+	})
+}
+
+func TestCreateClientMissingFields(t *testing.T) {
+	// CreateClient does NOT validate name/phone on the handler side —
+	// it only calls decodeJSON then directly hits the repo.
+	// So an empty name body will decode successfully and attempt the repo call.
+	// Without a repo, we can only test invalid JSON body (already covered).
+	// We verify this behavior: valid JSON with empty name is accepted by the handler
+	// (validation happens at DB level, not handler level for clients).
+	h := &CRUDHandler{}
+	userID := uuid.New()
+
+	// Test: completely invalid JSON
+	t.Run("InvalidJSON", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/clients", strings.NewReader(`{bad`))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+		rr := httptest.NewRecorder()
+		h.CreateClient(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+		if !strings.Contains(rr.Body.String(), "Invalid request body") {
+			t.Fatalf("body = %q, expected to contain 'Invalid request body'", rr.Body.String())
+		}
+	})
+}
+
+func TestUpdateProductValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	productID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "EmptyName",
+			body:     `{"name":"","category":"appetizer","base_price":10}`,
+			wantBody: "name: is required",
+		},
+		{
+			name:     "EmptyCategory",
+			body:     `{"name":"Tacos","category":"","base_price":10}`,
+			wantBody: "category: is required",
+		},
+		{
+			name:     "NegativeBasePrice",
+			body:     `{"name":"Tacos","category":"appetizer","base_price":-1}`,
+			wantBody: "base_price: must be greater than or equal to 0",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, "/api/products/"+productID, strings.NewReader(tc.body))
+			req = withURLParam(req, "id", productID)
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.UpdateProduct(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestUpdateInventoryItemValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	inventoryID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "EmptyIngredientName",
+			body:     `{"ingredient_name":"","current_stock":10,"minimum_stock":1,"unit":"kg","type":"ingredient"}`,
+			wantBody: "ingredient_name: is required",
+		},
+		{
+			name:     "EmptyUnit",
+			body:     `{"ingredient_name":"Flour","current_stock":10,"minimum_stock":1,"unit":"","type":"ingredient"}`,
+			wantBody: "unit: is required",
+		},
+		{
+			name:     "InvalidType",
+			body:     `{"ingredient_name":"Flour","current_stock":10,"minimum_stock":1,"unit":"kg","type":"badtype"}`,
+			wantBody: "type: must be one of: ingredient, equipment",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, "/api/inventory/"+inventoryID, strings.NewReader(tc.body))
+			req = withURLParam(req, "id", inventoryID)
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.UpdateInventoryItem(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
+}
+
+func TestValidationErrorFormat(t *testing.T) {
+	err := ValidationError{Field: "test_field", Message: "is invalid"}
+	if err.Error() != "test_field: is invalid" {
+		t.Fatalf("ValidationError.Error() = %q, want %q", err.Error(), "test_field: is invalid")
+	}
+}
+
+func TestCreateEventDepositPercentValidation(t *testing.T) {
+	h := &CRUDHandler{}
+	userID := uuid.New()
+	clientID := uuid.New().String()
+
+	tests := []struct {
+		name     string
+		body     string
+		wantBody string
+	}{
+		{
+			name:     "DepositPercentOver100",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":0,"deposit_percent":101}`,
+			wantBody: "deposit_percent: must be between 0 and 100",
+		},
+		{
+			name:     "NegativeDepositPercent",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":0,"deposit_percent":-1}`,
+			wantBody: "deposit_percent: must be between 0 and 100",
+		},
+		{
+			name:     "NegativeCancellationDays",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":0,"cancellation_days":-1}`,
+			wantBody: "cancellation_days: must be greater than or equal to 0",
+		},
+		{
+			name:     "RefundPercentOver100",
+			body:     `{"client_id":"` + clientID + `","event_date":"2026-01-01","service_type":"catering","num_people":10,"status":"quoted","tax_rate":16,"tax_amount":0,"total_amount":0,"refund_percent":101}`,
+			wantBody: "refund_percent: must be between 0 and 100",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/events", strings.NewReader(tc.body))
+			req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+			rr := httptest.NewRecorder()
+			h.CreateEvent(rr, req)
+			if rr.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d; body = %s", rr.Code, http.StatusBadRequest, rr.Body.String())
+			}
+			if !strings.Contains(rr.Body.String(), tc.wantBody) {
+				t.Fatalf("body = %q, expected to contain %q", rr.Body.String(), tc.wantBody)
+			}
+		})
+	}
 }

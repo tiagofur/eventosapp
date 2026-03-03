@@ -533,6 +533,149 @@ func TestValidateInventoryItem(t *testing.T) {
 	}
 }
 
+func TestValidateInventoryItem_EquipmentType(t *testing.T) {
+	item := &models.InventoryItem{
+		IngredientName: "Chafing Dish",
+		CurrentStock:   20.0,
+		MinimumStock:   5.0,
+		Unit:           "pcs",
+		Type:           "equipment",
+	}
+	if err := ValidateInventoryItem(item); err != nil {
+		t.Errorf("ValidateInventoryItem() unexpected error for equipment type: %v", err)
+	}
+}
+
+func TestValidateEventEquipment(t *testing.T) {
+	tests := []struct {
+		name    string
+		eq      *models.EventEquipment
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name: "valid equipment with quantity 1",
+			eq: &models.EventEquipment{
+				Quantity: 1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid equipment with quantity 10",
+			eq: &models.EventEquipment{
+				Quantity: 10,
+			},
+			wantErr: false,
+		},
+		{
+			name: "quantity zero",
+			eq: &models.EventEquipment{
+				Quantity: 0,
+			},
+			wantErr: true,
+			errMsg:  "quantity: must be at least 1",
+		},
+		{
+			name: "quantity negative",
+			eq: &models.EventEquipment{
+				Quantity: -5,
+			},
+			wantErr: true,
+			errMsg:  "quantity: must be at least 1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateEventEquipment(tt.eq)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateEventEquipment() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.errMsg {
+				t.Errorf("ValidateEventEquipment() error message = %v, want %v", err.Error(), tt.errMsg)
+			}
+		})
+	}
+}
+
+func TestValidationError_Error(t *testing.T) {
+	ve := ValidationError{Field: "test_field", Message: "is invalid"}
+	expected := "test_field: is invalid"
+	if got := ve.Error(); got != expected {
+		t.Errorf("ValidationError.Error() = %q, want %q", got, expected)
+	}
+}
+
+func TestValidateEvent_RefundPercentAbove100(t *testing.T) {
+	event := &models.Event{
+		NumPeople:     1,
+		Discount:      0,
+		TaxRate:       0,
+		TotalAmount:   100,
+		Status:        "quoted",
+		RefundPercent: float64Ptr(150),
+	}
+	err := ValidateEvent(event)
+	if err == nil {
+		t.Fatal("ValidateEvent() expected error for refund_percent above 100")
+	}
+	expected := "refund_percent: must be between 0 and 100"
+	if err.Error() != expected {
+		t.Errorf("ValidateEvent() error = %q, want %q", err.Error(), expected)
+	}
+}
+
+func TestValidateEvent_AllValidStatuses(t *testing.T) {
+	statuses := []string{"quoted", "confirmed", "completed", "cancelled"}
+	for _, status := range statuses {
+		t.Run(status, func(t *testing.T) {
+			event := &models.Event{
+				NumPeople:   1,
+				Discount:    0,
+				TaxRate:     0,
+				TotalAmount: 0,
+				Status:      status,
+			}
+			if err := ValidateEvent(event); err != nil {
+				t.Errorf("ValidateEvent() unexpected error for status %q: %v", status, err)
+			}
+		})
+	}
+}
+
+func TestValidateEvent_ValidWithOptionalFields(t *testing.T) {
+	event := &models.Event{
+		NumPeople:        10,
+		Discount:         5.0,
+		TaxRate:          16.0,
+		TotalAmount:      500.0,
+		Status:           "confirmed",
+		DepositPercent:   float64Ptr(50.0),
+		CancellationDays: float64Ptr(7.0),
+		RefundPercent:    float64Ptr(80.0),
+	}
+	if err := ValidateEvent(event); err != nil {
+		t.Errorf("ValidateEvent() unexpected error with all optional fields: %v", err)
+	}
+}
+
+func TestValidateEventProduct_DiscountBelowZero(t *testing.T) {
+	ep := &models.EventProduct{
+		Quantity:  1,
+		UnitPrice: 100.0,
+		Discount:  -10.0,
+	}
+	err := ValidateEventProduct(ep)
+	if err == nil {
+		t.Fatal("ValidateEventProduct() expected error for discount below 0")
+	}
+	expected := "discount: must be between 0 and 100"
+	if err.Error() != expected {
+		t.Errorf("ValidateEventProduct() error = %q, want %q", err.Error(), expected)
+	}
+}
+
 func TestValidateProductIngredient(t *testing.T) {
 	tests := []struct {
 		name       string

@@ -209,3 +209,189 @@ func TestAuthHandlerErrorBranchesWithClosedRepo(t *testing.T) {
 		}
 	})
 }
+
+func TestNewAuthHandler(t *testing.T) {
+	h := NewAuthHandler(nil, nil, nil)
+	if h == nil {
+		t.Fatal("NewAuthHandler returned nil")
+	}
+}
+
+func TestAuthHandlerMe(t *testing.T) {
+	pool, err := pgxpool.New(context.Background(), "postgres://eventosapp_user:eventosapp_password@localhost:5433/eventosapp?sslmode=disable")
+	if err != nil {
+		t.Skipf("pgxpool.New failed: %v", err)
+	}
+	pool.Close()
+
+	h := &AuthHandler{
+		userRepo: repository.NewUserRepo(pool),
+	}
+	req := httptest.NewRequest(http.MethodGet, "/api/auth/me", nil)
+	req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, uuid.New()))
+	rr := httptest.NewRecorder()
+	h.Me(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusNotFound)
+	}
+}
+
+func TestAuthHandlerLogout(t *testing.T) {
+	h := &AuthHandler{}
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/logout", nil)
+	rr := httptest.NewRecorder()
+	h.Logout(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+	if !strings.Contains(rr.Body.String(), "Logged out") {
+		t.Fatalf("body = %q, expected logout message", rr.Body.String())
+	}
+	// Verify cookie is cleared
+	cookies := rr.Result().Cookies()
+	found := false
+	for _, c := range cookies {
+		if c.Name == "auth_token" && c.MaxAge == -1 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("expected auth_token cookie to be cleared (MaxAge=-1)")
+	}
+}
+
+func TestAuthHandlerForgotPasswordWithClosedPool(t *testing.T) {
+	pool, err := pgxpool.New(context.Background(), "postgres://eventosapp_user:eventosapp_password@localhost:5433/eventosapp?sslmode=disable")
+	if err != nil {
+		t.Skipf("pgxpool.New failed: %v", err)
+	}
+	pool.Close()
+
+	h := &AuthHandler{
+		userRepo:    repository.NewUserRepo(pool),
+		authService: services.NewAuthService("test-secret", 1),
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/forgot-password", strings.NewReader(`{"email":"test@test.dev"}`))
+	rr := httptest.NewRecorder()
+	h.ForgotPassword(rr, req)
+	// Always returns 200 (security: don't reveal if email exists)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+}
+
+func TestAuthHandlerResetPassword(t *testing.T) {
+	h := &AuthHandler{
+		authService: services.NewAuthService("test-secret", 1),
+	}
+
+	t.Run("InvalidBody", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/reset-password", strings.NewReader(`{bad`))
+		rr := httptest.NewRecorder()
+		h.ResetPassword(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("MissingFields", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/reset-password", strings.NewReader(`{"token":"","new_password":""}`))
+		rr := httptest.NewRecorder()
+		h.ResetPassword(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("ShortPassword", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/reset-password", strings.NewReader(`{"token":"abc","new_password":"12345"}`))
+		rr := httptest.NewRecorder()
+		h.ResetPassword(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("InvalidToken", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/reset-password", strings.NewReader(`{"token":"invalid-token","new_password":"123456"}`))
+		rr := httptest.NewRecorder()
+		h.ResetPassword(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+		}
+	})
+
+	t.Run("ValidResetTokenButUserNotFound", func(t *testing.T) {
+		pool, err := pgxpool.New(context.Background(), "postgres://eventosapp_user:eventosapp_password@localhost:5433/eventosapp?sslmode=disable")
+		if err != nil {
+			t.Skipf("pgxpool.New failed: %v", err)
+		}
+		pool.Close()
+
+		hh := &AuthHandler{
+			userRepo:    repository.NewUserRepo(pool),
+			authService: services.NewAuthService("test-secret", 1),
+		}
+
+		// Generate a valid reset token
+		token, _ := hh.authService.GenerateResetToken(uuid.New(), "test@test.dev")
+
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/reset-password", strings.NewReader(`{"token":"`+token+`","new_password":"123456"}`))
+		rr := httptest.NewRecorder()
+		hh.ResetPassword(rr, req)
+		if rr.Code != http.StatusNotFound {
+			t.Fatalf("status = %d, want %d, body=%s", rr.Code, http.StatusNotFound, rr.Body.String())
+		}
+	})
+
+	t.Run("NonResetToken", func(t *testing.T) {
+		pair, _ := h.authService.GenerateTokenPair(uuid.New(), "test@test.dev")
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/reset-password", strings.NewReader(`{"token":"`+pair.AccessToken+`","new_password":"123456"}`))
+		rr := httptest.NewRecorder()
+		h.ResetPassword(rr, req)
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+		}
+	})
+}
+
+func TestRegisterValidationEdgeCases(t *testing.T) {
+	h := &AuthHandler{
+		authService: services.NewAuthService("test-secret", 1),
+	}
+
+	t.Run("InvalidEmailFormat", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/register", strings.NewReader(`{"email":"not-an-email","password":"123456","name":"Test"}`))
+		rr := httptest.NewRecorder()
+		h.Register(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+		if !strings.Contains(rr.Body.String(), "Invalid email") {
+			t.Fatalf("body = %q, expected invalid email error", rr.Body.String())
+		}
+	})
+
+	t.Run("TooLongEmail", func(t *testing.T) {
+		longEmail := strings.Repeat("a", 250) + "@test.dev"
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/register", strings.NewReader(`{"email":"`+longEmail+`","password":"123456","name":"Test"}`))
+		rr := httptest.NewRecorder()
+		h.Register(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+	})
+
+	t.Run("TooLongName", func(t *testing.T) {
+		longName := strings.Repeat("a", 256)
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/register", strings.NewReader(`{"email":"valid@test.dev","password":"123456","name":"`+longName+`"}`))
+		rr := httptest.NewRecorder()
+		h.Register(rr, req)
+		if rr.Code != http.StatusBadRequest {
+			t.Fatalf("status = %d, want %d", rr.Code, http.StatusBadRequest)
+		}
+		if !strings.Contains(rr.Body.String(), "Name must not exceed") {
+			t.Fatalf("body = %q, expected name length error", rr.Body.String())
+		}
+	})
+}

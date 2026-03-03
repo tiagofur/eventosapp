@@ -7,6 +7,35 @@ import (
 	"github.com/tiagofur/eventosapp-backend/internal/config"
 )
 
+func TestNewEmailService(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "re_test_key",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+	if svc == nil {
+		t.Fatal("NewEmailService() returned nil")
+	}
+	if svc.cfg != cfg {
+		t.Fatal("NewEmailService() config mismatch")
+	}
+}
+
+func TestEmailService_SendEmail_NoApiKey(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.sendEmail("user@example.com", "Test Subject", "<p>Hello</p>")
+	if err == nil || err.Error() != "Resend not configured" {
+		t.Errorf("expected 'Resend not configured' error, got %v", err)
+	}
+}
+
 func TestEmailService_GeneratePasswordResetHTML(t *testing.T) {
 	cfg := &config.Config{
 		FrontendURL: "http://localhost:5173",

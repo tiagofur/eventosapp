@@ -2,6 +2,7 @@ import React from "react";
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -9,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
-import { ChevronLeft, Code2, Heart, Globe, Mail, FileText, Shield } from "lucide-react-native";
+import { ChevronLeft, Heart, Globe, Mail, FileText, Shield } from "lucide-react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SettingsStackParamList } from "../../types/navigation";
 import { useTheme } from "../../hooks/useTheme";
@@ -42,9 +43,11 @@ export default function AboutScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Code2 color={palette.primary} size={64} />
-          </View>
+          <Image
+            source={require("../../../assets/icon.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.appName}>EventosApp</Text>
           <Text style={styles.version}>Versi&#xF3;n {APP_VERSION}</Text>
         </View>
@@ -136,10 +139,7 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
   logo: {
     width: 120,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: palette.primaryLight,
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 30,
     marginBottom: spacing.md,
     ...shadows.md,
   },

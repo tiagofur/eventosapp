@@ -66,6 +66,20 @@ func TestCRUDHandlerErrorBranchesWithClosedPool(t *testing.T) {
 		{"ListPaymentsRepoError", withUser(httptest.NewRequest(http.MethodGet, "/api/payments?event_id="+id, nil)), (*CRUDHandler).ListPayments, http.StatusInternalServerError},
 		{"CreatePaymentRepoError", withUser(httptest.NewRequest(http.MethodPost, "/api/payments", strings.NewReader(`{"event_id":"`+id+`","amount":10,"payment_date":"2026-01-01","payment_method":"cash"}`))), (*CRUDHandler).CreatePayment, http.StatusInternalServerError},
 		{"UpdatePaymentRepoError", withURLParam(withUser(httptest.NewRequest(http.MethodPut, "/api/payments/"+id, strings.NewReader(`{"amount":10,"payment_date":"2026-01-01","payment_method":"cash"}`))), "id", id), (*CRUDHandler).UpdatePayment, http.StatusInternalServerError},
+		{"GetEventEquipmentRepoError", withURLParam(withUser(httptest.NewRequest(http.MethodGet, "/api/events/"+id+"/equipment", nil)), "id", id), (*CRUDHandler).GetEventEquipment, http.StatusNotFound},
+		{"DeletePaymentRepoError", withURLParam(withUser(httptest.NewRequest(http.MethodDelete, "/api/payments/"+id, nil)), "id", id), (*CRUDHandler).DeletePayment, http.StatusNotFound},
+		// --- NEW: closed-pool error tests for additional repo paths ---
+		{"CheckEquipmentConflictsRepoError", withUser(httptest.NewRequest(http.MethodPost, "/api/events/equipment/conflicts", strings.NewReader(`{"event_date":"2026-01-01","inventory_ids":["`+id+`"]}`))), (*CRUDHandler).CheckEquipmentConflicts, http.StatusInternalServerError},
+		{"GetEquipmentSuggestionsRepoError", withUser(httptest.NewRequest(http.MethodPost, "/api/events/equipment/suggestions", strings.NewReader(`{"product_ids":["`+id+`"]}`))), (*CRUDHandler).GetEquipmentSuggestions, http.StatusInternalServerError},
+		{"GetBatchProductIngredientsRepoError", withUser(httptest.NewRequest(http.MethodPost, "/api/products/ingredients/batch", strings.NewReader(`{"product_ids":["`+id+`"]}`))), (*CRUDHandler).GetBatchProductIngredients, http.StatusNotFound},
+		{"GetClientRepoError", withURLParam(withUser(httptest.NewRequest(http.MethodGet, "/api/clients/"+id, nil)), "id", id), (*CRUDHandler).GetClient, http.StatusNotFound},
+		{"GetProductRepoError", withURLParam(withUser(httptest.NewRequest(http.MethodGet, "/api/products/"+id, nil)), "id", id), (*CRUDHandler).GetProduct, http.StatusNotFound},
+		{"GetInventoryItemRepoError", withURLParam(withUser(httptest.NewRequest(http.MethodGet, "/api/inventory/"+id, nil)), "id", id), (*CRUDHandler).GetInventoryItem, http.StatusNotFound},
+		{"ListPaymentsNoFilterRepoError", withUser(httptest.NewRequest(http.MethodGet, "/api/payments", nil)), (*CRUDHandler).ListPayments, http.StatusInternalServerError},
+		{"ListPaymentsDateRangeRepoError", withUser(httptest.NewRequest(http.MethodGet, "/api/payments?start=2026-01-01&end=2026-12-31", nil)), (*CRUDHandler).ListPayments, http.StatusInternalServerError},
+		{"ListPaymentsEventIDsRepoError", withUser(httptest.NewRequest(http.MethodGet, "/api/payments?event_ids="+id, nil)), (*CRUDHandler).ListPayments, http.StatusInternalServerError},
+		{"ListEventsDateRangeRepoError", withUser(httptest.NewRequest(http.MethodGet, "/api/events?start=2026-01-01&end=2026-12-31", nil)), (*CRUDHandler).ListEvents, http.StatusInternalServerError},
+		{"ListEventsClientIDRepoError", withUser(httptest.NewRequest(http.MethodGet, "/api/events?client_id="+id, nil)), (*CRUDHandler).ListEvents, http.StatusInternalServerError},
 	}
 
 	for _, tc := range tests {

@@ -201,3 +201,69 @@ func TestResetTokens(t *testing.T) {
 		t.Fatalf("expected error validating access token as reset token, got %v", err)
 	}
 }
+
+func TestValidateResetToken_MalformedToken(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	_, err := svc.ValidateResetToken("not-a-valid-token-at-all")
+	if err == nil {
+		t.Fatal("ValidateResetToken() expected error for malformed token")
+	}
+}
+
+func TestValidateResetToken_ExpiredToken(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "expired-reset@test.dev"
+
+	// Manually create an expired reset token using jwt directly
+	now := time.Now()
+	claims := TokenClaims{
+		UserID: userID,
+		Email:  email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(-1 * time.Hour)), // expired 1 hour ago
+			IssuedAt:  jwt.NewNumericDate(now.Add(-2 * time.Hour)),
+			Issuer:    "eventosapp-backend",
+			Subject:   "password-reset",
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("failed to create expired token: %v", err)
+	}
+
+	_, err = svc.ValidateResetToken(tokenString)
+	if err == nil {
+		t.Fatal("ValidateResetToken() expected error for expired token")
+	}
+}
+
+func TestGenerateResetToken_Success(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "generate-reset@test.dev"
+
+	tokenStr, err := svc.GenerateResetToken(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateResetToken() error = %v", err)
+	}
+	if tokenStr == "" {
+		t.Fatal("GenerateResetToken() returned empty token")
+	}
+
+	// Validate the token and check claims
+	claims, err := svc.ValidateResetToken(tokenStr)
+	if err != nil {
+		t.Fatalf("ValidateResetToken() error = %v", err)
+	}
+	if claims.UserID != userID {
+		t.Errorf("claims.UserID = %v, want %v", claims.UserID, userID)
+	}
+	if claims.Email != email {
+		t.Errorf("claims.Email = %q, want %q", claims.Email, email)
+	}
+	if claims.Subject != "password-reset" {
+		t.Errorf("claims.Subject = %q, want %q", claims.Subject, "password-reset")
+	}
+}
