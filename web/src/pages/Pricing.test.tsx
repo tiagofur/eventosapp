@@ -69,6 +69,7 @@ describe('Pricing', () => {
       expect(screen.getByText('Hasta 20 ítems en catálogo')).toBeInTheDocument();
       expect(screen.getByText('Gestión básica de clientes')).toBeInTheDocument();
       expect(screen.getByText('Calendario de eventos')).toBeInTheDocument();
+      expect(screen.getByText('Generación de PDFs (cotizaciones, contratos y más)')).toBeInTheDocument();
     });
 
     it('renders the Pro plan card with features', () => {
@@ -86,7 +87,6 @@ describe('Pricing', () => {
       // Pro features
       expect(screen.getByText('Eventos ilimitados')).toBeInTheDocument();
       expect(screen.getByText('Clientes y catálogo ilimitados')).toBeInTheDocument();
-      expect(screen.getByText('Generación de cotizaciones PDF')).toBeInTheDocument();
       expect(screen.getByText('Control de pagos e ingresos en múltiples plazos')).toBeInTheDocument();
       expect(screen.getByText('Reportes y analíticas avanzadas')).toBeInTheDocument();
       expect(screen.getByText('Soporte prioritario')).toBeInTheDocument();

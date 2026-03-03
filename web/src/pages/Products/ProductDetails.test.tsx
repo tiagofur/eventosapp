@@ -36,12 +36,14 @@ const sampleIngredients = [
   {
     inventory_id: 'inv-1',
     quantity_required: 2,
-    inventory: { ingredient_name: 'Harina', current_stock: 100, minimum_stock: 20, unit: 'kg' },
+    ingredient_name: 'Harina',
+    unit: 'kg',
   },
   {
     inventory_id: 'inv-2',
     quantity_required: 5,
-    inventory: { ingredient_name: 'Azúcar', current_stock: 10, minimum_stock: 15, unit: 'kg' },
+    ingredient_name: 'Azúcar',
+    unit: 'kg',
   },
 ];
 
@@ -167,7 +169,7 @@ describe('ProductDetails', () => {
   it('shows fallback for ingredient with missing inventory', async () => {
     (productService.getById as any).mockResolvedValue(baseProduct);
     (productService.getIngredients as any).mockResolvedValue([
-      { inventory_id: 'inv-99', quantity_required: 1, inventory: null },
+      { inventory_id: 'inv-99', quantity_required: 1, ingredient_name: null },
     ]);
     renderDetails();
     await waitFor(() => screen.getByText('Paquete Premium'));

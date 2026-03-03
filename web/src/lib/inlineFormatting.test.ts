@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from '@testing-library/react';
 import {
   parseInlineFormatting,
   renderFormattedReact,
   renderFormattedHTML,
+  renderFormattedJsPDF,
 } from './inlineFormatting';
 
 describe('inlineFormatting', () => {
@@ -165,6 +166,93 @@ describe('inlineFormatting', () => {
       );
       expect(rendered.querySelector('strong')?.textContent).toBe('bold');
       expect(rendered.querySelector('em')?.textContent).toBe('italic');
+    });
+  });
+
+  describe('renderFormattedJsPDF', () => {
+    const createMockDoc = () => ({
+      setFontSize: vi.fn(),
+      setFont: vi.fn(),
+      text: vi.fn(),
+      getTextWidth: vi.fn((text: string) => text.length * 2),
+      setLineWidth: vi.fn(),
+      line: vi.fn(),
+    });
+
+    it('renders plain text with normal font', () => {
+      const doc = createMockDoc();
+      const finalY = renderFormattedJsPDF(doc as any, 'Hello world', 10, 20, 160, 10);
+      expect(doc.setFontSize).toHaveBeenCalledWith(10);
+      expect(doc.setFont).toHaveBeenCalledWith('helvetica', 'normal');
+      expect(doc.text).toHaveBeenCalled();
+      expect(finalY).toBeGreaterThan(20);
+    });
+
+    it('renders bold text with bold font style', () => {
+      const doc = createMockDoc();
+      renderFormattedJsPDF(doc as any, '**bold text**', 10, 20, 160, 10);
+      expect(doc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
+      // Resets to normal after rendering
+      expect(doc.setFont).toHaveBeenLastCalledWith('helvetica', 'normal');
+    });
+
+    it('renders italic text with italic font style', () => {
+      const doc = createMockDoc();
+      renderFormattedJsPDF(doc as any, '*italic text*', 10, 20, 160, 10);
+      expect(doc.setFont).toHaveBeenCalledWith('helvetica', 'italic');
+    });
+
+    it('renders bold+italic text with bolditalic font style', () => {
+      const doc = createMockDoc();
+      // We can't nest markers, but we test via segments directly
+      // The function uses parseInlineFormatting which doesn't produce bold+italic from markdown
+      // So test plain + bold separately
+      renderFormattedJsPDF(doc as any, '**bold** and *italic*', 10, 20, 160, 10);
+      expect(doc.setFont).toHaveBeenCalledWith('helvetica', 'bold');
+      expect(doc.setFont).toHaveBeenCalledWith('helvetica', 'italic');
+    });
+
+    it('draws underline with doc.line()', () => {
+      const doc = createMockDoc();
+      renderFormattedJsPDF(doc as any, '__underlined__', 10, 20, 160, 10);
+      expect(doc.setLineWidth).toHaveBeenCalledWith(0.3);
+      expect(doc.line).toHaveBeenCalled();
+      // Verify line coordinates: starts at x=10, underlineY = 20+1 = 21
+      const lineCall = doc.line.mock.calls[0];
+      expect(lineCall[1]).toBe(21); // underlineY
+      expect(lineCall[3]).toBe(21); // same Y for horizontal line
+    });
+
+    it('wraps text to next line when exceeding maxWidth', () => {
+      const doc = createMockDoc();
+      // Each char = 2 units width. maxWidth = 20, so max ~10 chars per line
+      // "AAAAAAAAAA BBBBBBBBBB" should wrap
+      renderFormattedJsPDF(doc as any, 'AAAAAAAAAA BBBBBBBBBB', 10, 20, 20, 10);
+      // Should have text calls at different Y positions
+      const yCalls = doc.text.mock.calls.map((c: any[]) => c[2]);
+      const uniqueY = [...new Set(yCalls)];
+      expect(uniqueY.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('returns final Y position after rendering', () => {
+      const doc = createMockDoc();
+      const finalY = renderFormattedJsPDF(doc as any, 'Test', 10, 50, 160, 12);
+      // lineHeight = fontSize * 0.5 = 6
+      expect(finalY).toBe(50 + 6);
+    });
+
+    it('handles empty text', () => {
+      const doc = createMockDoc();
+      const finalY = renderFormattedJsPDF(doc as any, '', 10, 20, 160, 10);
+      expect(finalY).toBeGreaterThanOrEqual(20);
+    });
+
+    it('resets font to normal after rendering', () => {
+      const doc = createMockDoc();
+      renderFormattedJsPDF(doc as any, '**bold** and *italic*', 10, 20, 160, 10);
+      // Last setFont call should be reset to normal
+      const lastCall = doc.setFont.mock.calls[doc.setFont.mock.calls.length - 1];
+      expect(lastCall).toEqual(['helvetica', 'normal']);
     });
   });
 });

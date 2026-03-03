@@ -8,6 +8,7 @@ vi.mock('../lib/api', () => ({
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    postFormData: vi.fn(),
   },
 }));
 
@@ -44,5 +45,16 @@ describe('clientService', () => {
     (api.delete as any).mockResolvedValue({});
     await clientService.delete('1');
     expect(api.delete).toHaveBeenCalledWith('/clients/1');
+  });
+
+  it('uploadPhoto calls api.postFormData with FormData', async () => {
+    const mockResponse = { url: 'https://example.com/img.jpg', thumbnail_url: 'https://example.com/thumb.jpg' };
+    (api.postFormData as any).mockResolvedValue(mockResponse);
+
+    const file = new File(['content'], 'photo.jpg', { type: 'image/jpeg' });
+    const result = await clientService.uploadPhoto(file);
+
+    expect(api.postFormData).toHaveBeenCalledWith('/uploads/image', expect.any(FormData));
+    expect(result).toEqual(mockResponse);
   });
 });

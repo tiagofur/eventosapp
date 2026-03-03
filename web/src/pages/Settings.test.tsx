@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { Settings } from './Settings';
 import { logError } from '../lib/errorHandler';
 import { subscriptionService } from '../services/subscriptionService';
+import { api } from '../lib/api';
+import { DEFAULT_CONTRACT_TEMPLATE } from '../lib/contractTemplate';
 
 const mockUpdateProfile = vi.fn();
 let mockUser: Record<string, unknown> = {
@@ -38,6 +40,12 @@ vi.mock('../lib/errorHandler', () => ({
 vi.mock('../services/subscriptionService', () => ({
   subscriptionService: {
     createPortalSession: vi.fn(),
+  },
+}));
+
+vi.mock('../lib/api', () => ({
+  api: {
+    postFormData: vi.fn(),
   },
 }));
 
@@ -202,13 +210,8 @@ describe('Settings', () => {
   // --- Logo upload tests ---
 
   it('uploads a valid logo file', async () => {
-    const base64Result = 'data:image/png;base64,abc123';
-    const readAsDataURLSpy = vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(function (this: FileReader) {
-      Object.defineProperty(this, 'result', { value: base64Result, writable: true });
-      setTimeout(() => {
-        if (this.onloadend) this.onloadend(new ProgressEvent('loadend') as ProgressEvent<FileReader>);
-      }, 0);
-    });
+    const uploadedUrl = 'https://example.com/uploads/logo.png';
+    vi.mocked(api.postFormData).mockResolvedValueOnce({ url: uploadedUrl });
 
     renderSettings();
     clickTab('Mi Negocio');
@@ -219,13 +222,13 @@ describe('Settings', () => {
 
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    expect(readAsDataURLSpy).toHaveBeenCalledWith(file);
-
     await waitFor(() => {
-      expect(mockUpdateProfile).toHaveBeenCalledWith({ logo_url: base64Result });
+      expect(api.postFormData).toHaveBeenCalledWith('/uploads/image', expect.any(FormData));
     });
 
-    readAsDataURLSpy.mockRestore();
+    await waitFor(() => {
+      expect(mockUpdateProfile).toHaveBeenCalledWith({ logo_url: uploadedUrl });
+    });
   });
 
   it('shows alert for too-large logo file', () => {
@@ -235,11 +238,11 @@ describe('Settings', () => {
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['x'], 'huge.png', { type: 'image/png' });
-    Object.defineProperty(file, 'size', { value: 3 * 1024 * 1024 });
+    Object.defineProperty(file, 'size', { value: 11 * 1024 * 1024 });
 
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    expect(alertSpy).toHaveBeenCalledWith('El archivo es demasiado grande (máximo 2MB).');
+    expect(alertSpy).toHaveBeenCalledWith('El archivo es demasiado grande (máximo 10MB).');
     expect(mockUpdateProfile).not.toHaveBeenCalled();
     alertSpy.mockRestore();
   });
@@ -303,6 +306,7 @@ describe('Settings', () => {
         default_deposit_percent: 55,
         default_cancellation_days: 20,
         default_refund_percent: 15,
+        contract_template: DEFAULT_CONTRACT_TEMPLATE,
       });
     });
   });

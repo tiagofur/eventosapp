@@ -169,4 +169,46 @@ describe('eventService', () => {
       ],
     });
   });
+
+  it('updateItems includes equipment when provided', async () => {
+    (api.put as any).mockResolvedValue({});
+
+    await eventService.updateItems(
+      'event-1',
+      [{ productId: 'p1', quantity: 1, unitPrice: 100 }],
+      [{ description: 'Extra', cost: 10, price: 20, exclude_utility: false }],
+      [{ inventoryId: 'inv-1', quantity: 3, notes: 'fragile' }],
+    );
+
+    expect(api.put).toHaveBeenCalledWith('/events/event-1/items', {
+      products: [{ product_id: 'p1', quantity: 1, unit_price: 100, discount: 0 }],
+      extras: [{ description: 'Extra', cost: 10, price: 20, exclude_utility: false }],
+      equipment: [{ inventory_id: 'inv-1', quantity: 3, notes: 'fragile' }],
+    });
+  });
+
+  it('getEquipment calls api.get', async () => {
+    (api.get as any).mockResolvedValue([]);
+    await eventService.getEquipment('event-1');
+    expect(api.get).toHaveBeenCalledWith('/events/event-1/equipment');
+  });
+
+  it('checkEquipmentConflicts calls api.post', async () => {
+    (api.post as any).mockResolvedValue([]);
+    const params = {
+      event_date: '2024-01-01',
+      start_time: '10:00',
+      end_time: '14:00',
+      inventory_ids: ['inv-1', 'inv-2'],
+      exclude_event_id: 'event-1',
+    };
+    await eventService.checkEquipmentConflicts(params);
+    expect(api.post).toHaveBeenCalledWith('/events/equipment/conflicts', params);
+  });
+
+  it('getEquipmentSuggestions calls api.post with product_ids', async () => {
+    (api.post as any).mockResolvedValue([]);
+    await eventService.getEquipmentSuggestions(['p1', 'p2']);
+    expect(api.post).toHaveBeenCalledWith('/events/equipment/suggestions', { product_ids: ['p1', 'p2'] });
+  });
 });

@@ -124,7 +124,7 @@ Firmas:
 Proveedor: [Nombre del proveedor]
 Cliente: [Nombre del cliente]`;
 
-const TOKEN_REGEX = /\[([^\[\]]+)\]/g;
+const TOKEN_REGEX = /\[([^[\]]+)\]/g;
 
 export class ContractTemplateError extends Error {
   invalidTokens: string[];
