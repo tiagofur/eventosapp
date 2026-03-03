@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Event, Client, EventProduct, EventExtra, Payment } from "../types/entities";
 import { User } from "../contexts/AuthContext";
+import { renderContractTemplate } from "./contractTemplate";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -295,58 +296,19 @@ export const generateContractPDF = async (
   const brandColor = profile?.brand_color || DEFAULT_BRAND_COLOR;
   const providerName = profile?.business_name || profile?.name || "EL PROVEEDOR";
   const clientName = event.client?.name || "EL CLIENTE";
-  const city = event.city || providerName;
-  const dateStr = formatDateLongES(new Date());
-  const eventDateStr = formatDateES(event.event_date);
-  const depositPercent = event.deposit_percent ?? 50;
-  const cancellationDays = event.cancellation_days ?? 15;
 
-  let refundClause = "";
-  if (event.refund_percent && event.refund_percent > 0) {
-    refundClause = `Si la cancelación se realiza con la debida anticipación, se reembolsará el ${event.refund_percent}% del anticipo entregado.`;
-  }
+  const renderedContract = renderContractTemplate({
+    event,
+    profile,
+    template: profile?.contract_template,
+    strict: true,
+  });
+
+  const escapedContract = esc(renderedContract).replace(/\n/g, "<br/>");
 
   const body = `
     ${buildHeaderHTML(profile, "Contrato de Servicios")}
-
-    <p style="margin-bottom:16px;">
-      En ${esc(city)}, a los ${dateStr}, comparecen por una parte
-      <strong>${esc(providerName)}</strong> (en adelante "EL PROVEEDOR"), y por la otra parte
-      <strong>${esc(clientName)}</strong> (en adelante "EL CLIENTE"), quienes convienen en
-      celebrar el presente Contrato de Prestación de Servicios.
-    </p>
-
-    <div class="clause">
-      <p class="clause-title">PRIMERA: OBJETO.</p>
-      <p>EL PROVEEDOR se compromete a prestar los servicios de <strong>${esc(event.service_type)}</strong>
-      para el evento que se llevará a cabo el día <strong>${eventDateStr}</strong>.</p>
-    </div>
-
-    <div class="clause">
-      <p class="clause-title">SEGUNDA: DETALLES DEL EVENTO.</p>
-      <p>El evento contará con aproximadamente <strong>${event.num_people}</strong> personas.</p>
-      <p>Ubicación: ${esc(event.location || "A definir")}.</p>
-      <p>Horario: ${esc(event.start_time || "A definir")} - ${esc(event.end_time || "A definir")}.</p>
-    </div>
-
-    <div class="clause">
-      <p class="clause-title">TERCERA: COSTO Y FORMA DE PAGO.</p>
-      <p>El costo total del servicio es de <strong>${formatCurrency(event.total_amount)}</strong>.</p>
-      <p>EL CLIENTE realizará un anticipo del <strong>${depositPercent}%</strong> para reservar la fecha,
-      debiendo liquidar el saldo restante antes del inicio del evento.</p>
-    </div>
-
-    <div class="clause">
-      <p class="clause-title">CUARTA: CANCELACIONES.</p>
-      <p>En caso de cancelación por parte de EL CLIENTE con menos de <strong>${cancellationDays} días</strong>
-      de anticipación, el anticipo no será reembolsado.</p>
-      ${refundClause ? `<p>${refundClause}</p>` : ""}
-    </div>
-
-    <div class="clause">
-      <p class="clause-title">QUINTA: ACEPTACIÓN.</p>
-      <p>Ambas partes aceptan los términos y condiciones del presente contrato.</p>
-    </div>
+    <div style="margin-bottom:16px; white-space: pre-line;">${escapedContract}</div>
 
     <div class="signatures">
       <div class="signature-box">

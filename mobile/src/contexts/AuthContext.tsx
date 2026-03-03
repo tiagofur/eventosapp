@@ -15,6 +15,7 @@ export interface User {
   default_deposit_percent?: number;
   default_cancellation_days?: number;
   default_refund_percent?: number;
+  contract_template?: string | null;
 }
 
 interface AuthContextType {

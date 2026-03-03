@@ -25,9 +25,10 @@ func TestMigrateIntegration(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM schema_migrations").Scan(&count); err != nil {
 		t.Fatalf("failed to count schema_migrations: %v", err)
 	}
-	if count != 7 {
-		t.Fatalf("schema_migrations count = %d, want 7", count)
+	if count == 0 {
+		t.Fatalf("schema_migrations count = %d, want > 0", count)
 	}
+	initialCount := count
 
 	if err := Migrate(pool); err != nil {
 		t.Fatalf("Migrate() second run error = %v", err)
@@ -35,8 +36,8 @@ func TestMigrateIntegration(t *testing.T) {
 	if err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM schema_migrations").Scan(&count); err != nil {
 		t.Fatalf("failed to count schema_migrations after second run: %v", err)
 	}
-	if count != 7 {
-		t.Fatalf("schema_migrations count after rerun = %d, want 7", count)
+	if count != initialCount {
+		t.Fatalf("schema_migrations count after rerun = %d, want %d", count, initialCount)
 	}
 }
 

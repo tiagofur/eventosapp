@@ -24,11 +24,17 @@ import { useTheme } from "../../hooks/useTheme";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
+import {
+  CONTRACT_TEMPLATE_TOKENS,
+  DEFAULT_CONTRACT_TEMPLATE,
+  validateContractTemplate,
+} from "../../lib/contractTemplate";
 
 const contractSchema = z.object({
   default_deposit_percent: z.number().min(0, "Mínimo 0%").max(100, "Máximo 100%"),
   default_cancellation_days: z.number().min(0, "Mínimo 0 días").max(365, "Máximo 365 días"),
   default_refund_percent: z.number().min(0, "Mínimo 0%").max(100, "Máximo 100%"),
+  contract_template: z.string().min(1, "La plantilla es obligatoria").max(20000, "Máximo 20000 caracteres"),
 });
 
 type ContractFormData = z.infer<typeof contractSchema>;
@@ -54,6 +60,7 @@ export default function ContractDefaultsScreen({ navigation }: Props) {
       default_deposit_percent: 50,
       default_cancellation_days: 15,
       default_refund_percent: 0,
+      contract_template: DEFAULT_CONTRACT_TEMPLATE,
     },
   });
 
@@ -63,18 +70,29 @@ export default function ContractDefaultsScreen({ navigation }: Props) {
         default_deposit_percent: user.default_deposit_percent ?? 50,
         default_cancellation_days: user.default_cancellation_days ?? 15,
         default_refund_percent: user.default_refund_percent ?? 0,
+        contract_template: user.contract_template ?? DEFAULT_CONTRACT_TEMPLATE,
       });
     }
   }, [user, reset]);
 
   const onSubmit = useCallback(
     async (data: ContractFormData) => {
+      const { invalidTokens } = validateContractTemplate(data.contract_template);
+      if (invalidTokens.length > 0) {
+        addToast(
+          `Placeholders no soportados: ${invalidTokens.map((t) => `[${t}]`).join(", ")}`,
+          "error",
+        );
+        return;
+      }
+
       setSubmitting(true);
       try {
         await updateProfile({
           default_deposit_percent: data.default_deposit_percent,
           default_cancellation_days: data.default_cancellation_days,
           default_refund_percent: data.default_refund_percent,
+          contract_template: data.contract_template,
         });
         addToast("Valores de contrato actualizados", "success");
         navigation.goBack();
@@ -170,6 +188,31 @@ export default function ContractDefaultsScreen({ navigation }: Props) {
               </View>
             )}
           />
+
+          <Controller
+            control={control}
+            name="contract_template"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <View>
+                <FormInput
+                  label="Plantilla del Contrato"
+                  placeholder="Escribe aquí la plantilla usando [token]"
+                  value={value || ""}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.contract_template?.message}
+                  multiline
+                  style={styles.templateInput}
+                />
+                <Text style={styles.helperText}>
+                  Usa placeholders en formato [token]. Si falta información al generar PDF, se bloquea la impresión.
+                </Text>
+                <Text style={styles.tokenList}>
+                  {CONTRACT_TEMPLATE_TOKENS.map((token) => `[${token}]`).join("  ")}
+                </Text>
+              </View>
+            )}
+          />
         </ScrollView>
 
         <View style={styles.footer}>
@@ -219,6 +262,16 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     marginTop: -spacing.sm,
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.xxs,
+  },
+  templateInput: {
+    minHeight: 240,
+    textAlignVertical: "top",
+  },
+  tokenList: {
+    ...typography.caption2,
+    color: palette.textSecondary,
+    marginTop: spacing.xs,
+    lineHeight: 18,
   },
   footer: {
     padding: spacing.lg,

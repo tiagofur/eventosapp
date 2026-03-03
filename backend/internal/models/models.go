@@ -18,6 +18,7 @@ type User struct {
 	DefaultDepositPercent   *float64  `json:"default_deposit_percent,omitempty"`
 	DefaultCancellationDays *float64  `json:"default_cancellation_days,omitempty"`
 	DefaultRefundPercent    *float64  `json:"default_refund_percent,omitempty"`
+	ContractTemplate        *string   `json:"contract_template,omitempty"`
 	Plan                    string    `json:"plan"`
 	StripeCustomerID        *string   `json:"stripe_customer_id,omitempty"`
 	CreatedAt               time.Time `json:"created_at"`

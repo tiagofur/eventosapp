@@ -21,6 +21,7 @@ export interface User {
     default_deposit_percent: number | null
     default_cancellation_days: number | null
     default_refund_percent: number | null
+    contract_template: string | null
     plan: 'basic' | 'premium'
     stripe_customer_id: string | null
     created_at: string

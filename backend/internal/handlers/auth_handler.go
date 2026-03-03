@@ -362,6 +362,7 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		DefaultDepositPercent   *float64 `json:"default_deposit_percent"`
 		DefaultCancellationDays *float64 `json:"default_cancellation_days"`
 		DefaultRefundPercent    *float64 `json:"default_refund_percent"`
+		ContractTemplate        *string  `json:"contract_template"`
 	}
 
 	if err := decodeJSON(r, &req); err != nil {
@@ -369,9 +370,20 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.ContractTemplate != nil {
+		if err := validateContractTemplate(*req.ContractTemplate); err != nil {
+			if validationErr, ok := err.(ValidationError); ok {
+				writeError(w, http.StatusBadRequest, validationErr.Error())
+				return
+			}
+			writeError(w, http.StatusBadRequest, "Invalid contract template")
+			return
+		}
+	}
+
 	user, err := h.userRepo.Update(r.Context(), userID,
 		req.Name, req.BusinessName, req.LogoURL, req.BrandColor, req.ShowBusinessNameInPdf,
-		req.DefaultDepositPercent, req.DefaultCancellationDays, req.DefaultRefundPercent,
+		req.DefaultDepositPercent, req.DefaultCancellationDays, req.DefaultRefundPercent, req.ContractTemplate,
 	)
 	if err != nil {
 		slog.Error("Failed to update profile", "error", err)

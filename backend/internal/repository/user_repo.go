@@ -31,11 +31,13 @@ func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 	user := &models.User{}
 	query := `SELECT id, email, password_hash, name, business_name, logo_url, brand_color, show_business_name_in_pdf,
 		default_deposit_percent, default_cancellation_days, default_refund_percent,
+		contract_template,
 		plan, stripe_customer_id, created_at, updated_at
 		FROM users WHERE email = $1`
 	err := r.pool.QueryRow(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.BusinessName, &user.LogoURL, &user.BrandColor, &user.ShowBusinessNameInPdf,
 		&user.DefaultDepositPercent, &user.DefaultCancellationDays, &user.DefaultRefundPercent,
+		&user.ContractTemplate,
 		&user.Plan, &user.StripeCustomerID, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -48,11 +50,13 @@ func (r *UserRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, err
 	user := &models.User{}
 	query := `SELECT id, email, password_hash, name, business_name, logo_url, brand_color, show_business_name_in_pdf,
 		default_deposit_percent, default_cancellation_days, default_refund_percent,
+		contract_template,
 		plan, stripe_customer_id, created_at, updated_at
 		FROM users WHERE id = $1`
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.BusinessName, &user.LogoURL, &user.BrandColor, &user.ShowBusinessNameInPdf,
 		&user.DefaultDepositPercent, &user.DefaultCancellationDays, &user.DefaultRefundPercent,
+		&user.ContractTemplate,
 		&user.Plan, &user.StripeCustomerID, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -62,7 +66,7 @@ func (r *UserRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, err
 }
 
 func (r *UserRepo) Update(ctx context.Context, id uuid.UUID, name, businessName, logoURL, brandColor *string, showBusinessNameInPdf *bool,
-	depositPercent, cancellationDays, refundPercent *float64) (*models.User, error) {
+	depositPercent, cancellationDays, refundPercent *float64, contractTemplate *string) (*models.User, error) {
 	query := `
 		UPDATE users SET
 			name = COALESCE($2, name),
@@ -73,16 +77,19 @@ func (r *UserRepo) Update(ctx context.Context, id uuid.UUID, name, businessName,
 			default_deposit_percent = COALESCE($7, default_deposit_percent),
 			default_cancellation_days = COALESCE($8, default_cancellation_days),
 			default_refund_percent = COALESCE($9, default_refund_percent),
+			contract_template = COALESCE($10, contract_template),
 			updated_at = NOW()
 		WHERE id = $1
 		RETURNING id, email, password_hash, name, business_name, logo_url, brand_color, show_business_name_in_pdf,
 			default_deposit_percent, default_cancellation_days, default_refund_percent,
+			contract_template,
 			plan, stripe_customer_id, created_at, updated_at`
 	user := &models.User{}
 	err := r.pool.QueryRow(ctx, query, id, name, businessName, logoURL, brandColor, showBusinessNameInPdf,
-		depositPercent, cancellationDays, refundPercent).Scan(
+		depositPercent, cancellationDays, refundPercent, contractTemplate).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.BusinessName, &user.LogoURL, &user.BrandColor, &user.ShowBusinessNameInPdf,
 		&user.DefaultDepositPercent, &user.DefaultCancellationDays, &user.DefaultRefundPercent,
+		&user.ContractTemplate,
 		&user.Plan, &user.StripeCustomerID, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {

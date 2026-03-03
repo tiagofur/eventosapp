@@ -4,6 +4,7 @@ import { Event, Client, User, EventProduct, EventExtra, Payment } from '../types
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { logError } from './errorHandler';
+import { renderContractTemplate } from './contractTemplate';
 
 type EventWithClient = Event & {
   client?: Client | null;
@@ -12,6 +13,7 @@ type UserProfile = User & {
   stripe_customer_id?: string | null;
   created_at?: string;
   updated_at?: string;
+  contract_template?: string | null;
 };
 type ProductItem = EventProduct & {
   products: { name: string } | null;
@@ -227,36 +229,15 @@ export const generateContractPDF = (
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
 
-  const city = event.city || profile?.business_name || 'la ciudad';
-  const dateStr = format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es });
   const providerName = profile?.business_name || profile?.name || 'EL PROVEEDOR';
   const clientName = event.client?.name || 'EL CLIENTE';
 
-  const eventDate = new Date(event.event_date);
-  const userTimezoneOffset = eventDate.getTimezoneOffset() * 60000;
-  const localDate = new Date(eventDate.getTime() + userTimezoneOffset);
-  const eventDateStr = format(localDate, "d 'de' MMMM 'de' yyyy", { locale: es });
-
-  const text = `En ${city}, a los ${dateStr}, comparecen por una parte ${providerName} (en adelante "EL PROVEEDOR"), y por la otra parte ${clientName} (en adelante "EL CLIENTE"), quienes convienen en celebrar el presente Contrato de Prestación de Servicios.
-
-PRIMERA: OBJETO.
-EL PROVEEDOR se compromete a prestar los servicios de ${event.service_type} para el evento que se llevará a cabo el día ${eventDateStr}.
-
-SEGUNDA: DETALLES DEL EVENTO.
-El evento contará con aproximadamente ${event.num_people} personas.
-Ubicación: ${event.location || 'A definir'}.
-Horario: ${event.start_time || 'A definir'} - ${event.end_time || 'A definir'}.
-
-TERCERA: COSTO Y FORMA DE PAGO.
-El costo total del servicio es de ${formatCurrency(event.total_amount)}.
-EL CLIENTE realizará un anticipo del ${event.deposit_percent ?? 50}% para reservar la fecha, debiendo liquidar el saldo restante antes del inicio del evento.
-
-CUARTA: CANCELACIONES.
-En caso de cancelación por parte de EL CLIENTE con menos de ${event.cancellation_days ?? 15} días de anticipación, el anticipo no será reembolsado.
-${event.refund_percent && event.refund_percent > 0 ? `Si la cancelación se realiza con la debida anticipación, se reembolsará el ${event.refund_percent}% del anticipo entregado.` : ''}
-
-QUINTA: ACEPTACIÓN.
-Ambas partes aceptan los términos y condiciones del presente contrato.`;
+  const text = renderContractTemplate({
+    event,
+    profile,
+    template: profile?.contract_template,
+    strict: true,
+  });
 
   const splitText = doc.splitTextToSize(text, 170);
   doc.text(splitText, 20, currentY + 10);

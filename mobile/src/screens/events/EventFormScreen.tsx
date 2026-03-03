@@ -151,13 +151,13 @@ export default function EventFormScreen({ navigation, route }: Props) {
     discount: 0,
     discount_type: "percent" as "percent" | "fixed",
     tax_rate: 16,
-    deposit_percent: 50,
+    deposit_percent: user?.default_deposit_percent ?? 50,
     location: "",
     city: "",
     notes: "",
     requires_invoice: false,
-    cancellation_days: 15,
-    refund_percent: 0,
+    cancellation_days: user?.default_cancellation_days ?? 15,
+    refund_percent: user?.default_refund_percent ?? 0,
   });
 
   const {
@@ -204,13 +204,13 @@ export default function EventFormScreen({ navigation, route }: Props) {
           discount: event.discount,
           discount_type: "percent",
           tax_rate: event.tax_rate,
-          deposit_percent: event.deposit_percent || 50,
+          deposit_percent: event.deposit_percent ?? (user?.default_deposit_percent ?? 50),
           location: event.location || "",
           city: event.city || "",
           notes: event.notes || "",
           requires_invoice: event.requires_invoice,
-          cancellation_days: event.cancellation_days || 15,
-          refund_percent: event.refund_percent || 0,
+          cancellation_days: event.cancellation_days ?? (user?.default_cancellation_days ?? 15),
+          refund_percent: event.refund_percent ?? (user?.default_refund_percent ?? 0),
         });
 
         const eventProducts = await eventService.getProducts(id);
@@ -247,6 +247,14 @@ export default function EventFormScreen({ navigation, route }: Props) {
             }))
           );
         }
+      }
+      if (!id) {
+        setFormData((prev) => ({
+          ...prev,
+          deposit_percent: user?.default_deposit_percent ?? 50,
+          cancellation_days: user?.default_cancellation_days ?? 15,
+          refund_percent: user?.default_refund_percent ?? 0,
+        }));
       }
     } catch (err) {
       logError("Error loading data", err);
