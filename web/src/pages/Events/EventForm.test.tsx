@@ -6,6 +6,7 @@ import { EventForm } from './EventForm';
 import { eventService } from '../../services/eventService';
 import { clientService } from '../../services/clientService';
 import { productService } from '../../services/productService';
+import { inventoryService } from '../../services/inventoryService';
 import { logError } from '../../lib/errorHandler';
 
 let triggerFetchCosts = () => {};
@@ -152,6 +153,10 @@ vi.mock('./components/EventExtras', () => ({
   },
 }));
 
+vi.mock('./components/EventEquipment', () => ({
+  EventEquipment: () => <div>EVENT_EQUIPMENT</div>,
+}));
+
 vi.mock('./components/EventFinancials', () => ({
   EventFinancials: () => <div>EVENT_FINANCIALS</div>,
 }));
@@ -161,9 +166,12 @@ vi.mock('../../services/eventService', () => ({
     getById: vi.fn(),
     getProducts: vi.fn(),
     getExtras: vi.fn(),
+    getEquipment: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     updateItems: vi.fn(),
+    checkEquipmentConflicts: vi.fn(),
+    getEquipmentSuggestions: vi.fn(),
   },
 }));
 
@@ -173,6 +181,10 @@ vi.mock('../../services/clientService', () => ({
 
 vi.mock('../../services/productService', () => ({
   productService: { getAll: vi.fn(), getIngredients: vi.fn() },
+}));
+
+vi.mock('../../services/inventoryService', () => ({
+  inventoryService: { getAll: vi.fn() },
 }));
 
 vi.mock('../../lib/errorHandler', () => ({
@@ -217,6 +229,10 @@ describe('EventForm', () => {
     mockClientCreatedCallback = null;
     (clientService.getAll as any).mockResolvedValue([]);
     (productService.getAll as any).mockResolvedValue([]);
+    (inventoryService.getAll as any).mockResolvedValue([]);
+    (eventService.getEquipment as any).mockResolvedValue([]);
+    (eventService.checkEquipmentConflicts as any).mockResolvedValue([]);
+    (eventService.getEquipmentSuggestions as any).mockResolvedValue([]);
   });
 
   it('advances steps and creates event', async () => {
@@ -240,6 +256,11 @@ describe('EventForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {
+      expect(screen.getByText('EVENT_EQUIPMENT')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+    await waitFor(() => {
       expect(screen.getByText('EVENT_FINANCIALS')).toBeInTheDocument();
     });
 
@@ -252,7 +273,7 @@ describe('EventForm', () => {
         end_time: null,
         user_id: 'user-1',
       });
-      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], []);
+      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], [], []);
     });
   });
 
@@ -301,7 +322,7 @@ describe('EventForm', () => {
     fireEvent.submit(container.querySelector('form')!);
 
     await waitFor(() => {
-      expect(screen.getByText('EVENT_FINANCIALS')).toBeInTheDocument();
+      expect(screen.getByText('EVENT_EQUIPMENT')).toBeInTheDocument();
     });
     expect(eventService.create).not.toHaveBeenCalled();
   });
@@ -329,6 +350,10 @@ describe('EventForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {
       expect(screen.getByText('EVENT_EXTRAS')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+    await waitFor(() => {
+      expect(screen.getByText('EVENT_EQUIPMENT')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {
@@ -479,6 +504,11 @@ describe('EventForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {
+      expect(screen.getByText('EVENT_EQUIPMENT')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+    await waitFor(() => {
       expect(screen.getByText('EVENT_FINANCIALS')).toBeInTheDocument();
     });
 
@@ -496,7 +526,8 @@ describe('EventForm', () => {
           expect.objectContaining({
             cost: 50,
           }),
-        ]
+        ],
+        []
       );
     });
   });
@@ -680,6 +711,7 @@ describe('EventForm', () => {
     expect(screen.getByText('Información General')).toBeInTheDocument();
     expect(screen.getByText('Productos')).toBeInTheDocument();
     expect(screen.getByText('Extras')).toBeInTheDocument();
+    expect(screen.getByText('Equipo')).toBeInTheDocument();
     expect(screen.getByText('Finanzas y Contrato')).toBeInTheDocument();
   });
 
@@ -717,6 +749,11 @@ describe('EventForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {
+      expect(screen.getByText('EVENT_EQUIPMENT')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+    await waitFor(() => {
       expect(screen.getByText('EVENT_FINANCIALS')).toBeInTheDocument();
     });
 
@@ -727,7 +764,7 @@ describe('EventForm', () => {
         client_id: 'client-1',
         user_id: 'user-1',
       }));
-      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], []);
+      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], [], []);
     });
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/event-1/summary');
@@ -746,6 +783,10 @@ describe('EventForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {
       expect(screen.getByText('EVENT_EXTRAS')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
+    await waitFor(() => {
+      expect(screen.getByText('EVENT_EQUIPMENT')).toBeInTheDocument();
     });
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/i }));
     await waitFor(() => {

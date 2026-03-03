@@ -189,6 +189,14 @@ func ValidateInventoryItem(item *models.InventoryItem) error {
 	return nil
 }
 
+// ValidateEventEquipment validates event equipment assignments
+func ValidateEventEquipment(eq *models.EventEquipment) error {
+	if eq.Quantity < 1 {
+		return ValidationError{Field: "quantity", Message: "must be at least 1"}
+	}
+	return nil
+}
+
 // ValidateProductIngredient validates product ingredient relationships
 func ValidateProductIngredient(pi *models.ProductIngredient) error {
 	// Validate quantity_required (must be positive)

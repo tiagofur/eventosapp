@@ -103,6 +103,10 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 				r.Get("/{id}/products", crudHandler.GetEventProducts)
 				r.Get("/{id}/extras", crudHandler.GetEventExtras)
 				r.Put("/{id}/items", crudHandler.UpdateEventItems)
+				r.Get("/{id}/equipment", crudHandler.GetEventEquipment)
+				// Equipment conflict detection & suggestions (no event ID needed)
+				r.Post("/equipment/conflicts", crudHandler.CheckEquipmentConflicts)
+				r.Post("/equipment/suggestions", crudHandler.GetEquipmentSuggestions)
 				// Event payment routes
 				r.Post("/{id}/checkout-session", eventPaymentHandler.CreateEventCheckoutSession)
 				r.Get("/{id}/payment-session", eventPaymentHandler.HandleEventPaymentSuccess)

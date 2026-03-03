@@ -22,6 +22,7 @@ import {
   Camera,
   X,
   ImagePlus,
+  Wrench,
 } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -87,6 +88,7 @@ export const EventSummary: React.FC = () => {
   const [event, setEvent] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [extras, setExtras] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
   const [ingredients, setIngredients] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,18 +125,20 @@ export const EventSummary: React.FC = () => {
   const loadData = async (eventId: string) => {
     try {
       setLoading(true);
-      const [eventData, productsData, extrasData, paymentsData] =
+      const [eventData, productsData, extrasData, paymentsData, equipmentData] =
         await Promise.all([
           eventService.getById(eventId),
           eventService.getProducts(eventId),
           eventService.getExtras(eventId),
           paymentService.getByEventId(eventId),
+          eventService.getEquipment(eventId),
         ]);
 
       setEvent(eventData);
       setProducts(productsData || []);
       setExtras(extrasData || []);
       setPayments(paymentsData || []);
+      setEquipment(equipmentData || []);
 
       // Parse photos JSONB
       if (eventData.photos) {
@@ -755,6 +759,32 @@ export const EventSummary: React.FC = () => {
               </table>
             </div>
           </div>
+
+          {/* Equipment section */}
+          {equipment.length > 0 && (
+            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border mt-8">
+              <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
+                <Wrench className="h-5 w-5 text-brand-orange" />
+                Equipo Asignado
+              </h2>
+              <div className="space-y-3">
+                {equipment.map((eq: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                    <div>
+                      <span className="font-bold text-text">{eq.equipment_name || 'Equipo'}</span>
+                      <span className="text-text-secondary ml-2">x{eq.quantity}</span>
+                      {eq.notes && (
+                        <p className="text-xs text-text-tertiary mt-0.5">{eq.notes}</p>
+                      )}
+                    </div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                      Sin costo
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-8 border-t border-border pt-2 print:hidden">
             <div className="bg-card shadow-lg rounded-3xl p-6 sm:p-8 border border-border overflow-hidden relative">

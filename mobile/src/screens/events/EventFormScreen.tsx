@@ -31,13 +31,17 @@ import {
   Trash2,
   Search,
   UserPlus,
+  Wrench,
+  AlertTriangle,
+  Lightbulb,
 } from "lucide-react-native";
 import { Image } from "expo-image";
 import { EventsStackParamList } from "../../types/navigation";
-import { Event, Client, Product } from "../../types/entities";
+import { Event, Client, Product, InventoryItem, EquipmentConflict } from "../../types/entities";
 import { eventService } from "../../services/eventService";
 import { clientService } from "../../services/clientService";
 import { productService } from "../../services/productService";
+import { inventoryService } from "../../services/inventoryService";
 import { useToast } from "../../hooks/useToast";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { useAuth } from "../../contexts/AuthContext";
@@ -55,7 +59,8 @@ const STEPS = [
   { id: 1, title: "General" },
   { id: 2, title: "Productos" },
   { id: 3, title: "Extras" },
-  { id: 4, title: "Finanzas" },
+  { id: 4, title: "Equipo" },
+  { id: 5, title: "Finanzas" },
 ];
 
 const eventSchema = z.object({
@@ -84,6 +89,12 @@ type SelectedExtra = {
   price: number;
 };
 
+type SelectedEquipmentItem = {
+  inventory_id: string;
+  quantity: number;
+  notes: string;
+};
+
 export default function EventFormScreen({ navigation, route }: Props) {
   const { id, clientId, eventDate } = route.params;
   const isEditing = !!id;
@@ -104,7 +115,12 @@ export default function EventFormScreen({ navigation, route }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [extras, setExtras] = useState<SelectedExtra[]>([]);
-  
+  const [equipmentInventory, setEquipmentInventory] = useState<InventoryItem[]>([]);
+  const [selectedEquipment, setSelectedEquipment] = useState<SelectedEquipmentItem[]>([]);
+  const [equipmentConflicts, setEquipmentConflicts] = useState<EquipmentConflict[]>([]);
+  const [equipmentSuggestions, setEquipmentSuggestions] = useState<InventoryItem[]>([]);
+  const [showEquipmentPicker, setShowEquipmentPicker] = useState(false);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
@@ -166,12 +182,14 @@ export default function EventFormScreen({ navigation, route }: Props) {
 
   const loadData = async () => {
     try {
-      const [clientsData, productsData] = await Promise.all([
+      const [clientsData, productsData, inventoryData] = await Promise.all([
         clientService.getAll(),
         productService.getAll(),
+        inventoryService.getAll(),
       ]);
       setClients(clientsData || []);
       setProducts((productsData || []).filter(p => p.is_active));
+      setEquipmentInventory((inventoryData || []).filter((i: any) => i.type === 'equipment'));
 
       if (id) {
         const event = await eventService.getById(id);
@@ -215,6 +233,17 @@ export default function EventFormScreen({ navigation, route }: Props) {
               description: e.description,
               cost: e.cost,
               price: e.price,
+            }))
+          );
+        }
+
+        const eventEquipment = await eventService.getEquipment(id);
+        if (eventEquipment) {
+          setSelectedEquipment(
+            eventEquipment.map((eq: any) => ({
+              inventory_id: eq.inventory_id,
+              quantity: eq.quantity,
+              notes: eq.notes || '',
             }))
           );
         }
@@ -311,11 +340,70 @@ export default function EventFormScreen({ navigation, route }: Props) {
 
   const totals = calculateTotals();
 
+  // Auto-suggest equipment when products change
+  useEffect(() => {
+    const productIds = selectedProducts.map(p => p.product_id).filter(Boolean);
+    if (productIds.length === 0) {
+      setEquipmentSuggestions([]);
+      return;
+    }
+    const fetchSuggestions = async () => {
+      try {
+        const suggestions = await eventService.getEquipmentSuggestions(productIds);
+        setEquipmentSuggestions(suggestions || []);
+      } catch {
+        // Silently ignore
+      }
+    };
+    fetchSuggestions();
+  }, [selectedProducts]);
+
+  // Check equipment conflicts (debounced)
+  useEffect(() => {
+    const selectedIds = selectedEquipment.map(eq => eq.inventory_id).filter(Boolean);
+    if (selectedIds.length === 0 || !formData.event_date) {
+      setEquipmentConflicts([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const conflicts = await eventService.checkEquipmentConflicts({
+          event_date: formData.event_date,
+          start_time: formData.start_time || undefined,
+          end_time: formData.end_time || undefined,
+          inventory_ids: selectedIds,
+          exclude_event_id: id || undefined,
+        });
+        setEquipmentConflicts(conflicts || []);
+      } catch {
+        // Silently ignore
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [selectedEquipment, formData.event_date, formData.start_time, formData.end_time, id]);
+
+  const handleAddEquipmentItem = (item: InventoryItem) => {
+    if (!selectedEquipment.some(eq => eq.inventory_id === item.id)) {
+      setSelectedEquipment(prev => [...prev, { inventory_id: item.id, quantity: 1, notes: '' }]);
+    }
+    setShowEquipmentPicker(false);
+  };
+
+  const handleRemoveEquipment = (index: number) => {
+    setSelectedEquipment(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const filteredEquipment = useMemo(() => {
+    return equipmentInventory.filter(
+      e => !selectedEquipment.some(se => se.inventory_id === e.id)
+    );
+  }, [equipmentInventory, selectedEquipment]);
+
   const formatCurrency = (n: number) =>
     `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
   const handleNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setStep(step + 1);
     } else {
       handleSave();
@@ -384,7 +472,14 @@ export default function EventFormScreen({ navigation, route }: Props) {
           unitPrice: p.unit_price,
           discount: p.discount,
         })),
-        extras
+        extras,
+        selectedEquipment
+          .filter(eq => eq.inventory_id)
+          .map(eq => ({
+            inventoryId: eq.inventory_id,
+            quantity: eq.quantity,
+            notes: eq.notes || undefined,
+          })),
       );
 
       addToast(isEditing ? "Evento actualizado" : "Evento creado", "success");
@@ -700,6 +795,99 @@ export default function EventFormScreen({ navigation, route }: Props) {
 
         {step === 4 && (
           <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Equipo</Text>
+            <Text style={{ ...typography.caption, color: palette.textMuted, marginBottom: spacing.md }}>
+              Asigna equipos reutilizables. No afecta costos del evento.
+            </Text>
+
+            {/* Conflict warnings */}
+            {equipmentConflicts.length > 0 && (
+              <View style={{ backgroundColor: palette.warningBackground || '#FEF3C7', borderRadius: 12, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: palette.warning || '#F59E0B' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+                  <AlertTriangle color={palette.warning || '#F59E0B'} size={16} />
+                  <Text style={{ ...typography.caption, color: palette.warning || '#F59E0B', fontWeight: '600', marginLeft: spacing.xs }}>
+                    Conflictos detectados
+                  </Text>
+                </View>
+                {equipmentConflicts.map((c, i) => (
+                  <Text key={i} style={{ ...typography.caption, color: palette.warning || '#D97706', marginLeft: spacing.lg }}>
+                    {c.equipment_name} — {c.service_type}
+                    {c.start_time && c.end_time ? `, ${c.start_time.slice(0, 5)}-${c.end_time.slice(0, 5)}` : ''}
+                    {c.client_name ? ` (${c.client_name})` : ''}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            {/* Suggestions */}
+            {equipmentSuggestions.filter(s => !selectedEquipment.some(eq => eq.inventory_id === s.id)).length > 0 && (
+              <View style={{ backgroundColor: palette.infoBackground || '#EFF6FF', borderRadius: 12, padding: spacing.md, marginBottom: spacing.md, borderWidth: 1, borderColor: palette.info || '#3B82F6' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+                  <Lightbulb color={palette.info || '#3B82F6'} size={16} />
+                  <Text style={{ ...typography.caption, color: palette.info || '#3B82F6', fontWeight: '600', marginLeft: spacing.xs }}>
+                    Sugerido por tus productos
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
+                  {equipmentSuggestions
+                    .filter(s => !selectedEquipment.some(eq => eq.inventory_id === s.id))
+                    .map(s => (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: palette.info || '#DBEAFE', paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: 8 }}
+                        onPress={() => handleAddEquipmentItem(s)}
+                      >
+                        <Plus color={palette.info || '#3B82F6'} size={14} />
+                        <Text style={{ ...typography.caption, color: palette.info || '#2563EB', marginLeft: 4 }}>{s.ingredient_name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                </View>
+              </View>
+            )}
+
+            {/* Selected equipment */}
+            {selectedEquipment.map((eq, i) => {
+              const item = equipmentInventory.find(e => e.id === eq.inventory_id);
+              return (
+                <View key={i} style={[styles.productRow, { marginBottom: spacing.sm }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.productName}>{item?.ingredient_name || 'Equipo'}</Text>
+                    <Text style={{ ...typography.caption, color: palette.textMuted }}>
+                      Sin costo - Activo reutilizable
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs }}>
+                      <Text style={{ ...typography.caption, color: palette.textSecondary, marginRight: spacing.xs }}>Cant:</Text>
+                      <TextInput
+                        style={[styles.input, { width: 60, paddingVertical: spacing.xs, textAlign: 'center' }]}
+                        value={eq.quantity.toString()}
+                        onChangeText={(v) => {
+                          const next = [...selectedEquipment];
+                          next[i] = { ...next[i], quantity: Math.max(1, parseInt(v) || 1) };
+                          setSelectedEquipment(next);
+                        }}
+                        keyboardType="number-pad"
+                      />
+                    </View>
+                  </View>
+                  <TouchableOpacity onPress={() => handleRemoveEquipment(i)}>
+                    <Trash2 color={palette.error} size={18} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowEquipmentPicker(true)}
+            >
+              <Plus color={palette.primary} size={18} />
+              <Text style={styles.addButtonText}>Agregar Equipo</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {step === 5 && (
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Finanzas</Text>
 
             <View style={styles.row}>
@@ -791,7 +979,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
             <ActivityIndicator color={palette.textInverse} />
           ) : (
             <>
-              {step === 4 ? (
+              {step === 5 ? (
                 <>
                   <Save color={palette.textInverse} size={18} />
                   <Text style={styles.saveButtonText}>Guardar</Text>
@@ -916,6 +1104,43 @@ export default function EventFormScreen({ navigation, route }: Props) {
             <Text style={styles.sheetItemPrice}>{formatCurrency(product.base_price)}</Text>
           </TouchableOpacity>
         ))}
+      </AppBottomSheet>
+
+      {/* Equipment Picker */}
+      <AppBottomSheet
+        visible={showEquipmentPicker}
+        onClose={() => setShowEquipmentPicker(false)}
+        enableDynamicSizing={false}
+        snapPoints={['60%']}
+        scrollable
+      >
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>Agregar Equipo</Text>
+        </View>
+        {filteredEquipment.length === 0 ? (
+          <View style={{ padding: spacing.lg, alignItems: 'center' }}>
+            <Text style={{ ...typography.body, color: palette.textMuted }}>
+              No hay equipo disponible
+            </Text>
+          </View>
+        ) : (
+          filteredEquipment.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.sheetItem}
+              onPress={() => handleAddEquipmentItem(item)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sheetProductIcon}>
+                <Wrench color={palette.primary} size={18} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sheetItemText}>{item.ingredient_name}</Text>
+                <Text style={styles.sheetItemSubtext}>{item.current_stock} {item.unit} disponible(s)</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </AppBottomSheet>
     </SafeAreaView>
   );

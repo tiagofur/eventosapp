@@ -397,8 +397,9 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Products []models.EventProduct `json:"products"`
-		Extras   []models.EventExtra   `json:"extras"`
+		Products  []models.EventProduct   `json:"products"`
+		Extras    []models.EventExtra     `json:"extras"`
+		Equipment *[]models.EventEquipment `json:"equipment,omitempty"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
@@ -421,11 +422,125 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras); err != nil {
+	// Validate all equipment (if provided)
+	if req.Equipment != nil {
+		for i, eq := range *req.Equipment {
+			if err := ValidateEventEquipment(&eq); err != nil {
+				writeError(w, http.StatusBadRequest, fmt.Sprintf("equipment[%d]: %s", i, err.Error()))
+				return
+			}
+		}
+	}
+
+	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras, req.Equipment); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to update event items")
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *CRUDHandler) GetEventEquipment(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+	if _, err := h.eventRepo.GetByID(r.Context(), eventID, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
+		return
+	}
+	equipment, err := h.eventRepo.GetEquipment(r.Context(), eventID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch event equipment")
+		return
+	}
+	writeJSON(w, http.StatusOK, equipment)
+}
+
+func (h *CRUDHandler) CheckEquipmentConflicts(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	var req struct {
+		EventDate      string   `json:"event_date"`
+		StartTime      *string  `json:"start_time,omitempty"`
+		EndTime        *string  `json:"end_time,omitempty"`
+		InventoryIDs   []string `json:"inventory_ids"`
+		ExcludeEventID *string  `json:"exclude_event_id,omitempty"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if req.EventDate == "" || len(req.InventoryIDs) == 0 {
+		writeJSON(w, http.StatusOK, []models.EquipmentConflict{})
+		return
+	}
+
+	var inventoryUUIDs []uuid.UUID
+	for _, idStr := range req.InventoryIDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid inventory ID: "+idStr)
+			return
+		}
+		inventoryUUIDs = append(inventoryUUIDs, id)
+	}
+
+	var excludeID *uuid.UUID
+	if req.ExcludeEventID != nil && *req.ExcludeEventID != "" {
+		parsed, err := uuid.Parse(*req.ExcludeEventID)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid exclude_event_id")
+			return
+		}
+		excludeID = &parsed
+	}
+
+	conflicts, err := h.eventRepo.CheckEquipmentConflicts(r.Context(), userID,
+		req.EventDate, req.StartTime, req.EndTime, inventoryUUIDs, excludeID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to check equipment conflicts")
+		return
+	}
+	if conflicts == nil {
+		conflicts = []models.EquipmentConflict{}
+	}
+	writeJSON(w, http.StatusOK, conflicts)
+}
+
+func (h *CRUDHandler) GetEquipmentSuggestions(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	var req struct {
+		ProductIDs []string `json:"product_ids"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if len(req.ProductIDs) == 0 {
+		writeJSON(w, http.StatusOK, []models.InventoryItem{})
+		return
+	}
+
+	var productUUIDs []uuid.UUID
+	for _, idStr := range req.ProductIDs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid product ID: "+idStr)
+			return
+		}
+		productUUIDs = append(productUUIDs, id)
+	}
+
+	suggestions, err := h.eventRepo.GetEquipmentSuggestionsFromProducts(r.Context(), userID, productUUIDs)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch equipment suggestions")
+		return
+	}
+	if suggestions == nil {
+		suggestions = []models.InventoryItem{}
+	}
+	writeJSON(w, http.StatusOK, suggestions)
 }
 
 // ===================

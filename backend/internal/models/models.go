@@ -118,6 +118,30 @@ type EventExtra struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
+type EventEquipment struct {
+	ID           uuid.UUID `json:"id"`
+	EventID      uuid.UUID `json:"event_id"`
+	InventoryID  uuid.UUID `json:"inventory_id"`
+	Quantity     int       `json:"quantity"`
+	Notes        *string   `json:"notes,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	EquipmentName *string  `json:"equipment_name,omitempty"`
+	Unit          *string  `json:"unit,omitempty"`
+	CurrentStock  *float64 `json:"current_stock,omitempty"`
+}
+
+type EquipmentConflict struct {
+	InventoryID   uuid.UUID `json:"inventory_id"`
+	EquipmentName string    `json:"equipment_name"`
+	EventID       uuid.UUID `json:"conflicting_event_id"`
+	EventDate     string    `json:"event_date"`
+	StartTime     *string   `json:"start_time,omitempty"`
+	EndTime       *string   `json:"end_time,omitempty"`
+	ServiceType   string    `json:"service_type"`
+	ClientName    *string   `json:"client_name,omitempty"`
+	ConflictType  string    `json:"conflict_type"`
+}
+
 type ProductIngredient struct {
 	ID               uuid.UUID `json:"id"`
 	ProductID        uuid.UUID `json:"product_id"`

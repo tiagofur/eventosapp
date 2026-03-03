@@ -166,6 +166,34 @@ export interface EventExtra {
 export type EventExtraInsert = Omit<EventExtra, 'id' | 'created_at'>
 export type EventExtraUpdate = Partial<EventExtraInsert>
 
+// ===== Event Equipment =====
+export interface EventEquipment {
+    id: string
+    event_id: string
+    inventory_id: string
+    quantity: number
+    notes: string | null
+    created_at: string
+    equipment_name?: string
+    unit?: string
+    current_stock?: number
+}
+
+export type EventEquipmentInsert = Omit<EventEquipment, 'id' | 'created_at' | 'equipment_name' | 'unit' | 'current_stock'>
+
+// ===== Equipment Conflict =====
+export interface EquipmentConflict {
+    inventory_id: string
+    equipment_name: string
+    conflicting_event_id: string
+    event_date: string
+    start_time: string | null
+    end_time: string | null
+    service_type: string
+    client_name: string | null
+    conflict_type: 'overlap' | 'insufficient_gap' | 'full_day'
+}
+
 // ===== Product Ingredient =====
 export interface ProductIngredient {
     id: string

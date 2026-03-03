@@ -20,7 +20,10 @@ import { EventGeneralInfo } from "./components/EventGeneralInfo";
 import { EventProducts } from "./components/EventProducts";
 import { EventExtras } from "./components/EventExtras";
 import { EventFinancials } from "./components/EventFinancials";
+import { EventEquipment } from "./components/EventEquipment";
+import { inventoryService } from "../../services/inventoryService";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
+import { EquipmentConflict, InventoryItem } from "../../types/entities";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
 
 // Local types to avoid Supabase dependency
@@ -69,7 +72,8 @@ const STEPS = [
   { id: 1, title: "Información General" },
   { id: 2, title: "Productos" },
   { id: 3, title: "Extras" },
-  { id: 4, title: "Finanzas y Contrato" },
+  { id: 4, title: "Equipo" },
+  { id: 5, title: "Finanzas y Contrato" },
 ];
 
 export const EventForm: React.FC = () => {
@@ -107,6 +111,14 @@ export const EventForm: React.FC = () => {
     [key: string]: number;
   }>({});
 
+  // Equipment state
+  const [equipmentInventory, setEquipmentInventory] = useState<InventoryItem[]>([]);
+  const [selectedEquipment, setSelectedEquipment] = useState<
+    { inventory_id: string; quantity: number; notes: string }[]
+  >([]);
+  const [equipmentConflicts, setEquipmentConflicts] = useState<EquipmentConflict[]>([]);
+  const [equipmentSuggestions, setEquipmentSuggestions] = useState<InventoryItem[]>([]);
+
   const methods = useForm<EventFormData>({
     resolver: zodResolver(eventSchema) as Resolver<EventFormData>,
     defaultValues: {
@@ -139,18 +151,26 @@ export const EventForm: React.FC = () => {
   const cityValue = useWatch({ control, name: "city" });
   const requiresInvoiceValue = useWatch({ control, name: "requires_invoice" }) || false;
   const taxRateValue = useWatch({ control, name: "tax_rate" }) || 16;
+  const eventDateValue = useWatch({ control, name: "event_date" });
+  const startTimeValue = useWatch({ control, name: "start_time" });
+  const endTimeValue = useWatch({ control, name: "end_time" });
 
   // --- Effects ---
 
   useEffect(() => {
     const loadDependencies = async () => {
       try {
-        const [clientsData, productsData] = await Promise.all([
+        const [clientsData, productsData, inventoryData] = await Promise.all([
           clientService.getAll(),
           productService.getAll(),
+          inventoryService.getAll(),
         ]);
         setClients(clientsData as any || []);
         setProducts(productsData as any || []);
+        // Filter equipment items from inventory
+        setEquipmentInventory(
+          ((inventoryData as any) || []).filter((i: any) => i.type === 'equipment')
+        );
       } catch (err) {
         logError("Error loading dependencies", err);
       }
@@ -193,9 +213,10 @@ export const EventForm: React.FC = () => {
           notes: event.notes || "",
         });
 
-        const [eventProducts, eventExtras] = await Promise.all([
+        const [eventProducts, eventExtras, eventEquipment] = await Promise.all([
           eventService.getProducts(eventId),
           eventService.getExtras(eventId),
+          eventService.getEquipment(eventId),
         ]);
 
         if (eventProducts) {
@@ -213,6 +234,14 @@ export const EventForm: React.FC = () => {
             cost: e.cost,
             price: e.price,
             exclude_utility: e.exclude_utility || false,
+          })));
+        }
+
+        if (eventEquipment) {
+          setSelectedEquipment(eventEquipment.map((eq: any) => ({
+            inventory_id: eq.inventory_id,
+            quantity: eq.quantity,
+            notes: eq.notes || '',
           })));
         }
       } catch (err) {
@@ -355,6 +384,76 @@ export const EventForm: React.FC = () => {
     });
   };
 
+  // --- Equipment handlers ---
+
+  const handleAddEquipment = () => {
+    setSelectedEquipment(prev => [...prev, { inventory_id: '', quantity: 1, notes: '' }]);
+  };
+
+  const handleRemoveEquipment = (index: number) => {
+    setSelectedEquipment(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEquipmentChange = (index: number, field: string, value: string | number) => {
+    setSelectedEquipment(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  const handleQuickAddSuggestion = (inventoryId: string) => {
+    if (!selectedEquipment.some(eq => eq.inventory_id === inventoryId)) {
+      setSelectedEquipment(prev => [...prev, { inventory_id: inventoryId, quantity: 1, notes: '' }]);
+    }
+  };
+
+  // Auto-suggest equipment when products change
+  useEffect(() => {
+    const productIds = selectedProducts
+      .map(p => p.product_id)
+      .filter(Boolean);
+    if (productIds.length === 0) {
+      setEquipmentSuggestions([]);
+      return;
+    }
+    const fetchSuggestions = async () => {
+      try {
+        const suggestions = await eventService.getEquipmentSuggestions(productIds);
+        setEquipmentSuggestions(suggestions || []);
+      } catch {
+        // Silently ignore suggestion errors
+      }
+    };
+    fetchSuggestions();
+  }, [selectedProducts]);
+
+  // Check equipment conflicts (debounced)
+  useEffect(() => {
+    const selectedIds = selectedEquipment
+      .map(eq => eq.inventory_id)
+      .filter(Boolean);
+    if (selectedIds.length === 0 || !eventDateValue) {
+      setEquipmentConflicts([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const conflicts = await eventService.checkEquipmentConflicts({
+          event_date: eventDateValue,
+          start_time: startTimeValue || undefined,
+          end_time: endTimeValue || undefined,
+          inventory_ids: selectedIds,
+          exclude_event_id: id || undefined,
+        });
+        setEquipmentConflicts(conflicts || []);
+      } catch {
+        // Silently ignore conflict check errors
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [selectedEquipment, eventDateValue, startTimeValue, endTimeValue, id]);
+
   const onSubmit = async (data: EventFormData) => {
     if (activeStep < STEPS.length) {
       setActiveStep((prev) => Math.min(prev + 1, STEPS.length));
@@ -397,6 +496,13 @@ export const EventForm: React.FC = () => {
             discount: p.discount,
           })),
           extras,
+          selectedEquipment
+            .filter(eq => eq.inventory_id)
+            .map(eq => ({
+              inventoryId: eq.inventory_id,
+              quantity: eq.quantity,
+              notes: eq.notes || undefined,
+            })),
         );
       }
 
@@ -586,6 +692,18 @@ export const EventForm: React.FC = () => {
               />
             )}
             {activeStep === 4 && (
+              <EventEquipment
+                equipmentInventory={equipmentInventory}
+                selectedEquipment={selectedEquipment}
+                conflicts={equipmentConflicts}
+                suggestions={equipmentSuggestions}
+                onAddEquipment={handleAddEquipment}
+                onRemoveEquipment={handleRemoveEquipment}
+                onEquipmentChange={handleEquipmentChange}
+                onQuickAddSuggestion={handleQuickAddSuggestion}
+              />
+            )}
+            {activeStep === 5 && (
               <EventFinancials
                 selectedProducts={selectedProducts as any}
                 extras={extras}

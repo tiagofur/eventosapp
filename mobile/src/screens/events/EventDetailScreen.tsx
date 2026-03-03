@@ -91,6 +91,7 @@ export default function EventDetailScreen({ navigation, route }: Props) {
   const [client, setClient] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [extras, setExtras] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -128,16 +129,18 @@ export default function EventDetailScreen({ navigation, route }: Props) {
       const eventData = await eventService.getById(id);
       setEvent(eventData);
 
-      const [clientData, productsData, extrasData, paymentsData] = await Promise.all([
+      const [clientData, productsData, extrasData, paymentsData, equipmentData] = await Promise.all([
         clientService.getById(eventData.client_id),
         eventService.getProducts(id),
         eventService.getExtras(id),
         paymentService.getByEventIds([id]),
+        eventService.getEquipment(id),
       ]);
       setClient(clientData);
       setProducts(productsData || []);
       setExtras(extrasData || []);
       setPayments(paymentsData || []);
+      setEquipment(equipmentData || []);
 
       // Parse photos JSONB
       if (eventData.photos) {
@@ -502,13 +505,31 @@ export default function EventDetailScreen({ navigation, route }: Props) {
         {extras.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Extras</Text>
-            
+
             {extras.map((e: any, index: number) => (
               <View key={index} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>{e.description}</Text>
                 </View>
                 <Text style={styles.itemTotal}>{formatCurrency(e.price)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {equipment.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Equipo Asignado</Text>
+
+            {equipment.map((eq: any, index: number) => (
+              <View key={index} style={styles.itemRow}>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{eq.equipment_name || 'Equipo'}</Text>
+                  <Text style={styles.itemDetail}>
+                    x{eq.quantity}{eq.notes ? ` — ${eq.notes}` : ''}
+                  </Text>
+                </View>
+                <Text style={[styles.itemTotal, { color: palette.textMuted }]}>Sin costo</Text>
               </View>
             ))}
           </View>

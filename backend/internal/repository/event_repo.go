@@ -317,9 +317,9 @@ func (r *EventRepo) GetExtras(ctx context.Context, eventID uuid.UUID) ([]models.
 }
 
 // UpdateEventItems replaces the Supabase RPC `update_event_items`.
-// It atomically replaces all products and extras for an event within a transaction.
+// It atomically replaces all products, extras, and optionally equipment for an event within a transaction.
 func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
-	products []models.EventProduct, extras []models.EventExtra) error {
+	products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment) error {
 
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -357,7 +357,153 @@ func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
 		}
 	}
 
+	// Insert equipment (only if provided — nil means skip, preserving backward compatibility)
+	if equipment != nil {
+		if _, err := tx.Exec(ctx, "DELETE FROM event_equipment WHERE event_id=$1", eventID); err != nil {
+			return err
+		}
+		for _, eq := range *equipment {
+			_, err := tx.Exec(ctx,
+				`INSERT INTO event_equipment (event_id, inventory_id, quantity, notes)
+				VALUES ($1, $2, $3, $4)`,
+				eventID, eq.InventoryID, eq.Quantity, eq.Notes)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return tx.Commit(ctx)
+}
+
+// -- Event Equipment --
+
+func (r *EventRepo) GetEquipment(ctx context.Context, eventID uuid.UUID) ([]models.EventEquipment, error) {
+	query := `SELECT ee.id, ee.event_id, ee.inventory_id, ee.quantity, ee.notes, ee.created_at,
+		i.ingredient_name, i.unit, i.current_stock
+		FROM event_equipment ee LEFT JOIN inventory i ON ee.inventory_id = i.id
+		WHERE ee.event_id = $1`
+	rows, err := r.pool.Query(ctx, query, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []models.EventEquipment
+	for rows.Next() {
+		var eq models.EventEquipment
+		if err := rows.Scan(&eq.ID, &eq.EventID, &eq.InventoryID, &eq.Quantity,
+			&eq.Notes, &eq.CreatedAt, &eq.EquipmentName, &eq.Unit, &eq.CurrentStock); err != nil {
+			return nil, err
+		}
+		items = append(items, eq)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event equipment: %w", err)
+	}
+	return items, nil
+}
+
+func (r *EventRepo) CheckEquipmentConflicts(ctx context.Context, userID uuid.UUID,
+	eventDate string, startTime, endTime *string, inventoryIDs []uuid.UUID, excludeEventID *uuid.UUID) ([]models.EquipmentConflict, error) {
+
+	if len(inventoryIDs) == 0 {
+		return nil, nil
+	}
+
+	// Build the query: find events on the same date that use any of the given equipment
+	// A conflict exists when:
+	// 1. Either event has NULL times → full-day conflict
+	// 2. Time ranges overlap or gap < 1 hour
+	query := `SELECT ee.inventory_id, i.ingredient_name, e.id, to_char(e.event_date, 'YYYY-MM-DD'),
+		to_char(e.start_time, 'HH24:MI:SS'), to_char(e.end_time, 'HH24:MI:SS'),
+		e.service_type, c.name
+		FROM event_equipment ee
+		JOIN events e ON ee.event_id = e.id
+		JOIN inventory i ON ee.inventory_id = i.id
+		LEFT JOIN clients c ON e.client_id = c.id
+		WHERE e.user_id = $1
+		AND e.event_date = $2::date
+		AND e.status != 'cancelled'
+		AND ee.inventory_id = ANY($3)`
+
+	args := []interface{}{userID, eventDate, inventoryIDs}
+	argIdx := 4
+
+	if excludeEventID != nil {
+		query += fmt.Sprintf(" AND e.id != $%d", argIdx)
+		args = append(args, *excludeEventID)
+		argIdx++
+	}
+
+	// Time-based conflict filtering
+	if startTime != nil && endTime != nil {
+		// Overlap with < 1hr gap: other event starts before our end+1hr AND ends after our start-1hr
+		query += fmt.Sprintf(` AND (
+			e.start_time IS NULL OR e.end_time IS NULL
+			OR (e.start_time < ($%d::time + interval '1 hour') AND e.end_time > ($%d::time - interval '1 hour'))
+		)`, argIdx, argIdx+1)
+		args = append(args, *endTime, *startTime)
+	}
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var conflicts []models.EquipmentConflict
+	for rows.Next() {
+		var c models.EquipmentConflict
+		if err := rows.Scan(&c.InventoryID, &c.EquipmentName, &c.EventID, &c.EventDate,
+			&c.StartTime, &c.EndTime, &c.ServiceType, &c.ClientName); err != nil {
+			return nil, err
+		}
+		// Determine conflict type
+		if c.StartTime == nil || c.EndTime == nil {
+			c.ConflictType = "full_day"
+		} else if startTime == nil || endTime == nil {
+			c.ConflictType = "full_day"
+		} else {
+			c.ConflictType = "insufficient_gap"
+		}
+		conflicts = append(conflicts, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating equipment conflicts: %w", err)
+	}
+	return conflicts, nil
+}
+
+func (r *EventRepo) GetEquipmentSuggestionsFromProducts(ctx context.Context, userID uuid.UUID, productIDs []uuid.UUID) ([]models.InventoryItem, error) {
+	if len(productIDs) == 0 {
+		return nil, nil
+	}
+
+	query := `SELECT DISTINCT i.id, i.user_id, i.ingredient_name, i.current_stock, i.minimum_stock,
+		i.unit, i.unit_cost, i.type, i.last_updated
+		FROM product_ingredients pi
+		JOIN inventory i ON pi.inventory_id = i.id
+		WHERE pi.product_id = ANY($1) AND i.type = 'equipment' AND i.user_id = $2`
+	rows, err := r.pool.Query(ctx, query, productIDs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []models.InventoryItem
+	for rows.Next() {
+		var item models.InventoryItem
+		if err := rows.Scan(&item.ID, &item.UserID, &item.IngredientName, &item.CurrentStock,
+			&item.MinimumStock, &item.Unit, &item.UnitCost, &item.Type, &item.LastUpdated); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating equipment suggestions: %w", err)
+	}
+	return items, nil
 }
 
 // Search performs a full-text search on events for the given user

@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { Event, EventInsert, EventUpdate } from '../types/entities';
+import { Event, EventInsert, EventUpdate, EventEquipment, EquipmentConflict, InventoryItem } from '../types/entities';
 
 // Helper for type safety on joined data
 type EventWithClient = Event & { clients?: { name: string } | null };
@@ -51,9 +51,10 @@ export const eventService = {
     eventId: string,
     products: { productId: string; quantity: number; unitPrice: number; discount?: number }[],
     extras: { description: string; cost: number; price: number; exclude_utility?: boolean }[],
+    equipment?: { inventoryId: string; quantity: number; notes?: string }[],
   ) {
     // Map frontend structure to backend expected JSON
-    // Backend expects: { products: [{product_id, ...}], extras: [...] }
+    // Backend expects: { products: [{product_id, ...}], extras: [...], equipment: [...] }
     const backendProducts = products.map(p => ({
       product_id: p.productId,
       quantity: p.quantity,
@@ -68,10 +69,40 @@ export const eventService = {
       exclude_utility: e.exclude_utility || false
     }));
 
-    return api.put(`/events/${eventId}/items`, {
+    const payload: Record<string, unknown> = {
       products: backendProducts,
       extras: backendExtras
-    });
+    };
+
+    if (equipment) {
+      payload.equipment = equipment.map(eq => ({
+        inventory_id: eq.inventoryId,
+        quantity: eq.quantity,
+        notes: eq.notes || null
+      }));
+    }
+
+    return api.put(`/events/${eventId}/items`, payload);
+  },
+
+  // Equipment Management
+
+  async getEquipment(eventId: string): Promise<EventEquipment[]> {
+    return api.get<EventEquipment[]>(`/events/${eventId}/equipment`);
+  },
+
+  async checkEquipmentConflicts(params: {
+    event_date: string;
+    start_time?: string | null;
+    end_time?: string | null;
+    inventory_ids: string[];
+    exclude_event_id?: string;
+  }): Promise<EquipmentConflict[]> {
+    return api.post<EquipmentConflict[]>('/events/equipment/conflicts', params);
+  },
+
+  async getEquipmentSuggestions(productIds: string[]): Promise<InventoryItem[]> {
+    return api.post<InventoryItem[]>('/events/equipment/suggestions', { product_ids: productIds });
   },
 
   // Compatibility methods for legacy calls (if any individual update is used)

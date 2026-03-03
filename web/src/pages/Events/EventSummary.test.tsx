@@ -12,6 +12,7 @@ vi.mock('../../services/eventService', () => ({
     getById: vi.fn(),
     getProducts: vi.fn(),
     getExtras: vi.fn(),
+    getEquipment: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   },
@@ -94,6 +95,7 @@ const setupMocks = (eventOverrides: Record<string, any> = {}) => {
   (eventService.getExtras as any).mockResolvedValue([
     { description: 'Transporte', price: 50, cost: 20 },
   ]);
+  (eventService.getEquipment as any).mockResolvedValue([]);
   (paymentService.getByEventId as any).mockResolvedValue([]);
   (productService.getIngredientsForProducts as any).mockResolvedValue([
     { product_id: 'p1', inventory_id: 'i1', quantity_required: 1, ingredient_name: 'Harina', unit: 'kg', unit_cost: 2 },
