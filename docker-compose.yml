@@ -37,6 +37,8 @@ services:
       POSTGRES_USER: eventosapp_user
       POSTGRES_PASSWORD: eventosapp_password
       POSTGRES_DB: eventosapp
+    ports:
+      - "5433:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
