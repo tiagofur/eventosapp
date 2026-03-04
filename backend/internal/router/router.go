@@ -7,12 +7,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/tiagofur/eventosapp-backend/internal/handlers"
 	mw "github.com/tiagofur/eventosapp-backend/internal/middleware"
+	"github.com/tiagofur/eventosapp-backend/internal/repository"
 	"github.com/tiagofur/eventosapp-backend/internal/services"
 )
 
 func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, subHandler *handlers.SubscriptionHandler,
 	searchHandler *handlers.SearchHandler, eventPaymentHandler *handlers.EventPaymentHandler, uploadHandler *handlers.UploadHandler,
-	authService *services.AuthService, corsOrigins []string, uploadDir string) http.Handler {
+	adminHandler *handlers.AdminHandler,
+	authService *services.AuthService, userRepo *repository.UserRepo, corsOrigins []string, uploadDir string) http.Handler {
 
 	r := chi.NewRouter()
 
@@ -146,6 +148,18 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 				r.Use(mw.RateLimit(30, 1*time.Minute))
 				r.Get("/search", searchHandler.SearchAll)
 			})
+		})
+
+		// Admin routes — Auth + AdminOnly middleware
+		r.Route("/admin", func(r chi.Router) {
+			r.Use(mw.Auth(authService))
+			r.Use(mw.AdminOnly(userRepo))
+
+			r.Get("/stats", adminHandler.GetStats)
+			r.Get("/users", adminHandler.ListUsers)
+			r.Get("/users/{id}", adminHandler.GetUser)
+			r.Put("/users/{id}/upgrade", adminHandler.UpgradeUser)
+			r.Get("/subscriptions", adminHandler.GetSubscriptions)
 		})
 	})
 

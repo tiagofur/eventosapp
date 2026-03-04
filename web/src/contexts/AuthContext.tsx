@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '../lib/api';
-import { logError } from '../lib/errorHandler';
+import { api } from '@/lib/api';
+import { logError } from '@/lib/errorHandler';
 
 export interface User {
   id: string;
@@ -11,6 +11,7 @@ export interface User {
   brand_color?: string;
   show_business_name_in_pdf?: boolean;
   plan: string;
+  role?: string;
   default_deposit_percent?: number;
   default_cancellation_days?: number;
   default_refund_percent?: number;

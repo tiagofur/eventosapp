@@ -13,11 +13,12 @@ import {
   Search,
   Moon,
   Sun,
-  Calculator
+  Calculator,
+  Shield
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../hooks/useTheme';
-import { logError } from '../lib/errorHandler';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/hooks/useTheme';
+import { logError } from '@/lib/errorHandler';
 import clsx from 'clsx';
 import { ToastContainer } from './ToastContainer';
 import { Logo } from './Logo';
@@ -47,6 +48,8 @@ export const Layout: React.FC = () => {
     { name: 'Productos', href: '/products', icon: Package },
     { name: 'Inventario', href: '/inventory', icon: Boxes },
     { name: 'Configuración', href: '/settings', icon: Settings },
+    // Admin link — only visible to admins
+    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
   ];
 
   const handleSignOut = async () => {

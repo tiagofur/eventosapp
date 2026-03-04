@@ -58,6 +58,7 @@ func main() {
 	productRepo := repository.NewProductRepo(pool)
 	inventoryRepo := repository.NewInventoryRepo(pool)
 	paymentRepo := repository.NewPaymentRepo(pool)
+	adminRepo := repository.NewAdminRepo(pool)
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(userRepo, authService, emailService)
@@ -66,9 +67,10 @@ func main() {
 	searchHandler := handlers.NewSearchHandler(clientRepo, productRepo, inventoryRepo, eventRepo)
 	eventPaymentHandler := handlers.NewEventPaymentHandler(eventRepo, paymentRepo, cfg)
 	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir)
+	adminHandler := handlers.NewAdminHandler(adminRepo)
 
 	// Create router
-	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, authService, cfg.CORSAllowedOrigins, cfg.UploadDir)
+	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, adminHandler, authService, userRepo, cfg.CORSAllowedOrigins, cfg.UploadDir)
 
 	// Create HTTP server
 	srv := &http.Server{
