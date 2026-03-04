@@ -133,7 +133,16 @@
       "Bash(open:*)",
       "Bash(xargs -I {} basename {})",
       "Bash(done)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm run:*)",
+      "mcp__stripe__get_stripe_account_info",
+      "mcp__stripe__list_products",
+      "mcp__stripe__list_customers",
+      "mcp__stripe__list_prices",
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:docs.testsprite.com)",
+      "Bash(claude mcp:*)"
     ]
   }
 }
