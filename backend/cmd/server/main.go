@@ -82,6 +82,25 @@ func main() {
 	// Create router
 	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, adminHandler, authService, userRepo, cfg.CORSAllowedOrigins, cfg.UploadDir)
 
+	// Background job: expire gifted plans that have passed their expiry date.
+	// Runs once at startup then every hour.
+	go func() {
+		runExpiry := func() {
+			count, err := adminRepo.ExpireGiftedPlans(context.Background())
+			if err != nil {
+				slog.Error("Failed to expire gifted plans", "error", err)
+			} else if count > 0 {
+				slog.Info("Expired gifted plans", "count", count)
+			}
+		}
+		runExpiry()
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			runExpiry()
+		}
+	}()
+
 	// Create HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.Port),

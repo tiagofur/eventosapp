@@ -24,6 +24,7 @@ export interface AdminUser {
   role: string;
   stripe_customer_id?: string;
   has_paid_subscription: boolean;
+  plan_expires_at?: string | null;
   events_count: number;
   clients_count: number;
   products_count: number;
@@ -54,8 +55,11 @@ export const adminService = {
     return api.get<AdminUser>(`/admin/users/${id}`);
   },
 
-  async upgradeUser(id: string, plan = "pro") {
-    return api.put<AdminUser>(`/admin/users/${id}/upgrade`, { plan });
+  async upgradeUser(id: string, plan = "pro", expiresAt?: string | null) {
+    return api.put<AdminUser>(`/admin/users/${id}/upgrade`, {
+      plan,
+      expires_at: expiresAt ?? null,
+    });
   },
 
   async getSubscriptions() {
