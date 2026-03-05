@@ -239,7 +239,7 @@ export const ProductForm: React.FC = () => {
   if (limitsLoading) {
     return (
       <div className="flex justify-center items-center h-64" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange" aria-hidden="true"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true"></div>
         <span className="sr-only">Cargando límites de plan...</span>
       </div>
     );
@@ -351,7 +351,7 @@ export const ProductForm: React.FC = () => {
                     id="name"
                     type="text"
                     {...register("name")}
-                    className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                    className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                     placeholder="Ej. Paquete Premium"
                     aria-required="true"
                     aria-invalid={errors.name ? "true" : "false"}
@@ -375,7 +375,7 @@ export const ProductForm: React.FC = () => {
                     id="category"
                     type="text"
                     {...register("category")}
-                    className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                    className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                     placeholder="Ej. Servicios"
                     aria-required="true"
                     aria-invalid={errors.category ? "true" : "false"}
@@ -400,7 +400,7 @@ export const ProductForm: React.FC = () => {
                     type="number"
                     step="0.01"
                     {...register("base_price")}
-                    className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                    className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                     aria-required="true"
                     aria-invalid={errors.base_price ? "true" : "false"}
                     aria-describedby={errors.base_price ? "base_price-error" : undefined}
@@ -418,7 +418,7 @@ export const ProductForm: React.FC = () => {
         {/* Composición / Insumos */}
         <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10 flex flex-col">
             <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
-                <Layers className="h-5 w-5 mr-2 text-brand-orange" aria-hidden="true" />
+                <Layers className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
                 Composición / Insumos (por unidad/persona)
             </h3>
             <p className="text-xs text-text-secondary mb-4">Define qué insumos y qué cantidad se necesitan para 1 unidad de este producto. Solo insumos generan costo.</p>
@@ -440,7 +440,7 @@ export const ProductForm: React.FC = () => {
                                 id={`ingredient-select-${originalIndex}`}
                                 value={item.inventory_id}
                                 onChange={(e) => handleIngredientChange(originalIndex, 'inventory_id', e.target.value)}
-                                className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                                className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                                 aria-label={`Seleccionar insumo`}
                             >
                                 <option value="">Seleccionar insumo</option>
@@ -458,7 +458,7 @@ export const ProductForm: React.FC = () => {
                                     step="0.001"
                                     value={item.quantity_required}
                                     onChange={(e) => handleIngredientChange(originalIndex, 'quantity_required', Number(e.target.value))}
-                                    className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                                    className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                                     aria-label={`Cantidad de insumo`}
                                 />
                             </div>
@@ -517,7 +517,7 @@ export const ProductForm: React.FC = () => {
                                 id={`equipment-select-${originalIndex}`}
                                 value={item.inventory_id}
                                 onChange={(e) => handleIngredientChange(originalIndex, 'inventory_id', e.target.value)}
-                                className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                                className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                                 aria-label={`Seleccionar equipo`}
                             >
                                 <option value="">Seleccionar equipo</option>
@@ -535,7 +535,7 @@ export const ProductForm: React.FC = () => {
                                     step="1"
                                     value={item.quantity_required}
                                     onChange={(e) => handleIngredientChange(originalIndex, 'quantity_required', Number(e.target.value))}
-                                    className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                                    className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                                     aria-label={`Cantidad de equipo`}
                                 />
                             </div>
