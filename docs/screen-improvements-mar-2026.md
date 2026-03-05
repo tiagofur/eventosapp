@@ -83,10 +83,12 @@
 
 ### Prioridad Alta (mayor uso por el usuario)
 
-| Pantalla | Archivos | Tokens pendientes aprox. | Notas |
-|---|---|---|---|
-| Formulario de cliente | `Clients/ClientForm.tsx` | ~16 | Aún tiene gray-500, red-* |
-| Formulario de inventario | `Inventory/InventoryForm.tsx` | ~18 | brand-orange en focus rings |
+*Todas completadas ✅*
+
+| Pantalla | Archivo | Cambios principales |
+|---|---|---|
+| Formulario de cliente | `Clients/ClientForm.tsx` | spinner primary, hover bg-surface-alt, error alert error tokens, focus rings primary, photo delete bg-error, save premium-gradient |
+| Formulario de inventario | `Inventory/InventoryForm.tsx` | spinner primary, back link text-text-secondary, error alert error tokens, focus rings primary, save premium-gradient |
 
 ### Prioridad Media
 
