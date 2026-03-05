@@ -209,7 +209,7 @@ export const CalendarView: React.FC = () => {
           </div>
           <Link
             to={`/events/new${viewMode === "calendar" && selectedDate ? `?date=${format(selectedDate, "yyyy-MM-dd")}` : ""}`}
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-xs transition-colors"
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 shadow-xs transition-opacity"
             aria-label="Crear nuevo evento"
           >
             <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
@@ -319,7 +319,7 @@ export const CalendarView: React.FC = () => {
                   : "día"}
               </h2>
               {selectedEvents.length > 0 && (
-                <span className="bg-brand-orange/10 text-brand-orange text-xs font-bold px-2 py-1 rounded-full">
+                <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full">
                   {selectedEvents.length}{" "}
                   {selectedEvents.length === 1 ? "Evento" : "Eventos"}
                 </span>
@@ -346,7 +346,7 @@ export const CalendarView: React.FC = () => {
                   </p>
                   <Link
                     to={`/events/new?date=${selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}`}
-                    className="mt-4 text-brand-orange text-sm font-semibold hover:underline"
+                    className="mt-4 text-primary text-sm font-semibold hover:underline"
                     aria-label="Crear nuevo evento para este día"
                   >
                     Crear uno nuevo
@@ -359,7 +359,7 @@ export const CalendarView: React.FC = () => {
                       key={event.id}
                       role="button"
                       tabIndex={0}
-                      className="group border border-border rounded-2xl p-4 hover:border-brand-orange bg-surface hover:bg-surface-alt cursor-pointer transition-all shadow-sm flex flex-col h-full"
+                      className="group border border-border rounded-2xl p-4 hover:border-primary bg-surface hover:bg-surface-alt cursor-pointer transition-all shadow-sm flex flex-col h-full"
                       onClick={() => navigate(`/events/${event.id}/summary`)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -371,7 +371,7 @@ export const CalendarView: React.FC = () => {
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="min-w-0 flex-1 mr-2">
-                          <h3 className="text-sm font-bold text-text group-hover:text-brand-orange transition-colors truncate">
+                          <h3 className="text-sm font-bold text-text group-hover:text-primary transition-colors truncate">
                             {event.client?.name}
                           </h3>
                           <p className="text-[10px] text-text-secondary font-medium uppercase tracking-tight">
@@ -403,7 +403,7 @@ export const CalendarView: React.FC = () => {
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center text-[11px] text-text-secondary">
                             <Clock
-                              className="h-3.5 w-3.5 mr-1.5 text-brand-orange opacity-70"
+                              className="h-3.5 w-3.5 mr-1.5 text-primary opacity-70"
                               aria-hidden="true"
                             />
                             <span className="truncate">
@@ -414,7 +414,7 @@ export const CalendarView: React.FC = () => {
                           </div>
                           <div className="flex items-center text-[11px] text-text-secondary">
                             <Users
-                              className="h-3.5 w-3.5 mr-1.5 text-brand-orange opacity-70"
+                              className="h-3.5 w-3.5 mr-1.5 text-primary opacity-70"
                               aria-hidden="true"
                             />
                             <span>{event.num_people} pax</span>
@@ -424,7 +424,7 @@ export const CalendarView: React.FC = () => {
                         {event.location && (
                           <div className="flex items-start text-[11px] text-text-secondary">
                             <MapPin
-                              className="h-3.5 w-3.5 mr-1.5 mt-0.5 text-brand-orange opacity-70 shrink-0"
+                              className="h-3.5 w-3.5 mr-1.5 mt-0.5 text-primary opacity-70 shrink-0"
                               aria-hidden="true"
                             />
                             <span className="line-clamp-1">
@@ -467,12 +467,12 @@ export const CalendarView: React.FC = () => {
                 Buscar eventos por cliente o servicio
               </label>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
               </div>
               <input
                 id="event-search"
                 type="search"
-                className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-card text-text placeholder-text-tertiary focus:outline-hidden focus:ring-brand-orange sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-border rounded-md leading-5 bg-card text-text placeholder-text-tertiary focus:outline-hidden focus:ring-primary sm:text-sm"
                 placeholder="Buscar por cliente o servicio..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -484,11 +484,11 @@ export const CalendarView: React.FC = () => {
                 Filtrar eventos por estado
               </label>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Filter className="h-5 w-5 text-text-secondary" aria-hidden="true" />
               </div>
               <select
                 id="status-filter"
-                className="block w-full pl-10 pr-10 py-2 text-base border-border focus:outline-hidden focus:ring-brand-orange focus:border-brand-orange sm:text-sm rounded-md bg-card text-text"
+                className="block w-full pl-10 pr-10 py-2 text-base border-border focus:outline-hidden focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-card text-text"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 aria-label="Filtrar eventos por estado"
@@ -505,12 +505,12 @@ export const CalendarView: React.FC = () => {
           <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
             {loading ? (
               <div
-                className="p-12 text-center text-gray-500 flex flex-col items-center"
+                className="p-12 text-center text-text-secondary flex flex-col items-center"
                 role="status"
                 aria-live="polite"
               >
                 <div
-                  className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange mb-4"
+                  className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"
                   aria-hidden="true"
                 ></div>
                 <span className="sr-only">Cargando eventos...</span>
@@ -529,7 +529,7 @@ export const CalendarView: React.FC = () => {
             ) : (
               <div className="overflow-x-auto">
                 <table
-                  className="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+                  className="min-w-full divide-y divide-border"
                   aria-label="Tabla de eventos"
                 >
                   <caption className="sr-only">
@@ -540,25 +540,25 @@ export const CalendarView: React.FC = () => {
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
                       >
                         Fecha
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
                       >
                         Cliente / Tipo
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
                       >
                         Horario / Lugar
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
                       >
                         Estado
                       </th>

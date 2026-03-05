@@ -36,7 +36,7 @@ const formatSubDate = (dateStr?: string) => {
 const subStatusLabel: Record<string, { text: string; color: string }> = {
   active: { text: "Activa", color: "text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400" },
   past_due: { text: "Pago pendiente", color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400" },
-  canceled: { text: "Cancelada", color: "text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400" },
+  canceled: { text: "Cancelada", color: "text-error bg-error/5" },
   trialing: { text: "Periodo de prueba", color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400" },
 };
 
@@ -172,17 +172,17 @@ export const Settings: React.FC = () => {
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-black tracking-tight text-text">
             Configuración
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Personaliza tu experiencia y gestiona tu negocio.
           </p>
         </div>
       </div>
 
       <div className="flex justify-center w-full">
-        <div className="inline-flex bg-surface-alt dark:bg-gray-800/50 rounded-2xl p-1 overflow-x-auto border border-border" role="tablist">
+        <div className="inline-flex bg-surface-alt rounded-2xl p-1 overflow-x-auto border border-border" role="tablist">
           {[
             { id: "profile", label: "Mi Cuenta", icon: User },
             { id: "business", label: "Mi Negocio", icon: Building },
@@ -195,8 +195,8 @@ export const Settings: React.FC = () => {
               className={clsx(
                 "px-6 py-2.5 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 activeTab === tab.id
-                  ? "bg-white dark:bg-gray-700 text-brand-orange shadow-sm border border-border/50"
-                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-800/50"
+                  ? "bg-card text-primary shadow-sm border border-border/50"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
               )}
               role="tab"
               aria-selected={activeTab === tab.id}
@@ -214,26 +214,26 @@ export const Settings: React.FC = () => {
           {activeTab === "profile" && (
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                <h3 className="text-lg font-bold text-text mb-1">
                   Perfil de Usuario
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-text-secondary">
                   Información básica de tu cuenta personal.
                 </p>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre</label>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{profile?.name}</p>
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Nombre</label>
+                  <p className="text-lg font-bold text-text">{profile?.name}</p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</label>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{profile?.email}</p>
+                  <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Email</label>
+                  <p className="text-lg font-bold text-text">{profile?.email}</p>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-gray-100 dark:border-gray-800">
+              <div className="pt-6 border-t border-border">
                 <button className="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all">
                   Cambiar contraseña <ExternalLink className="h-4 w-4" />
                 </button>
@@ -244,17 +244,17 @@ export const Settings: React.FC = () => {
           {activeTab === "business" && (
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                <h3 className="text-lg font-bold text-text mb-1">
                   Identidad de Negocio
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-text-secondary">
                   Personaliza cómo te ven tus clientes en presupuestos y contratos.
                 </p>
               </div>
 
               {/* Business Name */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre Comercial</label>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Nombre Comercial</label>
                 {isEditingBusiness ? (
                   <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
                     <input
@@ -296,13 +296,13 @@ export const Settings: React.FC = () => {
 
               {/* Logo Upload */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logo de Marca</label>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Logo de Marca</label>
                 <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-surface-alt/30 rounded-3xl border-2 border-dashed border-border hover:border-primary/50 transition-all text-center sm:text-left">
-                  <div className="relative h-24 w-24 shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
+                  <div className="relative h-24 w-24 shrink-0 bg-card rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
                     {profile?.logo_url ? (
                       <img src={profile.logo_url} alt="Logo" className="max-w-full max-h-full object-contain" />
                     ) : (
-                      <ImageIcon className="h-10 w-10 text-gray-300" />
+                      <ImageIcon className="h-10 w-10 text-text-secondary" />
                     )}
                     {isUploadingLogo && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -312,8 +312,8 @@ export const Settings: React.FC = () => {
                   </div>
                   <div className="flex-1 space-y-2">
                     <h4 className="font-bold">Sube tu logo profesional</h4>
-                    <p className="text-xs text-gray-500">PNG transparente recomendado. Máx 10MB.</p>
-                    <label className="inline-block bg-white dark:bg-gray-800 text-text font-bold text-sm px-6 py-2.5 rounded-xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer">
+                    <p className="text-xs text-text-secondary">PNG transparente recomendado. Máx 10MB.</p>
+                    <label className="inline-block bg-card text-text font-bold text-sm px-6 py-2.5 rounded-xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer">
                       Seleccionar archivo
                       <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
                     </label>
@@ -323,20 +323,20 @@ export const Settings: React.FC = () => {
 
               {/* Brand Color */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Color de Marca</label>
+                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Color de Marca</label>
                 <div className="flex items-center gap-4">
                   <input
                     type="color"
                     value={brandColor}
                     onChange={(e) => setBrandColor(e.target.value)}
                     onBlur={handleUpdateBrandColor}
-                    className="h-12 w-12 rounded-xl border-4 border-white dark:border-gray-800 shadow-xl cursor-pointer"
+                    className="h-12 w-12 rounded-xl border-4 border-card shadow-xl cursor-pointer"
                   />
                   <div className="flex-1 px-4 py-3 bg-surface-alt/50 rounded-xl border border-border font-mono font-bold uppercase">
                     {brandColor}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 italic">
+                <p className="text-xs text-text-secondary italic">
                   Este color se aplicará automáticamente a tus presupuestos y contratos en PDF.
                 </p>
               </div>
@@ -346,10 +346,10 @@ export const Settings: React.FC = () => {
           {activeTab === "contracts" && (
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                <h3 className="text-lg font-bold text-text mb-1">
                   Valores Predeterminados
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-text-secondary">
                   Configura los valores que aparecerán por defecto en tus nuevos eventos.
                 </p>
               </div>
@@ -357,7 +357,7 @@ export const Settings: React.FC = () => {
               <div className="space-y-8">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Anticipo Sugerido</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Anticipo Sugerido</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -365,11 +365,11 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setContractSettings({...contractSettings, deposit: Number(e.target.value)})}
                         className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
                       />
-                      <span className="text-2xl font-black text-gray-300">%</span>
+                      <span className="text-2xl font-black text-text-secondary">%</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Días para cancelar</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Días para cancelar</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -377,11 +377,11 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setContractSettings({...contractSettings, cancellation: Number(e.target.value)})}
                         className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
                       />
-                      <span className="text-lg font-bold text-gray-300 uppercase">Días</span>
+                      <span className="text-lg font-bold text-text-secondary uppercase">Días</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Reembolso</label>
+                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Reembolso</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -389,7 +389,7 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setContractSettings({...contractSettings, refund: Number(e.target.value)})}
                         className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
                       />
-                      <span className="text-2xl font-black text-gray-300">%</span>
+                      <span className="text-2xl font-black text-text-secondary">%</span>
                     </div>
                   </div>
                 </div>
@@ -418,13 +418,13 @@ export const Settings: React.FC = () => {
               <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                   <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                    <div className="inline-flex items-center gap-2 bg-surface-alt px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-text-secondary">
                       Plan Actual
                     </div>
-                    <h2 className="text-4xl font-bold tracking-tight capitalize text-gray-900 dark:text-white">
+                    <h2 className="text-4xl font-bold tracking-tight capitalize text-text">
                       {profile?.plan || "Básico"}
                     </h2>
-                    <p className="text-gray-500 dark:text-gray-400 font-medium text-sm max-w-md">
+                    <p className="text-text-secondary font-medium text-sm max-w-md">
                       {profile?.plan === "pro"
                         ? "Disfrutas de acceso ilimitado a todas nuestras herramientas profesionales."
                         : "Potencia tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
@@ -434,7 +434,7 @@ export const Settings: React.FC = () => {
                     {subStatus?.subscription && (
                       <div className="flex flex-wrap items-center gap-3 pt-2">
                         {(() => {
-                          const info = subStatusLabel[subStatus.subscription!.status] || { text: subStatus.subscription!.status, color: "text-gray-600 bg-gray-50" };
+                          const info = subStatusLabel[subStatus.subscription!.status] || { text: subStatus.subscription!.status, color: "text-text-secondary bg-surface-alt" };
                           return (
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${info.color}`}>
                               {info.text}
@@ -442,7 +442,7 @@ export const Settings: React.FC = () => {
                           );
                         })()}
                         {subStatus.subscription.current_period_end && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-text-secondary">
                             {subStatus.subscription.cancel_at_period_end
                               ? `Se cancela el ${formatSubDate(subStatus.subscription.current_period_end)}`
                               : `Próxima renovación: ${formatSubDate(subStatus.subscription.current_period_end)}`}
@@ -471,7 +471,7 @@ export const Settings: React.FC = () => {
                       <button
                         onClick={handleManageSubscription}
                         disabled={isPortalLoading}
-                        className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-md font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+                        className="bg-card border border-border text-text-secondary px-6 py-3 rounded-md font-medium hover:bg-surface-alt transition-colors flex items-center justify-center gap-2"
                       >
                         {isPortalLoading ? "Cargando..." : (
                           <>Gestionar <ExternalLink className="h-4 w-4" /></>
@@ -484,11 +484,11 @@ export const Settings: React.FC = () => {
 
               {/* Limits / Usage section */}
               <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Uso de este mes</h3>
+                <h3 className="text-lg font-bold text-text mb-6">Uso de este mes</h3>
                 <div className="grid sm:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm font-bold">
-                      <span className="text-gray-500">Eventos este mes</span>
+                      <span className="text-text-secondary">Eventos este mes</span>
                       <span>
                         {isBasicPlan ? `${eventsThisMonth} / ${eventLimit}` : 'Ilimitados'}
                       </span>
@@ -502,7 +502,7 @@ export const Settings: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm font-bold">
-                      <span className="text-gray-500">Clientes totales</span>
+                      <span className="text-text-secondary">Clientes totales</span>
                       <span>
                         {isBasicPlan ? `${clientsCount} / ${clientLimit}` : 'Ilimitados'}
                       </span>
@@ -522,10 +522,10 @@ export const Settings: React.FC = () => {
 
         {/* ── LEGAL LINKS ── */}
         <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-lg font-bold text-text mb-1">
             Informacion Legal
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-sm text-text-secondary mb-4">
             Conoce mas sobre EventosApp y nuestras politicas.
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -533,21 +533,21 @@ export const Settings: React.FC = () => {
               to="/about"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
-              <Info className="h-4 w-4 text-brand-orange" />
+              <Info className="h-4 w-4 text-primary" />
               Acerca de EventosApp
             </Link>
             <Link
               to="/terms"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
-              <FileText className="h-4 w-4 text-brand-orange" />
+              <FileText className="h-4 w-4 text-primary" />
               Terminos y Condiciones
             </Link>
             <Link
               to="/privacy"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
-              <Shield className="h-4 w-4 text-brand-orange" />
+              <Shield className="h-4 w-4 text-primary" />
               Politica de Privacidad
             </Link>
           </div>
