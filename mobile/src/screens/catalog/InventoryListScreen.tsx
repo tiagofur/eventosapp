@@ -154,7 +154,7 @@ export default function InventoryListScreen({ navigation }: Props) {
         <TouchableOpacity
           style={[styles.card, isLowStock && styles.cardLowStock]}
           activeOpacity={0.7}
-          onPress={() => navigation.navigate("InventoryForm", { id: item.id })}
+          onPress={() => navigation.navigate("InventoryDetail", { id: item.id })}
         >
           <View style={[styles.iconBox, isLowStock && styles.iconBoxLow]}>
             <Package
