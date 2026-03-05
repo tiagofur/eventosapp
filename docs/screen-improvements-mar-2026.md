@@ -81,36 +81,40 @@
 
 ## Pantallas pendientes 🔲
 
-### Prioridad Alta (mayor uso por el usuario)
+*Todas las pantallas de usuario completadas ✅*
 
-*Todas completadas ✅*
+### Pendiente (admin interno solamente)
+
+| Pantalla | Archivos | Notas |
+|---|---|---|
+| Admin Dashboard | `Admin/AdminDashboard.tsx` | Solo para admins internos — baja prioridad |
+| Admin Users | `Admin/AdminUsers.tsx` | Solo para admins internos — baja prioridad |
+
+### Completadas — Prioridad Alta ✅
 
 | Pantalla | Archivo | Cambios principales |
 |---|---|---|
-| Formulario de cliente | `Clients/ClientForm.tsx` | spinner primary, hover bg-surface-alt, error alert error tokens, focus rings primary, photo delete bg-error, save premium-gradient |
-| Formulario de inventario | `Inventory/InventoryForm.tsx` | spinner primary, back link text-text-secondary, error alert error tokens, focus rings primary, save premium-gradient |
+| Formulario de cliente | `Clients/ClientForm.tsx` | spinner primary, hover bg-surface-alt, error tokens, focus rings primary, photo delete bg-error, save premium-gradient |
+| Formulario de inventario | `Inventory/InventoryForm.tsx` | spinner primary, back link text-text-secondary, error tokens, focus rings primary, save premium-gradient |
 
-### Prioridad Media
+### Completadas — Prioridad Media ✅
 
-| Pantalla | Archivos | Tokens pendientes aprox. | Notas |
-|---|---|---|---|
-| Configuración | `Settings.tsx` | ~40 | Perfil, branding, contratos |
-| Calendario | `Calendar/CalendarView.tsx` | ~25 | Vista mensual/semanal |
-| Búsqueda | `Search.tsx` | ~24 | Búsqueda global |
-| Pago exitoso | `Events/EventPaymentSuccess.tsx` | ~10 | Pantalla post-pago Stripe |
-| Restablecimiento contraseña | `ResetPassword.tsx` | ~18 | Flujo desde email |
+| Pantalla | Archivo | Cambios principales |
+|---|---|---|
+| Configuración | `Settings.tsx` | header font-black, tabs bg-card/text-primary, all gray-* → design tokens, legal icons text-primary, canceled status text-error |
+| Calendario | `Calendar/CalendarView.tsx` | CTA premium-gradient, badge bg-primary/10, all icons text-primary, hover:border-primary, focus rings primary, table dividers divide-border |
+| Búsqueda | `Search.tsx` | loading text-text-secondary, error bg-error/5, cards bg-card border-border, hover bg-surface-alt, group-hover:text-primary |
+| Restablecimiento contraseña | `ResetPassword.tsx` | bg-surface-alt page, bg-card card, focus:ring-primary, labels/icons text-text-secondary, submit premium-gradient |
 
-### Prioridad Baja (raramente visitadas)
+### Completadas — Prioridad Baja ✅
 
-| Pantalla | Archivos | Tokens pendientes aprox. | Notas |
-|---|---|---|---|
-| Precios | `Pricing.tsx` | ~9 | Página pública de planes |
-| Acerca de | `About.tsx` | ~19 | Página informativa |
-| Términos | `Terms.tsx` | 0 | Solo texto |
-| Privacidad | `Privacy.tsx` | 0 | Solo texto |
-| No encontrado | `NotFound.tsx` | ~5 | 404 |
-| Admin Dashboard | `Admin/AdminDashboard.tsx` | — | Solo para admins internos |
-| Admin Users | `Admin/AdminUsers.tsx` | — | Solo para admins internos |
+| Pantalla | Archivo | Cambios principales |
+|---|---|---|
+| Precios | `Pricing.tsx` | bg-card Basic card, bg-surface-alt features, error tokens, text-text/text-text-secondary; Pro gradient preserved |
+| Acerca de | `About.tsx` | bg-surface-alt page, bg-card cards, text-primary links/icon, border-border, text-text-secondary |
+| No encontrado | `NotFound.tsx` | bg-surface-alt, bg-card card, text-primary icon, premium-gradient CTA |
+| Términos | `Terms.tsx` | Sin tokens (solo texto) |
+| Privacidad | `Privacy.tsx` | Sin tokens (solo texto) |
 
 ---
 
