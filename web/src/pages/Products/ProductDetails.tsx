@@ -197,7 +197,7 @@ export const ProductDetails: React.FC = () => {
             <div className="p-6 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold text-text">Composición / Insumos</h2>
+                <h2 className="text-lg font-semibold text-text">Composición / Insumos</h2>
               </div>
             </div>
 
@@ -257,7 +257,7 @@ export const ProductDetails: React.FC = () => {
               <div className="p-6 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Wrench className="h-5 w-5 text-blue-500" />
-                  <h2 className="text-lg font-bold text-text">Equipo Necesario</h2>
+                  <h2 className="text-lg font-semibold text-text">Equipo Necesario</h2>
                 </div>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                   Sin costo - Reutilizable

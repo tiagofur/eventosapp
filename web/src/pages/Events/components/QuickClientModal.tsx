@@ -103,7 +103,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-500 focus:outline-hidden"
+                className="text-text-secondary hover:text-text focus:outline-hidden"
                 aria-label="Cerrar modal"
               >
                 <X className="h-6 w-6" aria-hidden="true" />
@@ -117,12 +117,12 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
 
             {error && (
               <div
-                className="mb-4 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4"
+                className="mb-4 bg-error/5 border-l-4 border-error p-4"
                 role="alert"
               >
                 <div className="flex">
                   <div className="ml-3">
-                    <p className="text-sm text-red-700 dark:text-red-300">
+                    <p className="text-sm text-error">
                       {error}
                     </p>
                   </div>
@@ -135,7 +135,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                 <div>
                   <label
                     htmlFor="quick-client-name"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-medium text-text-secondary"
                   >
                     Nombre Completo *
                   </label>
@@ -143,7 +143,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                     id="quick-client-name"
                     type="text"
                     {...register("name")}
-                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-xl shadow-xs py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20 sm:text-sm"
+                    className="mt-1 block w-full border border-border rounded-xl shadow-xs py-2 px-3 bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20 sm:text-sm"
                     aria-required="true"
                     aria-invalid={errors.name ? "true" : "false"}
                     aria-describedby={
@@ -153,7 +153,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                   {errors.name && (
                     <p
                       id="quick-client-name-error"
-                      className="mt-1 text-sm text-red-600 dark:text-red-400"
+                      className="mt-1 text-sm text-error"
                       role="alert"
                     >
                       {errors.name.message}
@@ -164,7 +164,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                 <div>
                   <label
                     htmlFor="quick-client-phone"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-medium text-text-secondary"
                   >
                     Teléfono *
                   </label>
@@ -172,7 +172,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                     id="quick-client-phone"
                     type="text"
                     {...register("phone")}
-                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-xl shadow-xs py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20 sm:text-sm"
+                    className="mt-1 block w-full border border-border rounded-xl shadow-xs py-2 px-3 bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20 sm:text-sm"
                     aria-required="true"
                     aria-invalid={errors.phone ? "true" : "false"}
                     aria-describedby={
@@ -182,7 +182,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                   {errors.phone && (
                     <p
                       id="quick-client-phone-error"
-                      className="mt-1 text-sm text-red-600 dark:text-red-400"
+                      className="mt-1 text-sm text-error"
                       role="alert"
                     >
                       {errors.phone.message}
@@ -193,7 +193,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                 <div>
                   <label
                     htmlFor="quick-client-email"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-medium text-text-secondary"
                   >
                     Email
                   </label>
@@ -201,7 +201,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                     id="quick-client-email"
                     type="email"
                     {...register("email")}
-                    className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-xl shadow-xs py-2 px-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-shadow focus:ring-2 focus:ring-brand-orange/20 sm:text-sm"
+                    className="mt-1 block w-full border border-border rounded-xl shadow-xs py-2 px-3 bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20 sm:text-sm"
                     aria-invalid={errors.email ? "true" : "false"}
                     aria-describedby={
                       errors.email ? "quick-client-email-error" : undefined
@@ -210,7 +210,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
                   {errors.email && (
                     <p
                       id="quick-client-email-error"
-                      className="mt-1 text-sm text-red-600 dark:text-red-400"
+                      className="mt-1 text-sm text-error"
                       role="alert"
                     >
                       {errors.email.message}
@@ -226,7 +226,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
               type="button"
               onClick={handleSubmit(onSubmit)}
               disabled={isLoading}
-              className="w-full inline-flex justify-center rounded-xl border border-transparent shadow-xs px-4 py-2 bg-brand-orange text-base font-medium text-white hover:bg-orange-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange/20 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              className="w-full inline-flex justify-center rounded-xl border border-transparent shadow-xs px-4 py-2 premium-gradient text-base font-medium text-white hover:opacity-90 transition-opacity focus:ring-2 focus:ring-offset-2 focus:ring-primary/20 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
               aria-label={
                 isLoading ? "Guardando cliente..." : "Guardar cliente"
               }
@@ -249,7 +249,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 dark:border-gray-600 shadow-xs px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange/20 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              className="mt-3 w-full inline-flex justify-center rounded-xl border border-border shadow-xs px-4 py-2 bg-card text-base font-medium text-text-secondary hover:bg-surface-alt transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-primary/20 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
             >
               Cancelar
             </button>

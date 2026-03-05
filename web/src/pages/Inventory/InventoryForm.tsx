@@ -117,7 +117,7 @@ export const InventoryForm: React.FC = () => {
   if (limitsLoading) {
     return (
       <div className="flex justify-center items-center h-64" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange" aria-hidden="true"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true"></div>
         <span className="sr-only">Cargando límites de plan...</span>
       </div>
     );
@@ -129,7 +129,7 @@ export const InventoryForm: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mb-6 flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+          className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
           aria-label="Regresar a la página anterior"
         >
           <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
@@ -163,10 +163,10 @@ export const InventoryForm: React.FC = () => {
       <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4" role="alert">
+            <div className="bg-error/5 border-l-4 border-error p-4" role="alert">
               <div className="flex">
                 <div className="ml-3">
-                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                  <p className="text-sm text-error">{error}</p>
                 </div>
               </div>
             </div>
@@ -184,13 +184,13 @@ export const InventoryForm: React.FC = () => {
                 id="ingredient_name"
                 type="text"
                 {...register("ingredient_name")}
-                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
                 aria-invalid={errors.ingredient_name ? "true" : "false"}
                 aria-describedby={errors.ingredient_name ? "ingredient_name-error" : undefined}
               />
               {errors.ingredient_name && (
-                <p id="ingredient_name-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="ingredient_name-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.ingredient_name.message}
                 </p>
               )}
@@ -206,7 +206,7 @@ export const InventoryForm: React.FC = () => {
               <select
                 id="type"
                 {...register("type")}
-                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
                 aria-invalid={errors.type ? "true" : "false"}
                 aria-describedby={errors.type ? "type-error" : undefined}
@@ -217,7 +217,7 @@ export const InventoryForm: React.FC = () => {
                 </option>
               </select>
               {errors.type && (
-                <p id="type-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="type-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.type.message}
                 </p>
               )}
@@ -234,14 +234,14 @@ export const InventoryForm: React.FC = () => {
                 id="unit"
                 type="text"
                 {...register("unit")}
-                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="Ej. kg, Litros"
                 aria-required="true"
                 aria-invalid={errors.unit ? "true" : "false"}
                 aria-describedby={errors.unit ? "unit-error" : undefined}
               />
               {errors.unit && (
-                <p id="unit-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="unit-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.unit.message}
                 </p>
               )}
@@ -259,13 +259,13 @@ export const InventoryForm: React.FC = () => {
                 type="number"
                 step="0.01"
                 {...register("current_stock")}
-                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
                 aria-invalid={errors.current_stock ? "true" : "false"}
                 aria-describedby={errors.current_stock ? "current_stock-error" : undefined}
               />
               {errors.current_stock && (
-                <p id="current_stock-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="current_stock-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.current_stock.message}
                 </p>
               )}
@@ -283,13 +283,13 @@ export const InventoryForm: React.FC = () => {
                 type="number"
                 step="0.01"
                 {...register("minimum_stock")}
-                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
                 aria-invalid={errors.minimum_stock ? "true" : "false"}
                 aria-describedby={errors.minimum_stock ? "minimum_stock-error" : undefined}
               />
               {errors.minimum_stock && (
-                <p id="minimum_stock-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="minimum_stock-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.minimum_stock.message}
                 </p>
               )}
@@ -307,12 +307,12 @@ export const InventoryForm: React.FC = () => {
                 type="number"
                 step="0.01"
                 {...register("unit_cost")}
-                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-invalid={errors.unit_cost ? "true" : "false"}
                 aria-describedby={errors.unit_cost ? "unit_cost-error" : undefined}
               />
               {errors.unit_cost && (
-                <p id="unit_cost-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="unit_cost-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.unit_cost.message}
                 </p>
               )}
@@ -330,7 +330,7 @@ export const InventoryForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
+              className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/40 disabled:opacity-50 transition-opacity"
               aria-label={isLoading ? "Guardando ítem..." : "Guardar ítem"}
             >
               <Save className="h-5 w-5 mr-2" aria-hidden="true" />

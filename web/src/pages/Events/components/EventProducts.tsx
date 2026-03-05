@@ -45,7 +45,7 @@ export const EventProducts: React.FC<EventProductsProps> = ({
           <button
             type="button"
             onClick={() => onRemoveProduct(index)}
-            className="absolute top-1 right-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+            className="absolute top-1 right-1 text-text-secondary hover:text-error transition-colors"
             aria-label={`Eliminar producto ${index + 1}`}
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -57,7 +57,7 @@ export const EventProducts: React.FC<EventProductsProps> = ({
               id={`product-select-${index}`}
               value={item.product_id}
               onChange={(e) => onProductChange(index, 'product_id', e.target.value)}
-              className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-card text-text p-2 border"
+              className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
               aria-label={`Seleccionar producto ${index + 1}`}
             >
               <option value="">Seleccionar producto</option>
@@ -78,7 +78,7 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                   type="number"
                   value={item.quantity}
                   onChange={(e) => onProductChange(index, 'quantity', Number(e.target.value))}
-                  className="flex-1 min-w-0 block w-full px-2 py-2 rounded-none rounded-l-xl text-sm border-border focus:ring-2 focus:ring-brand-orange/20 border bg-card text-text transition-shadow"
+                  className="flex-1 min-w-0 block w-full px-2 py-2 rounded-none rounded-l-xl text-sm border-border focus:ring-2 focus:ring-primary/20 border bg-card text-text transition-shadow"
                   aria-label={`Cantidad de producto ${index + 1}`}
                 />
                 <button
@@ -116,7 +116,7 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                   const val = Number(e.target.value);
                   if (val >= 0 && val <= item.price) onProductChange(index, 'discount', val);
                 }}
-                className="block w-full text-sm border-border rounded-md shadow-xs focus:ring-brand-orange focus:border-brand-orange p-2 border bg-card text-text"
+                className="block w-full text-sm border-border rounded-md shadow-xs focus:ring-primary/20 focus:border-primary p-2 border bg-card text-text"
                 aria-label={`Descuento unitario de producto ${index + 1}`}
               />
             </div>
@@ -135,14 +135,14 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                     onProductChange(index, 'discount', newDiscount);
                   }
                 }}
-                className="block w-full text-sm border-border rounded-md shadow-xs focus:ring-brand-orange focus:border-brand-orange p-2 border bg-card text-text font-bold"
+                className="block w-full text-sm border-border rounded-md shadow-xs focus:ring-primary/20 focus:border-primary p-2 border bg-card text-text font-bold"
                 aria-label={`Total de producto ${index + 1}`}
               />
             </div>
           </div>
 
           {item.product_id && productUnitCosts[item.product_id] !== undefined && (
-            <div className="mt-2 text-xs text-gray-400 dark:text-gray-400">
+            <div className="mt-2 text-xs text-text-secondary">
               Costo est. unitario: ${productUnitCosts[item.product_id].toFixed(2)}
             </div>
           )}
@@ -160,7 +160,7 @@ export const EventProducts: React.FC<EventProductsProps> = ({
 
       <div className="mt-4 text-right">
         <span className="text-sm text-text-secondary mr-2">Subtotal Productos:</span>
-        <span className="text-lg font-bold text-text">
+        <span className="text-lg font-semibold text-text">
           ${selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0).toFixed(2)}
         </span>
       </div>

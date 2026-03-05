@@ -289,7 +289,7 @@ export const EventSummary: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange" aria-hidden="true"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true"></div>
         <span className="sr-only">Cargando resumen del evento...</span>
       </div>
     );
@@ -298,7 +298,7 @@ export const EventSummary: React.FC = () => {
   if (!event) {
     return (
       <div className="flex justify-center items-center h-64" role="alert">
-        <p className="text-gray-600 dark:text-gray-400">Evento no encontrado</p>
+        <p className="text-text-secondary">Evento no encontrado</p>
       </div>
     );
   }
@@ -357,8 +357,8 @@ export const EventSummary: React.FC = () => {
               className={clsx(
                 "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 viewMode === "summary"
-                  ? "bg-white dark:bg-gray-600 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-600/30"
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
               )}
               aria-pressed={viewMode === "summary"}
               aria-label="Ver resumen del evento"
@@ -372,8 +372,8 @@ export const EventSummary: React.FC = () => {
               className={clsx(
                 "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 viewMode === "payments"
-                  ? "bg-white dark:bg-gray-600 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-600/30"
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
               )}
               aria-pressed={viewMode === "payments"}
               aria-label="Ver pagos del evento"
@@ -387,8 +387,8 @@ export const EventSummary: React.FC = () => {
               className={clsx(
                 "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 viewMode === "ingredients"
-                  ? "bg-white dark:bg-gray-600 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-600/30"
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
               )}
               aria-pressed={viewMode === "ingredients"}
               aria-label="Ver lista de insumos"
@@ -402,8 +402,8 @@ export const EventSummary: React.FC = () => {
               className={clsx(
                 "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 viewMode === "contract"
-                  ? "bg-white dark:bg-gray-600 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-600/30"
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
               )}
               aria-pressed={viewMode === "contract"}
               aria-label="Ver contrato del evento"
@@ -417,8 +417,8 @@ export const EventSummary: React.FC = () => {
               className={clsx(
                 "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 viewMode === "photos"
-                  ? "bg-white dark:bg-gray-600 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text hover:bg-white/50 dark:hover:bg-gray-600/30"
+                  ? "bg-card text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
               )}
               aria-pressed={viewMode === "photos"}
               aria-label="Ver fotos del evento"
@@ -426,7 +426,7 @@ export const EventSummary: React.FC = () => {
               <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
               Fotos
               {eventPhotos.length > 0 && (
-                <span className="ml-1.5 bg-brand-orange/10 text-brand-orange text-xs font-bold rounded-full px-1.5 py-0.5">
+                <span className="ml-1.5 bg-primary/10 text-primary text-xs font-bold rounded-full px-1.5 py-0.5">
                   {eventPhotos.length}
                 </span>
               )}
@@ -439,7 +439,7 @@ export const EventSummary: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate(`/events/${id}/edit`)}
-            className="flex items-center px-4 py-2 bg-brand-orange text-white rounded-2xl hover:bg-brand-orange/90 text-sm font-bold shadow-md shadow-brand-orange/20 transition-all active:scale-95"
+            className="flex items-center px-4 py-2 premium-gradient text-white rounded-2xl hover:opacity-90 text-sm font-bold shadow-md shadow-primary/20 transition-all active:scale-95"
             aria-label="Editar este evento"
           >
             <Pencil className="h-4 w-4 mr-2" aria-hidden="true" />
@@ -462,7 +462,7 @@ export const EventSummary: React.FC = () => {
             </button>
 
             {actionsDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden py-1" role="menu">
+              <div className="absolute right-0 mt-1 w-56 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden py-1" role="menu">
                 <p className="px-4 py-2 text-xs font-semibold text-text-tertiary uppercase tracking-wider border-b border-border mb-1">
                   Exportar PDF
                 </p>
@@ -622,7 +622,7 @@ export const EventSummary: React.FC = () => {
                 </button>
 
                 {statusDropdownOpen && (
-                  <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden" role="menu" aria-label="Cambiar estado del evento">
+                  <div className="absolute right-0 mt-1 w-44 bg-card border border-border rounded-lg shadow-lg z-50 overflow-hidden" role="menu" aria-label="Cambiar estado del evento">
                     {ALL_STATUSES.map((s) => {
                       const cfg = STATUS_CONFIG[s];
                       return (
@@ -630,10 +630,10 @@ export const EventSummary: React.FC = () => {
                           key={s}
                           type="button"
                           onClick={() => handleStatusChange(s)}
-                          className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors hover:bg-surface-alt ${
                             s === currentStatus
                               ? "font-semibold " + cfg.color
-                              : "text-gray-700 dark:text-gray-200"
+                              : "text-text"
                           }`}
                           role="menuitem"
                           aria-label={`Cambiar estado a ${cfg.label}`}
@@ -682,7 +682,7 @@ export const EventSummary: React.FC = () => {
                 <p className="font-bold text-lg text-text">{event.client?.name}</p>
                 {event.location && (
                   <p className="text-sm text-text-secondary flex items-baseline gap-2">
-                    <Building className="h-3.5 w-3.5 text-brand-orange" />
+                    <Building className="h-3.5 w-3.5 text-primary" />
                     {event.location}
                   </p>
                 )}
@@ -700,7 +700,7 @@ export const EventSummary: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
-                <ShoppingCart className="h-5 w-5 text-brand-orange" />
+                <ShoppingCart className="h-5 w-5 text-primary" />
                 Productos
               </h2>
               <table className="w-full text-sm" aria-label="Productos incluidos en el evento">
@@ -735,7 +735,7 @@ export const EventSummary: React.FC = () => {
 
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
-                <Zap className="h-5 w-5 text-brand-orange" />
+                <Zap className="h-5 w-5 text-primary" />
                 Extras
               </h2>
               <table className="w-full text-sm" aria-label="Extras adicionales del evento">
@@ -771,7 +771,7 @@ export const EventSummary: React.FC = () => {
           {equipment.length > 0 && (
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border mt-8">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
-                <Wrench className="h-5 w-5 text-brand-orange" />
+                <Wrench className="h-5 w-5 text-primary" />
                 Equipo Asignado
               </h2>
               <div className="space-y-3">
@@ -784,7 +784,7 @@ export const EventSummary: React.FC = () => {
                         <p className="text-xs text-text-tertiary mt-0.5">{eq.notes}</p>
                       )}
                     </div>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-alt text-text-secondary">
                       Sin costo
                     </span>
                   </div>
@@ -796,7 +796,7 @@ export const EventSummary: React.FC = () => {
           <div className="mt-8 border-t border-border pt-2 print:hidden">
             <div className="bg-card shadow-lg rounded-3xl p-6 sm:p-8 border border-border overflow-hidden relative">
               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <DollarSign className="h-32 w-32 text-brand-orange" />
+                <DollarSign className="h-32 w-32 text-primary" />
               </div>
               <h2 className="text-xl font-black mb-8 text-text tracking-tight uppercase">
                 Resumen Financiero <span className="text-text-tertiary font-medium">Interno</span>
@@ -812,7 +812,7 @@ export const EventSummary: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Total Cobrado</p>
-                  <p className="text-2xl font-black text-brand-orange">${totalCharged.toFixed(2)}</p>
+                  <p className="text-2xl font-black text-primary">${totalCharged.toFixed(2)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Utilidad Neta</p>
@@ -824,7 +824,7 @@ export const EventSummary: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Costos</p>
-                  <p className="text-2xl font-black text-red-500">${totalCost.toFixed(2)}</p>
+                  <p className="text-2xl font-black text-error">${totalCost.toFixed(2)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Pagado</p>
@@ -832,7 +832,7 @@ export const EventSummary: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Pendiente</p>
-                  <p className={clsx("text-2xl font-black", remainingValue > 0 ? "text-red-600" : "text-text")}>
+                  <p className={clsx("text-2xl font-black", remainingValue > 0 ? "text-error" : "text-text")}>
                     ${remainingValue.toFixed(2)}
                   </p>
                 </div>
@@ -847,11 +847,11 @@ export const EventSummary: React.FC = () => {
                       {Math.min(100, ((totalPaid / totalCharged) * 100)).toFixed(0)}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-surface-alt rounded-full h-3 overflow-hidden">
                     <div
                       className={clsx(
                         "h-full rounded-full transition-all duration-500",
-                        totalPaid >= totalCharged ? "bg-emerald-500" : "bg-brand-orange"
+                        totalPaid >= totalCharged ? "bg-emerald-500" : "bg-primary"
                       )}
                       style={{ width: `${Math.min(100, (totalPaid / totalCharged) * 100)}%` }}
                     />
@@ -864,7 +864,7 @@ export const EventSummary: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setViewMode("payments")}
-                      className="mt-3 flex items-center gap-2 px-4 py-2 bg-brand-orange/10 text-brand-orange rounded-xl text-sm font-bold hover:bg-brand-orange/20 transition-colors"
+                      className="mt-3 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors"
                     >
                       <DollarSign className="h-4 w-4" />
                       Registrar pago por ${remainingValue.toFixed(2)}
@@ -884,7 +884,7 @@ export const EventSummary: React.FC = () => {
               Lista de Insumos
             </h1>
             <p className="text-text-secondary text-sm flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-brand-orange" />
+              <ShoppingCart className="h-4 w-4 text-primary" />
               {event.service_type} • {new Date(event.event_date).toLocaleDateString()}
             </p>
           </div>
@@ -916,7 +916,7 @@ export const EventSummary: React.FC = () => {
                         <span className={clsx(
                           "px-2 py-0.5 rounded-full text-xs font-semibold",
                           needsMore 
-                            ? "bg-red-500/10 text-red-500 border border-red-500/20" 
+                            ? "bg-error/10 text-error border border-error/20"
                             : "bg-green-500/10 text-green-500 border border-green-500/20"
                         )}>
                           {(ing.currentStock || 0).toFixed(2)}
@@ -926,7 +926,7 @@ export const EventSummary: React.FC = () => {
                         {needsMore ? (
                           <Link 
                             to="/inventory" 
-                            className="text-brand-orange hover:text-orange-600 font-bold text-xs underline decoration-dotted"
+                            className="text-primary hover:text-primary/80 font-bold text-xs underline decoration-dotted"
                           >
                             Comprar
                           </Link>
@@ -941,7 +941,7 @@ export const EventSummary: React.FC = () => {
                   <tr>
                     <td
                       colSpan={3}
-                      className="py-4 text-center text-gray-500 dark:text-gray-400 italic"
+                      className="py-4 text-center text-text-secondary italic"
                     >
                       No hay insumos calculados para los productos
                       seleccionados.
@@ -957,17 +957,17 @@ export const EventSummary: React.FC = () => {
       {viewMode === "contract" && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-card shadow-xl rounded-[40px] p-12 sm:p-20 border border-border font-serif text-text leading-relaxed max-w-4xl mx-auto relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-brand-orange"></div>
+            <div className="absolute top-0 left-0 w-full h-2 bg-primary"></div>
             <div className="text-center mb-16">
               <h1 className="text-3xl font-black uppercase tracking-[0.2em] text-text">
                 Contrato de Servicios
               </h1>
-              <div className="w-24 h-1 bg-brand-orange mx-auto mt-4"></div>
+              <div className="w-24 h-1 bg-primary mx-auto mt-4"></div>
             </div>
 
           {contractPreviewMissingTokens.length > 0 ? (
             <div className="space-y-4 text-center">
-              <p className="text-red-600 dark:text-red-400 font-semibold">
+              <p className="text-error font-semibold">
                 Faltan datos para renderizar el contrato.
               </p>
               <p className="text-sm text-text-secondary">
@@ -983,17 +983,17 @@ export const EventSummary: React.FC = () => {
           )}
 
           <div className="grid grid-cols-2 gap-16 mt-24 pt-12">
-            <div className="text-center border-t border-gray-400 dark:border-gray-500 pt-4">
+            <div className="text-center border-t border-border pt-4">
               <p className="font-bold">
                 {profile?.business_name || profile?.name || "EL PROVEEDOR"}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-text-secondary mt-1">
                 Firma
               </p>
             </div>
-            <div className="text-center border-t border-gray-400 dark:border-gray-500 pt-4">
+            <div className="text-center border-t border-border pt-4">
               <p className="font-bold">{event.client?.name}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-text-secondary mt-1">
                 Firma de EL CLIENTE
               </p>
             </div>
@@ -1010,7 +1010,7 @@ export const EventSummary: React.FC = () => {
               type="button"
               onClick={() => photoInputRef.current?.click()}
               disabled={isUploadingPhoto}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 shadow-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 shadow-sm transition-opacity disabled:opacity-50"
             >
               {isUploadingPhoto ? (
                 <>
@@ -1055,7 +1055,7 @@ export const EventSummary: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleRemovePhoto(url)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    className="absolute top-2 right-2 bg-error text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error/90"
                     aria-label={`Eliminar foto ${idx + 1}`}
                   >
                     <X className="h-3.5 w-3.5" />
@@ -1078,7 +1078,7 @@ export const EventSummary: React.FC = () => {
           <button
             type="button"
             onClick={() => setLightboxPhoto(null)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+            className="absolute top-4 right-4 text-white hover:text-white/70 transition-colors"
             aria-label="Cerrar vista ampliada"
           >
             <X className="h-8 w-8" />
@@ -1092,7 +1092,7 @@ export const EventSummary: React.FC = () => {
         </div>
       )}
 
-      <div className="mt-12 text-center text-xs text-gray-400 dark:text-gray-400 print:mt-12">
+      <div className="mt-12 text-center text-xs text-text-secondary print:mt-12">
         <p>
           Generado por {profile?.business_name || "EventosApp"} -{" "}
           {new Date().toLocaleString()}

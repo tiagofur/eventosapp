@@ -124,7 +124,7 @@ export const Payments: React.FC<PaymentsProps> = ({
       )}
 
       {isFullyPaid && eventStatus === "quoted" && !statusMessage && (
-        <div className="bg-brand-orange/10 border border-brand-orange/20 rounded-2xl p-4 flex items-start text-brand-orange" role="alert">
+        <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start text-primary" role="alert">
           <AlertCircle className="h-5 w-5 mr-3 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-bold text-sm">El evento está totalmente pagado pero sigue como "Cotizado".</p>
@@ -143,7 +143,7 @@ export const Payments: React.FC<PaymentsProps> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-black text-text uppercase tracking-tight flex items-center gap-2">
-              <DollarSign className="h-6 w-6 text-brand-orange" aria-hidden="true" />
+              <DollarSign className="h-6 w-6 text-primary" aria-hidden="true" />
               Pagos y Saldo
             </h2>
             <p className="text-text-tertiary text-xs font-bold uppercase tracking-widest mt-1">Control de ingresos del evento</p>
@@ -154,7 +154,7 @@ export const Payments: React.FC<PaymentsProps> = ({
               <button
                 type="button"
                 onClick={() => { reset(); setIsAdding(true); }}
-                className="inline-flex items-center px-5 py-2.5 bg-brand-orange text-white text-sm font-black rounded-2xl hover:bg-brand-orange/90 shadow-lg shadow-brand-orange/20 transition-all active:scale-95 uppercase tracking-tighter"
+                className="inline-flex items-center px-5 py-2.5 premium-gradient text-white text-sm font-black rounded-2xl hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 uppercase tracking-tighter"
               >
                 <Plus className="h-4 w-4 mr-2" /> 
                 Registrar Pago
@@ -174,19 +174,19 @@ export const Payments: React.FC<PaymentsProps> = ({
           </div>
           <div className={clsx(
             "p-6 rounded-2xl border",
-            balance > 0.01 
-              ? "bg-red-500/5 border-red-500/10" 
+            balance > 0.01
+              ? "bg-error/5 border-error/10"
               : "bg-blue-500/5 border-blue-500/10"
           )}>
              <p className={clsx(
                "text-[10px] font-black uppercase tracking-tighter mb-1",
-               balance > 0.01 ? "text-red-500/70" : "text-blue-500/70"
+               balance > 0.01 ? "text-error/70" : "text-blue-500/70"
              )}>
                {balance > 0.01 ? 'Saldo Pendiente' : 'Saldo Liquidado'}
              </p>
              <p className={clsx(
                "text-2xl font-black",
-               balance > 0.01 ? "text-red-500" : "text-blue-500"
+               balance > 0.01 ? "text-error" : "text-blue-500"
              )}>
                ${Math.abs(balance).toFixed(2)}
              </p>
@@ -197,7 +197,7 @@ export const Payments: React.FC<PaymentsProps> = ({
           <div
             className={clsx(
               "h-full rounded-full transition-all duration-1000 ease-out",
-              isFullyPaid ? 'bg-emerald-500' : 'bg-brand-orange'
+              isFullyPaid ? 'bg-emerald-500' : 'bg-primary'
             )}
             style={{ width: `${Math.min(progress, 100)}%` }}
             role="progressbar"
@@ -223,7 +223,7 @@ export const Payments: React.FC<PaymentsProps> = ({
             <tbody className="divide-y divide-border/50">
               {payments.map((payment) => (
                 <tr key={payment.id} className="group hover:bg-surface-alt/50 transition-colors">
-                  <td className="py-4 px-6 font-bold text-text flex items-center gap-2">
+                  <td className="py-4 px-6 font-semibold text-text flex items-center gap-2">
                     <Calendar className="h-3.5 w-3.5 text-text-tertiary" />
                     {new Date(payment.payment_date).toLocaleDateString()}
                   </td>
@@ -248,7 +248,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                         setDeleteId(payment.id);
                         setConfirmOpen(true);
                       }}
-                      className="p-2 text-text-tertiary hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                      className="p-2 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-all"
                       aria-label="Eliminar pago"
                     >
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -271,10 +271,10 @@ export const Payments: React.FC<PaymentsProps> = ({
           <div className="mt-8 animate-in zoom-in-95 fade-in duration-300">
             <form 
               onSubmit={handleSubmit(onSubmit)} 
-              className="bg-surface-alt/50 p-8 rounded-3xl border border-brand-orange/20 relative overflow-hidden"
+              className="bg-surface-alt/50 p-8 rounded-3xl border border-primary/20 relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                <Plus className="h-24 w-24 text-brand-orange" />
+                <Plus className="h-24 w-24 text-primary" />
               </div>
               
               <h3 className="text-lg font-black text-text uppercase tracking-tight mb-6">Nuevo Pago</h3>
@@ -289,7 +289,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                       type="number"
                       step="0.01"
                       {...register("amount", { required: "Monto requerido", min: 0.01 })}
-                      className="block w-full bg-card border border-border rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all"
+                      className="block w-full bg-card border border-border rounded-xl pl-8 pr-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden transition-all"
                       placeholder="0.00"
                     />
                     {balance > 0 && (
@@ -302,7 +302,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                       </button>
                     )}
                   </div>
-                  {errors.amount && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tighter">{errors.amount.message as string}</p>}
+                  {errors.amount && <p className="text-[10px] text-error font-bold mt-1 uppercase tracking-tighter">{errors.amount.message as string}</p>}
                 </div>
 
                 <div>
@@ -311,7 +311,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                     id="payment-date"
                     type="date"
                     {...register("payment_date", { required: true })}
-                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all"
+                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden transition-all"
                   />
                 </div>
 
@@ -320,7 +320,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                   <select
                     id="payment-method"
                     {...register("payment_method")}
-                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all appearance-none cursor-pointer"
+                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden transition-all appearance-none cursor-pointer"
                   >
                     <option value="cash">Efectivo 💵</option>
                     <option value="transfer">Transferencia 🏦</option>
@@ -336,7 +336,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                     id="payment-notes"
                     type="text"
                     {...register("notes")}
-                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-brand-orange/20 focus:border-brand-orange outline-hidden transition-all"
+                    className="block w-full bg-card border border-border rounded-xl px-4 py-3 text-sm font-bold text-text focus:ring-2 focus:ring-primary/20 focus:border-primary outline-hidden transition-all"
                     placeholder="Ref. de pago..."
                   />
                 </div>
@@ -352,7 +352,7 @@ export const Payments: React.FC<PaymentsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-8 py-2.5 bg-brand-orange text-white text-xs font-black rounded-xl hover:bg-brand-orange/90 shadow-lg shadow-brand-orange/20 transition-all uppercase tracking-widest"
+                  className="px-8 py-2.5 premium-gradient text-white text-xs font-black rounded-xl hover:opacity-90 shadow-lg shadow-primary/20 transition-all uppercase tracking-widest"
                 >
                   Confirmar Pago
                 </button>

@@ -534,7 +534,7 @@ export const EventForm: React.FC = () => {
   if (isLoading || limitsLoading) {
     return (
       <div className="flex justify-center items-center h-64" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         <span className="sr-only">Cargando formulario de evento...</span>
       </div>
     );
@@ -571,7 +571,7 @@ export const EventForm: React.FC = () => {
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
-          <h1 className="text-2xl font-bold text-text">
+          <h1 className="text-2xl font-black tracking-tight text-text">
             {id ? "Editar Evento" : "Nuevo Evento"}
           </h1>
         </div>
@@ -579,7 +579,7 @@ export const EventForm: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate(`/events/${id}/summary`)}
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-xl shadow-xs text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            className="inline-flex items-center px-4 py-2 border border-border rounded-xl shadow-xs text-sm font-medium text-text-secondary bg-card hover:bg-surface-alt transition-colors"
           >
             <FileText className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Ver Resumen
@@ -603,9 +603,9 @@ export const EventForm: React.FC = () => {
                   <span
                     className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-full border-2 ${
                       activeStep > step.id
-                        ? "bg-brand-orange border-brand-orange"
+                        ? "bg-primary border-primary"
                         : activeStep === step.id
-                        ? "border-brand-orange text-brand-orange"
+                        ? "border-primary text-primary"
                         : "border-border text-text-secondary"
                     }`}
                   >
@@ -635,11 +635,11 @@ export const EventForm: React.FC = () => {
       </nav>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-md" role="alert">
+        <div className="bg-error/5 border-l-4 border-error p-4 rounded-md" role="alert">
           <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-500" aria-hidden="true" />
+            <AlertCircle className="h-5 w-5 text-error" aria-hidden="true" />
             <div className="ml-3">
-              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+              <p className="text-sm text-error">{error}</p>
             </div>
           </div>
         </div>
@@ -730,7 +730,7 @@ export const EventForm: React.FC = () => {
                 type="button"
                 onClick={nextStep}
                 disabled={isStepLoading}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-xs text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
+                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-xs text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-opacity"
                 aria-label="Ir al siguiente paso del formulario"
               >
                 {isStepLoading ? "Cargando..." : "Siguiente"}

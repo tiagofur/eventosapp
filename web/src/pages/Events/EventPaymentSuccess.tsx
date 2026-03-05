@@ -46,11 +46,11 @@ export default function EventPaymentSuccess() {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto mt-12 p-8 text-center">
-        <Loader2 className="w-16 h-16 mx-auto mb-4 text-brand-orange animate-spin" />
+        <Loader2 className="w-16 h-16 mx-auto mb-4 text-primary animate-spin" />
         <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
           Verificando pago...
         </h2>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-text-secondary">
           Por favor espera mientras confirmamos tu pago
         </p>
       </div>
@@ -60,15 +60,15 @@ export default function EventPaymentSuccess() {
   if (error || !paymentDetails) {
     return (
       <div className="max-w-2xl mx-auto mt-12 p-8">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-          <XCircle className="w-16 h-16 mx-auto mb-4 text-red-600 dark:text-red-400" />
-          <h2 className="text-2xl font-bold mb-2 text-red-900 dark:text-red-300">
+        <div className="bg-error/5 border border-error/30 rounded-lg p-6 text-center">
+          <XCircle className="w-16 h-16 mx-auto mb-4 text-error" />
+          <h2 className="text-2xl font-bold mb-2 text-error">
             Error al verificar pago
           </h2>
-          <p className="text-red-700 dark:text-red-400 mb-6">{error}</p>
+          <p className="text-error mb-6">{error}</p>
           <Link
             to={`/events/${id}/summary`}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-error hover:bg-error/90 text-white rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             Volver al evento
@@ -103,7 +103,7 @@ export default function EventPaymentSuccess() {
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
                 Detalles del Pago
               </h3>
-              <div className="space-y-2 text-gray-700 dark:text-gray-300">
+              <div className="space-y-2 text-text-secondary">
                 <div className="flex justify-between">
                   <span>Monto:</span>
                   <span className="font-bold">${paymentDetails.amount.toFixed(2)} MXN</span>
@@ -122,7 +122,7 @@ export default function EventPaymentSuccess() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-text-secondary">
                 Recibirás un correo de confirmación en breve
               </p>
 

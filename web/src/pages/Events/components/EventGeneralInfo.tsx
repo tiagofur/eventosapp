@@ -41,7 +41,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
             <button
               type="button"
               onClick={() => setIsQuickClientModalOpen(true)}
-              className="inline-flex items-center text-xs font-medium text-brand-orange hover:text-orange-600"
+              className="inline-flex items-center text-xs font-medium text-primary hover:text-primary/80"
               aria-label="Crear nuevo cliente rápidamente"
             >
               <UserPlus className="h-3 w-3 mr-1" aria-hidden="true" />
@@ -52,7 +52,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
             <select
               id="client_id"
               {...register('client_id')}
-              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               aria-required="true"
               aria-invalid={errors.client_id ? "true" : "false"}
               aria-describedby={errors.client_id ? "client_id-error" : undefined}
@@ -65,7 +65,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               ))}
             </select>
             {errors.client_id && (
-              <p id="client_id-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              <p id="client_id-error" className="mt-2 text-sm text-error" role="alert">
                 {errors.client_id.message as string}
               </p>
             )}
@@ -111,13 +111,13 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               id="event_date"
               type="date"
               {...register('event_date')}
-              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               aria-required="true"
               aria-invalid={errors.event_date ? "true" : "false"}
               aria-describedby={errors.event_date ? "event_date-error" : undefined}
             />
             {errors.event_date && (
-              <p id="event_date-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              <p id="event_date-error" className="mt-2 text-sm text-error" role="alert">
                 {errors.event_date.message as string}
               </p>
             )}
@@ -135,7 +135,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
                 id="start_time"
                 type="time"
                 {...register('start_time')}
-                className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -148,7 +148,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
                 id="end_time"
                 type="time"
                 {...register('end_time')}
-                className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -165,13 +165,13 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               type="text"
               {...register('service_type')}
               placeholder="Ej. Decoración, Banquete, Fotografía"
-              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               aria-required="true"
               aria-invalid={errors.service_type ? "true" : "false"}
               aria-describedby={errors.service_type ? "service_type-error" : undefined}
             />
             {errors.service_type && (
-              <p id="service_type-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              <p id="service_type-error" className="mt-2 text-sm text-error" role="alert">
                 {errors.service_type.message as string}
               </p>
             )}
@@ -186,20 +186,20 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
           <div className="mt-1">
             <div className="relative rounded-xl shadow-xs">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Users className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                <Users className="h-5 w-5 text-text-secondary" aria-hidden="true" />
               </div>
               <input
                 id="num_people"
                 type="number"
                 {...register('num_people')}
-                className="block w-full rounded-xl border-border pl-10 focus:border-brand-orange focus:ring-brand-orange sm:text-sm p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="block w-full rounded-xl border-border pl-10 focus:border-primary focus:ring-primary sm:text-sm p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
                 aria-invalid={errors.num_people ? "true" : "false"}
                 aria-describedby={errors.num_people ? "num_people-error" : undefined}
               />
             </div>
             {errors.num_people && (
-              <p id="num_people-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+              <p id="num_people-error" className="mt-2 text-sm text-error" role="alert">
                 {errors.num_people.message as string}
               </p>
             )}
@@ -215,7 +215,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
             <select
               id="status"
               {...register('status')}
-              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               aria-required="true"
             >
               <option value="quoted">Cotizado</option>
@@ -237,7 +237,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               type="text"
               {...register('location')}
               placeholder="Dirección del evento (opcional, por defecto dirección del cliente)"
-              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
@@ -252,7 +252,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               type="text"
               {...register('city')}
               placeholder="Ciudad del evento (para contrato)"
-              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+              className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
