@@ -35,19 +35,20 @@ type PlatformStats struct {
 
 // AdminUser represents a user with usage stats for admin views.
 type AdminUser struct {
-	ID               uuid.UUID `json:"id"`
-	Email            string    `json:"email"`
-	Name             string    `json:"name"`
-	BusinessName     *string   `json:"business_name,omitempty"`
-	Plan             string    `json:"plan"`
-	Role             string    `json:"role"`
-	StripeCustomerID *string   `json:"stripe_customer_id,omitempty"`
-	HasPaidSub       bool      `json:"has_paid_subscription"`
-	EventsCount      int       `json:"events_count"`
-	ClientsCount     int       `json:"clients_count"`
-	ProductsCount    int       `json:"products_count"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID               uuid.UUID  `json:"id"`
+	Email            string     `json:"email"`
+	Name             string     `json:"name"`
+	BusinessName     *string    `json:"business_name,omitempty"`
+	Plan             string     `json:"plan"`
+	Role             string     `json:"role"`
+	StripeCustomerID *string    `json:"stripe_customer_id,omitempty"`
+	HasPaidSub       bool       `json:"has_paid_subscription"`
+	PlanExpiresAt    *time.Time `json:"plan_expires_at,omitempty"`
+	EventsCount      int        `json:"events_count"`
+	ClientsCount     int        `json:"clients_count"`
+	ProductsCount    int        `json:"products_count"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 // SubscriptionOverview holds subscription stats.
@@ -135,11 +136,12 @@ func (r *AdminRepo) GetPlatformStats(ctx context.Context) (*PlatformStats, error
 // GetAllUsers returns all users with their usage counts.
 func (r *AdminRepo) GetAllUsers(ctx context.Context) ([]AdminUser, error) {
 	query := `
-		SELECT 
+		SELECT
 			u.id, u.email, u.name, u.business_name, u.plan, u.role, u.stripe_customer_id,
 			(u.stripe_customer_id IS NOT NULL OR EXISTS(
 				SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'active'
 			)) AS has_paid_sub,
+			u.plan_expires_at,
 			COALESCE((SELECT COUNT(*) FROM events e WHERE e.user_id = u.id), 0) AS events_count,
 			COALESCE((SELECT COUNT(*) FROM clients c WHERE c.user_id = u.id), 0) AS clients_count,
 			COALESCE((SELECT COUNT(*) FROM products p WHERE p.user_id = u.id), 0) AS products_count,
@@ -158,7 +160,7 @@ func (r *AdminRepo) GetAllUsers(ctx context.Context) ([]AdminUser, error) {
 		var u AdminUser
 		err := rows.Scan(
 			&u.ID, &u.Email, &u.Name, &u.BusinessName, &u.Plan, &u.Role, &u.StripeCustomerID,
-			&u.HasPaidSub,
+			&u.HasPaidSub, &u.PlanExpiresAt,
 			&u.EventsCount, &u.ClientsCount, &u.ProductsCount,
 			&u.CreatedAt, &u.UpdatedAt,
 		)
@@ -174,11 +176,12 @@ func (r *AdminRepo) GetAllUsers(ctx context.Context) ([]AdminUser, error) {
 // GetUserByID returns a single user with usage stats for admin view.
 func (r *AdminRepo) GetUserByID(ctx context.Context, id uuid.UUID) (*AdminUser, error) {
 	query := `
-		SELECT 
+		SELECT
 			u.id, u.email, u.name, u.business_name, u.plan, u.role, u.stripe_customer_id,
 			(u.stripe_customer_id IS NOT NULL OR EXISTS(
 				SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'active'
 			)) AS has_paid_sub,
+			u.plan_expires_at,
 			COALESCE((SELECT COUNT(*) FROM events e WHERE e.user_id = u.id), 0) AS events_count,
 			COALESCE((SELECT COUNT(*) FROM clients c WHERE c.user_id = u.id), 0) AS clients_count,
 			COALESCE((SELECT COUNT(*) FROM products p WHERE p.user_id = u.id), 0) AS products_count,
@@ -189,7 +192,7 @@ func (r *AdminRepo) GetUserByID(ctx context.Context, id uuid.UUID) (*AdminUser, 
 	var u AdminUser
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&u.ID, &u.Email, &u.Name, &u.BusinessName, &u.Plan, &u.Role, &u.StripeCustomerID,
-		&u.HasPaidSub,
+		&u.HasPaidSub, &u.PlanExpiresAt,
 		&u.EventsCount, &u.ClientsCount, &u.ProductsCount,
 		&u.CreatedAt, &u.UpdatedAt,
 	)
@@ -201,9 +204,10 @@ func (r *AdminRepo) GetUserByID(ctx context.Context, id uuid.UUID) (*AdminUser, 
 }
 
 // UpdateUserPlan updates a user's plan (admin action).
-func (r *AdminRepo) UpdateUserPlan(ctx context.Context, id uuid.UUID, plan string) error {
-	query := `UPDATE users SET plan = $2, updated_at = NOW() WHERE id = $1`
-	tag, err := r.pool.Exec(ctx, query, id, plan)
+// expiresAt is only set for gifted plans; nil means permanent (or paid subscription handles it).
+func (r *AdminRepo) UpdateUserPlan(ctx context.Context, id uuid.UUID, plan string, expiresAt *time.Time) error {
+	query := `UPDATE users SET plan = $2, plan_expires_at = $3, updated_at = NOW() WHERE id = $1`
+	tag, err := r.pool.Exec(ctx, query, id, plan, expiresAt)
 	if err != nil {
 		return fmt.Errorf("failed to update plan: %w", err)
 	}
@@ -211,6 +215,27 @@ func (r *AdminRepo) UpdateUserPlan(ctx context.Context, id uuid.UUID, plan strin
 		return fmt.Errorf("user not found")
 	}
 	return nil
+}
+
+// ExpireGiftedPlans reverts to 'basic' any manually-gifted plan whose expiry has passed.
+// It never touches users with an active paid subscription (stripe or in-app purchase).
+// Returns the number of users whose plans were expired.
+func (r *AdminRepo) ExpireGiftedPlans(ctx context.Context) (int, error) {
+	query := `
+		UPDATE users
+		SET plan = 'basic', plan_expires_at = NULL, updated_at = NOW()
+		WHERE plan_expires_at IS NOT NULL
+		  AND plan_expires_at <= NOW()
+		  AND stripe_customer_id IS NULL
+		  AND NOT EXISTS (
+			  SELECT 1 FROM subscriptions s
+			  WHERE s.user_id = users.id AND s.status = 'active'
+		  )`
+	tag, err := r.pool.Exec(ctx, query)
+	if err != nil {
+		return 0, fmt.Errorf("failed to expire gifted plans: %w", err)
+	}
+	return int(tag.RowsAffected()), nil
 }
 
 // HasActiveSubscription checks if a user has paid via Stripe/Apple/Google.

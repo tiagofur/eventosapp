@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -73,7 +74,8 @@ func (h *AdminHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 // upgradeRequest is the request body for upgrading a user.
 type upgradeRequest struct {
-	Plan string `json:"plan"`
+	Plan      string  `json:"plan"`
+	ExpiresAt *string `json:"expires_at"` // ISO 8601 date "YYYY-MM-DD"; nil = permanent gift
 }
 
 // UpgradeUser upgrades a free/basic user to pro.
@@ -118,6 +120,19 @@ func (h *AdminHandler) UpgradeUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse optional expiry date
+	var expiresAt *time.Time
+	if req.ExpiresAt != nil && *req.ExpiresAt != "" {
+		t, err := time.Parse("2006-01-02", *req.ExpiresAt)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid expires_at format. Use YYYY-MM-DD"})
+			return
+		}
+		// Expire at end of the specified day (UTC)
+		endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, time.UTC)
+		expiresAt = &endOfDay
+	}
+
 	// Log the admin action
 	adminID := middleware.GetUserID(r.Context())
 	slog.Info("admin: upgrading user",
@@ -125,10 +140,11 @@ func (h *AdminHandler) UpgradeUser(w http.ResponseWriter, r *http.Request) {
 		"target_user_id", id,
 		"from_plan", user.Plan,
 		"to_plan", req.Plan,
+		"expires_at", expiresAt,
 	)
 
 	// Perform the plan change
-	if err := h.adminRepo.UpdateUserPlan(r.Context(), id, req.Plan); err != nil {
+	if err := h.adminRepo.UpdateUserPlan(r.Context(), id, req.Plan, expiresAt); err != nil {
 		slog.Error("admin: failed to upgrade user", "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update plan"})
 		return

@@ -4,7 +4,6 @@ import {
   Users,
   Search,
   ArrowLeft,
-  ArrowUpCircle,
   Shield,
   Crown,
   RefreshCw,
@@ -16,17 +15,27 @@ import {
   ArrowUp,
   ArrowDown,
   Activity,
+  Gift,
+  X,
+  Calendar,
 } from 'lucide-react';
 import { adminService, AdminUser } from '@/services/adminService';
 import { logError } from '@/lib/errorHandler';
 import { useToast } from '@/hooks/useToast';
 import clsx from 'clsx';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInDays, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type PlanFilter = 'all' | 'basic' | 'pro' | 'premium';
 type SortField = 'name' | 'plan' | 'activity' | 'created_at';
 type SortDir = 'asc' | 'desc';
+
+interface GiftState {
+  user: AdminUser;
+  plan: 'pro' | 'premium';
+  expiresAt: string; // YYYY-MM-DD
+  noExpiry: boolean;
+}
 
 const activityScore = (u: AdminUser) =>
   u.events_count + u.clients_count + u.products_count;
@@ -34,24 +43,33 @@ const activityScore = (u: AdminUser) =>
 const getActivityBadge = (u: AdminUser) => {
   const score = activityScore(u);
   if (score === 0)
-    return {
-      label: 'Sin actividad',
-      cls: 'bg-gray-100 text-gray-500 dark:bg-gray-700/60 dark:text-gray-400',
-    };
+    return { label: 'Sin actividad', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-700/60 dark:text-gray-400' };
   if (score <= 5)
-    return {
-      label: 'Baja',
-      cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    };
+    return { label: 'Baja', cls: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' };
   if (score <= 20)
-    return {
-      label: 'Media',
-      cls: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-    };
+    return { label: 'Media', cls: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' };
+  return { label: 'Alta', cls: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' };
+};
+
+// Returns human-readable expiry label for a gift plan
+const getExpiryLabel = (expiresAt: string) => {
+  const date = parseISO(expiresAt);
+  if (isPast(date)) return { text: 'Expirado', cls: 'text-error', urgent: true };
+  const days = differenceInDays(date, new Date());
+  if (days === 0) return { text: 'Expira hoy', cls: 'text-amber-600 dark:text-amber-400', urgent: true };
+  if (days <= 7) return { text: `Expira en ${days}d`, cls: 'text-amber-600 dark:text-amber-400', urgent: true };
   return {
-    label: 'Alta',
-    cls: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+    text: `Hasta ${format(date, 'd MMM yy', { locale: es })}`,
+    cls: 'text-text-secondary',
+    urgent: false,
   };
+};
+
+// Minimum date for the gift picker (tomorrow)
+const minGiftDate = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
 };
 
 export const AdminUsers: React.FC = () => {
@@ -60,9 +78,10 @@ export const AdminUsers: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [planFilter, setPlanFilter] = useState<PlanFilter>('all');
-  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [gift, setGift] = useState<GiftState | null>(null);
   const { addToast } = useToast();
 
   const loadUsers = async () => {
@@ -92,70 +111,80 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
-  const handleUpgrade = async (user: AdminUser) => {
-    if (user.has_paid_subscription) {
-      addToast('No se puede modificar un usuario con suscripción activa pagada.', 'error');
+  const openGiftDialog = (user: AdminUser) => {
+    setGift({
+      user,
+      plan: 'pro',
+      expiresAt: minGiftDate(),
+      noExpiry: false,
+    });
+  };
+
+  const handleGiftConfirm = async () => {
+    if (!gift) return;
+    if (!gift.noExpiry && !gift.expiresAt) {
+      addToast('Selecciona una fecha de vencimiento o marca "Sin vencimiento".', 'error');
       return;
     }
-    if (!window.confirm(`¿Dar plan Pro a ${user.name} (${user.email})?`)) return;
 
-    setUpgrading(user.id);
+    setSaving(gift.user.id);
     try {
-      const updated = await adminService.upgradeUser(user.id, 'pro');
+      const expiresAt = gift.noExpiry ? null : gift.expiresAt;
+      const updated = await adminService.upgradeUser(gift.user.id, gift.plan, expiresAt);
       setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, plan: updated.plan || 'pro' } : u)),
+        prev.map((u) =>
+          u.id === gift.user.id
+            ? { ...u, plan: updated.plan, plan_expires_at: updated.plan_expires_at }
+            : u,
+        ),
       );
-      addToast(`${user.name} ahora tiene plan Pro ✓`, 'success');
+      const label = gift.noExpiry
+        ? `${gift.user.name} ahora tiene plan ${gift.plan} (permanente) ✓`
+        : `${gift.user.name} tiene plan ${gift.plan} hasta ${format(parseISO(gift.expiresAt), 'd MMM yyyy', { locale: es })} ✓`;
+      addToast(label, 'success');
+      setGift(null);
     } catch (err: unknown) {
-      logError('Admin: failed to upgrade user', err);
-      addToast(err instanceof Error ? err.message : 'Error al actualizar el plan.', 'error');
+      logError('Admin: failed to gift plan', err);
+      addToast(err instanceof Error ? err.message : 'Error al asignar el plan.', 'error');
     } finally {
-      setUpgrading(null);
+      setSaving(null);
     }
   };
 
   const handleDowngrade = async (user: AdminUser) => {
     if (user.has_paid_subscription) {
-      addToast(
-        'No se puede rebajar a un usuario con suscripción activa pagada.',
-        'error',
-      );
+      addToast('No se puede rebajar a un usuario con suscripción activa pagada.', 'error');
       return;
     }
     if (!window.confirm(`¿Rebajar a ${user.name} (${user.email}) al plan Basic?`)) return;
 
-    setUpgrading(user.id);
+    setSaving(user.id);
     try {
-      const updated = await adminService.upgradeUser(user.id, 'basic');
+      const updated = await adminService.upgradeUser(user.id, 'basic', null);
       setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, plan: updated.plan || 'basic' } : u)),
+        prev.map((u) =>
+          u.id === user.id
+            ? { ...u, plan: updated.plan || 'basic', plan_expires_at: null }
+            : u,
+        ),
       );
       addToast(`${user.name} ahora tiene plan Basic ✓`, 'success');
     } catch (err: unknown) {
       logError('Admin: failed to downgrade user', err);
       addToast(err instanceof Error ? err.message : 'Error al actualizar el plan.', 'error');
     } finally {
-      setUpgrading(null);
+      setSaving(null);
     }
   };
 
   const exportCSV = () => {
-    const headers = [
-      'Nombre',
-      'Email',
-      'Negocio',
-      'Plan',
-      'Eventos',
-      'Clientes',
-      'Productos',
-      'Actividad Total',
-      'Registro',
-    ];
+    const headers = ['Nombre', 'Email', 'Negocio', 'Plan', 'Vence', 'Eventos', 'Clientes', 'Productos', 'Actividad Total', 'Registro'];
     const rows = filteredUsers.map((u) => [
       u.name,
       u.email,
       u.business_name || '',
       u.plan,
+      u.plan_expires_at ? format(parseISO(u.plan_expires_at), 'dd/MM/yyyy') : '',
       u.events_count,
       u.clients_count,
       u.products_count,
@@ -194,22 +223,11 @@ export const AdminUsers: React.FC = () => {
     let aVal: string | number;
     let bVal: string | number;
     switch (sortField) {
-      case 'name':
-        aVal = a.name.toLowerCase();
-        bVal = b.name.toLowerCase();
-        break;
-      case 'plan':
-        aVal = a.plan;
-        bVal = b.plan;
-        break;
-      case 'activity':
-        aVal = activityScore(a);
-        bVal = activityScore(b);
-        break;
+      case 'name':      aVal = a.name.toLowerCase(); bVal = b.name.toLowerCase(); break;
+      case 'plan':      aVal = a.plan; bVal = b.plan; break;
+      case 'activity':  aVal = activityScore(a); bVal = activityScore(b); break;
       case 'created_at':
-      default:
-        aVal = a.created_at;
-        bVal = b.created_at;
+      default:          aVal = a.created_at; bVal = b.created_at;
     }
     const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
     return sortDir === 'asc' ? cmp : -cmp;
@@ -229,12 +247,7 @@ export const AdminUsers: React.FC = () => {
       premium: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     };
     return (
-      <span
-        className={clsx(
-          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
-          styles[plan] || styles.basic,
-        )}
-      >
+      <span className={clsx('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold', styles[plan] || styles.basic)}>
         {(plan === 'pro' || plan === 'premium') && <Crown className="h-3 w-3" />}
         {plan.charAt(0).toUpperCase() + plan.slice(1)}
       </span>
@@ -242,17 +255,133 @@ export const AdminUsers: React.FC = () => {
   };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field)
-      return <ArrowUpDown className="h-3.5 w-3.5 text-text-secondary/50 ml-1" />;
-    return sortDir === 'asc' ? (
-      <ArrowUp className="h-3.5 w-3.5 text-primary ml-1" />
-    ) : (
-      <ArrowDown className="h-3.5 w-3.5 text-primary ml-1" />
-    );
+    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-text-secondary/50 ml-1" />;
+    return sortDir === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5 text-primary ml-1" />
+      : <ArrowDown className="h-3.5 w-3.5 text-primary ml-1" />;
   };
 
   return (
     <div className="space-y-6">
+      {/* Gift Plan Dialog */}
+      {gift && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card rounded-3xl border border-border shadow-2xl w-full max-w-md p-6 space-y-5">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Gift className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-text">Regalar plan</h2>
+                  <p className="text-sm text-text-secondary">{gift.user.name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGift(null)}
+                className="p-2 rounded-xl hover:bg-surface-alt text-text-secondary transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Plan selector */}
+            <div>
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block mb-2">
+                Plan a regalar
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {(['pro', 'premium'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setGift((g) => g ? { ...g, plan: p } : g)}
+                    className={clsx(
+                      'flex items-center gap-2 px-4 py-3 rounded-2xl border text-sm font-semibold transition-all',
+                      gift.plan === p
+                        ? p === 'pro'
+                          ? 'border-orange-400 bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                          : 'border-purple-400 bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                        : 'border-border bg-surface-alt text-text-secondary hover:bg-card',
+                    )}
+                  >
+                    <Crown className="h-4 w-4" />
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Expiry */}
+            <div>
+              <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider block mb-2">
+                Válido hasta
+              </label>
+              <div className="space-y-3">
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
+                  <input
+                    type="date"
+                    value={gift.expiresAt}
+                    min={minGiftDate()}
+                    disabled={gift.noExpiry}
+                    onChange={(e) => setGift((g) => g ? { ...g, expiresAt: e.target.value } : g)}
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border border-border bg-surface-alt text-sm text-text focus:ring-2 focus:ring-primary focus:bg-card transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={gift.noExpiry}
+                    onChange={(e) => setGift((g) => g ? { ...g, noExpiry: e.target.checked } : g)}
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm text-text-secondary">
+                    Sin vencimiento <span className="text-xs text-text-secondary">(permanente hasta que pague)</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {/* Info note */}
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>
+                {gift.noExpiry
+                  ? 'Plan permanente hasta que el usuario adquiera una suscripción de pago.'
+                  : 'Al vencer, el plan regresa a Basic automáticamente. El usuario deberá suscribirse para continuar.'}
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setGift(null)}
+                className="flex-1 px-4 py-3 rounded-2xl border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleGiftConfirm}
+                disabled={saving === gift.user.id || (!gift.noExpiry && !gift.expiresAt)}
+                className="flex-1 px-4 py-3 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {saving === gift.user.id ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Gift className="h-4 w-4" />
+                )}
+                Confirmar regalo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
@@ -269,8 +398,7 @@ export const AdminUsers: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-text">Gestión de Usuarios</h1>
             <p className="text-sm text-text-secondary">
-              {users.length} usuario{users.length !== 1 ? 's' : ''} registrado
-              {users.length !== 1 ? 's' : ''}
+              {users.length} usuario{users.length !== 1 ? 's' : ''} registrado{users.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -296,10 +424,7 @@ export const AdminUsers: React.FC = () => {
       </div>
 
       {error && (
-        <div
-          className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-xl"
-          role="alert"
-        >
+        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4 rounded-r-xl" role="alert">
           <p className="text-sm text-error flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" /> {error}
           </p>
@@ -310,29 +435,12 @@ export const AdminUsers: React.FC = () => {
       {!loading && users.length > 0 && (
         <div className="flex flex-wrap gap-3">
           {[
-            {
-              label: 'Activos (con actividad)',
-              value: users.filter((u) => activityScore(u) > 0).length,
-              cls: 'bg-success/10 text-success border-success/20',
-            },
-            {
-              label: 'Sin actividad',
-              value: users.filter((u) => activityScore(u) === 0).length,
-              cls: 'bg-surface-alt text-text-secondary border-border',
-            },
-            {
-              label: 'Con suscripción pagada',
-              value: users.filter((u) => u.has_paid_subscription).length,
-              cls: 'bg-primary/10 text-primary border-primary/20',
-            },
+            { label: 'Activos (con actividad)', value: users.filter((u) => activityScore(u) > 0).length, cls: 'bg-success/10 text-success border-success/20' },
+            { label: 'Sin actividad', value: users.filter((u) => activityScore(u) === 0).length, cls: 'bg-surface-alt text-text-secondary border-border' },
+            { label: 'Con suscripción pagada', value: users.filter((u) => u.has_paid_subscription).length, cls: 'bg-primary/10 text-primary border-primary/20' },
+            { label: 'Planes regalo activos', value: users.filter((u) => u.plan_expires_at && !isPast(parseISO(u.plan_expires_at))).length, cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
           ].map((chip) => (
-            <div
-              key={chip.label}
-              className={clsx(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border',
-                chip.cls,
-              )}
-            >
+            <div key={chip.label} className={clsx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border', chip.cls)}>
               <span className="font-black text-sm">{chip.value}</span>
               {chip.label}
             </div>
@@ -344,10 +452,7 @@ export const AdminUsers: React.FC = () => {
       <div className="bg-card shadow-sm border border-border rounded-3xl p-5">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search
-              className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
-              aria-hidden="true"
-            />
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" aria-hidden="true" />
             <input
               type="search"
               value={searchQuery}
@@ -386,57 +491,29 @@ export const AdminUsers: React.FC = () => {
             <thead className="bg-surface-alt">
               <tr>
                 <th className="px-6 py-4 text-left">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('name')}
-                    className="flex items-center text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors"
-                  >
-                    Usuario
-                    <SortIcon field="name" />
+                  <button type="button" onClick={() => handleSort('name')} className="flex items-center text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors">
+                    Usuario <SortIcon field="name" />
                   </button>
                 </th>
                 <th className="px-6 py-4 text-left">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('plan')}
-                    className="flex items-center text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors"
-                  >
-                    Plan
-                    <SortIcon field="plan" />
+                  <button type="button" onClick={() => handleSort('plan')} className="flex items-center text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors">
+                    Plan <SortIcon field="plan" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">
-                  Eventos
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">
-                  Clientes
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden lg:table-cell">
-                  Productos
-                </th>
+                <th className="px-6 py-4 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Eventos</th>
+                <th className="px-6 py-4 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden md:table-cell">Clientes</th>
+                <th className="px-6 py-4 text-center text-xs font-medium text-text-secondary uppercase tracking-wider hidden lg:table-cell">Productos</th>
                 <th className="px-6 py-4 text-center hidden lg:table-cell">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('activity')}
-                    className="flex items-center mx-auto text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors"
-                  >
-                    Actividad
-                    <SortIcon field="activity" />
+                  <button type="button" onClick={() => handleSort('activity')} className="flex items-center mx-auto text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors">
+                    Actividad <SortIcon field="activity" />
                   </button>
                 </th>
                 <th className="px-6 py-4 text-left hidden lg:table-cell">
-                  <button
-                    type="button"
-                    onClick={() => handleSort('created_at')}
-                    className="flex items-center text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors"
-                  >
-                    Registro
-                    <SortIcon field="created_at" />
+                  <button type="button" onClick={() => handleSort('created_at')} className="flex items-center text-xs font-medium text-text-secondary uppercase tracking-wider hover:text-text transition-colors">
+                    Registro <SortIcon field="created_at" />
                   </button>
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
-                  Acciones
-                </th>
+                <th className="px-6 py-4 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
@@ -462,6 +539,9 @@ export const AdminUsers: React.FC = () => {
                 sortedUsers.map((user) => {
                   const badge = getActivityBadge(user);
                   const score = activityScore(user);
+                  const isGifted = !!user.plan_expires_at && !user.has_paid_subscription;
+                  const expiry = isGifted ? getExpiryLabel(user.plan_expires_at!) : null;
+
                   return (
                     <tr key={user.id} className="hover:bg-surface-alt/50 transition-colors">
                       {/* User info */}
@@ -479,9 +559,7 @@ export const AdminUsers: React.FC = () => {
                             </div>
                             <div className="text-xs text-text-secondary truncate">{user.email}</div>
                             {user.business_name && (
-                              <div className="text-xs text-text-tertiary truncate">
-                                {user.business_name}
-                              </div>
+                              <div className="text-xs text-text-tertiary truncate">{user.business_name}</div>
                             )}
                           </div>
                         </div>
@@ -490,45 +568,42 @@ export const AdminUsers: React.FC = () => {
                       {/* Plan */}
                       <td className="px-6 py-4">
                         <div className="flex flex-col items-start gap-1">
-                          {getPlanBadge(user.plan)}
+                          <div className="flex items-center gap-1.5">
+                            {getPlanBadge(user.plan)}
+                            {isGifted && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                <Gift className="h-3 w-3" />
+                                Regalo
+                              </span>
+                            )}
+                          </div>
                           {user.has_paid_subscription && (
                             <span className="text-xs text-success flex items-center gap-1">
                               <CheckCircle className="h-3 w-3" /> Pagado
                             </span>
                           )}
+                          {expiry && (
+                            <span className={clsx('text-xs flex items-center gap-1', expiry.cls)}>
+                              <Calendar className="h-3 w-3" />
+                              {expiry.text}
+                            </span>
+                          )}
                         </div>
                       </td>
 
-                      {/* Events */}
-                      <td className="px-6 py-4 text-center text-sm font-medium text-text hidden md:table-cell">
-                        {user.events_count}
-                      </td>
-
-                      {/* Clients */}
-                      <td className="px-6 py-4 text-center text-sm font-medium text-text hidden md:table-cell">
-                        {user.clients_count}
-                      </td>
-
-                      {/* Products */}
-                      <td className="px-6 py-4 text-center text-sm font-medium text-text hidden lg:table-cell">
-                        {user.products_count}
-                      </td>
+                      {/* Counts */}
+                      <td className="px-6 py-4 text-center text-sm font-medium text-text hidden md:table-cell">{user.events_count}</td>
+                      <td className="px-6 py-4 text-center text-sm font-medium text-text hidden md:table-cell">{user.clients_count}</td>
+                      <td className="px-6 py-4 text-center text-sm font-medium text-text hidden lg:table-cell">{user.products_count}</td>
 
                       {/* Activity */}
                       <td className="px-6 py-4 hidden lg:table-cell">
                         <div className="flex flex-col items-center gap-1">
-                          <span
-                            className={clsx(
-                              'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold',
-                              badge.cls,
-                            )}
-                          >
+                          <span className={clsx('inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold', badge.cls)}>
                             <Activity className="h-3 w-3" />
                             {badge.label}
                           </span>
-                          {score > 0 && (
-                            <span className="text-xs text-text-secondary">{score} pts</span>
-                          )}
+                          {score > 0 && <span className="text-xs text-text-secondary">{score} pts</span>}
                         </div>
                       </td>
 
@@ -540,49 +615,53 @@ export const AdminUsers: React.FC = () => {
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {user.plan === 'basic' && (
+                          {/* Gift button: for basic users, or gifted users without paid sub */}
+                          {!user.has_paid_subscription && user.plan === 'basic' && (
                             <button
                               type="button"
-                              onClick={() => handleUpgrade(user)}
-                              disabled={upgrading === user.id}
+                              onClick={() => openGiftDialog(user)}
+                              disabled={saving === user.id}
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={
-                                user.has_paid_subscription
-                                  ? 'No se puede modificar: tiene suscripción pagada'
-                                  : 'Dar plan Pro'
-                              }
+                              title="Regalar plan Pro o Premium con fecha de vencimiento"
                             >
-                              {upgrading === user.id ? (
-                                <RefreshCw className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <ArrowUpCircle className="h-3 w-3" />
-                              )}
-                              Dar Pro
+                              {saving === user.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Gift className="h-3 w-3" />}
+                              Regalar
                             </button>
                           )}
-                          {(user.plan === 'pro' || user.plan === 'premium') &&
-                            !user.has_paid_subscription && (
-                              <button
-                                type="button"
-                                onClick={() => handleDowngrade(user)}
-                                disabled={upgrading === user.id}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {upgrading === user.id && (
-                                  <RefreshCw className="h-3 w-3 animate-spin" />
-                                )}
-                                Rebajar
-                              </button>
-                            )}
-                          {(user.plan === 'pro' || user.plan === 'premium') &&
-                            user.has_paid_subscription && (
-                              <span
-                                className="text-xs text-text-tertiary italic"
-                                title="No se puede modificar: suscripción pagada activa"
-                              >
-                                Suscripción activa
-                              </span>
-                            )}
+
+                          {/* Extend/change gift for users already on a gifted plan */}
+                          {!user.has_paid_subscription && (user.plan === 'pro' || user.plan === 'premium') && isGifted && (
+                            <button
+                              type="button"
+                              onClick={() => openGiftDialog(user)}
+                              disabled={saving === user.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white dark:text-amber-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Extender o cambiar el regalo"
+                            >
+                              {saving === user.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Gift className="h-3 w-3" />}
+                              Editar regalo
+                            </button>
+                          )}
+
+                          {/* Downgrade: only for gifted or permanent manual upgrades without paid sub */}
+                          {!user.has_paid_subscription && (user.plan === 'pro' || user.plan === 'premium') && (
+                            <button
+                              type="button"
+                              onClick={() => handleDowngrade(user)}
+                              disabled={saving === user.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {saving === user.id && <RefreshCw className="h-3 w-3 animate-spin" />}
+                              Rebajar
+                            </button>
+                          )}
+
+                          {/* Paid subscription: no manual action allowed */}
+                          {user.has_paid_subscription && (
+                            <span className="text-xs text-text-tertiary italic" title="Suscripción pagada activa — gestionada por el proveedor de pagos">
+                              Suscripción activa
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -593,23 +672,15 @@ export const AdminUsers: React.FC = () => {
           </table>
         </div>
 
-        {/* Footer */}
         {!loading && sortedUsers.length > 0 && (
           <div className="px-6 py-3 bg-surface-alt border-t border-border flex items-center justify-between text-xs text-text-secondary">
             <span>
-              Mostrando {sortedUsers.length} de {users.length} usuario
-              {users.length !== 1 ? 's' : ''}
+              Mostrando {sortedUsers.length} de {users.length} usuario{users.length !== 1 ? 's' : ''}
             </span>
             <span>
               Ordenado por{' '}
               <strong className="text-text">
-                {sortField === 'name'
-                  ? 'nombre'
-                  : sortField === 'plan'
-                    ? 'plan'
-                    : sortField === 'activity'
-                      ? 'actividad'
-                      : 'registro'}
+                {sortField === 'name' ? 'nombre' : sortField === 'plan' ? 'plan' : sortField === 'activity' ? 'actividad' : 'registro'}
               </strong>{' '}
               ({sortDir === 'asc' ? '↑ asc' : '↓ desc'})
             </span>
