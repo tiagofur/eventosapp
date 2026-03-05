@@ -48,7 +48,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                   id="requires_invoice"
                   type="checkbox"
                   {...register('requires_invoice')}
-                  className="h-4 w-4 text-brand-orange border-border rounded-sm focus:ring-brand-orange bg-card"
+                  className="h-4 w-4 text-primary border-border rounded-sm focus:ring-primary bg-card"
                   aria-describedby="requires_invoice-description"
                 />
                 <span id="requires_invoice-description" className="text-sm text-text-secondary">
@@ -68,7 +68,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                 max="100"
                 step="0.01"
                 {...register('discount')}
-                className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 p-2 bg-card text-text border"
+                className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
               />
             </div>
 
@@ -83,7 +83,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                     {...register('deposit_percent')}
                     max="100"
                     min="0"
-                    className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 p-2 bg-card text-text border"
+                    className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
                   />
                 </div>
                 <div>
@@ -93,7 +93,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                     type="number"
                     {...register('cancellation_days')}
                     min="0"
-                    className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 p-2 bg-card text-text border"
+                    className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
                   />
                 </div>
                 <div>
@@ -104,7 +104,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                     {...register('refund_percent')}
                     max="100"
                     min="0"
-                    className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 p-2 bg-card text-text border"
+                    className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
                   />
                 </div>
               </div>
@@ -118,7 +118,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                 id="event-notes"
                 {...register('notes')}
                 rows={3}
-                className="shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 block w-full sm:text-sm border-border rounded-xl p-2 border bg-card text-text"
+                className="shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 block w-full sm:text-sm border-border rounded-xl p-2 border bg-card text-text"
               />
             </div>
           </div>
@@ -160,7 +160,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
 
             <div className="border-t border-border pt-3 flex justify-between text-xl font-bold text-text">
               <span>Total:</span>
-              <span className="text-brand-orange">${totalAmountValue.toFixed(2)}</span>
+              <span className="text-primary">${totalAmountValue.toFixed(2)}</span>
             </div>
           </div>
 

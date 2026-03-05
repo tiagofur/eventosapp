@@ -44,7 +44,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
-        <Wrench className="h-5 w-5 text-brand-orange" />
+        <Wrench className="h-5 w-5 text-primary" />
         <h3 className="text-lg font-medium text-text">Asignación de Equipo</h3>
       </div>
 
@@ -72,8 +72,8 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
 
       {/* Auto-suggestions from products */}
       {availableSuggestions.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-medium text-sm mb-2">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-primary font-medium text-sm mb-2">
             <Lightbulb className="h-4 w-4" />
             Equipo sugerido por tus productos
           </div>
@@ -83,7 +83,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
                 key={s.id}
                 type="button"
                 onClick={() => onQuickAddSuggestion(s.id)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/60 transition-colors"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
               >
                 <Plus className="h-3 w-3" />
                 {s.ingredient_name}
@@ -108,7 +108,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
             <button
               type="button"
               onClick={() => onRemoveEquipment(index)}
-              className="absolute top-1 right-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+              className="absolute top-1 right-1 text-text-secondary hover:text-error transition-colors"
               aria-label={`Eliminar equipo ${index + 1}`}
             >
               <Trash2 className="h-4 w-4" />
@@ -120,7 +120,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
                 id={`equipment-select-${index}`}
                 value={item.inventory_id}
                 onChange={(e) => onEquipmentChange(index, 'inventory_id', e.target.value)}
-                className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-brand-orange/20 bg-card text-text p-2 border"
+                className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
               >
                 <option value="">Seleccionar equipo</option>
                 {equipmentInventory.map((eq) => (
@@ -140,7 +140,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
                   min="1"
                   value={item.quantity}
                   onChange={(e) => onEquipmentChange(index, 'quantity', Number(e.target.value))}
-                  className="block w-full text-sm border-border rounded-xl shadow-xs focus:ring-2 focus:ring-brand-orange/20 p-2 border bg-card text-text transition-shadow"
+                  className="block w-full text-sm border-border rounded-xl shadow-xs focus:ring-2 focus:ring-primary/20 p-2 border bg-card text-text transition-shadow"
                 />
               </div>
 
@@ -152,14 +152,14 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
                   value={item.notes}
                   onChange={(e) => onEquipmentChange(index, 'notes', e.target.value)}
                   placeholder="Ej: Llevar limpio, reservado para mesa principal..."
-                  className="block w-full text-sm border-border rounded-xl shadow-xs focus:ring-2 focus:ring-brand-orange/20 p-2 border bg-card text-text transition-shadow"
+                  className="block w-full text-sm border-border rounded-xl shadow-xs focus:ring-2 focus:ring-primary/20 p-2 border bg-card text-text transition-shadow"
                 />
               </div>
             </div>
 
             {item.inventory_id && (
               <div className="mt-2 flex items-center gap-2">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-alt text-text-secondary border border-border">
                   Sin costo - Activo reutilizable
                 </span>
                 {getEquipmentName(item.inventory_id) && itemConflicts.length > 0 && (
