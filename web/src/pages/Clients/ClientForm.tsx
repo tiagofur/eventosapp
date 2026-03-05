@@ -143,7 +143,7 @@ export const ClientForm: React.FC = () => {
   if (limitsLoading) {
     return (
       <div className="flex justify-center items-center h-64" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-orange" aria-hidden="true"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true"></div>
         <span className="sr-only">Cargando límites de plan...</span>
       </div>
     );
@@ -175,7 +175,7 @@ export const ClientForm: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/clients")}
-            className="mr-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-text-secondary"
+            className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary"
             aria-label="Volver a la lista de clientes"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
@@ -189,10 +189,10 @@ export const ClientForm: React.FC = () => {
       <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4" role="alert">
+            <div className="bg-error/5 border-l-4 border-error p-4" role="alert">
               <div className="flex">
                 <div className="ml-3">
-                  <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                  <p className="text-sm text-error">{error}</p>
                 </div>
               </div>
             </div>
@@ -224,7 +224,7 @@ export const ClientForm: React.FC = () => {
                   <button
                     type="button"
                     onClick={removePhoto}
-                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-colors"
+                    className="absolute -top-1 -right-1 bg-error text-white rounded-full p-0.5 hover:bg-error/90 transition-colors"
                     aria-label="Eliminar foto"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -250,14 +250,14 @@ export const ClientForm: React.FC = () => {
                 id="name"
                 type="text"
                 {...register("name")}
-                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="Nombre del cliente"
                 aria-required="true"
                 aria-invalid={errors.name ? "true" : "false"}
                 aria-describedby={errors.name ? "name-error" : undefined}
               />
               {errors.name && (
-                <p id="name-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="name-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.name.message}
                 </p>
               )}
@@ -271,13 +271,13 @@ export const ClientForm: React.FC = () => {
                 id="email"
                 type="email"
                 {...register("email")}
-                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="ejemplo@correo.com"
                 aria-invalid={errors.email ? "true" : "false"}
                 aria-describedby={errors.email ? "email-error" : undefined}
               />
               {errors.email && (
-                <p id="email-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="email-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -291,14 +291,14 @@ export const ClientForm: React.FC = () => {
                 id="phone"
                 type="text"
                 {...register("phone")}
-                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="00 0000 0000"
                 aria-required="true"
                 aria-invalid={errors.phone ? "true" : "false"}
                 aria-describedby={errors.phone ? "phone-error" : undefined}
               />
               {errors.phone && (
-                <p id="phone-error" className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                <p id="phone-error" className="mt-2 text-sm text-error" role="alert">
                   {errors.phone.message}
                 </p>
               )}
@@ -312,7 +312,7 @@ export const ClientForm: React.FC = () => {
                 id="address"
                 type="text"
                 {...register("address")}
-                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="Calle, Número, Colonia"
               />
             </div>
@@ -325,7 +325,7 @@ export const ClientForm: React.FC = () => {
                 id="city"
                 type="text"
                 {...register("city")}
-                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="Ciudad"
               />
             </div>
@@ -338,7 +338,7 @@ export const ClientForm: React.FC = () => {
                 id="notes"
                 {...register("notes")}
                 rows={4}
-                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-brand-orange/20"
+                className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="Detalles adicionales sobre el cliente..."
               />
             </div>
@@ -355,7 +355,7 @@ export const ClientForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white bg-brand-orange hover:bg-orange-600 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
+              className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/40 disabled:opacity-50 transition-opacity"
               aria-label={isLoading ? "Guardando cliente..." : "Guardar cliente"}
             >
               <Save className="h-5 w-5 mr-2" aria-hidden="true" />
