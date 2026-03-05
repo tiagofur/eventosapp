@@ -63,6 +63,20 @@
 - **Card de alerta inteligente**: calcula demanda próximos 7 días vs stock actual y muestra uno de: "¡Stock insuficiente! Faltan X unidades", "Stock quedará bajo el mínimo", "Stock suficiente", "Sin demanda próxima"
 - **Barras de nivel de stock**: Stock actual · Mínimo recomendado · Demanda 7 días con colores coherentes
 
+### Eventos
+| Pantalla | Archivo | Cambios principales |
+|---|---|---|
+| Formulario de evento | `Events/EventForm.tsx` | font-black title, spinner primary, step indicator primary, error alert error tokens, save button premium-gradient |
+| Resumen/detalle de evento | `Events/EventSummary.tsx` | spinner, tabs hover, dropdown bg, progress bar track, signature borders, section icons → primary; status CONFIG preserved |
+| Info general del evento | `Events/components/EventGeneralInfo.tsx` | client link primary, error messages text-error, focus rings primary |
+| Productos del evento | `Events/components/EventProducts.tsx` | remove button text-error, focus rings primary, gray text → text-text-secondary |
+| Extras del evento | `Events/components/EventExtras.tsx` | remove button, checkboxes, focus rings, subtotal label → primary/error tokens |
+| Equipo del evento | `Events/components/EventEquipment.tsx` | icon primary, info box primary, focus rings primary, remove button text-error |
+| Financieros del evento | `Events/components/EventFinancials.tsx` | checkbox text-primary, all focus rings primary, total amount text-primary |
+| Pagos del evento | `Events/components/Payments.tsx` | pending banner primary, CTA buttons premium-gradient, progress bar primary, balance card error tokens |
+| Modal cliente rápido | `Events/components/QuickClientModal.tsx` | labels text-text-secondary, inputs border-border/bg-card, validation text-error, submit premium-gradient |
+| Pago exitoso | `Events/EventPaymentSuccess.tsx` | loading text-primary, error state text-error/border-error tokens |
+
 ---
 
 ## Pantallas pendientes 🔲
@@ -71,15 +85,6 @@
 
 | Pantalla | Archivos | Tokens pendientes aprox. | Notas |
 |---|---|---|---|
-| Formulario de evento | `Events/EventForm.tsx` | ~8 | Formulario complejo, paso crítico |
-| Resumen/detalle de evento | `Events/EventSummary.tsx` | ~62 | Pantalla más grande de la app |
-| Info general del evento | `Events/components/EventGeneralInfo.tsx` | ~15 | Sub-componente de EventSummary |
-| Productos del evento | `Events/components/EventProducts.tsx` | ~7 | Sub-componente |
-| Extras del evento | `Events/components/EventExtras.tsx` | ~6 | Sub-componente |
-| Equipo del evento | `Events/components/EventEquipment.tsx` | ~6 | Sub-componente |
-| Financieros del evento | `Events/components/EventFinancials.tsx` | ~10 | Sub-componente, cálculos de IVA |
-| Pagos del evento | `Events/components/Payments.tsx` | ~19 | Sub-componente |
-| Modal cliente rápido | `Events/components/QuickClientModal.tsx` | ~17 | Modal inline en EventForm |
 | Formulario de cliente | `Clients/ClientForm.tsx` | ~16 | Aún tiene gray-500, red-* |
 | Formulario de inventario | `Inventory/InventoryForm.tsx` | ~18 | brand-orange en focus rings |
 
