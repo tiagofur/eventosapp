@@ -60,22 +60,22 @@ export const Pricing: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
-        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="text-4xl font-extrabold text-text tracking-tight sm:text-5xl lg:text-6xl">
           Planes y Precios
         </h1>
-        <p className="mt-2 text-xl text-gray-600 dark:text-gray-300">
+        <p className="mt-2 text-xl text-text-secondary">
           Potencia tu negocio de eventos
         </p>
-        <p className="mt-5 text-xl text-gray-500 dark:text-gray-300">
+        <p className="mt-5 text-xl text-text-secondary">
           Elige el plan que se adapte al tamaño y crecimiento de tus eventos.
         </p>
       </div>
 
       {error && (
-        <div className="mb-8 max-w-max mx-auto bg-red-50 dark:bg-red-900 border-l-4 border-red-400 p-4 rounded-md" role="alert">
+        <div className="mb-8 max-w-max mx-auto bg-error/5 border-l-4 border-error p-4 rounded-md" role="alert">
           <div className="flex">
             <div className="ml-3">
-              <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
+              <p className="text-sm text-error">{error}</p>
             </div>
           </div>
         </div>
@@ -83,30 +83,30 @@ export const Pricing: React.FC = () => {
 
       <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         {/* Free Plan */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+        <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden flex flex-col">
           <div className="p-8 sm:p-10">
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Básico</h3>
-            <p className="text-gray-500 dark:text-gray-300 mb-6">Perfecto para empezar y organizar eventos pequeños.</p>
+            <h3 className="text-2xl font-semibold text-text mb-2">Básico</h3>
+            <p className="text-text-secondary mb-6">Perfecto para empezar y organizar eventos pequeños.</p>
             <div className="flex items-baseline mb-8">
-              <span className="text-5xl font-extrabold text-gray-900 dark:text-white">$0</span>
-              <span className="text-xl text-gray-500 dark:text-gray-300 ml-2">/mes</span>
+              <span className="text-5xl font-extrabold text-text">$0</span>
+              <span className="text-xl text-text-secondary ml-2">/mes</span>
             </div>
             
             <button
               type="button"
               disabled
-              className="w-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium py-3 px-4 rounded-xl cursor-not-allowed"
+              className="w-full bg-surface-alt text-text-secondary font-medium py-3 px-4 rounded-xl cursor-not-allowed"
               aria-label="Plan Básico - Plan actual"
             >
               Plan Actual
             </button>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700 p-8 sm:p-10 flex-1 border-t border-gray-100 dark:border-gray-600">
+          <div className="bg-surface-alt p-8 sm:p-10 flex-1 border-t border-border">
             <ul className="space-y-4">
               {featuresFree.map((feature, i) => (
                 <li key={i} className="flex items-start">
                   <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mr-3" aria-hidden="true" />
-                  <span className="text-gray-600 dark:text-gray-200">{feature}</span>
+                  <span className="text-text-secondary">{feature}</span>
                 </li>
               ))}
             </ul>
