@@ -132,7 +132,10 @@ export default function LoginScreen({ navigation }: Props) {
           activeOpacity={0.8}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <View style={styles.buttonLoadingContent}>
+              <ActivityIndicator color="#fff" size="small" />
+              <Text style={styles.buttonText}>Iniciando sesión...</Text>
+            </View>
           ) : (
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
           )}
@@ -202,6 +205,11 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  buttonLoadingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   buttonText: {
     ...typography.button,

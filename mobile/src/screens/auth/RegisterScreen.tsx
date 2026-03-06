@@ -178,6 +178,13 @@ export default function RegisterScreen({ navigation }: Props) {
           )}
         />
 
+        <Text style={styles.termsText}>
+          Al registrarte aceptas nuestros{" "}
+          <Text style={styles.termsLink}>Términos de Servicio</Text>
+          {" "}y{" "}
+          <Text style={styles.termsLink}>Política de Privacidad</Text>
+        </Text>
+
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleSubmit(onSubmit)}
@@ -185,7 +192,10 @@ export default function RegisterScreen({ navigation }: Props) {
           activeOpacity={0.8}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <View style={styles.buttonLoadingContent}>
+              <ActivityIndicator color="#fff" size="small" />
+              <Text style={styles.buttonText}>Creando cuenta...</Text>
+            </View>
           ) : (
             <Text style={styles.buttonText}>Registrarse</Text>
           )}
@@ -248,6 +258,22 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  buttonLoadingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  termsText: {
+    ...typography.caption,
+    color: palette.textSecondary,
+    textAlign: "center",
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: palette.primary,
   },
   buttonText: {
     ...typography.button,
