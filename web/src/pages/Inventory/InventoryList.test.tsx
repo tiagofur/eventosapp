@@ -439,7 +439,7 @@ describe('InventoryList', () => {
     });
 
     expect(screen.getByText(/No se encontraron ítems/i)).toBeInTheDocument();
-    expect(screen.getByText(/Intenta ajustar los términos de búsqueda/i)).toBeInTheDocument();
+    expect(screen.getByText(/Intenta ajustar los filtros de búsqueda/i)).toBeInTheDocument();
   });
 
   it('shows empty state with action button when no items exist', async () => {
@@ -514,7 +514,7 @@ describe('InventoryList', () => {
       expect(screen.getByText('Harina')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Hay 2 ítem\(s\) por debajo del nivel mínimo/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 ítem.*por debajo del nivel mínimo/i)).toBeInTheDocument();
   });
 
   it('has correct link hrefs for edit and new item', async () => {

@@ -201,6 +201,11 @@ export default function InventoryListScreen({ navigation }: Props) {
             <Text style={[styles.stockValue, isLowStock && styles.stockValueLow]}>
               {item.current_stock} {item.unit}
             </Text>
+            {item.unit_cost != null && item.unit_cost > 0 && (
+              <Text style={styles.unitCostText}>
+                ${item.unit_cost.toFixed(2)}/{item.unit}
+              </Text>
+            )}
             {isLowStock && (
               <View style={styles.lowStockBadge}>
                 <AlertTriangle color={palette.error} size={10} />
@@ -536,6 +541,12 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     ...typography.caption,
     color: palette.error,
     fontSize: 10,
+  },
+  unitCostText: {
+    ...typography.caption,
+    color: palette.textSecondary,
+    fontSize: 10,
+    marginTop: 1,
   },
   fab: {
     position: "absolute",

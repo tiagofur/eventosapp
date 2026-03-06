@@ -49,6 +49,7 @@ export const InventoryList: React.FC = () => {
   const [adjustmentValue, setAdjustmentValue] = useState<string>("");
   const { addToast } = useToast();
 
+  const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [ingredientSort, setIngredientSort] = useState<{ key: SortKey; order: SortOrder }>({ key: "ingredient_name", order: "asc" });
   const [equipmentSort, setEquipmentSort] = useState<{ key: SortKey; order: SortOrder }>({ key: "ingredient_name", order: "asc" });
 
@@ -62,6 +63,7 @@ export const InventoryList: React.FC = () => {
       setItems(data || []);
     } catch (error) {
       logError("Error fetching inventory", error);
+      addToast("Error al cargar el inventario.", "error");
     } finally {
       setLoading(false);
     }
@@ -120,9 +122,11 @@ export const InventoryList: React.FC = () => {
     }
   };
 
-  const filteredItems = (items || []).filter((item) =>
-    item.ingredient_name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredItems = (items || []).filter((item) => {
+    const matchesSearch = item.ingredient_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLowStock = !showLowStockOnly || (item.minimum_stock > 0 && item.current_stock <= item.minimum_stock);
+    return matchesSearch && matchesLowStock;
+  });
 
   const ingredients = sortItems(
     filteredItems.filter((item) => item.type === "ingredient"),
@@ -351,16 +355,21 @@ export const InventoryList: React.FC = () => {
       </div>
 
       {lowStockItems.length > 0 && (
-        <div
-          className="flex items-start gap-3 bg-error/5 border border-error/30 text-error rounded-2xl p-4"
-          role="alert"
+        <button
+          type="button"
+          onClick={() => setShowLowStockOnly((v) => !v)}
+          className="w-full flex items-center gap-3 bg-error/5 border border-error/30 text-error rounded-2xl p-4 hover:bg-error/10 transition-colors text-left"
+          aria-pressed={showLowStockOnly}
         >
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="text-sm">
+          <div className="text-sm flex-1">
             <span className="font-bold">Stock bajo detectado:</span>{" "}
-            {lowStockItems.length} ítem{lowStockItems.length !== 1 ? "s" : ""} por debajo del nivel mínimo. Revisa la lista para reabastecer.
+            {lowStockItems.length} ítem{lowStockItems.length !== 1 ? "s" : ""} por debajo del nivel mínimo.
           </div>
-        </div>
+          <span className="text-xs font-semibold underline shrink-0">
+            {showLowStockOnly ? "Ver todos" : "Ver alertas"}
+          </span>
+        </button>
       )}
 
       <div className="relative max-w-md">
@@ -400,12 +409,12 @@ export const InventoryList: React.FC = () => {
             icon={Package}
             title="No se encontraron ítems"
             description={
-              searchTerm
-                ? "Intenta ajustar los términos de búsqueda."
+              searchTerm || showLowStockOnly
+                ? "Intenta ajustar los filtros de búsqueda."
                 : "Comienza agregando tu primer ítem al inventario."
             }
             action={
-              !searchTerm ? (
+              !searchTerm && !showLowStockOnly ? (
                 <Link
                   to="/inventory/new"
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg transition-all hover:scale-[1.02]"
