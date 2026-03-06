@@ -44,6 +44,7 @@ type Props = NativeStackScreenProps<ProductStackParamList, "ProductDetail">;
 type DemandEntry = {
   date: string;
   eventId: string;
+  eventName?: string;
   quantity: number;
   numPeople: number;
 };
@@ -89,6 +90,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
               entries.push({
                 date: event.event_date.slice(0, 10),
                 eventId: event.id,
+                eventName: event.service_type || "Evento",
                 quantity: match.quantity,
                 numPeople: event.num_people || 0,
               });
@@ -387,6 +389,11 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
                           </Text>
                         )}
                       </View>
+                      {entry.eventName && (
+                        <Text style={styles.demandEventName} numberOfLines={1}>
+                          {entry.eventName}
+                        </Text>
+                      )}
                       {entry.numPeople > 0 && (
                         <View style={styles.demandPaxRow}>
                           <Users color={palette.textTertiary} size={11} />
@@ -438,9 +445,20 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
               {ingredientItems.map((ing: any, index: number) => (
                 <View key={index} style={styles.ingredientRow}>
                   <View style={styles.ingredientInfo}>
-                    <Text style={styles.ingredientName}>
-                      {ing.ingredient_name || "Insumo"}
-                    </Text>
+                    <TouchableOpacity
+                      disabled={!ing.inventory_id}
+                      onPress={() =>
+                        ing.inventory_id &&
+                        (navigation as any).navigate("InventoryStack", {
+                          screen: "InventoryDetail",
+                          params: { id: ing.inventory_id },
+                        })
+                      }
+                    >
+                      <Text style={[styles.ingredientName, ing.inventory_id && { color: palette.primary }]}>
+                        {ing.ingredient_name || "Insumo"}
+                      </Text>
+                    </TouchableOpacity>
                     <Text style={styles.ingredientUnit}>
                       {ing.quantity_required} {ing.unit || "und"}
                     </Text>
@@ -471,9 +489,20 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
             {equipmentItems.map((ing: any, index: number) => (
               <View key={index} style={styles.ingredientRow}>
                 <View style={styles.ingredientInfo}>
-                  <Text style={styles.ingredientName}>
-                    {ing.ingredient_name || "Equipo"}
-                  </Text>
+                  <TouchableOpacity
+                    disabled={!ing.inventory_id}
+                    onPress={() =>
+                      ing.inventory_id &&
+                      (navigation as any).navigate("InventoryStack", {
+                        screen: "InventoryDetail",
+                        params: { id: ing.inventory_id },
+                      })
+                    }
+                  >
+                    <Text style={[styles.ingredientName, ing.inventory_id && { color: palette.info }]}>
+                      {ing.ingredient_name || "Equipo"}
+                    </Text>
+                  </TouchableOpacity>
                   <Text style={styles.ingredientUnit}>
                     {ing.quantity_required} {ing.unit || "und"}
                   </Text>
@@ -655,6 +684,7 @@ const getStyles = (palette: typeof colors.light) =>
       borderRadius: spacing.borderRadius.sm,
     },
     urgencyText: { fontSize: 10, fontWeight: "700" },
+    demandEventName: { ...typography.caption, color: palette.primary, fontSize: 11, marginTop: 2 },
     demandPaxRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
     demandPax: { ...typography.caption, color: palette.textTertiary, fontSize: 11 },
     demandQtyWrap: { alignItems: "flex-end" },
