@@ -24,7 +24,7 @@ const eventSelectFields = `e.id, e.user_id, e.client_id,
 	to_char(e.event_date, 'YYYY-MM-DD') as event_date,
 	to_char(e.start_time, 'HH24:MI:SS') as start_time,
 	to_char(e.end_time, 'HH24:MI:SS') as end_time,
-	e.service_type, e.num_people, e.status, e.discount, e.requires_invoice,
+	e.service_type, e.num_people, e.status, e.discount, e.discount_type, e.requires_invoice,
 	e.tax_rate, e.tax_amount, e.total_amount, e.location, e.city,
 	e.deposit_percent, e.cancellation_days, e.refund_percent,
 	e.notes, e.photos, e.created_at, e.updated_at`
@@ -33,7 +33,7 @@ func scanEvent(row pgx.Row) (*models.Event, error) {
 	e := &models.Event{}
 	err := row.Scan(
 		&e.ID, &e.UserID, &e.ClientID, &e.EventDate, &e.StartTime, &e.EndTime,
-		&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.RequiresInvoice,
+		&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.DiscountType, &e.RequiresInvoice,
 		&e.TaxRate, &e.TaxAmount, &e.TotalAmount, &e.Location, &e.City,
 		&e.DepositPercent, &e.CancellationDays, &e.RefundPercent,
 		&e.Notes, &e.Photos, &e.CreatedAt, &e.UpdatedAt,
@@ -47,7 +47,7 @@ func scanEventWithClient(row pgx.Row) (models.Event, error) {
 	var clientPhone *string
 	err := row.Scan(
 		&e.ID, &e.UserID, &e.ClientID, &e.EventDate, &e.StartTime, &e.EndTime,
-		&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.RequiresInvoice,
+		&e.ServiceType, &e.NumPeople, &e.Status, &e.Discount, &e.DiscountType, &e.RequiresInvoice,
 		&e.TaxRate, &e.TaxAmount, &e.TotalAmount, &e.Location, &e.City,
 		&e.DepositPercent, &e.CancellationDays, &e.RefundPercent,
 		&e.Notes, &e.Photos, &e.CreatedAt, &e.UpdatedAt,
@@ -200,15 +200,18 @@ func (r *EventRepo) Create(ctx context.Context, e *models.Event) error {
 		endTime = e.EndTime
 	}
 
+	if e.DiscountType == "" {
+		e.DiscountType = "percent"
+	}
 	query := `INSERT INTO events (user_id, client_id, event_date, start_time, end_time,
-		service_type, num_people, status, discount, requires_invoice,
+		service_type, num_people, status, discount, discount_type, requires_invoice,
 		tax_rate, tax_amount, total_amount, location, city,
 		deposit_percent, cancellation_days, refund_percent, notes, photos)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
 		RETURNING id, created_at, updated_at`
 	err := r.pool.QueryRow(ctx, query,
 		e.UserID, e.ClientID, e.EventDate, startTime, endTime,
-		e.ServiceType, e.NumPeople, e.Status, e.Discount, e.RequiresInvoice,
+		e.ServiceType, e.NumPeople, e.Status, e.Discount, e.DiscountType, e.RequiresInvoice,
 		e.TaxRate, e.TaxAmount, e.TotalAmount, e.Location, e.City,
 		e.DepositPercent, e.CancellationDays, e.RefundPercent, e.Notes, e.Photos,
 	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
@@ -229,15 +232,18 @@ func (r *EventRepo) Update(ctx context.Context, e *models.Event) error {
 		endTime = e.EndTime
 	}
 
+	if e.DiscountType == "" {
+		e.DiscountType = "percent"
+	}
 	query := `UPDATE events SET client_id=$3, event_date=$4, start_time=$5, end_time=$6,
-		service_type=$7, num_people=$8, status=$9, discount=$10, requires_invoice=$11,
-		tax_rate=$12, tax_amount=$13, total_amount=$14, location=$15, city=$16,
-		deposit_percent=$17, cancellation_days=$18, refund_percent=$19, notes=$20, photos=$21, updated_at=NOW()
+		service_type=$7, num_people=$8, status=$9, discount=$10, discount_type=$11, requires_invoice=$12,
+		tax_rate=$13, tax_amount=$14, total_amount=$15, location=$16, city=$17,
+		deposit_percent=$18, cancellation_days=$19, refund_percent=$20, notes=$21, photos=$22, updated_at=NOW()
 		WHERE id=$1 AND user_id=$2
 		RETURNING created_at, updated_at`
 	return r.pool.QueryRow(ctx, query,
 		e.ID, e.UserID, e.ClientID, e.EventDate, startTime, endTime,
-		e.ServiceType, e.NumPeople, e.Status, e.Discount, e.RequiresInvoice,
+		e.ServiceType, e.NumPeople, e.Status, e.Discount, e.DiscountType, e.RequiresInvoice,
 		e.TaxRate, e.TaxAmount, e.TotalAmount, e.Location, e.City,
 		e.DepositPercent, e.CancellationDays, e.RefundPercent, e.Notes, e.Photos,
 	).Scan(&e.CreatedAt, &e.UpdatedAt)

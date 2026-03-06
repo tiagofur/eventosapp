@@ -54,6 +54,7 @@ type Event struct {
 	NumPeople        int       `json:"num_people"`
 	Status           string    `json:"status"`
 	Discount         float64   `json:"discount"`
+	DiscountType     string    `json:"discount_type"` // 'percent' | 'fixed'
 	RequiresInvoice  bool      `json:"requires_invoice"`
 	TaxRate          float64   `json:"tax_rate"`
 	TaxAmount        float64   `json:"tax_amount"`

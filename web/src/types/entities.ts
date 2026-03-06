@@ -72,6 +72,7 @@ export interface Event {
     num_people: number
     status: 'quoted' | 'confirmed' | 'completed' | 'cancelled'
     discount: number
+    discount_type: 'percent' | 'fixed'
     requires_invoice: boolean
     tax_rate: number
     tax_amount: number
