@@ -112,12 +112,12 @@ export default function LoginScreen({ navigation }: Props) {
       >
         {!isLandscapeTablet && (
           <>
-            <Text style={styles.title}>EventosApp</Text>
-            <Text style={styles.subtitle}>Inicia sesión en tu cuenta</Text>
+            <Text style={[styles.title, { color: palette.text }]}>EventosApp</Text>
+            <Text style={[styles.subtitle, { color: palette.textSecondary }]}>Inicia sesión en tu cuenta</Text>
           </>
         )}
         {isLandscapeTablet && (
-          <Text style={styles.formTitle}>Inicia sesión</Text>
+          <Text style={[styles.formTitle, { color: palette.textSecondary }]}>Inicia sesión</Text>
         )}
 
         {error && (

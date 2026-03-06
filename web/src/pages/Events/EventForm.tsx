@@ -192,7 +192,8 @@ export const EventForm: React.FC = () => {
         setIsLoading(true);
         const event = await eventService.getById(eventId);
         if (!event) throw new Error('Evento no encontrado');
-        
+
+        setDiscountType(event.discount_type || "percent");
         reset({
           client_id: event.client_id || "",
           event_date: event.event_date || "",
@@ -477,6 +478,7 @@ export const EventForm: React.FC = () => {
     try {
       const payload = {
         ...data,
+        discount_type: discountType,
         start_time: data.start_time?.trim() ? data.start_time : null,
         end_time: data.end_time?.trim() ? data.end_time : null,
         user_id: user.id,

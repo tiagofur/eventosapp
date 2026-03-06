@@ -117,12 +117,12 @@ export default function RegisterScreen({ navigation }: Props) {
       <View style={[styles.formCard, isTablet && styles.formCardTablet]}>
         {!isLandscapeTablet && (
           <>
-            <Text style={styles.title}>Crear Cuenta</Text>
-            <Text style={styles.subtitle}>Regístrate para empezar</Text>
+            <Text style={[styles.title, { color: palette.text }]}>Crear Cuenta</Text>
+            <Text style={[styles.subtitle, { color: palette.textSecondary }]}>Regístrate para empezar</Text>
           </>
         )}
         {isLandscapeTablet && (
-          <Text style={styles.formTitle}>Crear cuenta</Text>
+          <Text style={[styles.formTitle, { color: palette.textSecondary }]}>Crear cuenta</Text>
         )}
 
         {error && (
