@@ -18,12 +18,16 @@ interface EventFinancialsProps {
   selectedProducts: SelectedProduct[];
   extras: SelectedExtra[];
   productUnitCosts: { [key: string]: number };
+  discountType?: "percent" | "fixed";
+  onDiscountTypeChange?: (type: "percent" | "fixed") => void;
 }
 
 export const EventFinancials: React.FC<EventFinancialsProps> = ({
   selectedProducts,
   extras,
   productUnitCosts,
+  discountType = "percent",
+  onDiscountTypeChange = () => {},
 }) => {
   const { register, control } = useFormContext();
   const discountValue = useWatch({ control, name: 'discount' }) || 0;
@@ -58,14 +62,32 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
             </div>
 
             <div className="bg-card p-4 rounded-xl shadow-xs border border-border">
-              <label htmlFor="discount" className="block text-sm font-medium text-text-secondary mb-2">
-                Descuento General (%)
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="discount" className="text-sm font-medium text-text-secondary">
+                  Descuento General
+                </label>
+                <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+                  <button
+                    type="button"
+                    onClick={() => onDiscountTypeChange("percent")}
+                    className={`px-2.5 py-1 transition-colors ${discountType === "percent" ? "bg-primary text-white" : "bg-card text-text-secondary hover:bg-surface-alt"}`}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDiscountTypeChange("fixed")}
+                    className={`px-2.5 py-1 transition-colors ${discountType === "fixed" ? "bg-primary text-white" : "bg-card text-text-secondary hover:bg-surface-alt"}`}
+                  >
+                    $
+                  </button>
+                </div>
+              </div>
               <input
                 id="discount"
                 type="number"
                 min="0"
-                max="100"
+                max={discountType === "percent" ? "100" : undefined}
                 step="0.01"
                 {...register('discount')}
                 className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
@@ -139,13 +161,17 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
 
             {discountValue > 0 && (
               <div className="flex justify-between text-green-600 dark:text-green-400 font-medium">
-                <span>Descuento ({discountValue}%):</span>
+                <span>
+                  Descuento {discountType === "percent" ? `(${discountValue}%)` : ""}:
+                </span>
                 <span>
                   -${(() => {
                     const productsSubtotal = selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0);
                     const normalExtrasTotal = extras.filter((e) => !e.exclude_utility).reduce((sum, item) => sum + item.price, 0);
                     const discountableBase = productsSubtotal + normalExtrasTotal;
-                    return (discountableBase * (discountValue / 100)).toFixed(2);
+                    return discountType === "percent"
+                      ? (discountableBase * (discountValue / 100)).toFixed(2)
+                      : Math.min(discountValue, discountableBase).toFixed(2);
                   })()}
                 </span>
               </div>

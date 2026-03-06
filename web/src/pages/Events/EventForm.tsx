@@ -110,6 +110,7 @@ export const EventForm: React.FC = () => {
   const [productUnitCosts, setProductUnitCosts] = useState<{
     [key: string]: number;
   }>({});
+  const [discountType, setDiscountType] = useState<"percent" | "fixed">("percent");
 
   // Equipment state
   const [equipmentInventory, setEquipmentInventory] = useState<InventoryItem[]>([]);
@@ -272,7 +273,10 @@ export const EventForm: React.FC = () => {
       .reduce((sum, item) => sum + item.price, 0);
 
     const discountableBase = productsSubtotal + normalExtrasTotal;
-    const discountedBase = Math.round(discountableBase * (1 - discountValue / 100) * 100) / 100;
+    const discountAmount = discountType === "percent"
+      ? Math.round(discountableBase * (discountValue / 100) * 100) / 100
+      : Math.min(discountValue, discountableBase);
+    const discountedBase = Math.round((discountableBase - discountAmount) * 100) / 100;
 
     const baseTotal = Math.round((discountedBase + passThroughExtrasTotal) * 100) / 100;
     const taxAmount = requiresInvoiceValue ? Math.round(baseTotal * (taxRateValue / 100) * 100) / 100 : 0;
@@ -315,7 +319,7 @@ export const EventForm: React.FC = () => {
     };
 
     fetchMissingCosts();
-  }, [selectedProducts, extras, discountValue, requiresInvoiceValue, taxRateValue, setValue, productUnitCosts]);
+  }, [selectedProducts, extras, discountValue, discountType, requiresInvoiceValue, taxRateValue, setValue, productUnitCosts]);
 
   useEffect(() => {
     if (clientIdValue && !locationValue && !cityValue) {
@@ -710,6 +714,8 @@ export const EventForm: React.FC = () => {
                 selectedProducts={selectedProducts as any}
                 extras={extras}
                 productUnitCosts={productUnitCosts}
+                discountType={discountType}
+                onDiscountTypeChange={setDiscountType}
               />
             )}
           </div>

@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -87,6 +88,7 @@ type SelectedExtra = {
   description: string;
   cost: number;
   price: number;
+  exclude_utility: boolean;
 };
 
 type SelectedEquipmentItem = {
@@ -115,6 +117,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [extras, setExtras] = useState<SelectedExtra[]>([]);
+  const [productUnitCosts, setProductUnitCosts] = useState<Record<string, number>>({});
   const [equipmentInventory, setEquipmentInventory] = useState<InventoryItem[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<SelectedEquipmentItem[]>([]);
   const [equipmentConflicts, setEquipmentConflicts] = useState<EquipmentConflict[]>([]);
@@ -233,6 +236,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
               description: e.description,
               cost: e.cost,
               price: e.price,
+              exclude_utility: e.exclude_utility ?? false,
             }))
           );
         }
@@ -302,7 +306,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
   };
 
   const handleAddExtra = () => {
-    setExtras([...extras, { description: "", cost: 0, price: 0 }]);
+    setExtras([...extras, { description: "", cost: 0, price: 0, exclude_utility: false }]);
   };
 
   const handleRemoveExtra = (index: number) => {
@@ -347,6 +351,30 @@ export default function EventFormScreen({ navigation, route }: Props) {
   };
 
   const totals = calculateTotals();
+
+  // Fetch ingredient costs for rentability metrics
+  useEffect(() => {
+    const fetchMissingCosts = async () => {
+      const missing = selectedProducts
+        .filter(p => p.product_id && productUnitCosts[p.product_id] === undefined)
+        .map(p => p.product_id);
+      if (missing.length === 0) return;
+      try {
+        const results = await productService.getIngredientsForProducts(missing);
+        const costs: Record<string, number> = {};
+        missing.forEach(pid => { costs[pid] = 0; });
+        (results || []).forEach((ing: any) => {
+          if (ing.product_id && ing.quantity_required && ing.unit_cost) {
+            costs[ing.product_id] = (costs[ing.product_id] || 0) + ing.quantity_required * ing.unit_cost;
+          }
+        });
+        setProductUnitCosts(prev => ({ ...prev, ...costs }));
+      } catch {
+        // silently fail — rentability section won't show costs
+      }
+    };
+    fetchMissingCosts();
+  }, [selectedProducts]);
 
   // Auto-suggest equipment when products change
   useEffect(() => {
@@ -771,22 +799,43 @@ export default function EventFormScreen({ navigation, route }: Props) {
                       <TextInput
                         style={styles.extraInput}
                         value={extra.cost.toString()}
-                        onChangeText={(v) => handleExtraChange(index, "cost", parseFloat(v) || 0)}
+                        onChangeText={(v) => {
+                          const cost = parseFloat(v) || 0;
+                          setExtras(extras.map((e, i) =>
+                            i === index
+                              ? { ...e, cost, price: e.exclude_utility ? cost : e.price }
+                              : e
+                          ));
+                        }}
                         keyboardType="decimal-pad"
                       />
                     </View>
                     <View style={styles.extraHalf}>
                       <Text style={styles.extraLabel}>Precio</Text>
                       <TextInput
-                        style={styles.extraPriceInput}
+                        style={[styles.extraPriceInput, extra.exclude_utility && { opacity: 0.5 }]}
                         value={extra.price.toString()}
                         onChangeText={(v) => handleExtraChange(index, "price", parseFloat(v) || 0)}
                         keyboardType="decimal-pad"
+                        editable={!extra.exclude_utility}
                       />
                     </View>
                     <TouchableOpacity onPress={() => handleRemoveExtra(index)}>
                       <Trash2 color={palette.error} size={18} />
                     </TouchableOpacity>
+                  </View>
+                  <View style={styles.extraToggleRow}>
+                    <Text style={styles.extraLabel}>Solo cobrar costo (sin utilidad)</Text>
+                    <Switch
+                      value={extra.exclude_utility}
+                      onValueChange={(v) =>
+                        setExtras(extras.map((e, i) =>
+                          i === index ? { ...e, exclude_utility: v, price: v ? e.cost : e.price } : e
+                        ))
+                      }
+                      trackColor={{ false: palette.separator, true: palette.primary + "80" }}
+                      thumbColor={extra.exclude_utility ? palette.primary : palette.surface}
+                    />
                   </View>
                 </View>
               ))
@@ -965,6 +1014,43 @@ export default function EventFormScreen({ navigation, route }: Props) {
                 </Text>
               </View>
             </View>
+
+            {/* Rentability metrics (internal) */}
+            {(() => {
+              const totalProductCost = selectedProducts.reduce(
+                (sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0
+              );
+              const totalExtraCost = extras.reduce((sum, e) => sum + e.cost, 0);
+              const totalCost = totalProductCost + totalExtraCost;
+              const revenueExTax = totals.total - totals.taxAmount;
+              const profit = revenueExTax - totalCost;
+              const passThroughRevenue = extras
+                .filter(e => e.exclude_utility)
+                .reduce((sum, e) => sum + e.price, 0);
+              const adjustedRevenue = revenueExTax - passThroughRevenue;
+              const margin = adjustedRevenue > 0 ? (profit / adjustedRevenue) * 100 : 0;
+              return (
+                <View style={styles.rentabilityCard}>
+                  <Text style={styles.rentabilityTitle}>Métricas de Rentabilidad (Interno)</Text>
+                  <View style={styles.totalLine}>
+                    <Text style={styles.totalLineLabel}>Costo Total</Text>
+                    <Text style={styles.totalLineValue}>{formatCurrency(totalCost)}</Text>
+                  </View>
+                  <View style={styles.totalLine}>
+                    <Text style={styles.totalLineLabel}>Utilidad Neta</Text>
+                    <Text style={[styles.totalLineValue, { color: profit >= 0 ? palette.success : palette.error }]}>
+                      {formatCurrency(profit)}
+                    </Text>
+                  </View>
+                  <View style={styles.totalLine}>
+                    <Text style={styles.totalLineLabel}>Margen</Text>
+                    <Text style={[styles.totalLineValue, { color: palette.info || palette.primary }]}>
+                      {margin.toFixed(1)}%
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
           </View>
         )}
       </ScrollView>
@@ -1416,6 +1502,12 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
+  extraToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: spacing.xs,
+  },
   extraHalf: {
     flex: 1,
   },
@@ -1436,6 +1528,22 @@ const getStyles = (palette: typeof colors.light) => StyleSheet.create({
     borderRadius: spacing.borderRadius.lg,
     padding: spacing.md,
     marginTop: spacing.md,
+  },
+  rentabilityCard: {
+    backgroundColor: palette.surfaceGrouped || palette.background,
+    borderRadius: spacing.borderRadius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: palette.separator,
+  },
+  rentabilityTitle: {
+    ...typography.caption,
+    color: palette.textMuted,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
   },
   totalLine: {
     flexDirection: "row",

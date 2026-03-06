@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/entities';
-import { Plus, Search, Edit, Trash2, Package, Download, UtensilsCrossed } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, Download, UtensilsCrossed, X } from 'lucide-react';
 import { exportToCsv } from '../../lib/exportCsv';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
 import { logError } from '../../lib/errorHandler';
@@ -18,6 +18,7 @@ export const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { addToast } = useToast();
@@ -32,6 +33,7 @@ export const ProductList: React.FC = () => {
       setProducts(data || []);
     } catch (error) {
       logError('Error fetching products', error);
+      addToast('Error al cargar los productos.', 'error');
     } finally {
       setLoading(false);
     }
@@ -58,10 +60,18 @@ export const ProductList: React.FC = () => {
     }
   };
 
-  const filteredProducts = (products || []).filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const categories = useMemo(() => {
+    const cats = new Set((products || []).map(p => p.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [products]);
+
+  const filteredProducts = (products || []).filter(product => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const {
     currentData: paginatedProducts,
@@ -141,12 +151,41 @@ export const ProductList: React.FC = () => {
         <input
           id="product-search"
           type="search"
-          className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
+          className="block w-full pl-10 pr-8 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
           placeholder="Buscar producto..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+        {searchTerm && (
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-secondary hover:text-text transition-colors"
+            aria-label="Limpiar búsqueda"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
+
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                selectedCategory === cat
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-card text-text-secondary border-border hover:border-primary/50 hover:text-primary'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
         {loading ? (
@@ -163,8 +202,8 @@ export const ProductList: React.FC = () => {
           <Empty
             icon={UtensilsCrossed}
             title="No hay productos"
-            description={searchTerm ? "No se encontraron productos con ese criterio." : "Comienza agregando tu primer producto."}
-            action={!searchTerm ? (
+            description={searchTerm || selectedCategory ? "No se encontraron productos con ese criterio." : "Comienza agregando tu primer producto."}
+            action={!searchTerm && !selectedCategory ? (
               <Link
                 to="/products/new"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90"
@@ -227,7 +266,14 @@ export const ProductList: React.FC = () => {
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-semibold text-text">{product.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-text">{product.name}</span>
+                            {!product.is_active && (
+                              <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-error/10 text-error border border-error/20">
+                                Inactivo
+                              </span>
+                            )}
+                          </div>
                           <div className="text-sm text-text-secondary">{product.category}</div>
                         </div>
                       </div>

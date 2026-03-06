@@ -18,6 +18,7 @@ import {
   Plus,
   Phone,
   Mail,
+  MapPin,
   ChevronRight,
   Users,
 } from "lucide-react-native";
@@ -186,6 +187,16 @@ export default function ClientListScreen({ navigation }: Props) {
           <Text style={styles.cardName} numberOfLines={1}>
             {item.name}
           </Text>
+          {(item.city || item.address) && (
+            <View style={styles.cardRow}>
+              <View style={styles.infoChip}>
+                <MapPin color={palette.textTertiary} size={11} />
+                <Text style={styles.infoText} numberOfLines={1}>
+                  {item.city || item.address}
+                </Text>
+              </View>
+            </View>
+          )}
           <View style={styles.cardRow}>
             {item.phone ? (
               <View style={styles.infoChip}>
