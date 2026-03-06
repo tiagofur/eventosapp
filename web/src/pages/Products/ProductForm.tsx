@@ -35,7 +35,7 @@ export const ProductForm: React.FC = () => {
   const { canCreateCatalogItem, catalogCount, catalogLimit, loading: limitsLoading } = usePlanLimits();
 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [recipeIngredients, setRecipeIngredients] = useState<{inventory_id: string, quantity_required: number, unit_cost: number, unit: string, _type: 'ingredient' | 'equipment'}[]>([]);
+  const [recipeIngredients, setRecipeIngredients] = useState<{inventory_id: string, quantity_required: number, capacity: number | null, bring_to_event: boolean, unit_cost: number, unit: string, _type: 'ingredient' | 'equipment'}[]>([]);
 
   const {
     register,
@@ -92,6 +92,8 @@ export const ProductForm: React.FC = () => {
           setRecipeIngredients(ingredients.map((i: any) => ({
               inventory_id: i.inventory_id,
               quantity_required: i.quantity_required,
+              capacity: i.capacity ?? null,
+              bring_to_event: i.bring_to_event ?? false,
               unit_cost: i.unit_cost || 0,
               unit: i.unit || '',
               _type: i.type === 'equipment' ? 'equipment' as const : 'ingredient' as const,
@@ -142,6 +144,8 @@ export const ProductForm: React.FC = () => {
       setRecipeIngredients([...recipeIngredients, {
           inventory_id: "",
           quantity_required: 1,
+          capacity: null,
+          bring_to_event: false,
           unit_cost: 0,
           unit: "",
           _type: 'ingredient',
@@ -152,6 +156,8 @@ export const ProductForm: React.FC = () => {
       setRecipeIngredients([...recipeIngredients, {
           inventory_id: "",
           quantity_required: 1,
+          capacity: null,
+          bring_to_event: false,
           unit_cost: 0,
           unit: "",
           _type: 'equipment',
@@ -164,7 +170,7 @@ export const ProductForm: React.FC = () => {
       setRecipeIngredients(newIngredients);
   };
 
-  const handleIngredientChange = (index: number, field: 'inventory_id' | 'quantity_required', value: any) => {
+  const handleIngredientChange = (index: number, field: 'inventory_id' | 'quantity_required' | 'capacity' | 'bring_to_event', value: any) => {
       const newIngredients = [...recipeIngredients];
       newIngredients[index] = { ...newIngredients[index], [field]: value };
 
@@ -224,7 +230,9 @@ export const ProductForm: React.FC = () => {
       if (productId) {
           const ingredientsToSave = recipeIngredients.map(i => ({
               inventoryId: i.inventory_id,
-              quantityRequired: i.quantity_required
+              quantityRequired: i.quantity_required,
+              capacity: i._type === 'equipment' ? (i.capacity ?? null) : null,
+              bringToEvent: i.bring_to_event,
           }));
           await productService.updateIngredients(productId, ingredientsToSave);
       }
@@ -489,6 +497,15 @@ export const ProductForm: React.FC = () => {
                                 </span>
                             </div>
                         </div>
+                        <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={item.bring_to_event}
+                                onChange={(e) => handleIngredientChange(originalIndex, 'bring_to_event', e.target.checked)}
+                                className="rounded border-border text-primary focus:ring-primary/20 h-4 w-4"
+                            />
+                            <span className="text-xs text-text-secondary">Llevar al evento</span>
+                        </label>
                     </div>
                 ))}
 
@@ -548,16 +565,23 @@ export const ProductForm: React.FC = () => {
                         </div>
                         <div className="flex gap-2 items-center">
                             <div className="w-1/2">
-                                <label htmlFor={`eq-quantity-${originalIndex}`} className="text-xs text-text-secondary">Cantidad</label>
+                                <label htmlFor={`eq-capacity-${originalIndex}`} className="text-xs text-text-secondary">
+                                    Capacidad (unid./equipo)
+                                </label>
                                 <input
-                                    id={`eq-quantity-${originalIndex}`}
+                                    id={`eq-capacity-${originalIndex}`}
                                     type="number"
                                     step="1"
-                                    value={item.quantity_required}
-                                    onChange={(e) => handleIngredientChange(originalIndex, 'quantity_required', Number(e.target.value))}
+                                    min="1"
+                                    placeholder="Ej: 100"
+                                    value={item.capacity ?? ''}
+                                    onChange={(e) => handleIngredientChange(originalIndex, 'capacity', e.target.value === '' ? null : Number(e.target.value))}
                                     className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                                    aria-label={`Cantidad de equipo`}
+                                    aria-label={`Capacidad del equipo (unidades de producto por pieza)`}
                                 />
+                                <p className="text-xs text-text-secondary mt-1">
+                                    {item.capacity ? `1 pieza por cada ${item.capacity} unid.` : 'Fijo: 1 pieza siempre'}
+                                </p>
                             </div>
                             <div className="w-1/2 text-right">
                                 <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
