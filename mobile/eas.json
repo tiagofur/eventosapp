@@ -11,6 +11,9 @@
       "distribution": "internal",
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.solennix.com/api"
       }
     },
     "production": {
