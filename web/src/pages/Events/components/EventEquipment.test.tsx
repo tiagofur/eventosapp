@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EventEquipment } from './EventEquipment';
-import { EquipmentConflict, InventoryItem } from '../../../types/entities';
+import { EquipmentConflict, EquipmentSuggestion, InventoryItem } from '../../../types/entities';
 
 // ===== Shared test data =====
 
@@ -40,11 +40,17 @@ const mockEquipmentInventory: InventoryItem[] = [
   },
 ];
 
+const mockSuggestions: EquipmentSuggestion[] = [
+  { id: 'eq-1', ingredient_name: 'Mantelería', current_stock: 20, unit: 'pzas', type: 'equipment', suggested_quantity: 5 },
+  { id: 'eq-2', ingredient_name: 'Sillas plegables', current_stock: 100, unit: 'pzas', type: 'equipment', suggested_quantity: 10 },
+  { id: 'eq-3', ingredient_name: 'Mesas redondas', current_stock: 15, unit: 'pzas', type: 'equipment', suggested_quantity: 2 },
+];
+
 const defaultProps = {
   equipmentInventory: mockEquipmentInventory,
   selectedEquipment: [] as { inventory_id: string; quantity: number; notes: string }[],
   conflicts: [] as EquipmentConflict[],
-  suggestions: [] as InventoryItem[],
+  suggestions: [] as EquipmentSuggestion[],
   onAddEquipment: vi.fn(),
   onRemoveEquipment: vi.fn(),
   onEquipmentChange: vi.fn(),
@@ -445,23 +451,23 @@ describe('EventEquipment', () => {
 
   it('renders suggestions when available', () => {
     renderComponent({
-      suggestions: [mockEquipmentInventory[0], mockEquipmentInventory[1]],
+      suggestions: [mockSuggestions[0], mockSuggestions[1]],
     });
 
     expect(screen.getByText('Equipo sugerido por tus productos')).toBeInTheDocument();
-    expect(screen.getByText('Mantelería')).toBeInTheDocument();
-    expect(screen.getByText('Sillas plegables')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Mantelería/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sillas plegables/i })).toBeInTheDocument();
   });
 
   it('calls onQuickAddSuggestion when clicking a suggestion', () => {
     const onQuickAddSuggestion = vi.fn();
     renderComponent({
-      suggestions: [mockEquipmentInventory[0]],
+      suggestions: [mockSuggestions[0]],
       onQuickAddSuggestion,
     });
 
-    fireEvent.click(screen.getByText('Mantelería'));
-    expect(onQuickAddSuggestion).toHaveBeenCalledWith('eq-1');
+    fireEvent.click(screen.getByRole('button', { name: /Mantelería/i }));
+    expect(onQuickAddSuggestion).toHaveBeenCalledWith('eq-1', 5);
   });
 
   it('does not show suggestions that are already selected', () => {
@@ -469,7 +475,7 @@ describe('EventEquipment', () => {
       selectedEquipment: [
         { inventory_id: 'eq-1', quantity: 5, notes: '' },
       ],
-      suggestions: [mockEquipmentInventory[0], mockEquipmentInventory[1]],
+      suggestions: [mockSuggestions[0], mockSuggestions[1]],
     });
 
     // Mantelería (eq-1) is already selected, should not appear as suggestion
@@ -496,7 +502,7 @@ describe('EventEquipment', () => {
       selectedEquipment: [
         { inventory_id: 'eq-1', quantity: 5, notes: '' },
       ],
-      suggestions: [mockEquipmentInventory[0]], // only eq-1, which is already selected
+      suggestions: [mockSuggestions[0]], // only eq-1, which is already selected
     });
 
     expect(screen.queryByText('Equipo sugerido por tus productos')).not.toBeInTheDocument();
