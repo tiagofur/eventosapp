@@ -26,6 +26,7 @@ export const ProductForm: React.FC = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isActive, setIsActive] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -79,6 +80,7 @@ export const ProductForm: React.FC = () => {
         category: product.category || "",
         base_price: product.base_price || 0,
       });
+      setIsActive(product.is_active ?? true);
       if (product.image_url) {
         setImageUrl(product.image_url);
         setImagePreview(product.image_url);
@@ -204,13 +206,13 @@ export const ProductForm: React.FC = () => {
       let productId = id;
 
       if (id) {
-        await productService.update(id, { ...data, image_url: imageUrl || null });
+        await productService.update(id, { ...data, image_url: imageUrl || null, is_active: isActive });
       } else {
         const newProduct = await productService.create({
           ...data,
           user_id: user.id,
           image_url: imageUrl || null,
-          is_active: true,
+          is_active: isActive,
           recipe: null,
         });
         if (!newProduct) {
@@ -410,6 +412,24 @@ export const ProductForm: React.FC = () => {
                     {errors.base_price.message}
                 </p>
                 )}
+                </div>
+
+                <div className="sm:col-span-6">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface-alt">
+                    <div>
+                      <p className="text-sm font-medium text-text">Producto activo</p>
+                      <p className="text-xs text-text-secondary mt-0.5">Los productos inactivos no aparecen disponibles en cotizaciones</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isActive}
+                      onClick={() => setIsActive(!isActive)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40 ${isActive ? 'bg-primary' : 'bg-border'}`}
+                    >
+                      <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${isActive ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
                 </div>
             </div>
             </form>
