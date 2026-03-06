@@ -180,6 +180,26 @@ export const ClientDetails: React.FC = () => {
             Detalles personales y de contacto.
           </p>
         </div>
+        <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
+          <div className="px-4 py-4 text-center">
+            <p className="text-2xl font-black text-text">{client.total_events ?? 0}</p>
+            <p className="text-xs text-text-secondary mt-0.5">Eventos</p>
+          </div>
+          <div className="px-4 py-4 text-center">
+            <p className="text-2xl font-black text-text">
+              ${(client.total_spent ?? 0).toLocaleString('es-MX', { minimumFractionDigits: 0 })}
+            </p>
+            <p className="text-xs text-text-secondary mt-0.5">Total gastado</p>
+          </div>
+          <div className="px-4 py-4 text-center">
+            <p className="text-2xl font-black text-text">
+              {client.total_events
+                ? `$${Math.round((client.total_spent ?? 0) / client.total_events).toLocaleString('es-MX')}`
+                : '—'}
+            </p>
+            <p className="text-xs text-text-secondary mt-0.5">Promedio por evento</p>
+          </div>
+        </div>
         <div className="border-t border-border px-4 py-5 sm:px-6">
           <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
             <div className="sm:col-span-1">
@@ -226,6 +246,14 @@ export const ClientDetails: React.FC = () => {
                 {client.address || "No registrada"}
               </dd>
             </div>
+            {client.city && (
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-text-secondary flex items-center">
+                  <MapPin className="h-4 w-4 mr-2" aria-hidden="true" /> Ciudad
+                </dt>
+                <dd className="mt-1 text-sm text-text">{client.city}</dd>
+              </div>
+            )}
             <div className="sm:col-span-1">
               <dt className="text-sm font-medium text-text-secondary flex items-center">
                 <DollarSign className="h-4 w-4 mr-2" aria-hidden="true" /> Total
