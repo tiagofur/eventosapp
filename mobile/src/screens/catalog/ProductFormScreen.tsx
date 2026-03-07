@@ -347,8 +347,8 @@ export default function ProductFormScreen({ navigation, route }: Props) {
               <FormInput
                 label="Precio Base"
                 placeholder="0.00"
-                value={value?.toString() || ""}
-                onChangeText={onChange}
+                value={value != null && !isNaN(Number(value)) ? String(value) : "0"}
+                onChangeText={(v) => onChange(parseFloat(v) || 0)}
                 onBlur={onBlur}
                 error={errors.base_price?.message}
                 keyboardType="decimal-pad"

@@ -238,8 +238,8 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
               <FormInput
                 label="Stock Actual"
                 placeholder="0"
-                value={value?.toString() || "0"}
-                onChangeText={onChange}
+                value={value != null && !isNaN(Number(value)) ? String(value) : "0"}
+                onChangeText={(v) => onChange(parseFloat(v) || 0)}
                 onBlur={onBlur}
                 error={errors.current_stock?.message}
                 keyboardType="decimal-pad"
@@ -254,8 +254,8 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
               <FormInput
                 label="Stock Mínimo (Alerta)"
                 placeholder="0"
-                value={value?.toString() || "0"}
-                onChangeText={onChange}
+                value={value != null && !isNaN(Number(value)) ? String(value) : "0"}
+                onChangeText={(v) => onChange(parseFloat(v) || 0)}
                 onBlur={onBlur}
                 error={errors.minimum_stock?.message}
                 keyboardType="decimal-pad"
