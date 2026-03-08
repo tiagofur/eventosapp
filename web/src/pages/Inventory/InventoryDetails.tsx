@@ -246,10 +246,12 @@ export const InventoryDetails: React.FC = () => {
                 "px-2.5 py-0.5 mt-1 inline-flex text-xs font-semibold rounded-full border",
                 item.type === "equipment"
                   ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
+                  : item.type === "supply"
+                  ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
                   : "bg-primary/10 text-primary border-primary/20",
               )}
             >
-              {item.type === "equipment" ? "Activo / Equipo" : "Insumo Consumible"}
+              {item.type === "equipment" ? "Activo / Equipo" : item.type === "supply" ? "Insumo por Evento" : "Insumo Consumible"}
             </span>
           </div>
         </div>

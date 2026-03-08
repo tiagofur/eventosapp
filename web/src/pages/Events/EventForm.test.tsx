@@ -176,6 +176,10 @@ vi.mock('./components/EventEquipment', () => ({
   EventEquipment: () => <div>EVENT_EQUIPMENT</div>,
 }));
 
+vi.mock('./components/EventSupplies', () => ({
+  EventSupplies: () => <div>EVENT_SUPPLIES</div>,
+}));
+
 vi.mock('./components/EventFinancials', () => ({
   EventFinancials: () => <div>EVENT_FINANCIALS</div>,
 }));
@@ -191,6 +195,8 @@ vi.mock('../../services/eventService', () => ({
     updateItems: vi.fn(),
     checkEquipmentConflicts: vi.fn(),
     getEquipmentSuggestions: vi.fn(),
+    getSupplies: vi.fn(),
+    getSupplySuggestions: vi.fn(),
   },
 }));
 
@@ -217,6 +223,7 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigate,
     useParams: () => mockParams,
     useSearchParams: () => [mockSearchParams],
+    useLocation: () => ({ pathname: '/events/new', search: '', hash: '', state: null, key: 'default' }),
   };
 });
 
@@ -253,6 +260,8 @@ describe('EventForm', () => {
     (eventService.updateItems as any).mockResolvedValue(null);
     (eventService.checkEquipmentConflicts as any).mockResolvedValue([]);
     (eventService.getEquipmentSuggestions as any).mockResolvedValue([]);
+    (eventService.getSupplies as any).mockResolvedValue([]);
+    (eventService.getSupplySuggestions as any).mockResolvedValue([]);
     (clientService.getAll as any).mockResolvedValue([]);
     (productService.getAll as any).mockResolvedValue([]);
     (productService.getIngredients as any).mockResolvedValue([]);
@@ -317,7 +326,7 @@ describe('EventForm', () => {
         end_time: null,
         user_id: 'user-1',
       });
-      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], [], []);
+      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], [], [], []);
     });
   });
 
@@ -633,6 +642,7 @@ describe('EventForm', () => {
             cost: 50,
           }),
         ],
+        [],
         []
       );
     });
@@ -889,7 +899,7 @@ describe('EventForm', () => {
     expect(screen.getByText('Información General')).toBeInTheDocument();
     expect(screen.getByText('Productos')).toBeInTheDocument();
     expect(screen.getByText('Extras')).toBeInTheDocument();
-    expect(screen.getByText('Equipo')).toBeInTheDocument();
+    expect(screen.getByText('Insumos y Equipo')).toBeInTheDocument();
     expect(screen.getByText('Finanzas y Contrato')).toBeInTheDocument();
   });
 
@@ -960,7 +970,7 @@ describe('EventForm', () => {
         client_id: 'client-1',
         user_id: 'user-1',
       }));
-      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], [], []);
+      expect(eventService.updateItems).toHaveBeenCalledWith('event-1', [], [], [], []);
     });
 
     expect(mockNavigate).toHaveBeenCalledWith('/events/event-1/summary');

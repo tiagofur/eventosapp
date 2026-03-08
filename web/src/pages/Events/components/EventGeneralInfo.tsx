@@ -15,19 +15,41 @@ interface Client {
   total_spent: number | null;
 }
 
+interface UnavailableDate {
+  id: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+}
+
 interface EventGeneralInfoProps {
   clients: Client[];
   clientIdValue?: string;
   onClientCreated?: (client: Client) => void;
+  unavailableDates?: UnavailableDate[];
 }
 
 export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
   clients,
   clientIdValue,
-  onClientCreated
+  onClientCreated,
+  unavailableDates,
 }) => {
-  const { register, formState: { errors } } = useFormContext();
+  const { register, formState: { errors }, watch } = useFormContext();
   const [isQuickClientModalOpen, setIsQuickClientModalOpen] = useState(false);
+  const selectedDate = watch('event_date');
+
+  const isDateUnavailable = (date: string) => {
+    if (!unavailableDates || !date) return false;
+    const dateObj = new Date(date);
+    return unavailableDates.some(range => {
+      const start = new Date(range.start_date);
+      const end = new Date(range.end_date);
+      return dateObj >= start && dateObj <= end;
+    });
+  };
+
+  const unavailable = isDateUnavailable(selectedDate);
 
   return (
     <div className="space-y-6">
@@ -119,6 +141,11 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
             {errors.event_date && (
               <p id="event_date-error" className="mt-2 text-sm text-error" role="alert">
                 {errors.event_date.message as string}
+              </p>
+            )}
+            {unavailable && (
+              <p className="mt-2 text-sm text-error" role="alert">
+                Esta fecha no está disponible por vacaciones o bloqueo manual. Selecciona otra fecha.
               </p>
             )}
           </div>

@@ -31,10 +31,13 @@ type FullEventRepository interface {
 	UpdateClientStats(ctx context.Context, clientID uuid.UUID) error
 	GetProducts(ctx context.Context, eventID uuid.UUID) ([]models.EventProduct, error)
 	GetExtras(ctx context.Context, eventID uuid.UUID) ([]models.EventExtra, error)
-	UpdateEventItems(ctx context.Context, eventID uuid.UUID, products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment) error
+	UpdateEventItems(ctx context.Context, eventID uuid.UUID, products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment, supplies *[]models.EventSupply) error
 	GetEquipment(ctx context.Context, eventID uuid.UUID) ([]models.EventEquipment, error)
 	CheckEquipmentConflicts(ctx context.Context, userID uuid.UUID, eventDate string, startTime, endTime *string, inventoryIDs []uuid.UUID, excludeEventID *uuid.UUID) ([]models.EquipmentConflict, error)
 	GetEquipmentSuggestionsFromProducts(ctx context.Context, userID uuid.UUID, products []repository.ProductQuantity) ([]models.EquipmentSuggestion, error)
+	GetSupplies(ctx context.Context, eventID uuid.UUID) ([]models.EventSupply, error)
+	GetSupplySuggestionsFromProducts(ctx context.Context, userID uuid.UUID, products []repository.ProductQuantity) ([]models.SupplySuggestion, error)
+	DeductSupplyStock(ctx context.Context, eventID uuid.UUID) error
 	Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Event, error)
 }
 
@@ -73,6 +76,13 @@ type InventoryRepository interface {
 	Delete(ctx context.Context, id, userID uuid.UUID) error
 	CountByUserID(ctx context.Context, userID uuid.UUID) (int, error)
 	Search(ctx context.Context, userID uuid.UUID, query string) ([]models.InventoryItem, error)
+}
+
+// UnavailableDateRepository defines unavailable date repo operations.
+type UnavailableDateRepository interface {
+	Create(ctx context.Context, u *models.UnavailableDate) error
+	GetByDateRange(ctx context.Context, userID uuid.UUID, start, end string) ([]models.UnavailableDate, error)
+	Delete(ctx context.Context, id, userID uuid.UUID) error
 }
 
 // FullPaymentRepository is the complete interface for payment repo operations.

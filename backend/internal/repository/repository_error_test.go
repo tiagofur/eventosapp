@@ -67,7 +67,7 @@ func TestRepositoryMethodsWithClosedPool(t *testing.T) {
 	if err := NewEventRepo(pool).Delete(ctx, id, userID); err == nil {
 		t.Fatalf("EventRepo.Delete() expected error with closed pool")
 	}
-	if err := NewEventRepo(pool).UpdateEventItems(ctx, id, nil, nil, nil); err == nil {
+	if err := NewEventRepo(pool).UpdateEventItems(ctx, id, nil, nil, nil, nil); err == nil {
 		t.Fatalf("EventRepo.UpdateEventItems() expected error with closed pool")
 	}
 	if _, err := NewInventoryRepo(pool).GetAll(ctx, userID); err == nil {
@@ -394,14 +394,14 @@ func TestUpdateEventItemsWithEquipment(t *testing.T) {
 
 	// With non-nil equipment list
 	equipment := []models.EventEquipment{{InventoryID: invID, Quantity: 2}}
-	if err := repo.UpdateEventItems(ctx, eventID, nil, nil, &equipment); err == nil {
+	if err := repo.UpdateEventItems(ctx, eventID, nil, nil, &equipment, nil); err == nil {
 		t.Fatal("EventRepo.UpdateEventItems(with equipment) expected error with closed pool")
 	}
 
 	// With products and extras
 	products := []models.EventProduct{{ProductID: uuid.New(), Quantity: 1, UnitPrice: 10}}
 	extras := []models.EventExtra{{Description: "extra", Cost: 5, Price: 10}}
-	if err := repo.UpdateEventItems(ctx, eventID, products, extras, nil); err == nil {
+	if err := repo.UpdateEventItems(ctx, eventID, products, extras, nil, nil); err == nil {
 		t.Fatal("EventRepo.UpdateEventItems(products+extras) expected error with closed pool")
 	}
 }
@@ -491,7 +491,7 @@ func TestUpdateEventItemsProductsAndExtrasAndEquipment(t *testing.T) {
 	extras := []models.EventExtra{{Description: "Flowers", Cost: 20, Price: 30}}
 	equipment := []models.EventEquipment{{InventoryID: uuid.New(), Quantity: 3}}
 
-	if err := repo.UpdateEventItems(ctx, eventID, products, extras, &equipment); err == nil {
+	if err := repo.UpdateEventItems(ctx, eventID, products, extras, &equipment, nil); err == nil {
 		t.Fatal("EventRepo.UpdateEventItems(all three) expected error with closed pool")
 	}
 }

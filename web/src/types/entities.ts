@@ -133,7 +133,7 @@ export interface InventoryItem {
     unit: string
     unit_cost: number | null
     last_updated: string
-    type: 'ingredient' | 'equipment'
+    type: 'ingredient' | 'equipment' | 'supply'
 }
 
 export type InventoryItemInsert = Omit<InventoryItem, 'id' | 'last_updated'>
@@ -206,6 +206,33 @@ export interface EquipmentConflict {
     conflict_type: 'overlap' | 'insufficient_gap' | 'full_day'
 }
 
+// ===== Event Supply =====
+export interface EventSupply {
+    id: string
+    event_id: string
+    inventory_id: string
+    quantity: number
+    unit_cost: number
+    source: 'stock' | 'purchase'
+    exclude_cost: boolean
+    created_at: string
+    supply_name?: string
+    unit?: string
+    current_stock?: number
+}
+
+export type EventSupplyInsert = Omit<EventSupply, 'id' | 'created_at' | 'supply_name' | 'unit' | 'current_stock'>
+
+// ===== Supply Suggestion =====
+export interface SupplySuggestion {
+    id: string
+    ingredient_name: string
+    current_stock: number
+    unit: string
+    unit_cost: number
+    suggested_quantity: number
+}
+
 // ===== Product Ingredient =====
 export interface ProductIngredient {
     id: string
@@ -223,7 +250,7 @@ export interface ProductIngredient {
     ingredient_name?: string | null
     unit?: string | null
     unit_cost?: number | null
-    type?: 'ingredient' | 'equipment' | null
+    type?: 'ingredient' | 'equipment' | 'supply' | null
 }
 
 export type ProductIngredientInsert = Omit<ProductIngredient, 'id' | 'created_at'>

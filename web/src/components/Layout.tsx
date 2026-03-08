@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   Calculator,
+  Zap,
   Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,6 +45,7 @@ export const Layout: React.FC = () => {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
     { name: 'Cotización', href: '/events/new', icon: Calculator },
+    { name: 'Cotización Rápida', href: '/cotizacion-rapida', icon: Zap },
     { name: 'Clientes', href: '/clients', icon: Users },
     { name: 'Productos', href: '/products', icon: Package },
     { name: 'Inventario', href: '/inventory', icon: Boxes },

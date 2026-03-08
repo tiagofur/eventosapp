@@ -16,6 +16,8 @@ interface PaymentsProps {
   onStatusChange?: (newStatus: "quoted" | "confirmed" | "completed" | "cancelled") => void;
   eventData?: any;
   profile?: any;
+  initialAmount?: number;
+  autoOpenAdd?: boolean;
 }
 
 export const Payments: React.FC<PaymentsProps> = ({
@@ -24,6 +26,8 @@ export const Payments: React.FC<PaymentsProps> = ({
   userId,
   eventStatus,
   onStatusChange,
+  initialAmount,
+  autoOpenAdd,
 }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [, setLoading] = useState(true);
@@ -41,6 +45,15 @@ export const Payments: React.FC<PaymentsProps> = ({
       notes: "",
     },
   });
+
+  useEffect(() => {
+    if (autoOpenAdd) {
+      setIsAdding(true);
+      if (initialAmount !== undefined) {
+        setValue("amount", parseFloat(initialAmount.toFixed(2)));
+      }
+    }
+  }, [autoOpenAdd, initialAmount, setValue]);
 
   useEffect(() => {
     loadPayments();

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { inventoryService } from "../../services/inventoryService";
 import { InventoryItem } from "../../types/entities";
-import { Plus, Search, Edit, Trash2, AlertTriangle, Download, Package, Wrench, ShoppingBasket } from "lucide-react";
+import { Plus, Search, Edit, Trash2, AlertTriangle, Download, Package, Wrench, ShoppingBasket, Fuel } from "lucide-react";
 import { exportToCsv } from "../../lib/exportCsv";
 import clsx from "clsx";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -16,26 +16,23 @@ type SortKey = "ingredient_name" | "current_stock" | "minimum_stock" | "unit_cos
 type SortOrder = "asc" | "desc";
 
 function sortItems(items: InventoryItem[], key: SortKey, order: SortOrder): InventoryItem[] {
-  const sorted = [...items].sort((a, b) => {
-    let cmp = 0;
+  return [...items].sort((a, b) => {
     switch (key) {
       case "current_stock":
-        cmp = a.current_stock - b.current_stock;
-        break;
+        return order === "asc" ? a.current_stock - b.current_stock : b.current_stock - a.current_stock;
       case "minimum_stock":
-        cmp = a.minimum_stock - b.minimum_stock;
-        break;
-      case "unit_cost":
-        cmp = (a.unit_cost ?? 0) - (b.unit_cost ?? 0);
-        break;
+        return order === "asc" ? a.minimum_stock - b.minimum_stock : b.minimum_stock - a.minimum_stock;
+      case "unit_cost": {
+        const diff = (a.unit_cost ?? 0) - (b.unit_cost ?? 0);
+        return order === "asc" ? diff : -diff;
+      }
       case "ingredient_name":
-      default:
-        cmp = a.ingredient_name.localeCompare(b.ingredient_name);
-        break;
+      default: {
+        const strDiff = a.ingredient_name.localeCompare(b.ingredient_name);
+        return order === "asc" ? strDiff : -strDiff;
+      }
     }
-    return order === "asc" ? cmp : -cmp;
   });
-  return sorted;
 }
 
 export const InventoryList: React.FC = () => {
@@ -52,6 +49,7 @@ export const InventoryList: React.FC = () => {
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [ingredientSort, setIngredientSort] = useState<{ key: SortKey; order: SortOrder }>({ key: "ingredient_name", order: "asc" });
   const [equipmentSort, setEquipmentSort] = useState<{ key: SortKey; order: SortOrder }>({ key: "ingredient_name", order: "asc" });
+  const [supplySort, setSupplySort] = useState<{ key: SortKey; order: SortOrder }>({ key: "ingredient_name", order: "asc" });
 
   useEffect(() => {
     fetchInventory();
@@ -106,7 +104,12 @@ export const InventoryList: React.FC = () => {
     try {
       const newStock = Math.max(0, adjustingItem.current_stock + change);
       await inventoryService.update(adjustingItem.id, {
-        current_stock: newStock
+        ingredient_name: adjustingItem.ingredient_name,
+        current_stock: newStock,
+        minimum_stock: adjustingItem.minimum_stock,
+        unit: adjustingItem.unit,
+        unit_cost: adjustingItem.unit_cost,
+        type: adjustingItem.type,
       });
 
       setItems(prev => prev.map(item =>
@@ -138,6 +141,11 @@ export const InventoryList: React.FC = () => {
     equipmentSort.key,
     equipmentSort.order,
   );
+  const supplies = sortItems(
+    filteredItems.filter((item) => item.type === "supply"),
+    supplySort.key,
+    supplySort.order,
+  );
 
   const handleIngredientSort = (key: SortKey) => {
     setIngredientSort(prev => ({
@@ -148,6 +156,13 @@ export const InventoryList: React.FC = () => {
 
   const handleEquipmentSort = (key: SortKey) => {
     setEquipmentSort(prev => ({
+      key,
+      order: prev.key === key && prev.order === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const handleSupplySort = (key: SortKey) => {
+    setSupplySort(prev => ({
       key,
       order: prev.key === key && prev.order === "asc" ? "desc" : "asc",
     }));
@@ -330,7 +345,7 @@ export const InventoryList: React.FC = () => {
                 ['Nombre', 'Tipo', 'Stock Actual', 'Stock Mínimo', 'Unidad', 'Costo Unitario'],
                 items.map(i => [
                   i.ingredient_name,
-                  i.type === 'equipment' ? 'Equipo' : 'Insumo',
+                  i.type === 'equipment' ? 'Equipo' : i.type === 'supply' ? 'Insumo por Evento' : 'Insumo',
                   i.current_stock,
                   i.minimum_stock,
                   i.unit,
@@ -448,6 +463,30 @@ export const InventoryList: React.FC = () => {
                 </div>
               ) : (
                 renderTable(ingredients, ingredientSort, handleIngredientSort)
+              )}
+            </div>
+          </section>
+
+          {/* Insumos por Evento Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-amber-500/10">
+                <Fuel className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-text">Insumos por Evento</h2>
+                <p className="text-xs text-text-secondary">
+                  {supplies.length} {supplies.length === 1 ? "insumo" : "insumos"} de costo fijo por evento
+                </p>
+              </div>
+            </div>
+            <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+              {supplies.length === 0 ? (
+                <div className="px-6 py-8 text-center text-sm text-text-secondary">
+                  No hay insumos por evento{searchTerm ? " que coincidan con la búsqueda" : " registrados"}.
+                </div>
+              ) : (
+                renderTable(supplies, supplySort, handleSupplySort)
               )}
             </div>
           </section>

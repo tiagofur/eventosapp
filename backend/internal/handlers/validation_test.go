@@ -515,7 +515,7 @@ func TestValidateInventoryItem(t *testing.T) {
 				Type:           "invalid",
 			},
 			wantErr: true,
-			errMsg:  "type: must be one of: ingredient, equipment",
+			errMsg:  "type: must be one of: ingredient, equipment, supply",
 		},
 	}
 
@@ -594,6 +594,78 @@ func TestValidateEventEquipment(t *testing.T) {
 			}
 			if tt.wantErr && err.Error() != tt.errMsg {
 				t.Errorf("ValidateEventEquipment() error message = %v, want %v", err.Error(), tt.errMsg)
+			}
+		})
+	}
+}
+
+func TestValidateInventoryItem_SupplyType(t *testing.T) {
+	cost := 50.0
+	item := &models.InventoryItem{
+		IngredientName: "Aceite vegetal",
+		CurrentStock:   10.0,
+		MinimumStock:   4.0,
+		Unit:           "litros",
+		UnitCost:       &cost,
+		Type:           "supply",
+	}
+	if err := ValidateInventoryItem(item); err != nil {
+		t.Errorf("ValidateInventoryItem() unexpected error for supply type: %v", err)
+	}
+}
+
+func TestValidateEventSupply(t *testing.T) {
+	tests := []struct {
+		name    string
+		supply  *models.EventSupply
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "valid supply from stock",
+			supply:  &models.EventSupply{Quantity: 4, UnitCost: 50, Source: "stock"},
+			wantErr: false,
+		},
+		{
+			name:    "valid supply as purchase",
+			supply:  &models.EventSupply{Quantity: 2.5, UnitCost: 0, Source: "purchase"},
+			wantErr: false,
+		},
+		{
+			name:    "zero quantity",
+			supply:  &models.EventSupply{Quantity: 0, UnitCost: 50, Source: "stock"},
+			wantErr: true,
+			errMsg:  "quantity: must be greater than 0",
+		},
+		{
+			name:    "negative quantity",
+			supply:  &models.EventSupply{Quantity: -1, UnitCost: 50, Source: "stock"},
+			wantErr: true,
+			errMsg:  "quantity: must be greater than 0",
+		},
+		{
+			name:    "negative unit cost",
+			supply:  &models.EventSupply{Quantity: 4, UnitCost: -10, Source: "stock"},
+			wantErr: true,
+			errMsg:  "unit_cost: must be greater than or equal to 0",
+		},
+		{
+			name:    "invalid source",
+			supply:  &models.EventSupply{Quantity: 4, UnitCost: 50, Source: "borrowed"},
+			wantErr: true,
+			errMsg:  "source: must be one of: stock, purchase",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateEventSupply(tt.supply)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateEventSupply() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.errMsg {
+				t.Errorf("ValidateEventSupply() error message = %v, want %v", err.Error(), tt.errMsg)
 			}
 		})
 	}

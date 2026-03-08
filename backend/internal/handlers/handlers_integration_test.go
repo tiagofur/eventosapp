@@ -123,6 +123,8 @@ func TestCRUDHandlerIntegration(t *testing.T) {
 	resetHandlersTestDB(t, pool)
 
 	userID := seedHandlersUser(t, pool, "handlers.crud@test.dev")
+	unavailRepo := repository.NewUnavailableDateRepo(pool)
+
 	h := NewCRUDHandler(
 		repository.NewClientRepo(pool),
 		repository.NewEventRepo(pool),
@@ -130,6 +132,7 @@ func TestCRUDHandlerIntegration(t *testing.T) {
 		repository.NewInventoryRepo(pool),
 		repository.NewPaymentRepo(pool),
 		repository.NewUserRepo(pool),
+		unavailRepo,
 	)
 
 	ctxWithUser := func(r *http.Request) *http.Request {

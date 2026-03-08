@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { eventService } from "../../services/eventService";
+import { unavailableDatesService, UnavailableDate } from "../../services/unavailableDatesService";
+import { UnavailableDatesModal } from "./components/UnavailableDatesModal";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -15,6 +17,8 @@ import {
   CalendarDays,
   Search,
   Download,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { exportToCsv } from "../../lib/exportCsv";
@@ -22,8 +26,8 @@ import {
   format,
   startOfMonth,
   endOfMonth,
-  addMonths,
-  subMonths,
+  parse,
+  isSameMonth,
   isSameDay,
 } from "date-fns";
 
@@ -33,7 +37,6 @@ const parseLocalDate = (dateStr: string): Date => {
   return new Date(y, m - 1, d);
 };
 import { es } from "date-fns/locale";
-import { logError } from "../../lib/errorHandler";
 import { usePagination } from "../../hooks/usePagination";
 import { Pagination } from "../../components/Pagination";
 import Empty from "../../components/Empty";
@@ -61,11 +64,56 @@ export const CalendarView: React.FC = () => {
   );
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [unavailableDates, setUnavailableDates] = useState<UnavailableDate[]>([]);
+  const [isBlockingDates, setIsBlockingDates] = useState(false);
+  const [isConfirmingUnblock, setIsConfirmingUnblock] = useState(false);
 
   // List view state
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+
+  const fetchAllEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = (await eventService.getAll()) || [];
+      // Sort events starting from today
+      const todayStr = format(new Date(), "yyyy-MM-dd");
+      const upcomingEvents = data
+        .filter((e) => e.event_date >= todayStr)
+        .sort((a, b) => a.event_date.localeCompare(b.event_date));
+      setEvents(upcomingEvents);
+    } catch (error) {
+      console.error("Error fetching all events:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchEvents = useCallback(async (date: Date) => {
+    try {
+      setLoading(true);
+      const start = startOfMonth(date);
+      const endMonth = endOfMonth(date);
+      
+      const [eventsData, unavailableData] = await Promise.all([
+        eventService.getByDateRange(
+          format(start, "yyyy-MM-dd"),
+          format(endMonth, "yyyy-MM-dd")
+        ),
+        unavailableDatesService.getDates(
+          format(start, "yyyy-MM-dd"),
+          format(endMonth, "yyyy-MM-dd")
+        )
+      ]);
+      setEvents(eventsData || []);
+      setUnavailableDates(unavailableData || []);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (viewMode === "calendar") {
@@ -73,37 +121,11 @@ export const CalendarView: React.FC = () => {
     } else {
       fetchAllEvents();
     }
-  }, [currentMonth, viewMode]);
+  }, [currentMonth, viewMode, fetchAllEvents, fetchEvents]);
 
-  const fetchAllEvents = async () => {
-    try {
-      setLoading(true);
-      const now = new Date();
-      const start = format(startOfMonth(subMonths(now, 6)), "yyyy-MM-dd");
-      const end = format(endOfMonth(addMonths(now, 6)), "yyyy-MM-dd");
-      const data = await eventService.getByDateRange(start, end);
-      setEvents(data || []);
-    } catch (error) {
-      logError("Error fetching events for list", error);
-      addToast("Error al cargar eventos", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchEvents = async (date: Date) => {
-    try {
-      setLoading(true);
-      const start = format(startOfMonth(date), "yyyy-MM-dd");
-      const end = format(endOfMonth(date), "yyyy-MM-dd");
-      const data = await eventService.getByDateRange(start, end);
-      setEvents(data || []);
-    } catch (error) {
-      logError("Error fetching events", error);
-      addToast("Error al cargar eventos", "error");
-    } finally {
-      setLoading(false);
-    }
+  const handleMonthChange = (month: Date) => {
+    setCurrentMonth(month);
+    setSelectedDate(undefined); // Clear selection when changing month
   };
 
   const goToToday = () => {
@@ -112,13 +134,45 @@ export const CalendarView: React.FC = () => {
     setSelectedDate(today);
   };
 
-  const modifiers = {
-    booked: (events || []).map((e) => parseLocalDate(e.event_date)),
+  const modifiers: { booked: Date[]; unavailable: Date[] } = {
+    booked: (events || []).map((e: any) => parseLocalDate(e.event_date)),
+    unavailable: (unavailableDates || []).flatMap((d: any) => {
+      // Create an array of all dates between start_date and end_date
+      const dates: Date[] = [];
+      const currentDate = parseLocalDate(d.start_date);
+      const end = parseLocalDate(d.end_date);
+      while (currentDate <= end) {
+        dates.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      return dates;
+    }),
   };
 
   const selectedEvents = (events || []).filter(
     (e) => selectedDate && isSameDay(parseLocalDate(e.event_date), selectedDate),
   );
+
+  const selectedUnavailable = unavailableDates.find((d) => {
+    const start = parseLocalDate(d.start_date);
+    const end = parseLocalDate(d.end_date);
+    return selectedDate && selectedDate >= start && selectedDate <= end;
+  });
+
+  const handleUnblock = async () => {
+    if (!selectedUnavailable) return;
+    try {
+      await unavailableDatesService.removeDate(selectedUnavailable.id);
+      setUnavailableDates((prev) => prev.filter((d) => d.id !== selectedUnavailable.id));
+      addToast('Fechas desbloqueadas exitosamente', 'success');
+      setSelectedDate(undefined);
+    } catch (error) {
+      console.error(error);
+      addToast('Error al desbloquear las fechas', 'error');
+    } finally {
+      setIsConfirmingUnblock(false);
+    }
+  };
 
   // Pagination for list view
   const filteredListEvents = (events || []).filter((event) => {
@@ -157,7 +211,7 @@ export const CalendarView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          {events.length > 0 && (
+          {(events || []).length > 0 && (
             <button
               type="button"
               onClick={() => {
@@ -220,6 +274,25 @@ export const CalendarView: React.FC = () => {
               Lista
             </button>
           </div>
+          {selectedUnavailable ? (
+            <button
+              type="button"
+              onClick={() => setIsConfirmingUnblock(true)}
+              className="inline-flex items-center justify-center px-4 py-2 border border-red-300 dark:border-red-700 text-sm font-medium rounded-xl text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 shadow-sm transition-colors"
+              aria-label="Desbloquear Fecha"
+            >
+              Desbloquear Fecha
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsBlockingDates(true)}
+              className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text bg-surface hover:bg-surface-alt shadow-sm transition-colors"
+              aria-label="Bloquear Fechas"
+            >
+              Bloquear Fechas
+            </button>
+          )}
           <Link
             to={`/events/new${viewMode === "calendar" && selectedDate ? `?date=${format(selectedDate, "yyyy-MM-dd")}` : ""}`}
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 shadow-xs transition-opacity"
@@ -331,16 +404,25 @@ export const CalendarView: React.FC = () => {
                 border: 2px solid #ffffff !important;
                 box-shadow: 0 0 0 2px #FF6B35 !important;
             }
+            /* Unavailable days */
+            .rdp-unavailable .rdp-day_button {
+                background-color: #F3F4F6 !important;
+                color: #9CA3AF !important;
+                text-decoration: line-through;
+            }
+            .dark .rdp-unavailable .rdp-day_button {
+                 background-color: #374151 !important;
+                 color: #6B7280 !important;
+            }
             `}</style>
             <DayPicker
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               month={currentMonth}
-              onMonthChange={setCurrentMonth}
-              locale={es}
+              onMonthChange={handleMonthChange}
               modifiers={modifiers}
-              modifiersClassNames={{ booked: "rdp-booked" }}
+              modifiersClassNames={{ booked: "rdp-booked", unavailable: "rdp-unavailable" }}
               className="flex justify-center"
             />
           </div>
@@ -363,7 +445,42 @@ export const CalendarView: React.FC = () => {
             </div>
 
             <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-              {selectedEvents.length === 0 ? (
+              {selectedUnavailable ? (
+                <div
+                  className="flex flex-col items-center justify-center py-12 text-center"
+                  role="status"
+                >
+                  <div
+                    className="h-16 w-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4"
+                    aria-hidden="true"
+                  >
+                    <Lock
+                      className="h-8 w-8 text-red-500 dark:text-red-400"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <p className="text-text font-semibold text-sm mb-1">
+                    Fecha Bloqueada
+                  </p>
+                  <p className="text-text-secondary text-xs">
+                    {selectedUnavailable.start_date === selectedUnavailable.end_date
+                      ? format(parseLocalDate(selectedUnavailable.start_date), "d 'de' MMMM yyyy", { locale: es })
+                      : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: es })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: es })}`}
+                  </p>
+                  {selectedUnavailable.reason && (
+                    <p className="text-text-tertiary text-xs italic mt-2">
+                      {selectedUnavailable.reason}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingUnblock(true)}
+                    className="mt-4 text-red-600 dark:text-red-400 text-sm font-semibold hover:underline"
+                  >
+                    Desbloquear
+                  </button>
+                </div>
+              ) : selectedEvents.length === 0 ? (
                 <div
                   className="flex flex-col items-center justify-center py-12 text-center"
                   role="status"
@@ -694,6 +811,61 @@ export const CalendarView: React.FC = () => {
                 onPageChange={handlePageChange}
               />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Block Dates Modal */}
+      <UnavailableDatesModal
+        isOpen={isBlockingDates}
+        onClose={() => setIsBlockingDates(false)}
+        onSave={(newDate) => {
+          setUnavailableDates((prev) => [...prev, newDate]);
+        }}
+      />
+
+      {/* Unblock Confirmation Modal */}
+      {isConfirmingUnblock && selectedUnavailable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm fallback-bg">
+          <div className="bg-card w-full max-w-sm rounded-2xl shadow-xl border border-border overflow-hidden fade-in">
+            <div className="p-6 text-center">
+              <div className="mx-auto h-14 w-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                <Unlock className="h-7 w-7 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-text mb-2">
+                Desbloquear Fechas
+              </h3>
+              <p className="text-sm text-text-secondary mb-1">
+                {selectedUnavailable.start_date === selectedUnavailable.end_date
+                  ? format(parseLocalDate(selectedUnavailable.start_date), "d 'de' MMMM yyyy", { locale: es })
+                  : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: es })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: es })}`}
+              </p>
+              {selectedUnavailable.reason && (
+                <p className="text-xs text-text-tertiary italic mb-4">
+                  {selectedUnavailable.reason}
+                </p>
+              )}
+              {!selectedUnavailable.reason && <div className="mb-4" />}
+              <p className="text-sm text-text-secondary">
+                Estas fechas volverán a estar disponibles para eventos.
+              </p>
+            </div>
+            <div className="flex gap-3 p-4 border-t border-border bg-surface-alt/50">
+              <button
+                type="button"
+                onClick={() => setIsConfirmingUnblock(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text bg-surface-alt hover:bg-surface border border-border rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleUnblock}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors shadow-sm"
+              >
+                Desbloquear
+              </button>
+            </div>
           </div>
         </div>
       )}

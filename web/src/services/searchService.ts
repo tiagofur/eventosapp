@@ -59,7 +59,7 @@ const mapInventoryResults = (items: InventoryItem[]): SearchResult[] =>
     id: item.id,
     type: 'inventory',
     title: item.ingredient_name,
-    subtitle: `${item.type === 'equipment' ? 'Equipo' : 'Insumo'} - ${item.unit}`,
+    subtitle: `${item.type === 'equipment' ? 'Equipo' : item.type === 'supply' ? 'Insumo por Evento' : 'Insumo'} - ${item.unit}`,
     meta: `Stock: ${item.current_stock} ${item.unit}`,
     href: `/inventory/${item.id}/edit`,
   }));

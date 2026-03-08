@@ -336,11 +336,13 @@ describe('InventoryForm', () => {
     const typeSelect = screen.getByLabelText(/Tipo/i) as HTMLSelectElement;
     const options = typeSelect.querySelectorAll('option');
 
-    expect(options).toHaveLength(2);
+    expect(options).toHaveLength(3);
     expect(options[0]).toHaveValue('ingredient');
     expect(options[0]).toHaveTextContent('Insumo (Consumible)');
-    expect(options[1]).toHaveValue('equipment');
-    expect(options[1]).toHaveTextContent('Activo / Equipo (Retornable)');
+    expect(options[1]).toHaveValue('supply');
+    expect(options[1]).toHaveTextContent('Insumo por Evento (Costo fijo por evento)');
+    expect(options[2]).toHaveValue('equipment');
+    expect(options[2]).toHaveTextContent('Activo / Equipo (Retornable)');
   });
 
   it('disables submit button while saving', async () => {

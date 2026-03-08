@@ -22,6 +22,7 @@ import {
   Package,
   ShoppingCart,
   Wrench,
+  Fuel,
 } from "lucide-react-native";
 import { InventoryStackParamList } from "../../types/navigation";
 import { InventoryItem } from "../../types/entities";
@@ -39,7 +40,7 @@ type Props = NativeStackScreenProps<InventoryStackParamList, "InventoryList">;
 
 interface InventorySection {
   title: string;
-  type: "ingredient" | "equipment";
+  type: "ingredient" | "equipment" | "supply";
   data: InventoryItem[];
 }
 
@@ -94,7 +95,14 @@ export default function InventoryListScreen({ navigation }: Props) {
     }
     try {
       const newStock = Math.max(0, adjustingItem.current_stock + change);
-      await inventoryService.update(adjustingItem.id, { current_stock: newStock });
+      await inventoryService.update(adjustingItem.id, {
+        ingredient_name: adjustingItem.ingredient_name,
+        current_stock: newStock,
+        minimum_stock: adjustingItem.minimum_stock,
+        unit: adjustingItem.unit,
+        unit_cost: adjustingItem.unit_cost,
+        type: adjustingItem.type,
+      });
       setItems((prev) =>
         prev.map((item) =>
           item.id === adjustingItem.id ? { ...item, current_stock: newStock } : item,
@@ -146,11 +154,15 @@ export default function InventoryListScreen({ navigation }: Props) {
     });
 
     const ingredientItems = sorted.filter(item => item.type === "ingredient");
+    const supplyItems = sorted.filter(item => item.type === "supply");
     const equipmentItems = sorted.filter(item => item.type === "equipment");
 
     const sections: InventorySection[] = [];
     if (ingredientItems.length > 0) {
       sections.push({ title: "Consumibles", type: "ingredient", data: ingredientItems });
+    }
+    if (supplyItems.length > 0) {
+      sections.push({ title: "Insumos por Evento", type: "supply", data: supplyItems });
     }
     if (equipmentItems.length > 0) {
       sections.push({ title: "Equipos", type: "equipment", data: equipmentItems });
@@ -234,10 +246,9 @@ export default function InventoryListScreen({ navigation }: Props) {
 
   const renderSectionHeader = useCallback(
     ({ section }: { section: InventorySection }) => {
-      const isEquipment = section.type === "equipment";
-      const Icon = isEquipment ? Wrench : ShoppingCart;
-      const iconColor = isEquipment ? palette.info : palette.primary;
-      const bgColor = isEquipment ? palette.infoBg : palette.primaryLight;
+      const Icon = section.type === "equipment" ? Wrench : section.type === "supply" ? Fuel : ShoppingCart;
+      const iconColor = section.type === "equipment" ? palette.info : section.type === "supply" ? "#D97706" : palette.primary;
+      const bgColor = section.type === "equipment" ? palette.infoBg : section.type === "supply" ? "#FEF3C7" : palette.primaryLight;
 
       return (
         <View style={styles.sectionHeader}>

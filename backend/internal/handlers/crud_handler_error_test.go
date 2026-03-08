@@ -20,6 +20,7 @@ func TestCRUDHandlerErrorBranchesWithClosedPool(t *testing.T) {
 	}
 	pool.Close()
 
+	// Use actual repos with the closed pool to trigger DB errors
 	h := NewCRUDHandler(
 		repository.NewClientRepo(pool),
 		repository.NewEventRepo(pool),
@@ -27,6 +28,7 @@ func TestCRUDHandlerErrorBranchesWithClosedPool(t *testing.T) {
 		repository.NewInventoryRepo(pool),
 		repository.NewPaymentRepo(pool),
 		repository.NewUserRepo(pool),
+		repository.NewUnavailableDateRepo(pool),
 	)
 	userID := uuid.New()
 	id := uuid.New().String()

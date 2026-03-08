@@ -86,7 +86,7 @@ export const QuickClientModal: React.FC<QuickClientModalProps> = ({
         </span>
 
         <div
-          className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100 dark:border-gray-700"
+          className="relative z-10 inline-block align-bottom bg-white dark:bg-gray-800 rounded-3xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100 dark:border-gray-700"
           role="dialog"
           aria-modal="true"
           aria-labelledby="quick-client-modal-title"

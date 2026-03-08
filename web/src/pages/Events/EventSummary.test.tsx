@@ -16,6 +16,7 @@ vi.mock('../../services/eventService', () => ({
     getProducts: vi.fn(),
     getExtras: vi.fn(),
     getEquipment: vi.fn(),
+    getSupplies: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   },
@@ -107,9 +108,10 @@ const setupMocks = (eventOverrides: Record<string, any> = {}) => {
     { description: 'Transporte', price: 50, cost: 20 },
   ]);
   (eventService.getEquipment as any).mockResolvedValue([]);
+  (eventService.getSupplies as any).mockResolvedValue([]);
   (paymentService.getByEventId as any).mockResolvedValue([]);
   (productService.getIngredientsForProducts as any).mockResolvedValue([
-    { product_id: 'p1', inventory_id: 'i1', quantity_required: 1, ingredient_name: 'Harina', unit: 'kg', unit_cost: 2 },
+    { product_id: 'p1', inventory_id: 'i1', quantity_required: 1, ingredient_name: 'Harina', unit: 'kg', unit_cost: 2, type: 'ingredient' },
   ]);
 };
 
@@ -550,8 +552,8 @@ describe('EventSummary', () => {
       { product_id: 'p2', quantity: 3, unit_price: 80, products: { name: 'Waffles' } },
     ]);
     (productService.getIngredientsForProducts as any).mockResolvedValue([
-      { product_id: 'p1', inventory_id: 'i1', quantity_required: 0.5, ingredient_name: 'Harina', unit: 'kg', unit_cost: 10 },
-      { product_id: 'p2', inventory_id: 'i1', quantity_required: 0.3, ingredient_name: 'Harina', unit: 'kg', unit_cost: 10 },
+      { product_id: 'p1', inventory_id: 'i1', quantity_required: 0.5, ingredient_name: 'Harina', unit: 'kg', unit_cost: 10, type: 'ingredient' },
+      { product_id: 'p2', inventory_id: 'i1', quantity_required: 0.3, ingredient_name: 'Harina', unit: 'kg', unit_cost: 10, type: 'ingredient' },
     ]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
@@ -576,6 +578,7 @@ describe('EventSummary', () => {
         unit: undefined,
         unit_cost: undefined,
         inventory: { ingredient_name: 'Azucar', unit: 'g', unit_cost: 5 },
+        type: 'ingredient',
       },
     ]);
 
@@ -1202,8 +1205,8 @@ describe('EventSummary', () => {
 
   it('renders ingredient stock status with "needs more" and "OK"', async () => {
     (productService.getIngredientsForProducts as any).mockResolvedValue([
-      { product_id: 'p1', inventory_id: 'i1', quantity_required: 5, ingredient_name: 'Harina', unit: 'kg', unit_cost: 10, inventory: { current_stock: 2 } },
-      { product_id: 'p1', inventory_id: 'i2', quantity_required: 1, ingredient_name: 'Azúcar', unit: 'kg', unit_cost: 8, inventory: { current_stock: 100 } },
+      { product_id: 'p1', inventory_id: 'i1', quantity_required: 5, ingredient_name: 'Harina', unit: 'kg', unit_cost: 10, inventory: { current_stock: 2 }, type: 'ingredient' },
+      { product_id: 'p1', inventory_id: 'i2', quantity_required: 1, ingredient_name: 'Azúcar', unit: 'kg', unit_cost: 8, inventory: { current_stock: 100 }, type: 'ingredient' },
     ]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);

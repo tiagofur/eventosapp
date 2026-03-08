@@ -22,6 +22,7 @@ type CRUDHandler struct {
 	inventoryRepo InventoryRepository
 	paymentRepo   FullPaymentRepository
 	userRepo      FullUserRepository
+	unavailRepo   UnavailableDateRepository
 }
 
 func NewCRUDHandler(
@@ -31,6 +32,7 @@ func NewCRUDHandler(
 	inventoryRepo InventoryRepository,
 	paymentRepo FullPaymentRepository,
 	userRepo FullUserRepository,
+	unavailRepo UnavailableDateRepository,
 ) *CRUDHandler {
 	return &CRUDHandler{
 		clientRepo:    clientRepo,
@@ -39,6 +41,7 @@ func NewCRUDHandler(
 		inventoryRepo: inventoryRepo,
 		paymentRepo:   paymentRepo,
 		userRepo:      userRepo,
+		unavailRepo:   unavailRepo,
 	}
 }
 
@@ -238,6 +241,20 @@ func (h *CRUDHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate unavailable dates
+	startReqStr := strings.Split(event.EventDate, "T")[0]
+	endReqStr := startReqStr
+
+	unavailableDates, err := h.unavailRepo.GetByDateRange(r.Context(), userID, startReqStr, endReqStr)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to verify unavailable dates")
+		return
+	}
+	if len(unavailableDates) > 0 {
+		writeError(w, http.StatusBadRequest, "Date range overlaps with unavailable dates")
+		return
+	}
+
 	// 1. Check user plan and limits
 	user, err := h.userRepo.GetByID(r.Context(), userID)
 	if err != nil {
@@ -286,6 +303,7 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	oldClientID := existing.ClientID
+	oldStatus := existing.Status
 
 	// Decode into existing event to handle partial updates
 	if err := decodeJSON(r, existing); err != nil {
@@ -302,6 +320,20 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate unavailable dates
+	startReqStr := strings.Split(existing.EventDate, "T")[0]
+	endReqStr := startReqStr
+
+	unavailableDates, err := h.unavailRepo.GetByDateRange(r.Context(), userID, startReqStr, endReqStr)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to verify unavailable dates")
+		return
+	}
+	if len(unavailableDates) > 0 {
+		writeError(w, http.StatusBadRequest, "Date range overlaps with unavailable dates")
+		return
+	}
+
 	if err := h.eventRepo.Update(r.Context(), existing); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to update event")
 		return
@@ -314,6 +346,13 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	if oldClientID != existing.ClientID {
 		if err := h.eventRepo.UpdateClientStats(r.Context(), oldClientID); err != nil {
 			slog.Warn("Failed to update client stats", "client_id", oldClientID, "error", err)
+		}
+	}
+
+	// Deduct supply stock when event transitions to 'confirmed'
+	if existing.Status == "confirmed" && oldStatus != "confirmed" {
+		if err := h.eventRepo.DeductSupplyStock(r.Context(), id); err != nil {
+			slog.Warn("Failed to deduct supply stock", "event_id", id, "error", err)
 		}
 	}
 
@@ -397,9 +436,10 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Products  []models.EventProduct   `json:"products"`
-		Extras    []models.EventExtra     `json:"extras"`
+		Products  []models.EventProduct    `json:"products"`
+		Extras    []models.EventExtra      `json:"extras"`
 		Equipment *[]models.EventEquipment `json:"equipment,omitempty"`
+		Supplies  *[]models.EventSupply    `json:"supplies,omitempty"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
@@ -432,7 +472,17 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras, req.Equipment); err != nil {
+	// Validate all supplies (if provided)
+	if req.Supplies != nil {
+		for i, s := range *req.Supplies {
+			if err := ValidateEventSupply(&s); err != nil {
+				writeError(w, http.StatusBadRequest, fmt.Sprintf("supplies[%d]: %s", i, err.Error()))
+				return
+			}
+		}
+	}
+
+	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras, req.Equipment, req.Supplies); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to update event items")
 		return
 	}
@@ -546,6 +596,66 @@ func (h *CRUDHandler) GetEquipmentSuggestions(w http.ResponseWriter, r *http.Req
 	}
 	if suggestions == nil {
 		suggestions = []models.EquipmentSuggestion{}
+	}
+	writeJSON(w, http.StatusOK, suggestions)
+}
+
+func (h *CRUDHandler) GetEventSupplies(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+	if _, err := h.eventRepo.GetByID(r.Context(), eventID, userID); err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
+		return
+	}
+	supplies, err := h.eventRepo.GetSupplies(r.Context(), eventID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch event supplies")
+		return
+	}
+	if supplies == nil {
+		supplies = []models.EventSupply{}
+	}
+	writeJSON(w, http.StatusOK, supplies)
+}
+
+func (h *CRUDHandler) GetSupplySuggestions(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	var req struct {
+		Products []struct {
+			ProductID string  `json:"product_id"`
+			Quantity  float64 `json:"quantity"`
+		} `json:"products"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	if len(req.Products) == 0 {
+		writeJSON(w, http.StatusOK, []models.SupplySuggestion{})
+		return
+	}
+
+	var productQtys []repository.ProductQuantity
+	for _, p := range req.Products {
+		id, err := uuid.Parse(p.ProductID)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid product ID: "+p.ProductID)
+			return
+		}
+		productQtys = append(productQtys, repository.ProductQuantity{ID: id, Quantity: p.Quantity})
+	}
+
+	suggestions, err := h.eventRepo.GetSupplySuggestionsFromProducts(r.Context(), userID, productQtys)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch supply suggestions")
+		return
+	}
+	if suggestions == nil {
+		suggestions = []models.SupplySuggestion{}
 	}
 	writeJSON(w, http.StatusOK, suggestions)
 }

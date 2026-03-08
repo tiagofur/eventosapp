@@ -57,7 +57,7 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
-  const [itemType, setItemType] = useState<"ingredient" | "equipment">("ingredient");
+  const [itemType, setItemType] = useState<"ingredient" | "equipment" | "supply">("ingredient");
   const [showUnitPicker, setShowUnitPicker] = useState(false);
 
   const {
@@ -181,6 +181,22 @@ export default function InventoryFormScreen({ navigation, route }: Props) {
                   ]}
                 >
                   Insumo
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.typeButton,
+                  itemType === "supply" && styles.typeButtonActive,
+                ]}
+                onPress={() => setItemType("supply")}
+              >
+                <Text
+                  style={[
+                    styles.typeButtonText,
+                    itemType === "supply" && styles.typeButtonTextActive,
+                  ]}
+                >
+                  Por Evento
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

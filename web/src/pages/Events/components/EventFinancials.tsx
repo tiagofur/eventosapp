@@ -18,6 +18,7 @@ interface EventFinancialsProps {
   selectedProducts: SelectedProduct[];
   extras: SelectedExtra[];
   productUnitCosts: { [key: string]: number };
+  supplyCost?: number;
   discountType?: "percent" | "fixed";
   onDiscountTypeChange?: (type: "percent" | "fixed") => void;
 }
@@ -26,6 +27,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
   selectedProducts,
   extras,
   productUnitCosts,
+  supplyCost = 0,
   discountType = "percent",
   onDiscountTypeChange = () => {},
 }) => {
@@ -35,6 +37,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
   const taxRateValue = useWatch({ control, name: 'tax_rate' }) || 16;
   const taxAmountValue = useWatch({ control, name: 'tax_amount' }) || 0;
   const totalAmountValue = useWatch({ control, name: 'total_amount' }) || 0;
+  const depositPercentValue = useWatch({ control, name: 'deposit_percent' }) || 0;
 
   return (
     <div className="space-y-6">
@@ -188,6 +191,13 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
               <span>Total:</span>
               <span className="text-primary">${totalAmountValue.toFixed(2)}</span>
             </div>
+
+            {depositPercentValue > 0 && (
+              <div className="flex justify-between text-orange-600 dark:text-orange-400 font-medium">
+                <span>Anticipo ({depositPercentValue}%):</span>
+                <span>${(totalAmountValue * (depositPercentValue / 100)).toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 pt-4 border-t border-border">
@@ -196,23 +206,42 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
             </h5>
 
             <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <div className="text-text-secondary">Costo Total:</div>
+              <div className="text-text-secondary">Costo Productos:</div>
               <div className="text-right font-medium text-text">
-                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0) + extras.reduce((sum, e) => sum + e.cost, 0)).toFixed(2)}
+                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0)).toFixed(2)}
+              </div>
+
+              <div className="text-text-secondary">Costo Extras:</div>
+              <div className="text-right font-medium text-text">
+                ${extras.reduce((sum, e) => sum + e.cost, 0).toFixed(2)}
+              </div>
+
+              {supplyCost > 0 && (
+                <>
+                  <div className="text-amber-600 dark:text-amber-400">Costo Insumos Evento:</div>
+                  <div className="text-right font-medium text-amber-600 dark:text-amber-400">
+                    ${supplyCost.toFixed(2)}
+                  </div>
+                </>
+              )}
+
+              <div className="text-text-secondary font-medium border-t border-border pt-2">Costo Total:</div>
+              <div className="text-right font-medium text-text border-t border-border pt-2">
+                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0) + extras.reduce((sum, e) => sum + e.cost, 0) + supplyCost).toFixed(2)}
               </div>
 
               <div className="text-text-secondary">Utilidad Neta:</div>
               <div className="text-right font-bold text-green-600 dark:text-green-400">
                  ${(
                     totalAmountValue -
-                    (requiresInvoiceValue ? taxAmountValue : 0) - // Exclude tax from profit
+                    (requiresInvoiceValue ? taxAmountValue : 0) -
                     (selectedProducts.reduce(
                       (sum, p) =>
                         sum +
                         (productUnitCosts[p.product_id] || 0) * p.quantity,
                       0,
                     ) +
-                      extras.reduce((sum, e) => sum + e.cost, 0))
+                      extras.reduce((sum, e) => sum + e.cost, 0) + supplyCost)
                   ).toFixed(2)}
               </div>
 
@@ -226,7 +255,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                           sum +
                           (productUnitCosts[p.product_id] || 0) * p.quantity,
                         0,
-                      ) + extras.reduce((sum, e) => sum + e.cost, 0);
+                      ) + extras.reduce((sum, e) => sum + e.cost, 0) + supplyCost;
 
                     const profit = totalRevenue - totalCost;
                     const passThroughRevenue = extras

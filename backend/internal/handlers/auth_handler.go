@@ -127,7 +127,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
-		"user": user,
+		"user":   user,
+		"tokens": tokens,
 	})
 }
 
@@ -179,7 +180,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"user": user,
+		"user":   user,
+		"tokens": tokens,
 	})
 }
 

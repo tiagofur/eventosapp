@@ -13,7 +13,7 @@ import (
 
 func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, subHandler *handlers.SubscriptionHandler,
 	searchHandler *handlers.SearchHandler, eventPaymentHandler *handlers.EventPaymentHandler, uploadHandler *handlers.UploadHandler,
-	adminHandler *handlers.AdminHandler,
+	adminHandler *handlers.AdminHandler, unavailHandler *handlers.UnavailableDateHandler,
 	authService *services.AuthService, userRepo *repository.UserRepo, corsOrigins []string, uploadDir string) http.Handler {
 
 	r := chi.NewRouter()
@@ -115,9 +115,11 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 				r.Get("/{id}/extras", crudHandler.GetEventExtras)
 				r.Put("/{id}/items", crudHandler.UpdateEventItems)
 				r.Get("/{id}/equipment", crudHandler.GetEventEquipment)
+				r.Get("/{id}/supplies", crudHandler.GetEventSupplies)
 				// Equipment conflict detection & suggestions (no event ID needed)
 				r.Post("/equipment/conflicts", crudHandler.CheckEquipmentConflicts)
 				r.Post("/equipment/suggestions", crudHandler.GetEquipmentSuggestions)
+				r.Post("/supplies/suggestions", crudHandler.GetSupplySuggestions)
 				// Event payment routes
 				r.Post("/{id}/checkout-session", eventPaymentHandler.CreateEventCheckoutSession)
 				r.Get("/{id}/payment-session", eventPaymentHandler.HandleEventPaymentSuccess)
@@ -150,6 +152,13 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 				r.Post("/", crudHandler.CreatePayment)
 				r.Put("/{id}", crudHandler.UpdatePayment)
 				r.Delete("/{id}", crudHandler.DeletePayment)
+			})
+
+			// Unavailable Dates
+			r.Route("/unavailable-dates", func(r chi.Router) {
+				r.Get("/", unavailHandler.GetUnavailableDates)
+				r.Post("/", unavailHandler.CreateUnavailableDate)
+				r.Delete("/{id}", unavailHandler.DeleteUnavailableDate)
 			})
 
 			// Search — rate limited to prevent abuse

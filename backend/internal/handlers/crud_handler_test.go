@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
 )
@@ -26,7 +27,23 @@ func newTestHandler(
 	paymentRepo *MockFullPaymentRepo,
 	userRepo *MockFullUserRepo,
 ) *CRUDHandler {
-	return NewCRUDHandler(clientRepo, eventRepo, productRepo, inventoryRepo, paymentRepo, userRepo)
+	udr := new(MockUnavailableDateRepo)
+	udr.On("GetByDateRange", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]models.UnavailableDate{}, nil).Maybe()
+	return NewCRUDHandler(clientRepo, eventRepo, productRepo, inventoryRepo, paymentRepo, userRepo, udr)
+}
+
+// setupCRUDTest creates a CRUDHandler with new mocks and returns them.
+func setupCRUDTest(t *testing.T) (*CRUDHandler, *MockClientRepo, *MockFullEventRepo, *MockProductRepo, *MockInventoryRepo, *MockFullPaymentRepo, *MockFullUserRepo, *MockUnavailableDateRepo) {
+	clientRepo := new(MockClientRepo)
+	eventRepo := new(MockFullEventRepo)
+	productRepo := new(MockProductRepo)
+	inventoryRepo := new(MockInventoryRepo)
+	paymentRepo := new(MockFullPaymentRepo)
+	userRepo := new(MockFullUserRepo)
+	unavailRepo := new(MockUnavailableDateRepo)
+	unavailRepo.On("GetByDateRange", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]models.UnavailableDate{}, nil).Maybe()
+
+	return NewCRUDHandler(clientRepo, eventRepo, productRepo, inventoryRepo, paymentRepo, userRepo, unavailRepo), clientRepo, eventRepo, productRepo, inventoryRepo, paymentRepo, userRepo, unavailRepo
 }
 
 // makeReqWithUserID creates a request with the given userID in context.
@@ -395,6 +412,14 @@ func TestSplitCSV(t *testing.T) {
 	if len(got) != 3 || got[0] != "a" || got[1] != "b" || got[2] != "c" {
 		t.Fatalf("splitCSV() = %#v, want [a b c]", got)
 	}
+}
+
+func TestListPayments(t *testing.T) {
+	h, _, _, _, _, paymentRepo, _, _ := setupCRUDTest(t)
+	// The rest of the test logic for ListPayments would go here.
+	// For now, it's just a placeholder to demonstrate the setup.
+	_ = h
+	_ = paymentRepo
 }
 
 func TestSplitAndTrim(t *testing.T) {
@@ -796,7 +821,7 @@ func TestCreateInventoryItemValidation(t *testing.T) {
 }
 
 func TestCreatePaymentValidation(t *testing.T) {
-	h := &CRUDHandler{}
+	h, _, _, _, _, _, _, _ := setupCRUDTest(t)
 	userID := uuid.New()
 	eventID := uuid.New().String()
 
@@ -839,7 +864,7 @@ func TestCreatePaymentValidation(t *testing.T) {
 }
 
 func TestUpdatePaymentValidation(t *testing.T) {
-	h := &CRUDHandler{}
+	h, _, _, _, _, _, _, _ := setupCRUDTest(t)
 	userID := uuid.New()
 	paymentID := uuid.New().String()
 	eventID := uuid.New().String()

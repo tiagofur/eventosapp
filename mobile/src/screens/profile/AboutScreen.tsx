@@ -2,7 +2,6 @@ import React from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -11,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Constants from "expo-constants";
 import { ChevronLeft, Heart, Globe, Mail, FileText, Shield } from "lucide-react-native";
+import { SvgXml } from "react-native-svg";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SettingsStackParamList } from "../../types/navigation";
 import { useTheme } from "../../hooks/useTheme";
@@ -18,6 +18,50 @@ import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/spacing";
 import { typography } from "../../theme/typography";
 import { shadows } from "../../theme/shadows";
+
+const solennixLogoXml = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="iconBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a201b"/>
+      <stop offset="50%" stop-color="#120d0b"/>
+      <stop offset="100%" stop-color="#0a0504"/>
+    </linearGradient>
+    <linearGradient id="gold-grad" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="50%" stop-color="#fef3c7"/>
+      <stop offset="70%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="orange-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c2410c"/>
+      <stop offset="20%" stop-color="#ea580c"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="80%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+    <filter id="drop-shadow">
+      <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+    <clipPath id="clipRight">
+      <rect x="52" y="44" width="50" height="50" />
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="100" height="100" rx="25" ry="25" fill="url(#iconBg)"/>
+
+  <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
+  <circle cx="41" cy="62" r="20" fill="none" stroke="#ffedd5" stroke-width="1.5" opacity="0.6"/>
+
+  <circle cx="53" cy="38" r="20" fill="none" stroke="url(#gold-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
+  <circle cx="53" cy="38" r="20" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+
+  <g clip-path="url(#clipRight)">
+    <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
+    <circle cx="41" cy="62" r="20" fill="none" stroke="#ffedd5" stroke-width="1.5" opacity="0.6"/>
+  </g>
+</svg>`;
 
 type Props = NativeStackScreenProps<SettingsStackParamList, "About">;
 
@@ -43,10 +87,11 @@ export default function AboutScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         <View style={styles.logoContainer}>
-          <Image
-            source={require("../../../assets/icon.png")}
+          <SvgXml
+            xml={solennixLogoXml}
+            width={120}
+            height={120}
             style={styles.logo}
-            resizeMode="contain"
           />
           <Text style={styles.appName}>Solennix</Text>
           <Text style={styles.version}>Versi&#xF3;n {APP_VERSION}</Text>

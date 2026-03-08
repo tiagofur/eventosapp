@@ -6,7 +6,7 @@ import { z } from "zod";
 import { productService } from "../../services/productService";
 import { inventoryService } from "../../services/inventoryService";
 import { useAuth } from "../../contexts/AuthContext";
-import { ArrowLeft, Save, Plus, Trash2, Layers, Wrench, Camera, X } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Layers, Wrench, Fuel, Camera, X } from "lucide-react";
 import { InventoryItem } from "../../types/entities";
 import { logError } from "../../lib/errorHandler";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
@@ -35,7 +35,7 @@ export const ProductForm: React.FC = () => {
   const { canCreateCatalogItem, catalogCount, catalogLimit, loading: limitsLoading } = usePlanLimits();
 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [recipeIngredients, setRecipeIngredients] = useState<{inventory_id: string, quantity_required: number, capacity: number | null, bring_to_event: boolean, unit_cost: number, unit: string, _type: 'ingredient' | 'equipment'}[]>([]);
+  const [recipeIngredients, setRecipeIngredients] = useState<{inventory_id: string, quantity_required: number, capacity: number | null, bring_to_event: boolean, unit_cost: number, unit: string, _type: 'ingredient' | 'equipment' | 'supply'}[]>([]);
 
   const {
     register,
@@ -96,7 +96,7 @@ export const ProductForm: React.FC = () => {
               bring_to_event: i.bring_to_event ?? false,
               unit_cost: i.unit_cost || 0,
               unit: i.unit || '',
-              _type: i.type === 'equipment' ? 'equipment' as const : 'ingredient' as const,
+              _type: i.type === 'equipment' ? 'equipment' as const : i.type === 'supply' ? 'supply' as const : 'ingredient' as const,
           })));
       }
 
@@ -164,6 +164,18 @@ export const ProductForm: React.FC = () => {
       }]);
   };
 
+  const handleAddSupply = () => {
+      setRecipeIngredients([...recipeIngredients, {
+          inventory_id: "",
+          quantity_required: 1,
+          capacity: null,
+          bring_to_event: true,
+          unit_cost: 0,
+          unit: "",
+          _type: 'supply',
+      }]);
+  };
+
   const handleRemoveIngredient = (index: number) => {
       const newIngredients = [...recipeIngredients];
       newIngredients.splice(index, 1);
@@ -187,20 +199,31 @@ export const ProductForm: React.FC = () => {
 
   const calculateTotalCost = () => {
       return recipeIngredients
-          .filter(item => item._type !== 'equipment')
+          .filter(item => item._type === 'ingredient')
+          .reduce((sum, item) => sum + (item.quantity_required * item.unit_cost), 0);
+  };
+
+  const calculatePerEventCost = () => {
+      return recipeIngredients
+          .filter(item => item._type === 'supply')
           .reduce((sum, item) => sum + (item.quantity_required * item.unit_cost), 0);
   };
 
   const ingredientInventoryItems = inventoryItems.filter(i => i.type === 'ingredient');
   const equipmentInventoryItems = inventoryItems.filter(i => i.type === 'equipment');
+  const supplyInventoryItems = inventoryItems.filter(i => i.type === 'supply');
 
   const ingredientEntries = recipeIngredients
       .map((item, idx) => ({ item, originalIndex: idx }))
-      .filter(({ item }) => item._type !== 'equipment');
+      .filter(({ item }) => item._type === 'ingredient');
 
   const equipmentEntries = recipeIngredients
       .map((item, idx) => ({ item, originalIndex: idx }))
       .filter(({ item }) => item._type === 'equipment');
+
+  const supplyEntries = recipeIngredients
+      .map((item, idx) => ({ item, originalIndex: idx }))
+      .filter(({ item }) => item._type === 'supply');
 
   const onSubmit = async (data: ProductFormData) => {
     if (!user) return;
@@ -601,6 +624,86 @@ export const ProductForm: React.FC = () => {
                     <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar Equipo
                 </button>
             </div>
+        </div>
+
+        {/* Insumos por Evento */}
+        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10 flex flex-col">
+            <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
+                <Fuel className="h-5 w-5 mr-2 text-amber-500" aria-hidden="true" />
+                Insumos por Evento (costo fijo por evento)
+            </h3>
+            <p className="text-xs text-text-secondary mb-4">Insumos con cantidad fija por evento que no escala con unidades del producto (ej. aceite, gas). Se contabilizan como costo del evento.</p>
+
+            <div className="flex-1 overflow-y-auto mb-4 space-y-3">
+                {supplyEntries.map(({ item, originalIndex }) => (
+                    <div key={originalIndex} className="bg-surface-alt p-4 rounded-xl relative group border border-border">
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveIngredient(originalIndex)}
+                            className="absolute top-1 right-1 text-text-secondary hover:text-error transition-colors"
+                            aria-label="Eliminar insumo por evento"
+                        >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        <div className="mb-2 pr-6">
+                            <label htmlFor={`supply-select-${originalIndex}`} className="block text-xs text-text-secondary mb-1">Insumo por Evento</label>
+                            <select
+                                id={`supply-select-${originalIndex}`}
+                                value={item.inventory_id}
+                                onChange={(e) => handleIngredientChange(originalIndex, 'inventory_id', e.target.value)}
+                                className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
+                                aria-label="Seleccionar insumo por evento"
+                            >
+                                <option value="">Seleccionar insumo</option>
+                                {supplyInventoryItems.map(i => (
+                                    <option key={i.id} value={i.id}>{i.ingredient_name} ({i.unit})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                            <div className="w-1/2">
+                                <label htmlFor={`supply-qty-${originalIndex}`} className="text-xs text-text-secondary">Cant. por evento</label>
+                                <input
+                                    id={`supply-qty-${originalIndex}`}
+                                    type="number"
+                                    step="0.001"
+                                    value={item.quantity_required}
+                                    onChange={(e) => handleIngredientChange(originalIndex, 'quantity_required', Number(e.target.value))}
+                                    className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
+                                    aria-label="Cantidad por evento"
+                                />
+                            </div>
+                            <div className="w-1/2 text-right">
+                                <span className="text-xs text-text-secondary block">Costo por evento</span>
+                                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                                    ${(item.quantity_required * item.unit_cost).toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+
+                <button
+                    type="button"
+                    onClick={handleAddSupply}
+                    className="w-full flex items-center justify-center px-4 py-3 border border-border shadow-sm text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
+                    aria-label="Agregar insumo por evento"
+                >
+                    <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar Insumo por Evento
+                </button>
+            </div>
+
+            {supplyEntries.length > 0 && (
+              <div className="border-t border-border pt-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                      <span className="text-sm text-text-secondary">Costo por Evento (Insumos Fijos)</span>
+                      <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                          ${calculatePerEventCost().toFixed(2)}
+                      </span>
+                  </div>
+                  <p className="text-xs text-text-secondary">Este costo se suma al costo total del evento, no al costo por unidad.</p>
+              </div>
+            )}
         </div>
 
         {/* Botones de acción */}

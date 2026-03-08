@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import { useForm, FormProvider, useWatch, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,10 +21,12 @@ import { EventProducts } from "./components/EventProducts";
 import { EventExtras } from "./components/EventExtras";
 import { EventFinancials } from "./components/EventFinancials";
 import { EventEquipment } from "./components/EventEquipment";
+import { EventSupplies } from "./components/EventSupplies";
 import { inventoryService } from "@/services/inventoryService";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { EquipmentConflict, EquipmentSuggestion, InventoryItem } from "@/types/entities";
+import { EquipmentConflict, EquipmentSuggestion, SupplySuggestion, InventoryItem } from "@/types/entities";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
+import { unavailableDatesService } from "@/services/unavailableDatesService";
 
 // Local types to avoid Supabase dependency
 interface Client {
@@ -36,6 +38,13 @@ interface Client {
   city?: string | null;
   total_events: number | null;
   total_spent: number | null;
+}
+
+interface UnavailableDate {
+  id: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
 }
 
 interface Product {
@@ -72,7 +81,7 @@ const STEPS = [
   { id: 1, title: "Información General" },
   { id: 2, title: "Productos" },
   { id: 3, title: "Extras" },
-  { id: 4, title: "Equipo" },
+  { id: 4, title: "Insumos y Equipo" },
   { id: 5, title: "Finanzas y Contrato" },
 ];
 
@@ -80,7 +89,9 @@ export const EventForm: React.FC = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const quickQuoteData = (location.state as any)?.fromQuickQuote ? (location.state as any) : null;
 
   const [activeStep, setActiveStep] = useState(1);
   const [clients, setClients] = useState<Client[]>([]);
@@ -91,6 +102,9 @@ export const EventForm: React.FC = () => {
 
   // Plan Limits
   const { canCreateEvent, eventsThisMonth, limit, loading: limitsLoading } = usePlanLimits();
+
+  // Unavailable Dates
+  const [unavailableDates, setUnavailableDates] = useState<UnavailableDate[]>([]);
 
   // Local state for items
   const [selectedProducts, setSelectedProducts] = useState<
@@ -119,6 +133,13 @@ export const EventForm: React.FC = () => {
   >([]);
   const [equipmentConflicts, setEquipmentConflicts] = useState<EquipmentConflict[]>([]);
   const [equipmentSuggestions, setEquipmentSuggestions] = useState<EquipmentSuggestion[]>([]);
+
+  // Supply state
+  const [supplyInventory, setSupplyInventory] = useState<InventoryItem[]>([]);
+  const [selectedSupplies, setSelectedSupplies] = useState<
+    { inventory_id: string; quantity: number; unit_cost: number; source: 'stock' | 'purchase'; exclude_cost: boolean }[]
+  >([]);
+  const [supplySuggestions, setSupplySuggestions] = useState<SupplySuggestion[]>([]);
 
   const methods = useForm<EventFormData>({
     resolver: zodResolver(eventSchema) as Resolver<EventFormData>,
@@ -168,10 +189,18 @@ export const EventForm: React.FC = () => {
         ]);
         setClients((clientsData as Client[]) || []);
         setProducts((productsData as Product[]) || []);
-        // Filter equipment items from inventory
-        setEquipmentInventory(
-          ((inventoryData as InventoryItem[]) || []).filter((i) => i.type === 'equipment')
+        const allInventory = (inventoryData as InventoryItem[]) || [];
+        setEquipmentInventory(allInventory.filter((i) => i.type === 'equipment'));
+        setSupplyInventory(allInventory.filter((i) => i.type === 'supply'));
+
+        // Load unavailable dates
+        const endOfNextYear = new Date();
+        endOfNextYear.setFullYear(endOfNextYear.getFullYear() + 1);
+        const dates = await unavailableDatesService.getDates(
+          '2020-01-01',
+          endOfNextYear.toISOString().split('T')[0]
         );
+        setUnavailableDates(dates);
       } catch (err) {
         logError("Error loading dependencies", err);
       }
@@ -215,10 +244,11 @@ export const EventForm: React.FC = () => {
           notes: event.notes || "",
         });
 
-        const [eventProducts, eventExtras, eventEquipment] = await Promise.all([
+        const [eventProducts, eventExtras, eventEquipment, eventSupplies] = await Promise.all([
           eventService.getProducts(eventId),
           eventService.getExtras(eventId),
           eventService.getEquipment(eventId),
+          eventService.getSupplies(eventId),
         ]);
 
         if (eventProducts) {
@@ -244,6 +274,16 @@ export const EventForm: React.FC = () => {
             inventory_id: eq.inventory_id,
             quantity: eq.quantity,
             notes: eq.notes || '',
+          })));
+        }
+
+        if (eventSupplies) {
+          setSelectedSupplies(eventSupplies.map((s: any) => ({
+            inventory_id: s.inventory_id,
+            quantity: s.quantity,
+            unit_cost: s.unit_cost,
+            source: s.source || 'purchase',
+            exclude_cost: s.exclude_cost || false,
           })));
         }
       } catch (err) {
@@ -298,7 +338,7 @@ export const EventForm: React.FC = () => {
           missing.map(async (productId) => {
             const ingredients = await productService.getIngredients(productId);
             const cost = ingredients
-              ?.filter((ing: any) => ing.type !== 'equipment')
+              ?.filter((ing: any) => ing.type === 'ingredient')
               .reduce((sum, ing: any) => {
                 const unitCost = ing.unit_cost ?? 0;
                 return sum + ing.quantity_required * unitCost;
@@ -331,6 +371,30 @@ export const EventForm: React.FC = () => {
       }
     }
   }, [clientIdValue, clients, locationValue, cityValue, setValue]);
+
+  // Pre-fill from Quick Quote
+  useEffect(() => {
+    if (quickQuoteData && !id) {
+      if (quickQuoteData.selectedProducts?.length > 0) {
+        setSelectedProducts(quickQuoteData.selectedProducts);
+      }
+      if (quickQuoteData.extras?.length > 0) {
+        setExtras(quickQuoteData.extras);
+      }
+      if (quickQuoteData.numPeople) {
+        setValue("num_people", quickQuoteData.numPeople);
+      }
+      if (quickQuoteData.discountValue) {
+        setValue("discount", quickQuoteData.discountValue);
+      }
+      if (quickQuoteData.discountType) {
+        setDiscountType(quickQuoteData.discountType);
+      }
+      if (quickQuoteData.requiresInvoice) {
+        setValue("requires_invoice", true);
+      }
+    }
+  }, [quickQuoteData, id, setValue]);
 
   const handleAddProduct = () => {
     if (products.length > 0) {
@@ -415,6 +479,30 @@ export const EventForm: React.FC = () => {
     }
   };
 
+  // --- Supply handlers ---
+
+  const handleAddSupply = () => {
+    setSelectedSupplies(prev => [...prev, { inventory_id: '', quantity: 1, unit_cost: 0, source: 'purchase', exclude_cost: false }]);
+  };
+
+  const handleRemoveSupply = (index: number) => {
+    setSelectedSupplies(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSupplyChange = (index: number, field: string, value: string | number | boolean) => {
+    setSelectedSupplies(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
+  const handleQuickAddSupplySuggestion = (inventoryId: string, suggestedQty: number, unitCost: number) => {
+    if (!selectedSupplies.some(s => s.inventory_id === inventoryId)) {
+      setSelectedSupplies(prev => [...prev, { inventory_id: inventoryId, quantity: suggestedQty, unit_cost: unitCost, source: 'purchase', exclude_cost: false }]);
+    }
+  };
+
   // Auto-suggest equipment when products change
   useEffect(() => {
     const productItems = selectedProducts
@@ -433,6 +521,26 @@ export const EventForm: React.FC = () => {
       }
     };
     fetchSuggestions();
+  }, [selectedProducts]);
+
+  // Auto-suggest supplies when products change
+  useEffect(() => {
+    const productItems = selectedProducts
+      .filter(p => p.product_id)
+      .map(p => ({ product_id: p.product_id, quantity: p.quantity }));
+    if (productItems.length === 0) {
+      setSupplySuggestions([]);
+      return;
+    }
+    const fetchSupplySuggestions = async () => {
+      try {
+        const suggestions = await eventService.getSupplySuggestions(productItems);
+        setSupplySuggestions(suggestions || []);
+      } catch {
+        // Silently ignore suggestion errors
+      }
+    };
+    fetchSupplySuggestions();
   }, [selectedProducts]);
 
   // Check equipment conflicts (debounced)
@@ -476,6 +584,22 @@ export const EventForm: React.FC = () => {
     setError(null);
 
     try {
+      // Validate unavailable dates
+      if (unavailableDates && unavailableDates.length > 0) {
+        const eventDateObj = new Date(data.event_date);
+        const isUnavailable = unavailableDates.some(range => {
+          const start = new Date(range.start_date);
+          const end = new Date(range.end_date);
+          return eventDateObj >= start && eventDateObj <= end;
+        });
+
+        if (isUnavailable) {
+          setError("La fecha seleccionada no está disponible.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const payload = {
         ...data,
         discount_type: discountType,
@@ -510,6 +634,15 @@ export const EventForm: React.FC = () => {
               inventoryId: eq.inventory_id,
               quantity: eq.quantity,
               notes: eq.notes || undefined,
+            })),
+          selectedSupplies
+            .filter(s => s.inventory_id)
+            .map(s => ({
+              inventoryId: s.inventory_id,
+              quantity: s.quantity,
+              unitCost: s.unit_cost,
+              source: s.source,
+              excludeCost: s.exclude_cost,
             })),
         );
       }
@@ -679,7 +812,12 @@ export const EventForm: React.FC = () => {
         >
           <div className="bg-card shadow-sm border border-border p-6 rounded-3xl">
             {activeStep === 1 && (
-              <EventGeneralInfo clients={clients as any} clientIdValue={clientIdValue} onClientCreated={handleClientCreated as any} />
+              <EventGeneralInfo 
+                clients={clients as any} 
+                clientIdValue={clientIdValue} 
+                onClientCreated={handleClientCreated as any}
+                unavailableDates={unavailableDates}
+              />
             )}
             {activeStep === 2 && (
               <EventProducts
@@ -700,22 +838,35 @@ export const EventForm: React.FC = () => {
               />
             )}
             {activeStep === 4 && (
-              <EventEquipment
-                equipmentInventory={equipmentInventory}
-                selectedEquipment={selectedEquipment}
-                conflicts={equipmentConflicts}
-                suggestions={equipmentSuggestions}
-                onAddEquipment={handleAddEquipment}
-                onRemoveEquipment={handleRemoveEquipment}
-                onEquipmentChange={handleEquipmentChange}
-                onQuickAddSuggestion={handleQuickAddSuggestion}
-              />
+              <div className="space-y-8">
+                <EventSupplies
+                  supplyInventory={supplyInventory}
+                  selectedSupplies={selectedSupplies}
+                  suggestions={supplySuggestions}
+                  onAddSupply={handleAddSupply}
+                  onRemoveSupply={handleRemoveSupply}
+                  onSupplyChange={handleSupplyChange}
+                  onQuickAddSuggestion={handleQuickAddSupplySuggestion}
+                />
+                <div className="border-t border-border" />
+                <EventEquipment
+                  equipmentInventory={equipmentInventory}
+                  selectedEquipment={selectedEquipment}
+                  conflicts={equipmentConflicts}
+                  suggestions={equipmentSuggestions}
+                  onAddEquipment={handleAddEquipment}
+                  onRemoveEquipment={handleRemoveEquipment}
+                  onEquipmentChange={handleEquipmentChange}
+                  onQuickAddSuggestion={handleQuickAddSuggestion}
+                />
+              </div>
             )}
             {activeStep === 5 && (
               <EventFinancials
                 selectedProducts={selectedProducts as any}
                 extras={extras}
                 productUnitCosts={productUnitCosts}
+                supplyCost={selectedSupplies.reduce((sum, s) => sum + (s.exclude_cost ? 0 : s.quantity * s.unit_cost), 0)}
                 discountType={discountType}
                 onDiscountTypeChange={setDiscountType}
               />

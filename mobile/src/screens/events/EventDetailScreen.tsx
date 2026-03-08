@@ -33,6 +33,7 @@ import {
   Check,
   Camera,
   ClipboardList,
+  Fuel,
 } from "lucide-react-native";
 import { EventsStackParamList } from "../../types/navigation";
 import { Event } from "../../types/entities";
@@ -95,6 +96,7 @@ export default function EventDetailScreen({ navigation, route }: Props) {
   const [products, setProducts] = useState<any[]>([]);
   const [extras, setExtras] = useState<any[]>([]);
   const [equipment, setEquipment] = useState<any[]>([]);
+  const [supplies, setSupplies] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -132,18 +134,20 @@ export default function EventDetailScreen({ navigation, route }: Props) {
       const eventData = await eventService.getById(id);
       setEvent(eventData);
 
-      const [clientData, productsData, extrasData, paymentsData, equipmentData] = await Promise.all([
+      const [clientData, productsData, extrasData, paymentsData, equipmentData, suppliesData] = await Promise.all([
         clientService.getById(eventData.client_id),
         eventService.getProducts(id),
         eventService.getExtras(id),
         paymentService.getByEventIds([id]),
         eventService.getEquipment(id),
+        eventService.getSupplies(id),
       ]);
       setClient(clientData);
       setProducts(productsData || []);
       setExtras(extrasData || []);
       setPayments(paymentsData || []);
       setEquipment(equipmentData || []);
+      setSupplies(suppliesData || []);
 
       // Parse photos JSONB
       if (eventData.photos) {
@@ -342,7 +346,7 @@ export default function EventDetailScreen({ navigation, route }: Props) {
         : [];
       const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
       (prodIngredients || [])
-        .filter((ing: any) => ing.type !== 'equipment')
+        .filter((ing: any) => ing.type === 'ingredient')
         .forEach((ing: any) => {
           const key = ing.inventory_id;
           const qty = productQuantities.get(ing.product_id) || 0;
@@ -351,7 +355,11 @@ export default function EventDetailScreen({ navigation, route }: Props) {
           }
           aggregated[key].quantity += (ing.quantity_required || 0) * qty;
         });
-      await generateShoppingListPDF(event!, user, Object.values(aggregated));
+      // Include purchase supplies in shopping list
+      const purchaseSupplies = supplies
+        .filter((s: any) => s.source === 'purchase')
+        .map((s: any) => ({ name: s.supply_name || 'Insumo', quantity: s.quantity, unit: s.unit || 'und' }));
+      await generateShoppingListPDF(event!, user, [...Object.values(aggregated), ...purchaseSupplies]);
       trackPdfShared();
     } catch (err) {
       logError("Error generating shopping list PDF", err);
@@ -375,7 +383,7 @@ export default function EventDetailScreen({ navigation, route }: Props) {
         : [];
       const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
       (prodIngredients || [])
-        .filter((ing: any) => ing.type !== 'equipment' && ing.bring_to_event)
+        .filter((ing: any) => ing.type === 'ingredient' && ing.bring_to_event)
         .forEach((ing: any) => {
           const key = ing.inventory_id;
           const qty = productQuantities.get(ing.product_id) || 0;
@@ -384,7 +392,11 @@ export default function EventDetailScreen({ navigation, route }: Props) {
           }
           aggregated[key].quantity += (ing.quantity_required || 0) * qty;
         });
-      await generateChecklistPDF(event!, user, products, equipment, Object.values(aggregated), extras);
+      // Include stock supplies in checklist
+      const stockSupplies = supplies
+        .filter((s: any) => s.source === 'stock')
+        .map((s: any) => ({ name: s.supply_name || 'Insumo', quantity: s.quantity, unit: s.unit || 'und' }));
+      await generateChecklistPDF(event!, user, products, equipment, [...Object.values(aggregated), ...stockSupplies], extras);
       trackPdfShared();
     } catch (err) {
       logError("Error generating checklist PDF", err);
@@ -536,6 +548,42 @@ export default function EventDetailScreen({ navigation, route }: Props) {
                 <Text style={styles.itemTotal}>{formatCurrency(e.price)}</Text>
               </View>
             ))}
+          </View>
+        )}
+
+        {supplies.length > 0 && (
+          <View style={styles.section}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.sm }}>
+              <Fuel color="#D97706" size={18} />
+              <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Insumos por Evento</Text>
+            </View>
+
+            {supplies.map((s: any, index: number) => (
+              <View key={index} style={styles.itemRow}>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{s.supply_name || 'Insumo'}</Text>
+                  <Text style={styles.itemDetail}>
+                    {s.quantity} × ${s.unit_cost?.toFixed(2) || '0.00'}/{s.unit || 'und'}
+                    {' — '}
+                    {s.source === 'stock' ? 'Del stock' : 'Compra nueva'}
+                    {s.exclude_cost ? ' — Sin costo' : ''}
+                  </Text>
+                </View>
+                <Text style={[styles.itemTotal, {
+                  color: s.exclude_cost ? palette.textMuted : "#D97706",
+                  textDecorationLine: s.exclude_cost ? 'line-through' : 'none',
+                }]}>
+                  {formatCurrency(s.quantity * (s.unit_cost || 0))}
+                </Text>
+              </View>
+            ))}
+
+            <View style={[styles.itemRow, { borderBottomWidth: 0 }]}>
+              <Text style={[styles.itemName, { color: "#D97706" }]}>Total Insumos</Text>
+              <Text style={[styles.itemTotal, { color: "#D97706", fontWeight: "700" }]}>
+                {formatCurrency(supplies.reduce((sum: number, s: any) => sum + (s.exclude_cost ? 0 : s.quantity * (s.unit_cost || 0)), 0))}
+              </Text>
+            </View>
           </View>
         )}
 

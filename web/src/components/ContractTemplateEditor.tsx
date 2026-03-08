@@ -277,6 +277,10 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
         { products: { name: "Iluminación" } },
         { products: { name: "Decoración Floral" } },
       ] as any,
+      payments: [
+        { amount: 15000, payment_date: "2026-03-01", payment_method: "cash" },
+        { amount: 7500, payment_date: "2026-03-05", payment_method: "transfer" },
+      ],
     });
   } catch {
     previewText = template;

@@ -596,8 +596,9 @@ describe('InventoryList', () => {
 
     // Equipment section should be visible
     expect(screen.getByText('Equipos')).toBeInTheDocument();
-    // Consumibles section should show empty message
-    expect(screen.getByText(/No hay insumos/i)).toBeInTheDocument();
+    // Consumibles and supply sections should show empty messages
+    const emptyMessages = screen.getAllByText(/No hay insumos/i);
+    expect(emptyMessages.length).toBeGreaterThanOrEqual(1);
   });
 
   it('sorts equipment section independently from consumibles', async () => {

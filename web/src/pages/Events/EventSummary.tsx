@@ -24,6 +24,8 @@ import {
   ImagePlus,
   Wrench,
   ClipboardList,
+  AlertCircle,
+  Fuel,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -93,6 +95,7 @@ export const EventSummary: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [extras, setExtras] = useState<any[]>([]);
   const [equipment, setEquipment] = useState<any[]>([]);
+  const [supplies, setSupplies] = useState<any[]>([]);
   const [ingredients, setIngredients] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,17 +109,20 @@ export const EventSummary: React.FC = () => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
   const photoInputRef = React.useRef<HTMLInputElement>(null);
+  const [autoOpenPayment, setAutoOpenPayment] = useState(false);
+  const [paymentInitialAmount, setPaymentInitialAmount] = useState(0);
 
   const loadData = useCallback(async (eventId: string) => {
     try {
       setLoading(true);
-      const [eventData, productsData, extrasData, paymentsData, equipmentData] =
+      const [eventData, productsData, extrasData, paymentsData, equipmentData, suppliesData] =
         await Promise.all([
           eventService.getById(eventId),
           eventService.getProducts(eventId),
           eventService.getExtras(eventId),
           paymentService.getByEventId(eventId),
           eventService.getEquipment(eventId),
+          eventService.getSupplies(eventId),
         ]);
 
       setEvent(eventData);
@@ -124,6 +130,7 @@ export const EventSummary: React.FC = () => {
       setExtras(extrasData || []);
       setPayments(paymentsData || []);
       setEquipment(equipmentData || []);
+      setSupplies(suppliesData || []);
 
       // Parse photos JSONB
       if (eventData.photos) {
@@ -171,7 +178,7 @@ export const EventSummary: React.FC = () => {
   const aggregateProductIngredients = async (productIds: string[], productQuantities: Map<string, number>) => {
     try {
       const allProdIngredients = await productService.getIngredientsForProducts(productIds);
-      const prodIngredients = allProdIngredients.filter((ing: any) => ing.type !== 'equipment');
+      const prodIngredients = allProdIngredients.filter((ing: any) => ing.type === 'ingredient');
 
       const aggregatedIngredients: any = {};
       prodIngredients.forEach((ing: any) => {
@@ -317,6 +324,8 @@ export const EventSummary: React.FC = () => {
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const remainingValue = totalCharged - totalPaid;
+  const depositAmount = totalCharged * ((event.deposit_percent || 0) / 100);
+  const isDownpaymentMet = totalPaid >= (depositAmount - 0.1);
 
   let contractPreview = "";
   let contractPreviewMissingTokens: string[] = [];
@@ -328,6 +337,7 @@ export const EventSummary: React.FC = () => {
       template: profile?.contract_template,
       strict: true,
       products,
+      payments,
     });
   } catch (error) {
     if (error instanceof ContractTemplateError) {
@@ -405,12 +415,13 @@ export const EventSummary: React.FC = () => {
                 "px-4 py-2 rounded-xl text-sm font-bold flex items-center transition-all whitespace-nowrap",
                 viewMode === "contract"
                   ? "bg-card text-primary shadow-sm"
-                  : "text-text-secondary hover:text-text hover:bg-surface-alt"
+                  : "text-text-secondary hover:text-text hover:bg-surface-alt",
+                !isDownpaymentMet && "opacity-50 grayscale-[0.5]"
               )}
               aria-pressed={viewMode === "contract"}
               aria-label="Ver contrato del evento"
             >
-              <FileCheck className="h-4 w-4 mr-2" aria-hidden="true" />
+              <FileCheck className={clsx("h-4 w-4 mr-2", !isDownpaymentMet && "text-amber-500")} aria-hidden="true" />
               Contrato
             </button>
             <button
@@ -495,7 +506,15 @@ export const EventSummary: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    generateShoppingListPDF(event, profile as any, ingredients);
+                    // Include purchase supplies in shopping list
+                    const purchaseSupplies = supplies
+                      .filter((s: any) => s.source === 'purchase')
+                      .map((s: any) => ({
+                        name: s.supply_name || 'Insumo',
+                        quantity: s.quantity,
+                        unit: s.unit || 'und',
+                      }));
+                    generateShoppingListPDF(event, profile as any, [...ingredients, ...purchaseSupplies]);
                     setActionsDropdownOpen(false);
                   }}
                   className="w-full flex items-center px-4 py-2 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -516,7 +535,7 @@ export const EventSummary: React.FC = () => {
                         : [];
                       const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
                       (allIngredients || [])
-                        .filter((ing: any) => ing.type !== 'equipment' && ing.bring_to_event)
+                        .filter((ing: any) => ing.type === 'ingredient' && ing.bring_to_event)
                         .forEach((ing: any) => {
                           const key = ing.inventory_id;
                           const qty = productQuantities.get(ing.product_id) || 0;
@@ -525,7 +544,15 @@ export const EventSummary: React.FC = () => {
                           }
                           aggregated[key].quantity += (ing.quantity_required || 0) * qty;
                         });
-                      generateChecklistPDF(event, profile as any, products, equipment, Object.values(aggregated), extras);
+                      // Include stock supplies in checklist ingredients
+                      const stockSupplies = supplies
+                        .filter((s: any) => s.source === 'stock')
+                        .map((s: any) => ({
+                          name: s.supply_name || 'Insumo',
+                          quantity: s.quantity,
+                          unit: s.unit || 'und',
+                        }));
+                      generateChecklistPDF(event, profile as any, products, equipment, [...Object.values(aggregated), ...stockSupplies], extras);
                     } catch (err) {
                       logError("Error generating checklist", err);
                       addToast("Error al generar checklist.", "error");
@@ -540,9 +567,10 @@ export const EventSummary: React.FC = () => {
                 </button>
                 <button
                   type="button"
+                  disabled={!isDownpaymentMet}
                   onClick={() => {
                     try {
-                      generateContractPDF(event, profile as any, undefined, products);
+                      generateContractPDF(event, profile as any, undefined, products, payments);
                     } catch (error) {
                       const message =
                         error instanceof ContractTemplateError
@@ -553,11 +581,16 @@ export const EventSummary: React.FC = () => {
                     }
                     setActionsDropdownOpen(false);
                   }}
-                  className="w-full flex items-center px-4 py-2 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
+                  className={clsx(
+                    "w-full flex items-center px-4 py-2 text-sm transition-colors",
+                    !isDownpaymentMet 
+                      ? "text-text-tertiary cursor-not-allowed bg-surface-alt/50" 
+                      : "text-text hover:bg-surface-alt dark:hover:bg-surface"
+                  )}
                   role="menuitem"
                 >
-                  <FileCheck className="h-4 w-4 mr-3 text-text-secondary" />
-                  Contrato
+                  <FileCheck className={clsx("h-4 w-4 mr-3", !isDownpaymentMet ? "text-amber-500/50" : "text-text-secondary")} />
+                  Contrato {!isDownpaymentMet && "(Saldar Anticipo)"}
                 </button>
                 {viewMode === "payments" && payments.length > 0 && (
                   <button
@@ -621,6 +654,8 @@ export const EventSummary: React.FC = () => {
           onStatusChange={handleStatusChange}
           eventData={event}
           profile={profile}
+          initialAmount={paymentInitialAmount}
+          autoOpenAdd={autoOpenPayment}
         />
       )}
 
@@ -803,6 +838,55 @@ export const EventSummary: React.FC = () => {
             </div>
           </div>
 
+          {/* Supplies section */}
+          {supplies.length > 0 && (
+            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border mt-8">
+              <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
+                <Fuel className="h-5 w-5 text-amber-500" />
+                Insumos por Evento
+              </h2>
+              <div className="space-y-3">
+                {supplies.map((s: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                    <div>
+                      <span className="font-bold text-text">{s.supply_name || 'Insumo'}</span>
+                      <span className="text-text-secondary ml-2">
+                        {s.quantity} {s.unit || 'und'} × ${s.unit_cost?.toFixed(2) || '0.00'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {s.exclude_cost && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-text-secondary">
+                          Sin costo
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+                        s.source === 'stock'
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
+                          : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+                      }`}>
+                        {s.source === 'stock' ? 'Del stock' : 'Compra nueva'}
+                      </span>
+                      <span className={`font-bold ${
+                        s.exclude_cost
+                          ? 'line-through text-text-tertiary'
+                          : 'text-amber-600 dark:text-amber-400'
+                      }`}>
+                        ${(s.quantity * (s.unit_cost || 0)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
+                <span className="text-sm text-text-secondary">Costo total insumos</span>
+                <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                  ${supplies.reduce((sum: number, s: any) => sum + (s.exclude_cost ? 0 : s.quantity * (s.unit_cost || 0)), 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Equipment section */}
           {equipment.length > 0 && (
             <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border mt-8">
@@ -850,6 +934,14 @@ export const EventSummary: React.FC = () => {
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Total Cobrado</p>
                   <p className="text-2xl font-black text-primary">${totalCharged.toFixed(2)}</p>
                 </div>
+                {event.deposit_percent > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">Cobrar Anticipo ({event.deposit_percent}%)</p>
+                    <p className={clsx("text-2xl font-black", isDownpaymentMet ? "text-text" : "text-orange-500")}>
+                      ${depositAmount.toFixed(2)}
+                    </p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter">Utilidad Neta</p>
                   <p className="text-2xl font-black text-emerald-500">${profit.toFixed(2)}</p>
@@ -897,14 +989,34 @@ export const EventSummary: React.FC = () => {
                     <span>Total: ${totalCharged.toFixed(2)}</span>
                   </div>
                   {remainingValue > 0 && currentStatus !== "cancelled" && (
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("payments")}
-                      className="mt-3 flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors"
-                    >
-                      <DollarSign className="h-4 w-4" />
-                      Registrar pago por ${remainingValue.toFixed(2)}
-                    </button>
+                    <div className="flex flex-wrap gap-3 mt-3">
+                       {event.deposit_percent > 0 && !isDownpaymentMet && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentInitialAmount(depositAmount - totalPaid);
+                            setAutoOpenPayment(true);
+                            setViewMode("payments");
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                        >
+                          <DollarSign className="h-4 w-4" />
+                          Registrar Anticipo (${(depositAmount - totalPaid).toFixed(2)})
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentInitialAmount(0);
+                          setAutoOpenPayment(false);
+                          setViewMode("payments");
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm font-bold hover:bg-primary/20 transition-colors"
+                      >
+                        <DollarSign className="h-4 w-4" />
+                        Registrar Pago
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -1009,6 +1121,31 @@ export const EventSummary: React.FC = () => {
               <p className="text-sm text-text-secondary">
                 Completa estos campos en el evento o cliente: {contractPreviewMissingTokens.map((token) => `[${token}]`).join(", ")}
               </p>
+            </div>
+          ) : !isDownpaymentMet ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+              <div className="bg-amber-100 dark:bg-amber-900/30 p-6 rounded-full">
+                <AlertCircle className="h-12 w-12 text-amber-500" />
+              </div>
+              <h3 className="text-2xl font-black text-text uppercase">Anticipo Requerido</h3>
+              <p className="text-text-secondary max-w-md">
+                Para visualizar y generar el contrato, es necesario cubrir el anticipo mínimo del 
+                <span className="font-bold text-text mx-1">{event.deposit_percent}%</span> 
+                (${depositAmount.toFixed(2)}).
+              </p>
+              <p className="text-sm text-amber-600 dark:text-amber-400 font-bold">
+                Faltan ${(depositAmount - totalPaid).toFixed(2)} por cobrar.
+              </p>
+              <button
+                onClick={() => {
+                  setPaymentInitialAmount(depositAmount - totalPaid);
+                  setAutoOpenPayment(true);
+                  setViewMode("payments");
+                }}
+                className="mt-4 px-8 py-3 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+              >
+                Registrar Anticipo Ahora
+              </button>
             </div>
           ) : (
             <div className="space-y-4 text-justify whitespace-pre-line">

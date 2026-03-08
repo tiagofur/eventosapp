@@ -175,7 +175,7 @@ describe('ProductDetails', () => {
   it('shows fallback for ingredient with missing inventory', async () => {
     (productService.getById as any).mockResolvedValue(baseProduct);
     (productService.getIngredients as any).mockResolvedValue([
-      { inventory_id: 'inv-99', quantity_required: 1, ingredient_name: null },
+      { inventory_id: 'inv-99', quantity_required: 1, ingredient_name: null, type: 'ingredient' },
     ]);
     renderDetails();
     await waitFor(() => screen.getByText('Paquete Premium'));

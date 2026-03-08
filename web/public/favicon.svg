@@ -1,113 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Solennix Favicon (100x100)
+  2 Aros Entrelazados (Dorado y Naranja) formando una S
+-->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <!-- Background: deep slate, elegant dark -->
-    <linearGradient id="bg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0c0a1a"/>
-      <stop offset="100%" stop-color="#1c1525"/>
+    <!-- Fondo de Icono -->
+    <linearGradient id="iconBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2a201b"/>
+      <stop offset="50%" stop-color="#120d0b"/>
+      <stop offset="100%" stop-color="#0a0504"/>
     </linearGradient>
 
-    <!-- Inner radial warmth on background -->
-    <radialGradient id="bgWarm" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#3d1500" stop-opacity="0.35"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-    </radialGradient>
-
-    <!-- Metallic S gradient: simulates 3D tube / ring cross-section -->
-    <!-- Diagonal sweep: dark shadow → deep orange → brand orange → gold → cream highlight → gold → orange → dark -->
-    <linearGradient id="metalS" x1="22" y1="12" x2="78" y2="88" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#431407"/>
-      <stop offset="12%"  stop-color="#9a3412"/>
-      <stop offset="28%"  stop-color="#ea580c"/>
-      <stop offset="42%"  stop-color="#ff6b35"/>
-      <stop offset="52%"  stop-color="#fbbf24"/>
-      <stop offset="60%"  stop-color="#fef3c7"/>
-      <stop offset="70%"  stop-color="#fbbf24"/>
-      <stop offset="82%"  stop-color="#ff6b35"/>
-      <stop offset="92%"  stop-color="#c2410c"/>
-      <stop offset="100%" stop-color="#431407"/>
+    <!-- ── Gradiente Dorado (Aro 1) ── -->
+    <linearGradient id="gold-grad" x1="0" y1="0.5" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="30%" stop-color="#f59e0b"/>
+      <stop offset="50%" stop-color="#fef3c7"/>
+      <stop offset="70%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#b45309"/>
     </linearGradient>
 
-    <!-- Orange glow filter behind the S -->
-    <filter id="glowS" x="-45%" y="-45%" width="190%" height="190%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
-      <feFlood flood-color="#ff6b35" flood-opacity="0.55" result="color"/>
-      <feComposite in="color" in2="blur" operator="in" result="glow"/>
-      <feMerge>
-        <feMergeNode in="glow"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    <!-- ── Gradiente Naranja (Aro 2) ── -->
+    <linearGradient id="orange-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c2410c"/>
+      <stop offset="20%" stop-color="#ea580c"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="80%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#9a3412"/>
+    </linearGradient>
+
+    <!-- ── Sombra de Oclusión ── -->
+    <filter id="drop-shadow">
+      <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-color="#000000" flood-opacity="0.8"/>
     </filter>
 
-    <!-- Softer glow for the highlight line -->
-    <filter id="glowLine" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="1" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
+    <!-- Recorte para entrelazado -->
+    <clipPath id="clipRight">
+      <rect x="52" y="44" width="50" height="50" />
+    </clipPath>
   </defs>
 
-  <!-- ── Background ───────────────────────────────────────────── -->
-  <rect width="100" height="100" rx="20" ry="20" fill="url(#bg)"/>
-  <rect width="100" height="100" rx="20" ry="20" fill="url(#bgWarm)"/>
+  <!-- Background squircle -->
+  <rect x="0" y="0" width="100" height="100" rx="25" ry="25" fill="url(#iconBg)"/>
 
-  <!-- Subtle inner border: warm orange tint -->
-  <rect x="1.5" y="1.5" width="97" height="97" rx="18.5" ry="18.5"
-        fill="none" stroke="rgba(255,160,80,0.18)" stroke-width="1.5"/>
+  <!-- ARO INFERIOR (NARANJA) -->
+  <!-- Centrado abajo-izquierda -->
+  <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
+  <circle cx="41" cy="62" r="20" fill="none" stroke="#ffedd5" stroke-width="1.5" opacity="0.6"/>
 
-  <!-- ── S Letterform ──────────────────────────────────────────── -->
-  <!--
-    Classic two-arc S construction:
-      Upper arc  : large CCW arc (upper bowl, opens right)   → center (44, 33), r=19
-      S-crossing : smooth cubic bezier connecting the two arcs
-      Lower arc  : large CW arc  (lower bowl, opens left)    → center (56, 67), r=19
+  <!-- ARO SUPERIOR (DORADO) -->
+  <!-- Centrado arriba-derecha -->
+  <circle cx="53" cy="38" r="20" fill="none" stroke="url(#gold-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
+  <circle cx="53" cy="38" r="20" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
 
-    Path: M 63,33  A 19,19 0 1 0 44,52  C 50,52 50,48 56,48  A 19,19 0 1 1 37,67
-
-    Tangent continuity at joints:
-      At (44,52): arc tangent = rightward → C control1=(50,52) is also rightward ✓
-      At (56,48): C control2=(50,48) arrives rightward → arc starts rightward ✓
-  -->
-
-  <!-- Layer 1 – dark shadow (widest) for depth -->
-  <path d="M 63,33 A 19,19 0 1 0 44,52 C 50,52 50,48 56,48 A 19,19 0 1 1 37,67"
-        fill="none"
-        stroke="#160800"
-        stroke-width="19"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        opacity="0.65"/>
-
-  <!-- Layer 2 – metallic gradient main body -->
-  <path d="M 63,33 A 19,19 0 1 0 44,52 C 50,52 50,48 56,48 A 19,19 0 1 1 37,67"
-        fill="none"
-        stroke="url(#metalS)"
-        stroke-width="13"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        filter="url(#glowS)"/>
-
-  <!-- Layer 3 – cream highlight (thinnest, center shine simulating tube reflection) -->
-  <path d="M 63,33 A 19,19 0 1 0 44,52 C 50,52 50,48 56,48 A 19,19 0 1 1 37,67"
-        fill="none"
-        stroke="#fff8e7"
-        stroke-width="2.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        opacity="0.5"
-        filter="url(#glowLine)"/>
-
-  <!-- ── Decorative sparkle ✦ top-right ───────────────────────── -->
-  <g transform="translate(80, 16)" opacity="0.85">
-    <line x1="0" y1="-6"   x2="0"  y2="6"  stroke="#fde68a" stroke-width="1.6" stroke-linecap="round"/>
-    <line x1="-6" y1="0"   x2="6"  y2="0"  stroke="#fde68a" stroke-width="1.6" stroke-linecap="round"/>
-    <line x1="-3.8" y1="-3.8" x2="3.8" y2="3.8" stroke="#fde68a" stroke-width="1" stroke-linecap="round"/>
-    <line x1="3.8"  y1="-3.8" x2="-3.8" y2="3.8" stroke="#fde68a" stroke-width="1" stroke-linecap="round"/>
+  <!-- ENTRELAZADO -->
+  <!-- Redibujando la parte inferior-derecha del Naranja sobre el Dorado -->
+  <g clip-path="url(#clipRight)">
+    <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
+    <circle cx="41" cy="62" r="20" fill="none" stroke="#ffedd5" stroke-width="1.5" opacity="0.6"/>
   </g>
 
-  <!-- ── Small accent ring bottom-left ────────────────────────── -->
-  <circle cx="18" cy="82" r="3.5" fill="none" stroke="#ff6b35" stroke-width="1.2" opacity="0.45"/>
-  <circle cx="18" cy="82" r="1.2" fill="#fbbf24" opacity="0.6"/>
 </svg>

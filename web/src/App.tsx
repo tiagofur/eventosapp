@@ -32,6 +32,7 @@ import { Terms } from '@/pages/Terms';
 import { NotFound } from '@/pages/NotFound';
 import { AdminDashboard } from '@/pages/Admin/AdminDashboard';
 import { AdminUsers } from '@/pages/Admin/AdminUsers';
+import { QuickQuotePage } from '@/pages/QuickQuote/QuickQuotePage';
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
           
           {/* Rutas de Calendario y Eventos */}
           <Route path="/calendar" element={<CalendarView />} />
+          <Route path="/cotizacion-rapida" element={<QuickQuotePage />} />
           <Route path="/events/new" element={<EventForm />} />
           <Route path="/events/:id/edit" element={<EventForm />} />
           <Route path="/events/:id/summary" element={<EventSummary />} />

@@ -7,18 +7,18 @@ import (
 )
 
 type User struct {
-	ID                      uuid.UUID `json:"id"`
-	Email                   string    `json:"email"`
-	PasswordHash            string    `json:"-"` // Never expose in JSON
-	Name                    string    `json:"name"`
-	BusinessName            *string   `json:"business_name,omitempty"`
-	LogoURL                 *string   `json:"logo_url,omitempty"`
-	BrandColor              *string   `json:"brand_color,omitempty"`
-	ShowBusinessNameInPdf   *bool     `json:"show_business_name_in_pdf,omitempty"`
-	DefaultDepositPercent   *float64  `json:"default_deposit_percent,omitempty"`
-	DefaultCancellationDays *float64  `json:"default_cancellation_days,omitempty"`
-	DefaultRefundPercent    *float64  `json:"default_refund_percent,omitempty"`
-	ContractTemplate        *string   `json:"contract_template,omitempty"`
+	ID                      uuid.UUID  `json:"id"`
+	Email                   string     `json:"email"`
+	PasswordHash            string     `json:"-"` // Never expose in JSON
+	Name                    string     `json:"name"`
+	BusinessName            *string    `json:"business_name,omitempty"`
+	LogoURL                 *string    `json:"logo_url,omitempty"`
+	BrandColor              *string    `json:"brand_color,omitempty"`
+	ShowBusinessNameInPdf   *bool      `json:"show_business_name_in_pdf,omitempty"`
+	DefaultDepositPercent   *float64   `json:"default_deposit_percent,omitempty"`
+	DefaultCancellationDays *float64   `json:"default_cancellation_days,omitempty"`
+	DefaultRefundPercent    *float64   `json:"default_refund_percent,omitempty"`
+	ContractTemplate        *string    `json:"contract_template,omitempty"`
 	Plan                    string     `json:"plan"`
 	Role                    string     `json:"role"`
 	StripeCustomerID        *string    `json:"stripe_customer_id,omitempty"`
@@ -123,15 +123,15 @@ type EventExtra struct {
 }
 
 type EventEquipment struct {
-	ID           uuid.UUID `json:"id"`
-	EventID      uuid.UUID `json:"event_id"`
-	InventoryID  uuid.UUID `json:"inventory_id"`
-	Quantity     int       `json:"quantity"`
-	Notes        *string   `json:"notes,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
-	EquipmentName *string  `json:"equipment_name,omitempty"`
-	Unit          *string  `json:"unit,omitempty"`
-	CurrentStock  *float64 `json:"current_stock,omitempty"`
+	ID            uuid.UUID `json:"id"`
+	EventID       uuid.UUID `json:"event_id"`
+	InventoryID   uuid.UUID `json:"inventory_id"`
+	Quantity      int       `json:"quantity"`
+	Notes         *string   `json:"notes,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	EquipmentName *string   `json:"equipment_name,omitempty"`
+	Unit          *string   `json:"unit,omitempty"`
+	CurrentStock  *float64  `json:"current_stock,omitempty"`
 }
 
 // EquipmentSuggestion is returned by the suggestions endpoint.
@@ -191,15 +191,53 @@ type Payment struct {
 
 // Subscription represents a SaaS subscription from any provider (Stripe/Apple/Google).
 type Subscription struct {
-	ID                   uuid.UUID  `json:"id"`
-	UserID               uuid.UUID  `json:"user_id"`
-	Provider             string     `json:"provider"` // 'stripe' | 'apple' | 'google'
-	ProviderSubID        *string    `json:"provider_subscription_id,omitempty"`
-	RevenueCatAppUserID  *string    `json:"revenuecat_app_user_id,omitempty"`
-	Plan                 string     `json:"plan"`   // 'basic' | 'pro'
-	Status               string     `json:"status"` // 'active' | 'past_due' | 'canceled' | 'trialing'
-	CurrentPeriodStart   *time.Time `json:"current_period_start,omitempty"`
-	CurrentPeriodEnd     *time.Time `json:"current_period_end,omitempty"`
-	CreatedAt            time.Time  `json:"created_at"`
-	UpdatedAt            time.Time  `json:"updated_at"`
+	ID                  uuid.UUID  `json:"id"`
+	UserID              uuid.UUID  `json:"user_id"`
+	Provider            string     `json:"provider"` // 'stripe' | 'apple' | 'google'
+	ProviderSubID       *string    `json:"provider_subscription_id,omitempty"`
+	RevenueCatAppUserID *string    `json:"revenuecat_app_user_id,omitempty"`
+	Plan                string     `json:"plan"`   // 'basic' | 'pro'
+	Status              string     `json:"status"` // 'active' | 'past_due' | 'canceled' | 'trialing'
+	CurrentPeriodStart  *time.Time `json:"current_period_start,omitempty"`
+	CurrentPeriodEnd    *time.Time `json:"current_period_end,omitempty"`
+	CreatedAt           time.Time  `json:"created_at"`
+	UpdatedAt           time.Time  `json:"updated_at"`
+}
+
+type EventSupply struct {
+	ID          uuid.UUID `json:"id"`
+	EventID     uuid.UUID `json:"event_id"`
+	InventoryID uuid.UUID `json:"inventory_id"`
+	Quantity    float64   `json:"quantity"`
+	UnitCost    float64   `json:"unit_cost"`
+	Source      string    `json:"source"`       // 'stock' | 'purchase'
+	ExcludeCost bool      `json:"exclude_cost"` // true = don't count in event total
+	CreatedAt   time.Time `json:"created_at"`
+
+	// Joined data from inventory
+	SupplyName   *string  `json:"supply_name,omitempty"`
+	Unit         *string  `json:"unit,omitempty"`
+	CurrentStock *float64 `json:"current_stock,omitempty"`
+}
+
+// SupplySuggestion is returned by the supply suggestions endpoint.
+// SuggestedQty is the sum of quantity_required across all products that use this supply.
+// Unlike ingredients, supply quantities are fixed per event (not scaled by product quantity).
+type SupplySuggestion struct {
+	ID             uuid.UUID `json:"id"`
+	IngredientName string    `json:"ingredient_name"`
+	CurrentStock   float64   `json:"current_stock"`
+	Unit           string    `json:"unit"`
+	UnitCost       float64   `json:"unit_cost"`
+	SuggestedQty   float64   `json:"suggested_quantity"`
+}
+
+type UnavailableDate struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	StartDate string    `json:"start_date"` // DATE as string
+	EndDate   string    `json:"end_date"`   // DATE as string
+	Reason    *string   `json:"reason,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

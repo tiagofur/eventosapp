@@ -331,7 +331,7 @@ export const AdminDashboard: React.FC = () => {
                 <RefreshCw className="h-8 w-8 animate-spin text-gray-300" />
               </div>
             ) : planDistribution.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <PieChart>
                   <Pie
                     data={planDistribution}
@@ -385,7 +385,7 @@ export const AdminDashboard: React.FC = () => {
                 <RefreshCw className="h-8 w-8 animate-spin text-gray-300" />
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <BarChart data={signupData}>
                   <CartesianGrid
                     strokeDasharray="3 3"

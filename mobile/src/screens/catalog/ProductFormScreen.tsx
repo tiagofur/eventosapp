@@ -61,7 +61,7 @@ export default function ProductFormScreen({ navigation, route }: Props) {
     inventory_id: string;
     quantity_required: number;
     inventory?: InventoryItem;
-    _type: 'ingredient' | 'equipment';
+    _type: 'ingredient' | 'equipment' | 'supply';
   }[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -121,7 +121,7 @@ export default function ProductFormScreen({ navigation, route }: Props) {
               inventory_id: i.inventory_id,
               quantity_required: i.quantity_required,
               inventory: i.inventory,
-              _type: i.type === 'equipment' ? 'equipment' as const : 'ingredient' as const,
+              _type: i.type === 'equipment' ? 'equipment' as const : i.type === 'supply' ? 'supply' as const : 'ingredient' as const,
             }))
           );
         }
@@ -148,16 +148,28 @@ export default function ProductFormScreen({ navigation, route }: Props) {
     ]);
   };
 
+  const handleAddSupply = () => {
+    setIngredients([
+      ...ingredients,
+      { inventory_id: "", quantity_required: 1, _type: 'supply' },
+    ]);
+  };
+
   const ingredientInventoryItems = inventoryItems.filter(i => i.type === 'ingredient');
   const equipmentInventoryItems = inventoryItems.filter(i => i.type === 'equipment');
+  const supplyInventoryItems = inventoryItems.filter(i => i.type === 'supply');
 
   const ingredientEntries = ingredients
     .map((item, idx) => ({ item, originalIndex: idx }))
-    .filter(({ item }) => item._type !== 'equipment');
+    .filter(({ item }) => item._type === 'ingredient');
 
   const equipmentEntries = ingredients
     .map((item, idx) => ({ item, originalIndex: idx }))
     .filter(({ item }) => item._type === 'equipment');
+
+  const supplyEntries = ingredients
+    .map((item, idx) => ({ item, originalIndex: idx }))
+    .filter(({ item }) => item._type === 'supply');
 
   const handleRemoveIngredient = (index: number) => {
     setIngredients(ingredients.filter((_, i) => i !== index));
@@ -488,6 +500,91 @@ export default function ProductFormScreen({ navigation, route }: Props) {
                     contentContainerStyle={styles.ingredientScroll}
                   >
                     {equipmentInventoryItems.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.ingredientChip,
+                          ing.inventory_id === item.id &&
+                            styles.ingredientChipActive,
+                        ]}
+                        onPress={() =>
+                          handleIngredientChange(originalIndex, "inventory_id", item.id)
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.ingredientChipText,
+                            ing.inventory_id === item.id &&
+                              styles.ingredientChipTextActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.ingredient_name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                <View style={styles.quantityInput}>
+                  <Text style={styles.selectLabel}>Cantidad</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={ing.quantity_required.toString()}
+                    onChangeText={(v) =>
+                      handleIngredientChange(
+                        originalIndex,
+                        "quantity_required",
+                        parseFloat(v) || 0
+                      )
+                    }
+                    keyboardType="decimal-pad"
+                  />
+                  <Text style={styles.unitText}>
+                    {ing.inventory?.unit || "und"}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.removeBtn}
+                  onPress={() => handleRemoveIngredient(originalIndex)}
+                >
+                  <Trash2 color={palette.error} size={18} />
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* Insumos por Evento */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Insumos por Evento</Text>
+            <TouchableOpacity
+              style={styles.addIngredientBtn}
+              onPress={handleAddSupply}
+            >
+              <Plus color={palette.primary} size={18} />
+              <Text style={styles.addIngredientText}>Agregar</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.sectionDescription}>Costo fijo por evento (ej. aceite, gas). No escala con unidades del producto.</Text>
+
+          {supplyEntries.length === 0 ? (
+            <Text style={styles.emptyText}>
+              No hay insumos por evento asignados.
+            </Text>
+          ) : (
+            supplyEntries.map(({ item: ing, originalIndex }) => (
+              <View key={originalIndex} style={styles.ingredientRow}>
+                <View style={styles.ingredientSelect}>
+                  <Text style={styles.selectLabel}>Insumo</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.ingredientScroll}
+                  >
+                    {supplyInventoryItems.map((item) => (
                       <TouchableOpacity
                         key={item.id}
                         style={[

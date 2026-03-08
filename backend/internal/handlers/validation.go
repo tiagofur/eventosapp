@@ -181,9 +181,10 @@ func ValidateInventoryItem(item *models.InventoryItem) error {
 	validTypes := map[string]bool{
 		"ingredient": true,
 		"equipment":  true,
+		"supply":     true,
 	}
 	if !validTypes[item.Type] {
-		return ValidationError{Field: "type", Message: "must be one of: ingredient, equipment"}
+		return ValidationError{Field: "type", Message: "must be one of: ingredient, equipment, supply"}
 	}
 
 	return nil
@@ -193,6 +194,24 @@ func ValidateInventoryItem(item *models.InventoryItem) error {
 func ValidateEventEquipment(eq *models.EventEquipment) error {
 	if eq.Quantity < 1 {
 		return ValidationError{Field: "quantity", Message: "must be at least 1"}
+	}
+	return nil
+}
+
+// ValidateEventSupply validates event supply assignments
+func ValidateEventSupply(s *models.EventSupply) error {
+	if s.Quantity <= 0 {
+		return ValidationError{Field: "quantity", Message: "must be greater than 0"}
+	}
+	if s.UnitCost < 0 {
+		return ValidationError{Field: "unit_cost", Message: "must be greater than or equal to 0"}
+	}
+	validSources := map[string]bool{
+		"stock":    true,
+		"purchase": true,
+	}
+	if !validSources[s.Source] {
+		return ValidationError{Field: "source", Message: "must be one of: stock, purchase"}
 	}
 	return nil
 }

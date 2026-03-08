@@ -151,8 +151,8 @@ func (m *MockFullEventRepo) GetExtras(ctx context.Context, eventID uuid.UUID) ([
 	return args.Get(0).([]models.EventExtra), args.Error(1)
 }
 
-func (m *MockFullEventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID, products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment) error {
-	args := m.Called(ctx, eventID, products, extras, equipment)
+func (m *MockFullEventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID, products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment, supplies *[]models.EventSupply) error {
+	args := m.Called(ctx, eventID, products, extras, equipment, supplies)
 	return args.Error(0)
 }
 
@@ -178,6 +178,27 @@ func (m *MockFullEventRepo) GetEquipmentSuggestionsFromProducts(ctx context.Cont
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]models.EquipmentSuggestion), args.Error(1)
+}
+
+func (m *MockFullEventRepo) GetSupplies(ctx context.Context, eventID uuid.UUID) ([]models.EventSupply, error) {
+	args := m.Called(ctx, eventID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.EventSupply), args.Error(1)
+}
+
+func (m *MockFullEventRepo) GetSupplySuggestionsFromProducts(ctx context.Context, userID uuid.UUID, products []repository.ProductQuantity) ([]models.SupplySuggestion, error) {
+	args := m.Called(ctx, userID, products)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.SupplySuggestion), args.Error(1)
+}
+
+func (m *MockFullEventRepo) DeductSupplyStock(ctx context.Context, eventID uuid.UUID) error {
+	args := m.Called(ctx, eventID)
+	return args.Error(0)
 }
 
 func (m *MockFullEventRepo) Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Event, error) {
@@ -478,4 +499,30 @@ func (m *MockAdminRepo) GetSubscriptionOverview(ctx context.Context) (*repositor
 func (m *MockAdminRepo) ExpireGiftedPlans(ctx context.Context) (int, error) {
 	args := m.Called(ctx)
 	return args.Int(0), args.Error(1)
+}
+
+// ---------------------------------------------------------------------------
+// MockUnavailableDateRepo — implements UnavailableDateRepository
+// ---------------------------------------------------------------------------
+
+type MockUnavailableDateRepo struct {
+	mock.Mock
+}
+
+func (m *MockUnavailableDateRepo) Create(ctx context.Context, u *models.UnavailableDate) error {
+	args := m.Called(ctx, u)
+	return args.Error(0)
+}
+
+func (m *MockUnavailableDateRepo) GetByDateRange(ctx context.Context, userID uuid.UUID, start, end string) ([]models.UnavailableDate, error) {
+	args := m.Called(ctx, userID, start, end)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.UnavailableDate), args.Error(1)
+}
+
+func (m *MockUnavailableDateRepo) Delete(ctx context.Context, id, userID uuid.UUID) error {
+	args := m.Called(ctx, id, userID)
+	return args.Error(0)
 }

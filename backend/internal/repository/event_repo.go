@@ -324,9 +324,9 @@ func (r *EventRepo) GetExtras(ctx context.Context, eventID uuid.UUID) ([]models.
 }
 
 // UpdateEventItems replaces the Supabase RPC `update_event_items`.
-// It atomically replaces all products, extras, and optionally equipment for an event within a transaction.
+// It atomically replaces all products, extras, and optionally equipment and supplies for an event within a transaction.
 func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
-	products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment) error {
+	products []models.EventProduct, extras []models.EventExtra, equipment *[]models.EventEquipment, supplies *[]models.EventSupply) error {
 
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
@@ -374,6 +374,22 @@ func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
 				`INSERT INTO event_equipment (event_id, inventory_id, quantity, notes)
 				VALUES ($1, $2, $3, $4)`,
 				eventID, eq.InventoryID, eq.Quantity, eq.Notes)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Insert supplies (only if provided — nil means skip, preserving backward compatibility)
+	if supplies != nil {
+		if _, err := tx.Exec(ctx, "DELETE FROM event_supplies WHERE event_id=$1", eventID); err != nil {
+			return err
+		}
+		for _, s := range *supplies {
+			_, err := tx.Exec(ctx,
+				`INSERT INTO event_supplies (event_id, inventory_id, quantity, unit_cost, source, exclude_cost)
+				VALUES ($1, $2, $3, $4, $5, $6)`,
+				eventID, s.InventoryID, s.Quantity, s.UnitCost, s.Source, s.ExcludeCost)
 			if err != nil {
 				return err
 			}
@@ -579,6 +595,114 @@ func (r *EventRepo) GetEquipmentSuggestionsFromProducts(ctx context.Context, use
 		result = append(result, *totals[id])
 	}
 	return result, nil
+}
+
+// -- Event Supplies --
+
+func (r *EventRepo) GetSupplies(ctx context.Context, eventID uuid.UUID) ([]models.EventSupply, error) {
+	query := `SELECT es.id, es.event_id, es.inventory_id, es.quantity, es.unit_cost,
+		es.source, es.exclude_cost, es.created_at,
+		i.ingredient_name, i.unit, i.current_stock
+		FROM event_supplies es LEFT JOIN inventory i ON es.inventory_id = i.id
+		WHERE es.event_id = $1`
+	rows, err := r.pool.Query(ctx, query, eventID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []models.EventSupply
+	for rows.Next() {
+		var s models.EventSupply
+		if err := rows.Scan(&s.ID, &s.EventID, &s.InventoryID, &s.Quantity,
+			&s.UnitCost, &s.Source, &s.ExcludeCost, &s.CreatedAt,
+			&s.SupplyName, &s.Unit, &s.CurrentStock); err != nil {
+			return nil, err
+		}
+		items = append(items, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event supplies: %w", err)
+	}
+	return items, nil
+}
+
+// GetSupplySuggestionsFromProducts returns suggested per-event supplies for an event,
+// with quantities summed across all products that use the same supply.
+// Unlike ingredients, supply quantities are fixed per event (not scaled by product quantity).
+func (r *EventRepo) GetSupplySuggestionsFromProducts(ctx context.Context, userID uuid.UUID, products []ProductQuantity) ([]models.SupplySuggestion, error) {
+	if len(products) == 0 {
+		return nil, nil
+	}
+
+	productIDs := make([]uuid.UUID, len(products))
+	for i, p := range products {
+		productIDs[i] = p.ID
+	}
+
+	query := `
+		SELECT i.id, i.ingredient_name, i.current_stock, i.unit, COALESCE(i.unit_cost, 0),
+		       pi.quantity_required
+		FROM (
+			SELECT unnest($1::uuid[]) AS product_id
+		) AS p
+		JOIN product_ingredients pi ON pi.product_id = p.product_id
+		JOIN inventory i ON pi.inventory_id = i.id
+		WHERE i.type = 'supply' AND i.user_id = $2`
+
+	rows, err := r.pool.Query(ctx, query, productIDs, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	totals := make(map[uuid.UUID]*models.SupplySuggestion)
+	var order []uuid.UUID
+
+	for rows.Next() {
+		var id uuid.UUID
+		var name, unit string
+		var stock, unitCost, qtyReq float64
+		if err := rows.Scan(&id, &name, &stock, &unit, &unitCost, &qtyReq); err != nil {
+			return nil, err
+		}
+
+		if s, ok := totals[id]; ok {
+			s.SuggestedQty += qtyReq
+		} else {
+			totals[id] = &models.SupplySuggestion{
+				ID:             id,
+				IngredientName: name,
+				CurrentStock:   stock,
+				Unit:           unit,
+				UnitCost:       unitCost,
+				SuggestedQty:   qtyReq,
+			}
+			order = append(order, id)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating supply suggestions: %w", err)
+	}
+
+	result := make([]models.SupplySuggestion, 0, len(order))
+	for _, id := range order {
+		result = append(result, *totals[id])
+	}
+	return result, nil
+}
+
+// DeductSupplyStock decrements inventory stock for all event supplies with source='stock'.
+func (r *EventRepo) DeductSupplyStock(ctx context.Context, eventID uuid.UUID) error {
+	query := `UPDATE inventory SET
+		current_stock = GREATEST(0, current_stock - es.quantity),
+		last_updated = NOW()
+		FROM event_supplies es
+		WHERE inventory.id = es.inventory_id
+		AND es.event_id = $1
+		AND es.source = 'stock'`
+	_, err := r.pool.Exec(ctx, query, eventID)
+	return err
 }
 
 // Search performs a full-text search on events for the given user

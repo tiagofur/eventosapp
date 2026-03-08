@@ -33,6 +33,7 @@ import {
   Search,
   UserPlus,
   Wrench,
+  Fuel,
   AlertTriangle,
   Lightbulb,
 } from "lucide-react-native";
@@ -45,6 +46,7 @@ import {
   InventoryItem,
   EquipmentConflict,
   EquipmentSuggestion,
+  SupplySuggestion,
 } from "../../types/entities";
 import { eventService } from "../../services/eventService";
 import { clientService } from "../../services/clientService";
@@ -73,7 +75,7 @@ const STEPS = [
   { id: 1, title: "General" },
   { id: 2, title: "Productos" },
   { id: 3, title: "Extras" },
-  { id: 4, title: "Equipo" },
+  { id: 4, title: "Ins./Equipo" },
   { id: 5, title: "Finanzas" },
 ];
 
@@ -150,6 +152,19 @@ export default function EventFormScreen({ navigation, route }: Props) {
   >([]);
   const [showEquipmentPicker, setShowEquipmentPicker] = useState(false);
 
+  // Supply state
+  type SelectedSupplyItem = {
+    inventory_id: string;
+    quantity: number;
+    unit_cost: number;
+    source: 'stock' | 'purchase';
+    exclude_cost: boolean;
+  };
+  const [supplyInventory, setSupplyInventory] = useState<InventoryItem[]>([]);
+  const [selectedSupplies, setSelectedSupplies] = useState<SelectedSupplyItem[]>([]);
+  const [supplySuggestions, setSupplySuggestions] = useState<SupplySuggestion[]>([]);
+  const [showSupplyPicker, setShowSupplyPicker] = useState(false);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
@@ -221,6 +236,9 @@ export default function EventFormScreen({ navigation, route }: Props) {
       setEquipmentInventory(
         (inventoryData || []).filter((i: any) => i.type === "equipment"),
       );
+      setSupplyInventory(
+        (inventoryData || []).filter((i: any) => i.type === "supply"),
+      );
 
       if (id) {
         const event = await eventService.getById(id);
@@ -279,6 +297,19 @@ export default function EventFormScreen({ navigation, route }: Props) {
               inventory_id: eq.inventory_id,
               quantity: eq.quantity,
               notes: eq.notes || "",
+            })),
+          );
+        }
+
+        const eventSupplies = await eventService.getSupplies(id);
+        if (eventSupplies) {
+          setSelectedSupplies(
+            eventSupplies.map((s: any) => ({
+              inventory_id: s.inventory_id,
+              quantity: s.quantity,
+              unit_cost: s.unit_cost,
+              source: s.source || 'purchase',
+              exclude_cost: s.exclude_cost || false,
             })),
           );
         }
@@ -438,6 +469,26 @@ export default function EventFormScreen({ navigation, route }: Props) {
     fetchSuggestions();
   }, [selectedProducts]);
 
+  // Auto-suggest supplies when products change
+  useEffect(() => {
+    const prods = selectedProducts
+      .filter((p) => p.product_id)
+      .map((p) => ({ product_id: p.product_id, quantity: p.quantity }));
+    if (prods.length === 0) {
+      setSupplySuggestions([]);
+      return;
+    }
+    const fetchSupplySuggestions = async () => {
+      try {
+        const suggestions = await eventService.getSupplySuggestions(prods);
+        setSupplySuggestions(suggestions || []);
+      } catch {
+        // Silently ignore
+      }
+    };
+    fetchSupplySuggestions();
+  }, [selectedProducts]);
+
   // Check equipment conflicts (debounced)
   useEffect(() => {
     const selectedIds = selectedEquipment
@@ -499,6 +550,46 @@ export default function EventFormScreen({ navigation, route }: Props) {
   const handleRemoveEquipment = (index: number) => {
     setSelectedEquipment((prev) => prev.filter((_, i) => i !== index));
   };
+
+  // Supply handlers
+  const handleAddSupplyItem = (item: InventoryItem) => {
+    if (!selectedSupplies.some((s) => s.inventory_id === item.id)) {
+      setSelectedSupplies((prev) => [
+        ...prev,
+        { inventory_id: item.id, quantity: 1, unit_cost: item.unit_cost || 0, source: 'purchase', exclude_cost: false },
+      ]);
+    }
+    setShowSupplyPicker(false);
+  };
+
+  const handleQuickAddSupplySuggestion = (suggestion: SupplySuggestion) => {
+    if (!selectedSupplies.some((s) => s.inventory_id === suggestion.id)) {
+      setSelectedSupplies((prev) => [
+        ...prev,
+        {
+          inventory_id: suggestion.id,
+          quantity: suggestion.suggested_quantity,
+          unit_cost: suggestion.unit_cost,
+          source: 'purchase',
+          exclude_cost: false,
+        },
+      ]);
+    }
+  };
+
+  const handleRemoveSupply = (index: number) => {
+    setSelectedSupplies((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const filteredSupplyInventory = useMemo(() => {
+    return supplyInventory.filter(
+      (s) => !selectedSupplies.some((sel) => sel.inventory_id === s.id),
+    );
+  }, [supplyInventory, selectedSupplies]);
+
+  const supplyCost = useMemo(() => {
+    return selectedSupplies.reduce((sum, s) => sum + (s.exclude_cost ? 0 : s.quantity * s.unit_cost), 0);
+  }, [selectedSupplies]);
 
   const filteredEquipment = useMemo(() => {
     return equipmentInventory.filter(
@@ -587,6 +678,15 @@ export default function EventFormScreen({ navigation, route }: Props) {
             inventoryId: eq.inventory_id,
             quantity: eq.quantity,
             notes: eq.notes || undefined,
+          })),
+        selectedSupplies
+          .filter((s) => s.inventory_id)
+          .map((s) => ({
+            inventory_id: s.inventory_id,
+            quantity: s.quantity,
+            unit_cost: s.unit_cost,
+            source: s.source,
+            exclude_cost: s.exclude_cost,
           })),
       );
 
@@ -987,6 +1087,205 @@ export default function EventFormScreen({ navigation, route }: Props) {
 
         {step === 4 && (
           <View style={styles.section}>
+            {/* Supplies Section */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.sm }}>
+              <Fuel color="#D97706" size={18} />
+              <Text style={styles.sectionTitle}>Insumos por Evento</Text>
+            </View>
+            <Text
+              style={{
+                ...typography.caption,
+                color: palette.textMuted,
+                marginBottom: spacing.md,
+              }}
+            >
+              Insumos de costo fijo por evento (ej. aceite, gas). Se suma al costo total.
+            </Text>
+
+            {/* Supply suggestions */}
+            {supplySuggestions.filter(
+              (s) => !selectedSupplies.some((sel) => sel.inventory_id === s.id),
+            ).length > 0 && (
+              <View
+                style={{
+                  backgroundColor: "#FFFBEB",
+                  borderRadius: 12,
+                  padding: spacing.md,
+                  marginBottom: spacing.md,
+                  borderWidth: 1,
+                  borderColor: "#FCD34D",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <Lightbulb color="#D97706" size={16} />
+                  <Text
+                    style={{
+                      ...typography.caption,
+                      color: "#D97706",
+                      fontWeight: "600",
+                      marginLeft: spacing.xs,
+                    }}
+                  >
+                    Insumos sugeridos por tus productos
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: spacing.xs,
+                  }}
+                >
+                  {supplySuggestions
+                    .filter(
+                      (s) =>
+                        !selectedSupplies.some(
+                          (sel) => sel.inventory_id === s.id,
+                        ),
+                    )
+                    .map((s) => (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          backgroundColor: "#FEF3C7",
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                          borderRadius: 8,
+                        }}
+                        onPress={() => handleQuickAddSupplySuggestion(s)}
+                      >
+                        <Plus color="#D97706" size={14} />
+                        <Text
+                          style={{
+                            ...typography.caption,
+                            color: "#92400E",
+                            marginLeft: 4,
+                          }}
+                        >
+                          {s.ingredient_name} ×{s.suggested_quantity} (${s.unit_cost}/{s.unit})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                </View>
+              </View>
+            )}
+
+            {/* Selected supplies */}
+            {selectedSupplies.map((sup, i) => {
+              const item = supplyInventory.find(
+                (s) => s.id === sup.inventory_id,
+              );
+              return (
+                <View
+                  key={i}
+                  style={[styles.productCard, { marginBottom: spacing.sm }]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.productName}>
+                      {item?.ingredient_name || "Insumo"}
+                    </Text>
+                    <Text
+                      style={{
+                        ...typography.caption,
+                        color: "#D97706",
+                      }}
+                    >
+                      ${(sup.quantity * sup.unit_cost).toFixed(2)} — {sup.source === 'stock' ? 'Del stock' : 'Compra nueva'}
+                    </Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginTop: spacing.xs,
+                        gap: spacing.sm,
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text style={{ ...typography.caption, color: palette.textSecondary, marginRight: spacing.xs }}>
+                          Cant:
+                        </Text>
+                        <TextInput
+                          style={[
+                            styles.input,
+                            { width: 60, paddingVertical: spacing.xs, textAlign: "center" },
+                          ]}
+                          value={sup.quantity.toString()}
+                          onChangeText={(v) => {
+                            const next = [...selectedSupplies];
+                            next[i] = { ...next[i], quantity: Math.max(0.001, parseFloat(v) || 0.001) };
+                            setSelectedSupplies(next);
+                          }}
+                          keyboardType="decimal-pad"
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={{
+                          paddingHorizontal: spacing.sm,
+                          paddingVertical: spacing.xs,
+                          borderRadius: 8,
+                          backgroundColor: sup.source === 'stock' ? palette.successBg || '#DCFCE7' : palette.surface,
+                        }}
+                        onPress={() => {
+                          const next = [...selectedSupplies];
+                          next[i] = { ...next[i], source: sup.source === 'stock' ? 'purchase' : 'stock' };
+                          setSelectedSupplies(next);
+                        }}
+                      >
+                        <Text style={{ ...typography.caption, color: sup.source === 'stock' ? palette.success : palette.textSecondary }}>
+                          {sup.source === 'stock' ? 'Del stock' : 'Compra nueva'}
+                        </Text>
+                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                        <Switch
+                          value={sup.exclude_cost}
+                          onValueChange={(val) => {
+                            const next = [...selectedSupplies];
+                            next[i] = { ...next[i], exclude_cost: val };
+                            setSelectedSupplies(next);
+                          }}
+                          trackColor={{ true: palette.primary, false: palette.separator }}
+                        />
+                        <Text style={{ ...typography.caption, color: palette.textSecondary }}>
+                          Sin costo
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <TouchableOpacity onPress={() => handleRemoveSupply(i)}>
+                    <Trash2 color={palette.error} size={18} />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowSupplyPicker(true)}
+            >
+              <Plus color={palette.primary} size={18} />
+              <Text style={styles.addButtonText}>Agregar Insumo</Text>
+            </TouchableOpacity>
+
+            {selectedSupplies.length > 0 && (
+              <View style={[styles.totalRow, { marginTop: spacing.sm }]}>
+                <Text style={[styles.totalLabel, { color: "#D97706" }]}>Costo insumos evento</Text>
+                <Text style={[styles.totalValue, { color: "#D97706" }]}>
+                  {formatCurrency(supplyCost)}
+                </Text>
+              </View>
+            )}
+
+            {/* Divider */}
+            <View style={{ height: 1, backgroundColor: palette.separator, marginVertical: spacing.md }} />
+
             <Text style={styles.sectionTitle}>Equipo</Text>
             <Text
               style={{
@@ -1051,7 +1350,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
               </View>
             )}
 
-            {/* Suggestions */}
+            {/* Equipment Suggestions */}
             {equipmentSuggestions.filter(
               (s) => !selectedEquipment.some((eq) => eq.inventory_id === s.id),
             ).length > 0 && (
@@ -1316,7 +1615,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
                 0,
               );
               const totalExtraCost = extras.reduce((sum, e) => sum + e.cost, 0);
-              const totalCost = totalProductCost + totalExtraCost;
+              const totalCost = totalProductCost + totalExtraCost + supplyCost;
               const revenueExTax = totals.total - totals.taxAmount;
               const profit = revenueExTax - totalCost;
               const passThroughRevenue = extras
@@ -1559,6 +1858,45 @@ export default function EventFormScreen({ navigation, route }: Props) {
                 <Text style={styles.sheetItemText}>{item.ingredient_name}</Text>
                 <Text style={styles.sheetItemSubtext}>
                   {item.current_stock} {item.unit} disponible(s)
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+      </AppBottomSheet>
+
+      {/* Supply Picker */}
+      <AppBottomSheet
+        visible={showSupplyPicker}
+        onClose={() => setShowSupplyPicker(false)}
+        enableDynamicSizing={false}
+        snapPoints={["60%"]}
+        scrollable
+      >
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>Agregar Insumo por Evento</Text>
+        </View>
+        {filteredSupplyInventory.length === 0 ? (
+          <View style={{ padding: spacing.lg, alignItems: "center" }}>
+            <Text style={{ ...typography.body, color: palette.textMuted }}>
+              No hay insumos por evento disponibles
+            </Text>
+          </View>
+        ) : (
+          filteredSupplyInventory.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.sheetItem}
+              onPress={() => handleAddSupplyItem(item)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.sheetProductIcon, { backgroundColor: "#FEF3C7" }]}>
+                <Fuel color="#D97706" size={18} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sheetItemText}>{item.ingredient_name}</Text>
+                <Text style={styles.sheetItemSubtext}>
+                  {item.current_stock} {item.unit} — ${item.unit_cost || 0}/{item.unit}
                 </Text>
               </View>
             </TouchableOpacity>

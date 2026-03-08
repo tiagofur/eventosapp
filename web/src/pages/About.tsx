@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Code2, Globe, Mail, FileText, Shield, Heart } from 'lucide-react';
+import { ArrowLeft, Globe, Mail, FileText, Shield, Heart } from 'lucide-react';
 
 const APP_VERSION = '1.0.0';
 
@@ -21,9 +21,11 @@ export const About: React.FC = () => {
 
         {/* Logo & Version */}
         <div className="flex flex-col items-center mb-10">
-          <div className="w-28 h-28 rounded-full bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center mb-4 shadow-lg">
-            <Code2 className="h-14 w-14 text-primary" />
-          </div>
+          <img 
+            src="/favicon.svg" 
+            alt="Solennix Logo" 
+            className="w-28 h-28 mb-4 drop-shadow-lg"
+          />
           <h1 className="text-3xl font-bold text-text">Solennix</h1>
           <p className="text-sm text-text-secondary mt-1">
             Version {APP_VERSION}

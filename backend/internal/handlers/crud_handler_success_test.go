@@ -257,6 +257,7 @@ func TestUpdateEvent_Success_SameClient(t *testing.T) {
 	eventRepo.On("GetByID", mock.Anything, eventID, userID).Return(existing, nil)
 	eventRepo.On("Update", mock.Anything, mock.AnythingOfType("*models.Event")).Return(nil)
 	eventRepo.On("UpdateClientStats", mock.Anything, clientID).Return(nil)
+	eventRepo.On("DeductSupplyStock", mock.Anything, eventID).Return(nil)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
 
@@ -289,6 +290,7 @@ func TestUpdateEvent_Success_ClientChanged(t *testing.T) {
 	eventRepo.On("Update", mock.Anything, mock.AnythingOfType("*models.Event")).Return(nil)
 	eventRepo.On("UpdateClientStats", mock.Anything, newClientID).Return(nil)
 	eventRepo.On("UpdateClientStats", mock.Anything, oldClientID).Return(nil)
+	eventRepo.On("DeductSupplyStock", mock.Anything, eventID).Return(nil)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
 
@@ -664,6 +666,7 @@ func TestUpdateEventItems_Success(t *testing.T) {
 		mock.AnythingOfType("[]models.EventProduct"),
 		mock.AnythingOfType("[]models.EventExtra"),
 		mock.AnythingOfType("*[]models.EventEquipment"),
+		mock.Anything, // supplies
 	).Return(nil)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
@@ -696,6 +699,7 @@ func TestUpdateEventItems_EmptyLists_Success(t *testing.T) {
 		mock.AnythingOfType("[]models.EventProduct"),
 		mock.AnythingOfType("[]models.EventExtra"),
 		mock.Anything, // equipment can be nil
+		mock.Anything, // supplies can be nil
 	).Return(nil)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
@@ -792,7 +796,8 @@ func TestUpdateEventItems_RepoError_Returns500(t *testing.T) {
 	eventRepo.On("UpdateEventItems", mock.Anything, eventID,
 		mock.AnythingOfType("[]models.EventProduct"),
 		mock.AnythingOfType("[]models.EventExtra"),
-		mock.Anything,
+		mock.Anything, // equipment
+		mock.Anything, // supplies
 	).Return(errTest)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
@@ -2542,6 +2547,7 @@ func TestUpdateEvent_ClientChange_UpdateClientStatsError_StillReturns200(t *test
 	// New client stats update succeeds, old client stats update fails
 	eventRepo.On("UpdateClientStats", mock.Anything, newClientID).Return(nil)
 	eventRepo.On("UpdateClientStats", mock.Anything, oldClientID).Return(errTest)
+	eventRepo.On("DeductSupplyStock", mock.Anything, eventID).Return(nil)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
 
@@ -2572,6 +2578,7 @@ func TestUpdateEvent_ClientChange_NewClientStatsError_StillReturns200(t *testing
 	// New client stats update fails — response should still be OK
 	eventRepo.On("UpdateClientStats", mock.Anything, newClientID).Return(errTest)
 	eventRepo.On("UpdateClientStats", mock.Anything, oldClientID).Return(nil)
+	eventRepo.On("DeductSupplyStock", mock.Anything, eventID).Return(nil)
 
 	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
 

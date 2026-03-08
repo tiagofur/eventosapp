@@ -279,6 +279,7 @@ describe('Layout', () => {
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
     expect(screen.getByText('Calendario')).toBeInTheDocument();
     expect(screen.getByText('Cotización')).toBeInTheDocument();
+    expect(screen.getByText('Cotización Rápida')).toBeInTheDocument();
     expect(screen.getByText('Clientes')).toBeInTheDocument();
     expect(screen.getByText('Productos')).toBeInTheDocument();
     expect(screen.getByText('Inventario')).toBeInTheDocument();

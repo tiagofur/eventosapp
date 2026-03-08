@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import { Event, EventInsert, EventUpdate, EventEquipment, EquipmentConflict, EquipmentSuggestion, InventoryItem } from '../types/entities';
+import { Event, EventInsert, EventUpdate, EventEquipment, EventSupply, EquipmentConflict, EquipmentSuggestion, SupplySuggestion, InventoryItem } from '../types/entities';
 
 // Helper for type safety on joined data
 type EventWithClient = Event & { clients?: { name: string } | null };
@@ -52,6 +52,7 @@ export const eventService = {
         products: { productId: string; quantity: number; unitPrice: number; discount?: number }[],
         extras: { description: string; cost: number; price: number; exclude_utility?: boolean }[],
         equipment?: { inventoryId: string; quantity: number; notes?: string }[],
+        supplies?: { inventory_id: string; quantity: number; unit_cost: number; source: string; exclude_cost?: boolean }[],
     ) {
         const backendProducts = products.map((p) => ({
             product_id: p.productId,
@@ -80,6 +81,16 @@ export const eventService = {
             }));
         }
 
+        if (supplies) {
+            payload.supplies = supplies.map((s) => ({
+                inventory_id: s.inventory_id,
+                quantity: s.quantity,
+                unit_cost: s.unit_cost,
+                source: s.source,
+                exclude_cost: s.exclude_cost || false,
+            }));
+        }
+
         return api.put(`/events/${eventId}/items`, payload);
     },
 
@@ -101,6 +112,16 @@ export const eventService = {
 
     async getEquipmentSuggestions(products: { product_id: string; quantity: number }[]): Promise<EquipmentSuggestion[]> {
         return api.post('/events/equipment/suggestions', { products });
+    },
+
+    // Supply Management
+
+    async getSupplies(eventId: string): Promise<EventSupply[]> {
+        return api.get<EventSupply[]>(`/events/${eventId}/supplies`);
+    },
+
+    async getSupplySuggestions(products: { product_id: string; quantity: number }[]): Promise<SupplySuggestion[]> {
+        return api.post<SupplySuggestion[]>('/events/supplies/suggestions', { products });
     },
 
     async addProducts(

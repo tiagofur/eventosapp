@@ -227,6 +227,7 @@ export const generateContractPDF = (
   profile: UserProfile | null,
   contractTemplate?: string,
   products?: ProductItem[],
+  payments?: Payment[],
 ) => {
   const doc = new jsPDF();
   let currentY = addHeader(doc, profile, 'Contrato');
@@ -243,6 +244,7 @@ export const generateContractPDF = (
     template: contractTemplate ?? profile?.contract_template,
     strict: false,
     products,
+    payments,
   });
 
   const pageHeight = doc.internal.pageSize.height;

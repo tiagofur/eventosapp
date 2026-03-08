@@ -27,7 +27,7 @@ const inventorySchema = z.object({
   ingredient_name: z
     .string()
     .min(2, "El nombre debe tener al menos 2 caracteres"),
-  type: z.enum(["ingredient", "equipment"]),
+  type: z.enum(["ingredient", "equipment", "supply"]),
   current_stock: z.coerce
     .number()
     .min(0, "El stock no puede ser negativo"),
@@ -94,7 +94,7 @@ export const InventoryForm: React.FC = () => {
 
       reset({
         ingredient_name: item.ingredient_name || "",
-        type: (item.type as "ingredient" | "equipment") || "ingredient",
+        type: (item.type as "ingredient" | "equipment" | "supply") || "ingredient",
         current_stock: item.current_stock || 0,
         minimum_stock: item.minimum_stock || 0,
         unit: item.unit || "",
@@ -236,6 +236,9 @@ export const InventoryForm: React.FC = () => {
                 aria-describedby={errors.type ? "type-error" : undefined}
               >
                 <option value="ingredient">Insumo (Consumible)</option>
+                <option value="supply">
+                  Insumo por Evento (Costo fijo por evento)
+                </option>
                 <option value="equipment">
                   Activo / Equipo (Retornable)
                 </option>
