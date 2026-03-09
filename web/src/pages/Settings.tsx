@@ -68,7 +68,7 @@ export const Settings: React.FC = () => {
   );
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [brandColor, setBrandColor] = useState(
-    profile?.brand_color || "#B89A6A"
+    profile?.brand_color || "#C4A265"
   );
   const [isPortalLoading, setIsPortalLoading] = useState(false);
   const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
@@ -87,7 +87,7 @@ export const Settings: React.FC = () => {
         refund: profile.default_refund_percent ?? 0,
       });
       setContractTemplate(profile.contract_template || DEFAULT_CONTRACT_TEMPLATE);
-      setBrandColor(profile.brand_color || "#B89A6A");
+      setBrandColor(profile.brand_color || "#C4A265");
       setShowBusinessNameInPdf(profile.show_business_name_in_pdf ?? true);
     }
   }, [profile]);

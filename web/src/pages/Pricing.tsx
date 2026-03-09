@@ -115,7 +115,7 @@ export const Pricing: React.FC = () => {
         </div>
 
         {/* Pro Plan */}
-        <div className="bg-linear-to-br from-primary via-primary-dark to-[#8a724d] rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all hover:-translate-y-1 relative" style={{background: 'linear-gradient(135deg, #B89A6A 0%, #a2865b 45%, #8a724d 100%)'}}>
+        <div className="bg-linear-to-br from-primary via-primary-dark to-[#8a724d] rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all hover:-translate-y-1 relative" style={{background: 'linear-gradient(135deg, #C4A265 0%, #B8965A 45%, #0F1A2E 100%)'}}>
           <div className="absolute top-0 right-0 bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-widest">
             Recomendado
           </div>

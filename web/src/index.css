@@ -4,11 +4,11 @@
 
 @theme {
   /* Brand */
-  --color-primary: #b89a6a;
-  --color-primary-dark: #a2865b;
-  --color-primary-light: #f7f3ed;
-  --color-secondary: #64748b;
-  --color-accent: #1e2a3a;
+  --color-primary: #C4A265;
+  --color-primary-dark: #B8965A;
+  --color-primary-light: #F5F0E8;
+  --color-secondary: #6B7B8D;
+  --color-accent: #1B2A4A;
 
   /* Legacy Brand Aliases (for backward compatibility) */
   --color-brand-orange: var(--color-primary);
@@ -179,7 +179,7 @@
 }
 
 @utility premium-gradient {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #d4bc8d 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, #D4B87A 100%);
   background-size: 200% 200%;
 }
 
@@ -206,7 +206,7 @@
 }
 
 @utility premium-shadow {
-  box-shadow: 0 25px 50px -12px rgba(30, 42, 58, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(27, 42, 74, 0.25);
 }
 
 /* ── SCROLLBAR STYLING ── */

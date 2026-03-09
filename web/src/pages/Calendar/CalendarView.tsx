@@ -318,8 +318,8 @@ export const CalendarView: React.FC = () => {
             <style>{`
             .rdp-root {
                 --rdp-cell-size: 45px;
-                --rdp-accent-color: #B89A6A;
-                --rdp-accent-background-color: rgba(184, 154, 106, 0.1);
+                --rdp-accent-color: #C4A265;
+                --rdp-accent-background-color: rgba(196, 162, 101, 0.1);
                 margin: 0;
                 width: 100%;
             }
@@ -343,8 +343,8 @@ export const CalendarView: React.FC = () => {
                 border-radius: 50% !important;
             }
             .rdp-selected .rdp-day_button:hover:not([disabled]) { 
-                background-color: #a2865b !important; 
-                border-color: #a2865b !important;
+                background-color: #B8965A !important; 
+                border-color: #B8965A !important;
             }
             .rdp-today:not(.rdp-selected) .rdp-day_button {
                 font-weight: bold;
@@ -369,10 +369,10 @@ export const CalendarView: React.FC = () => {
                 padding-bottom: 1rem;
             }
             .rdp-nav_button {
-                color: #B89A6A;
+                color: #C4A265;
             }
             .rdp-nav_button:hover {
-                color: #a2865b;
+                color: #B8965A;
             }
             .rdp-caption_label {
                 font-size: 1.125rem;
@@ -390,17 +390,17 @@ export const CalendarView: React.FC = () => {
             }
             /* Booked days (have events): orange circle with always-visible white text */
             .rdp-booked .rdp-day_button {
-                background-color: #B89A6A !important;
+                background-color: #C4A265 !important;
                 color: #ffffff !important;
                 border-radius: 50% !important;
                 font-weight: bold;
             }
             /* Selected booked day: add white ring so it's distinguishable from unselected booked */
             .rdp-selected.rdp-booked .rdp-day_button:not([disabled]) {
-                background-color: #B89A6A !important;
+                background-color: #C4A265 !important;
                 color: #ffffff !important;
                 border: 2px solid #ffffff !important;
-                box-shadow: 0 0 0 2px #B89A6A !important;
+                box-shadow: 0 0 0 2px #C4A265 !important;
             }
             /* Unavailable days */
             .rdp-unavailable .rdp-day_button {

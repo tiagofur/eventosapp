@@ -28,7 +28,7 @@ import { typography } from "../../theme/typography";
 import { shadows } from "../../theme/shadows";
 
 const COLOR_SWATCHES = [
-  "#B89A6A",
+  "#C4A265",
   "#007AFF",
   "#34C759",
   "#FF3B30",
@@ -50,7 +50,7 @@ export default function BusinessSettingsScreen({ navigation }: Props) {
   const styles = getStyles(palette);
 
   const [businessName, setBusinessName] = useState(user?.business_name || "");
-  const [brandColor, setBrandColor] = useState(user?.brand_color || "#B89A6A");
+  const [brandColor, setBrandColor] = useState(user?.brand_color || "#C4A265");
   const [showBusinessName, setShowBusinessName] = useState(
     user?.show_business_name_in_pdf ?? true,
   );
@@ -158,7 +158,7 @@ export default function BusinessSettingsScreen({ navigation }: Props) {
               <View style={{ flex: 1 }}>
                 <FormInput
                   label="Código HEX"
-                  placeholder="#B89A6A"
+                  placeholder="#C4A265"
                   value={brandColor}
                   onChangeText={(text) => {
                     const hex = text.startsWith("#") ? text : `#${text}`;

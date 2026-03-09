@@ -1,10 +1,10 @@
 export const colors = {
   light: {
     // Brand (accent only — CTAs, FAB, active tab, links)
-    primary: "#b89a6a",
-    primaryDark: "#a2865b",
-    primaryLight: "#f7f3ed",
-    secondary: "#64748b",
+    primary: "#C4A265",
+    primaryDark: "#B8965A",
+    primaryLight: "#F5F0E8",
+    secondary: "#6B7B8D",
 
     // Neutral palette (backbone of the UI)
     background: "#ffffff",
@@ -60,7 +60,7 @@ export const colors = {
     // Tab bar
     tabBar: {
       background: "#ffffff",
-      active: "#b89a6a",
+      active: "#C4A265",
       inactive: "#aeaeb2",
     },
     tabBarBorder: "#e5e7eb",
@@ -79,9 +79,9 @@ export const colors = {
   },
   dark: {
     // Brand
-    primary: "#b89a6a",
-    primaryDark: "#d4bc8d",
-    primaryLight: "#1e2a3a",
+    primary: "#C4A265",
+    primaryDark: "#D4B87A",
+    primaryLight: "#1B2A4A",
     secondary: "#94a3b8",
 
     // Neutral palette
@@ -138,7 +138,7 @@ export const colors = {
     // Tab bar
     tabBar: {
       background: "#1c1c1e",
-      active: "#b89a6a",
+      active: "#C4A265",
       inactive: "#636366",
     },
     tabBarBorder: "#38383a",
