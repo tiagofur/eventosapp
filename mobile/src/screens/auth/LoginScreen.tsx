@@ -45,9 +45,9 @@ function BrandPanel({ palette }: { palette: typeof colors.light }) {
       colors={[palette.primary, palette.primaryDark]}
       style={styles.brandPanel}
     >
-      <Text style={styles.brandTitle}>EventosApp</Text>
+      <Text style={styles.brandTitle}>Solennix</Text>
       <Text style={styles.brandTagline}>
-        La plataforma todo-en-uno para organizadores de eventos
+        Cada detalle importa
       </Text>
       <View style={styles.brandFeatures}>
         {BRAND_FEATURES.map(({ icon: Icon, text }) => (

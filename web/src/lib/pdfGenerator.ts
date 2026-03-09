@@ -22,7 +22,7 @@ type ProductItem = EventProduct & {
 };
 type ExtraItem = EventExtra;
 
-const DEFAULT_BRAND_COLOR = '#B89A6A'; // Dorado de la marca
+const DEFAULT_BRAND_COLOR = '#C4A265'; // Dorado de la marca
 const TEXT_COLOR = '#333333';
 const GRAY_COLOR = '#666666';
 

@@ -19,7 +19,10 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 32, showText 
         style={{ width: size, height: size }}
       />
       {showText && (
-        <span className={`text-2xl font-bold ${forceLight ? 'text-white' : 'text-primary'}`}>
+        <span
+          className={`text-2xl font-semibold tracking-wide ${forceLight ? 'text-white' : 'text-primary'}`}
+          style={{ fontFamily: "'Cinzel', 'Playfair Display', Didot, 'Bodoni MT', Georgia, serif" }}
+        >
           Solennix
         </span>
       )}

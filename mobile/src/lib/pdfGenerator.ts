@@ -16,7 +16,7 @@ type Ingredient = { name: string; quantity: number; unit: string };
 
 // ── Constants ──────────────────────────────────────────────────────
 
-const DEFAULT_BRAND_COLOR = "#B89A6A";
+const DEFAULT_BRAND_COLOR = "#C4A265"; // Dorado de la marca
 const TEXT_COLOR = "#333333";
 const GRAY_COLOR = "#666666";
 

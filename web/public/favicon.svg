@@ -1,64 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 
-  Solennix Favicon (100x100)
-  2 Aros Entrelazados (Dorado y Naranja) formando una S
--->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<!-- Solennix — Icon Only (fondo transparente, dorado) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <defs>
-    <!-- Fondo de Icono -->
-    <linearGradient id="iconBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2a201b"/>
-      <stop offset="50%" stop-color="#120d0b"/>
-      <stop offset="100%" stop-color="#0a0504"/>
+    <linearGradient id="gT" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D4B87A"/>
+      <stop offset="45%" stop-color="#C4A265"/>
+      <stop offset="100%" stop-color="#B8965A"/>
     </linearGradient>
-
-    <!-- ── Gradiente Dorado (Aro 1) ── -->
-    <linearGradient id="gold-grad" x1="0" y1="0.5" x2="1" y2="0.5">
-      <stop offset="0%" stop-color="#b45309"/>
-      <stop offset="30%" stop-color="#f59e0b"/>
-      <stop offset="50%" stop-color="#fef3c7"/>
-      <stop offset="70%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#b45309"/>
+    <linearGradient id="gTH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#B8965A"/>
+      <stop offset="50%" stop-color="#D4B87A"/>
+      <stop offset="100%" stop-color="#B8965A"/>
     </linearGradient>
-
-    <!-- ── Gradiente Slate (Aro 2) ── -->
-    <linearGradient id="orange-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#475569"/>
-      <stop offset="20%" stop-color="#64748b"/>
-      <stop offset="50%" stop-color="#94a3b8"/>
-      <stop offset="80%" stop-color="#64748b"/>
-      <stop offset="100%" stop-color="#334155"/>
-    </linearGradient>
-
-    <!-- ── Sombra de Oclusión ── -->
-    <filter id="drop-shadow">
-      <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-color="#000000" flood-opacity="0.8"/>
-    </filter>
-
-    <!-- Recorte para entrelazado -->
-    <clipPath id="clipRight">
-      <rect x="52" y="44" width="50" height="50" />
-    </clipPath>
   </defs>
 
-  <!-- Background squircle -->
-  <rect x="0" y="0" width="100" height="100" rx="25" ry="25" fill="url(#iconBg)"/>
+  <!-- Bowl -->
+  <path d="M66,34 Q58,65 66,88 Q78,116 100,122 Q122,116 134,88 Q142,65 134,34"
+        fill="none" stroke="url(#gT)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- ARO INFERIOR (NARANJA) -->
-  <!-- Centrado abajo-izquierda -->
-  <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
-  <circle cx="41" cy="62" r="20" fill="none" stroke="#e2e8f0" stroke-width="1.5" opacity="0.6"/>
+  <!-- Labio -->
+  <path d="M66,34 Q100,42 134,34" fill="none" stroke="url(#gTH)" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- ARO SUPERIOR (DORADO) -->
-  <!-- Centrado arriba-derecha -->
-  <circle cx="53" cy="38" r="20" fill="none" stroke="url(#gold-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
-  <circle cx="53" cy="38" r="20" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+  <!-- Reflejo -->
+  <path d="M76,40 Q72,58 76,80" fill="none" stroke="#F5F0E8" stroke-width="1.8" opacity="0.25" stroke-linecap="round"/>
 
-  <!-- ENTRELAZADO -->
-  <!-- Redibujando la parte inferior-derecha del Naranja sobre el Dorado -->
-  <g clip-path="url(#clipRight)">
-    <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
-    <circle cx="41" cy="62" r="20" fill="none" stroke="#ffedd5" stroke-width="1.5" opacity="0.6"/>
+  <!-- Nodo -->
+  <ellipse cx="100" cy="124" rx="5" ry="2.5" fill="none" stroke="url(#gT)" stroke-width="2"/>
+
+  <!-- Tallo -->
+  <path d="M100,126 L100,150 Q100,155 88,158 L72,160"
+        fill="none" stroke="url(#gT)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M100,126 L100,150 Q100,155 112,158 L128,160"
+        fill="none" stroke="url(#gT)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Base semicirculo -->
+  <path d="M72,160 A28,7 0 0,0 128,160"
+        fill="none" stroke="url(#gTH)" stroke-width="2.8" stroke-linecap="round"/>
+
+  <!-- Destello -->
+  <g transform="translate(132,32)" opacity="0.65">
+    <line x1="0" y1="-8" x2="0" y2="8" stroke="#F5F0E8" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="-8" y1="0" x2="8" y2="0" stroke="#F5F0E8" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="-4" y1="-4" x2="4" y2="4" stroke="#F5F0E8" stroke-width="0.8" stroke-linecap="round"/>
+    <line x1="4" y1="-4" x2="-4" y2="4" stroke="#F5F0E8" stroke-width="0.8" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="2" fill="#F5F0E8" opacity="0.5"/>
   </g>
-
 </svg>
