@@ -1,4 +1,5 @@
-import React from 'react';
+import React from "react";
+import { useTheme } from "../hooks/useTheme";
 
 interface LogoProps {
   className?: string;
@@ -7,11 +8,23 @@ interface LogoProps {
   forceLight?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = '', size = 32, showText = true, forceLight = false }) => {
+export const Logo: React.FC<LogoProps> = ({
+  className = "",
+  size = 32,
+  showText = true,
+  forceLight = false,
+}) => {
+  const { isDark } = useTheme();
+
+  // User request:
+  // Modo claro (isDark false) -> Fondo Navy
+  // Modo oscuro (isDark true) -> Fondo Beige
+  const logoSrc = isDark ? "/icon-beige.svg" : "/icon-navy.svg";
+
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <img
-        src="/favicon.svg"
+        src={logoSrc}
         alt="Solennix Logo"
         width={size}
         height={size}
@@ -20,8 +33,11 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 32, showText 
       />
       {showText && (
         <span
-          className={`text-2xl font-semibold tracking-wide ${forceLight ? 'text-white' : 'text-primary'}`}
-          style={{ fontFamily: "'Cinzel', 'Playfair Display', Didot, 'Bodoni MT', Georgia, serif" }}
+          className={`text-2xl font-semibold tracking-wide ${forceLight ? "text-white" : "text-primary"}`}
+          style={{
+            fontFamily:
+              "'Cinzel', 'Playfair Display', Didot, 'Bodoni MT', Georgia, serif",
+          }}
         >
           Solennix
         </span>

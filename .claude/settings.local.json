@@ -175,7 +175,10 @@
       "mcp__claude_ai_Canva__create-design-from-candidate",
       "mcp__claude_ai_Canva__move-item-to-folder",
       "Bash(git config:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(gh repo:*)",
+      "mcp__claude_ai_Canva__upload-asset-from-url",
+      "Bash(pkill:*)"
     ]
   }
 }

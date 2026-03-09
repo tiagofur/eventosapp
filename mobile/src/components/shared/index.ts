@@ -16,3 +16,4 @@ export { SegmentedControl } from './SegmentedControl';
 export { QuickClientSheet } from './QuickClientSheet';
 export { SortSelector } from './SortSelector';
 export type { SortOption } from './SortSelector';
+export { Logo } from './Logo';
