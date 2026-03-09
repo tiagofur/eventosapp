@@ -144,7 +144,7 @@ export const Layout: React.FC = () => {
           <div className="p-4 lg:p-2 border-t border-border lg:border-transparent">
             {/* User Profile Mini */}
             <div className="flex items-center mb-4 px-3 py-2 bg-surface-alt/50 rounded-2xl border border-border pl-2">
-              <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-orange-400 flex items-center justify-center text-white font-bold shadow-sm" aria-hidden="true">
+              <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold shadow-sm" aria-hidden="true">
                 {avatarInitial}
               </div>
               <div className="ml-3 flex-1 min-w-0">

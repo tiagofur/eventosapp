@@ -24,21 +24,17 @@ export default function Empty({
       {showImage && (
         <div className="relative mb-8 group" aria-hidden="true">
           {/* Outer glow */}
-          <div className="absolute inset-0 bg-brand-orange/10 blur-3xl rounded-full scale-150 group-hover:bg-brand-orange/15 transition-all duration-500" />
-
-          {/* Decorative rings */}
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-full border-2 border-dashed border-brand-orange/15 animate-[spin_25s_linear_infinite]" />
-            <div className="absolute -inset-8 rounded-full border border-brand-orange/8 animate-[spin_35s_linear_infinite_reverse]" />
-
-            {/* Main icon container */}
-            <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-brand-orange/15 to-brand-orange/5 dark:from-brand-orange/20 dark:to-brand-orange/8 flex items-center justify-center shadow-lg shadow-brand-orange/10 group-hover:scale-105 transition-transform duration-500 ring-1 ring-brand-orange/20">
-              <Icon className="w-10 h-10 text-brand-orange" strokeWidth={1.5} />
+          <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full scale-150 group-hover:bg-primary/15 transition-all duration-500" />
+          <div className="relative mb-6">
+            <div className="absolute -inset-4 rounded-full border-2 border-dashed border-primary/15 animate-[spin_25s_linear_infinite]" />
+            <div className="absolute -inset-8 rounded-full border border-primary/8 animate-[spin_35s_linear_infinite_reverse]" />
+            
+            <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 dark:from-primary/20 dark:to-primary/8 flex items-center justify-center shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform duration-500 ring-1 ring-primary/20">
+              <Icon className="w-10 h-10 text-primary" strokeWidth={1.5} />
             </div>
 
-            {/* Decorative dots */}
-            <div className="absolute -top-2 -right-2 w-3 h-3 rounded-full bg-brand-orange/30 animate-pulse" />
-            <div className="absolute -bottom-1 -left-3 w-2 h-2 rounded-full bg-brand-orange/20 animate-pulse [animation-delay:1s]" />
+            <div className="absolute -top-2 -right-2 w-3 h-3 rounded-full bg-primary/30 animate-pulse" />
+            <div className="absolute -bottom-1 -left-3 w-2 h-2 rounded-full bg-primary/20 animate-pulse [animation-delay:1s]" />
           </div>
         </div>
       )}

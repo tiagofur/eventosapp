@@ -115,7 +115,7 @@ export const Pricing: React.FC = () => {
         </div>
 
         {/* Pro Plan */}
-        <div className="bg-linear-to-br from-orange-500 via-brand-orange to-orange-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all hover:-translate-y-1 relative" style={{background: 'linear-gradient(135deg, #FF8C42 0%, #FF6B35 45%, #D94F1E 100%)'}}>
+        <div className="bg-linear-to-br from-primary via-primary-dark to-[#8a724d] rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all hover:-translate-y-1 relative" style={{background: 'linear-gradient(135deg, #B89A6A 0%, #a2865b 45%, #8a724d 100%)'}}>
           <div className="absolute top-0 right-0 bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-widest">
             Recomendado
           </div>
@@ -124,15 +124,20 @@ export const Pricing: React.FC = () => {
               <h3 className="text-2xl font-semibold text-white">Pro</h3>
               <Star className="h-5 w-5 text-yellow-400 ml-2 fill-current" aria-hidden="true" />
             </div>
-            <p className="text-orange-100 mb-4">Todas las herramientas para escalar tu negocio sin límites.</p>
+            <p className="text-primary-light mb-4">Todas las herramientas para escalar tu negocio sin límites.</p>
             {/* Promo badge */}
-            <div className="inline-flex items-center gap-1.5 bg-yellow-400/20 text-yellow-200 text-xs font-bold px-3 py-1 rounded-full mb-4">
+            <div className="inline-flex items-center gap-1.5 bg-primary-light/20 text-primary-light text-xs font-bold px-3 py-1 rounded-full mb-4">
               🎉 Precio de lanzamiento — ¡Por tiempo limitado!
             </div>
-            <div className="flex items-baseline gap-3 mb-8">
-              <span className="text-xl text-orange-300 line-through opacity-75">$199</span>
-              <span className="text-6xl font-black text-white drop-shadow-sm">$99</span>
-              <span className="text-lg text-orange-200 font-medium">MXN/mes</span>
+            <div className="flex items-baseline mb-6">
+              <span className="text-4xl font-black text-white">$1,499</span>
+              <span className="text-xl text-primary-light line-through opacity-75 ml-2">$2,499</span>
+              <span className="text-lg text-primary-light font-medium ml-2">MXN/año</span>
+            </div>
+            <div className="flex items-baseline mb-8">
+              <span className="text-2xl font-bold text-white">$149</span>
+              <span className="text-xl text-primary-light line-through opacity-75 ml-2">$199</span>
+              <span className="text-lg text-primary-light font-medium ml-2">MXN/mes</span>
             </div>
             
             {(user?.plan === 'premium' || user?.plan === 'pro') ? (
@@ -150,7 +155,7 @@ export const Pricing: React.FC = () => {
                 type="button"
                 onClick={handleUpgrade}
                 disabled={loading}
-                className="w-full bg-white text-orange-600 hover:bg-orange-50 font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-75 hover:shadow-xl"
+                className="w-full bg-white text-primary-dark hover:bg-primary-light font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-75 hover:shadow-xl"
                 aria-label="Suscribirse al Plan Pro - Iniciar proceso de pago"
               >
                 {loading ? 'Procesando...' : (
@@ -183,7 +188,7 @@ export const Pricing: React.FC = () => {
               </li>
               {featuresPro.map((feature, i) => (
                 <li key={i} className="flex items-start">
-                  <CheckCircle className="h-5 w-5 text-orange-200 shrink-0 mr-3 mt-0.5" aria-hidden="true" />
+                  <CheckCircle className="h-5 w-5 text-primary-light shrink-0 mr-3 mt-0.5" aria-hidden="true" />
                   <span className="text-white">{feature}</span>
                 </li>
               ))}

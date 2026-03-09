@@ -26,8 +26,6 @@ import {
   format,
   startOfMonth,
   endOfMonth,
-  parse,
-  isSameMonth,
   isSameDay,
 } from "date-fns";
 
@@ -320,8 +318,8 @@ export const CalendarView: React.FC = () => {
             <style>{`
             .rdp-root {
                 --rdp-cell-size: 45px;
-                --rdp-accent-color: #FF6B35;
-                --rdp-accent-background-color: rgba(255, 107, 53, 0.1);
+                --rdp-accent-color: #B89A6A;
+                --rdp-accent-background-color: rgba(184, 154, 106, 0.1);
                 margin: 0;
                 width: 100%;
             }
@@ -345,8 +343,8 @@ export const CalendarView: React.FC = () => {
                 border-radius: 50% !important;
             }
             .rdp-selected .rdp-day_button:hover:not([disabled]) { 
-                background-color: #e55a2b !important; 
-                border-color: #e55a2b !important;
+                background-color: #a2865b !important; 
+                border-color: #a2865b !important;
             }
             .rdp-today:not(.rdp-selected) .rdp-day_button {
                 font-weight: bold;
@@ -371,10 +369,10 @@ export const CalendarView: React.FC = () => {
                 padding-bottom: 1rem;
             }
             .rdp-nav_button {
-                color: #FF6B35;
+                color: #B89A6A;
             }
             .rdp-nav_button:hover {
-                color: #e55a2b;
+                color: #a2865b;
             }
             .rdp-caption_label {
                 font-size: 1.125rem;
@@ -392,17 +390,17 @@ export const CalendarView: React.FC = () => {
             }
             /* Booked days (have events): orange circle with always-visible white text */
             .rdp-booked .rdp-day_button {
-                background-color: #FF6B35 !important;
+                background-color: #B89A6A !important;
                 color: #ffffff !important;
                 border-radius: 50% !important;
                 font-weight: bold;
             }
             /* Selected booked day: add white ring so it's distinguishable from unselected booked */
             .rdp-selected.rdp-booked .rdp-day_button:not([disabled]) {
-                background-color: #FF6B35 !important;
+                background-color: #B89A6A !important;
                 color: #ffffff !important;
                 border: 2px solid #ffffff !important;
-                box-shadow: 0 0 0 2px #FF6B35 !important;
+                box-shadow: 0 0 0 2px #B89A6A !important;
             }
             /* Unavailable days */
             .rdp-unavailable .rdp-day_button {

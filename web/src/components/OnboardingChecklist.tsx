@@ -102,9 +102,9 @@ export const OnboardingChecklist: React.FC = () => {
   ];
 
   return (
-    <div className="bg-card rounded-3xl shadow-sm border border-brand-orange/30 overflow-hidden mb-6 relative animate-fade-in-up">
+    <div className="bg-card rounded-3xl shadow-sm border border-primary/30 overflow-hidden mb-6 relative animate-fade-in-up">
       {/* Decorative background element */}
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-brand-orange/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
       
       <div className="p-6 relative z-10">
         <div className="flex justify-between items-start mb-6">
@@ -134,7 +134,7 @@ export const OnboardingChecklist: React.FC = () => {
           </div>
           <div className="w-full bg-surface-alt rounded-full h-2.5 overflow-hidden">
             <div
-              className="bg-brand-orange h-2.5 rounded-full transition-all duration-1000 ease-out"
+              className="bg-primary h-2.5 rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${progress}%` }}
               role="progressbar"
               aria-valuenow={progress}
@@ -154,18 +154,18 @@ export const OnboardingChecklist: React.FC = () => {
                 relative flex flex-col p-4 rounded-xl border transition-all duration-300 group
                 ${step.isCompleted 
                   ? 'bg-surface-alt border-border opacity-75' 
-                  : 'bg-card border-brand-orange/30 hover:border-brand-orange/60 hover:shadow-md'
+                  : 'bg-card border-primary/30 hover:border-primary/60 hover:shadow-md'
                 }
               `}
             >
               <div className="flex items-center justify-between mb-3">
-                <div className={`p-2 rounded-md ${step.isCompleted ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-orange-50 text-brand-orange dark:bg-brand-orange/10'}`}>
+                <div className={`p-2 rounded-md ${step.isCompleted ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-primary-light text-primary dark:bg-primary/10'}`}>
                   {step.icon}
                 </div>
                 {step.isCompleted ? (
                    <CheckCircle2 className="h-6 w-6 text-green-500" aria-hidden="true" />
                 ) : (
-                   <Circle className="h-6 w-6 text-gray-300 dark:text-gray-500 group-hover:text-brand-orange/50 transition-colors" aria-hidden="true" />
+                   <Circle className="h-6 w-6 text-gray-300 dark:text-gray-500 group-hover:text-primary/50 transition-colors" aria-hidden="true" />
                 )}
               </div>
 
@@ -177,7 +177,7 @@ export const OnboardingChecklist: React.FC = () => {
               </p>
 
               {!step.isCompleted && (
-                 <div className="mt-auto text-xs font-semibold text-brand-orange flex items-center opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
+                 <div className="mt-auto text-xs font-semibold text-primary flex items-center opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
                     Comenzar <ChevronRight className="h-3 w-3 ml-0.5" aria-hidden="true" />
                  </div>
               )}

@@ -21,13 +21,13 @@
       <stop offset="100%" stop-color="#b45309"/>
     </linearGradient>
 
-    <!-- ── Gradiente Naranja (Aro 2) ── -->
+    <!-- ── Gradiente Slate (Aro 2) ── -->
     <linearGradient id="orange-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#c2410c"/>
-      <stop offset="20%" stop-color="#ea580c"/>
-      <stop offset="50%" stop-color="#f97316"/>
-      <stop offset="80%" stop-color="#ea580c"/>
-      <stop offset="100%" stop-color="#9a3412"/>
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="20%" stop-color="#64748b"/>
+      <stop offset="50%" stop-color="#94a3b8"/>
+      <stop offset="80%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#334155"/>
     </linearGradient>
 
     <!-- ── Sombra de Oclusión ── -->
@@ -47,7 +47,7 @@
   <!-- ARO INFERIOR (NARANJA) -->
   <!-- Centrado abajo-izquierda -->
   <circle cx="41" cy="62" r="20" fill="none" stroke="url(#orange-grad)" stroke-width="11" filter="url(#drop-shadow)"/>
-  <circle cx="41" cy="62" r="20" fill="none" stroke="#ffedd5" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="41" cy="62" r="20" fill="none" stroke="#e2e8f0" stroke-width="1.5" opacity="0.6"/>
 
   <!-- ARO SUPERIOR (DORADO) -->
   <!-- Centrado arriba-derecha -->

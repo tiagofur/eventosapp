@@ -76,14 +76,12 @@ const htmlToTemplate = (container: HTMLDivElement): string => {
 interface ContractTemplateEditorProps {
   template: string;
   onChange: (template: string) => void;
-  onSave: () => void;
   isBasicPlan: boolean;
 }
 
 export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
   template,
   onChange,
-  onSave,
   isBasicPlan,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -218,7 +216,11 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
   // ─── Handle reset ─────────────────────────────────────────────
   const handleReset = () => {
     if (isBasicPlan) return;
+    isInternalUpdate.current = false;
     onChange(DEFAULT_CONTRACT_TEMPLATE);
+    if (editorRef.current) {
+      editorRef.current.innerHTML = templateToHTML(DEFAULT_CONTRACT_TEMPLATE);
+    }
   };
 
   // ─── Handle key events to prevent chip editing ────────────────
@@ -395,14 +397,6 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
           >
             <RotateCcw className="h-3.5 w-3.5" />
             Restablecer
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
-          >
-            <Save className="h-3.5 w-3.5" />
-            Guardar
           </button>
         </div>
       </div>

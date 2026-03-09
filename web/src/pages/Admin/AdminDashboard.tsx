@@ -123,7 +123,7 @@ export const AdminDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 bg-linear-to-br from-red-500 to-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-500/20">
+          <div className="h-10 w-10 bg-linear-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
             <Shield className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
@@ -526,7 +526,7 @@ export const AdminDashboard: React.FC = () => {
                   <span className="text-xs font-bold text-text-secondary w-5 text-center shrink-0">
                     {idx + 1}
                   </span>
-                  <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-orange-400 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
+                  <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">

@@ -68,7 +68,7 @@ export const Settings: React.FC = () => {
   );
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [brandColor, setBrandColor] = useState(
-    profile?.brand_color || "#FF6B35"
+    profile?.brand_color || "#B89A6A"
   );
   const [isPortalLoading, setIsPortalLoading] = useState(false);
   const [subStatus, setSubStatus] = useState<SubscriptionStatus | null>(null);
@@ -87,7 +87,7 @@ export const Settings: React.FC = () => {
         refund: profile.default_refund_percent ?? 0,
       });
       setContractTemplate(profile.contract_template || DEFAULT_CONTRACT_TEMPLATE);
-      setBrandColor(profile.brand_color || "#FF6B35");
+      setBrandColor(profile.brand_color || "#B89A6A");
       setShowBusinessNameInPdf(profile.show_business_name_in_pdf ?? true);
     }
   }, [profile]);
@@ -162,8 +162,10 @@ export const Settings: React.FC = () => {
         default_refund_percent: contractSettings.refund,
         contract_template: contractTemplate,
       });
+      addToast("Configuración del contrato guardada correctamente", "success");
     } catch (error) {
       logError("Error updating contract settings", error);
+      addToast("Error al guardar la configuración", "error");
     }
   };
 
@@ -466,7 +468,6 @@ export const Settings: React.FC = () => {
                 <ContractTemplateEditor
                   template={contractTemplate}
                   onChange={setContractTemplate}
-                  onSave={handleUpdateContractSettings}
                   isBasicPlan={isBasicPlan}
                 />
 

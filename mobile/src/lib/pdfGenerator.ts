@@ -16,7 +16,7 @@ type Ingredient = { name: string; quantity: number; unit: string };
 
 // ── Constants ──────────────────────────────────────────────────────
 
-const DEFAULT_BRAND_COLOR = "#FF6B35";
+const DEFAULT_BRAND_COLOR = "#B89A6A";
 const TEXT_COLOR = "#333333";
 const GRAY_COLOR = "#666666";
 
