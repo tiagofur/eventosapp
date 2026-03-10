@@ -30,48 +30,54 @@ Solennix debe sentirse como una herramienta **premium pero accesible**. La esté
 ### 2.2 Tokens de Color — Referencia Definitiva
 
 #### Marca (Brand)
-| Token | Light | Dark | Uso Correcto |
-|-------|-------|------|-------------|
-| `primary` | `#C4A265` | `#C4A265` | CTAs, iconos activos, badges, links, focus rings |
-| `primary-dark` | `#B8965A` | `#B8965A` | Hover de primary, gradientes |
-| `primary-light` | `#F5F0E8` | `#F5F0E8` | Fondos hover sutiles (bg-primary-light/50) |
-| `accent` | `#1B2A4A` | `#1B2A4A` | Elementos de contraste, landing page |
-| `secondary` | `#6B7B8D` | `#94A3B8` | Texto terciario, elementos decorativos |
+
+| Token           | Light     | Dark      | Uso Correcto                                     |
+| --------------- | --------- | --------- | ------------------------------------------------ |
+| `primary`       | `#C4A265` | `#C4A265` | CTAs, iconos activos, badges, links, focus rings |
+| `primary-dark`  | `#B8965A` | `#B8965A` | Hover de primary, gradientes                     |
+| `primary-light` | `#F5F0E8` | `#F5F0E8` | Fondos hover sutiles (bg-primary-light/50)       |
+| `accent`        | `#1B2A4A` | `#1B2A4A` | Elementos de contraste, landing page             |
+| `secondary`     | `#6B7B8D` | `#94A3B8` | Texto terciario, elementos decorativos           |
 
 #### Superficies (Backgrounds)
-| Token | Light | Dark | Uso |
-|-------|-------|------|-----|
-| `bg` | `#f3f4f6` | `#000000` | Fondo de página (el más externo) |
-| `surface-grouped` | `#ffffff` | `#09090b` | Panel de contenido principal |
-| `surface` | `#f9fafb` | `#121212` | Áreas internas |
-| `surface-alt` | `#f3f4f6` | `#1c1c1e` | Hover, estados alternos |
-| `card` | `#ffffff` | `#121212` | Cards y contenedores |
+
+| Token             | Light     | Dark      | Uso                              |
+| ----------------- | --------- | --------- | -------------------------------- |
+| `bg`              | `#f3f4f6` | `#000000` | Fondo de página (el más externo) |
+| `surface-grouped` | `#ffffff` | `#09090b` | Panel de contenido principal     |
+| `surface`         | `#f9fafb` | `#121212` | Áreas internas                   |
+| `surface-alt`     | `#f3f4f6` | `#1c1c1e` | Hover, estados alternos          |
+| `card`            | `#ffffff` | `#121212` | Cards y contenedores             |
 
 #### Texto
-| Token | Light | Dark | Uso |
-|-------|-------|------|-----|
-| `text` | `#111827` | `#f5f5f7` | Texto principal, títulos |
-| `text-secondary` | `#6b7280` | `#a1a1aa` | Texto secundario, labels |
-| `text-tertiary` | `#9ca3af` | `#71717a` | Placeholders, texto deshabilitado |
+
+| Token            | Light     | Dark      | Uso                               |
+| ---------------- | --------- | --------- | --------------------------------- |
+| `text`           | `#111827` | `#f5f5f7` | Texto principal, títulos          |
+| `text-secondary` | `#6b7280` | `#a1a1aa` | Texto secundario, labels          |
+| `text-tertiary`  | `#9ca3af` | `#71717a` | Placeholders, texto deshabilitado |
 
 #### Bordes
-| Token | Light | Dark | Uso |
-|-------|-------|------|-----|
-| `border` | `#e5e7eb` | `#27272a` | Bordes estándar |
-| `border-strong` | `#d1d5db` | `#3f3f46` | Bordes con más énfasis |
-| `separator` | `rgba(60,60,67,0.29)` | `rgba(84,84,88,0.65)` | Divisores de sección |
+
+| Token           | Light                 | Dark                  | Uso                    |
+| --------------- | --------------------- | --------------------- | ---------------------- |
+| `border`        | `#e5e7eb`             | `#27272a`             | Bordes estándar        |
+| `border-strong` | `#d1d5db`             | `#3f3f46`             | Bordes con más énfasis |
+| `separator`     | `rgba(60,60,67,0.29)` | `rgba(84,84,88,0.65)` | Divisores de sección   |
 
 #### Semánticos
-| Token | Light | Dark | Uso |
-|-------|-------|------|-----|
+
+| Token     | Light     | Dark      | Uso                            |
+| --------- | --------- | --------- | ------------------------------ |
 | `success` | `#34c759` | `#30d158` | Completado, activo, confirmado |
-| `warning` | `#ff9500` | `#ff9f0a` | Alerta, stock bajo |
-| `error` | `#ff3b30` | `#ff453a` | Error, cancelado, eliminar |
-| `info` | `#007aff` | `#0a84ff` | Info, links de sistema |
+| `warning` | `#ff9500` | `#ff9f0a` | Alerta, stock bajo             |
+| `error`   | `#ff3b30` | `#ff453a` | Error, cancelado, eliminar     |
+| `info`    | `#007aff` | `#0a84ff` | Info, links de sistema         |
 
 ### 2.3 Reglas de Aplicación de Color
 
 #### ✅ CORRECTO
+
 ```
 - Botón CTA principal: premium-gradient (linear-gradient #C4A265 → #D4B87A)
 - Icono activo en tab/sidebar: text-primary
@@ -83,6 +89,7 @@ Solennix debe sentirse como una herramienta **premium pero accesible**. La esté
 ```
 
 #### ❌ INCORRECTO
+
 ```
 - Fondo de card dorado: bg-primary ← NUNCA
 - Texto body en dorado: text-primary ← NO para párrafos
@@ -169,12 +176,12 @@ Solennix debe sentirse como una herramienta **premium pero accesible**. La esté
 
 ### 4.1 Botones
 
-| Tipo | Clase | Uso |
-|------|-------|-----|
-| **Primary CTA** | `premium-gradient text-white font-semibold rounded-lg px-6 py-3` | Acción principal (1 por pantalla) |
-| **Secondary** | `bg-surface-alt text-text border border-border rounded-lg px-4 py-2` | Acciones secundarias |
-| **Destructive** | `bg-error/10 text-error border border-error/30 rounded-lg px-4 py-2` | Eliminar, cancelar |
-| **Ghost** | `text-primary hover:bg-primary/5 rounded-lg px-4 py-2` | Links, acciones terciarias |
+| Tipo            | Clase                                                                | Uso                               |
+| --------------- | -------------------------------------------------------------------- | --------------------------------- |
+| **Primary CTA** | `premium-gradient text-white font-semibold rounded-lg px-6 py-3`     | Acción principal (1 por pantalla) |
+| **Secondary**   | `bg-surface-alt text-text border border-border rounded-lg px-4 py-2` | Acciones secundarias              |
+| **Destructive** | `bg-error/10 text-error border border-error/30 rounded-lg px-4 py-2` | Eliminar, cancelar                |
+| **Ghost**       | `text-primary hover:bg-primary/5 rounded-lg px-4 py-2`               | Links, acciones terciarias        |
 
 ### 4.2 Inputs
 
@@ -229,6 +236,8 @@ bg-error/10 text-error
 ```
 
 ### 4.5 Tipografía en la App
+
+> **Nota:** La tipografía de marca (Cinzel para headlines, Helvetica Neue para body) está definida en el [Brand Manual](../../marketing/brand-manual/BRAND-MANUAL.md#4-tipografia). En la app, usamos la fuente del sistema con los siguientes estilos:
 
 ```css
 /* Título de página */
@@ -350,26 +359,26 @@ bg-warning/5 border border-warning/30 rounded-lg p-4 text-warning
 
 ### Escala de Espaciado
 
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `xxs` | 2px | Micro separaciones |
-| `xs` | 4px | Entre iconos y texto |
-| `sm` | 8px | Padding interno compacto |
-| `md` | 16px | Padding estándar, gaps |
-| `lg` | 20px | Márgenes de pantalla (mobile) |
-| `xl` | 24px | Separación de secciones |
-| `xxl` | 32px | Espaciado entre grupos |
-| `xxxl` | 48px | Separación de zonas mayores |
+| Token  | Valor | Uso                           |
+| ------ | ----- | ----------------------------- |
+| `xxs`  | 2px   | Micro separaciones            |
+| `xs`   | 4px   | Entre iconos y texto          |
+| `sm`   | 8px   | Padding interno compacto      |
+| `md`   | 16px  | Padding estándar, gaps        |
+| `lg`   | 20px  | Márgenes de pantalla (mobile) |
+| `xl`   | 24px  | Separación de secciones       |
+| `xxl`  | 32px  | Espaciado entre grupos        |
+| `xxxl` | 48px  | Separación de zonas mayores   |
 
 ### Border Radius
 
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `radius-sm` | 6px | Badges, chips, tags |
-| `radius-md` | 10px | Inputs, botones |
-| `radius-lg` | 14px | Cards (web) |
-| `radius-xl` | 20px | Cards principales, modals |
-| `rounded-3xl` | — | Cards principales (mobile) |
+| Token         | Valor | Uso                        |
+| ------------- | ----- | -------------------------- |
+| `radius-sm`   | 6px   | Badges, chips, tags        |
+| `radius-md`   | 10px  | Inputs, botones            |
+| `radius-lg`   | 14px  | Cards (web)                |
+| `radius-xl`   | 20px  | Cards principales, modals  |
+| `rounded-3xl` | —     | Cards principales (mobile) |
 
 ---
 
@@ -414,5 +423,5 @@ Antes de considerar una pantalla "terminada", verificar:
 
 ---
 
-*Guía de Diseño UI v1.0 — Marzo 2026*
-*Referencia: Brand Manual v2.0, screen-improvements-mar-2026.md*
+_Guía de Diseño UI v1.0 — Marzo 2026_
+_Referencia: Brand Manual v2.0, screen-improvements-mar-2026.md_

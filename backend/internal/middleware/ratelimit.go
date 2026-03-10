@@ -15,8 +15,11 @@ type visitor struct {
 
 var RateLimitCleanupInterval = 5 * time.Minute
 
-// RateLimitStopFunc holds the function to stop the background loop of the latest created RateLimit.
+// RateLimitStopFunc holds the function to stop all background cleanup loops.
 var RateLimitStopFunc func()
+
+// allStopFuncs accumulates stop functions for all rate limiters.
+var allStopFuncs []func()
 
 // TrustProxy controls whether X-Forwarded-For is used for client IP extraction.
 // Set to true only when behind a trusted reverse proxy.
@@ -30,7 +33,16 @@ func RateLimit(maxRequests int, window time.Duration) func(http.Handler) http.Ha
 	visitors := make(map[string]*visitor)
 	done := make(chan struct{})
 
-	RateLimitStopFunc = func() { close(done) }
+	stopThis := func() { close(done) }
+	allStopFuncs = append(allStopFuncs, stopThis)
+
+	// Update global stop to close all rate limiters
+	RateLimitStopFunc = func() {
+		for _, fn := range allStopFuncs {
+			fn()
+		}
+		allStopFuncs = nil
+	}
 
 	// Background cleanup of stale entries
 	go func() {

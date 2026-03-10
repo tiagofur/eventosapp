@@ -2,7 +2,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
 import { eventService } from "../../services/eventService";
-import { unavailableDatesService, UnavailableDate } from "../../services/unavailableDatesService";
+import {
+  unavailableDatesService,
+  UnavailableDate,
+} from "../../services/unavailableDatesService";
 import { UnavailableDatesModal } from "./components/UnavailableDatesModal";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -22,17 +25,13 @@ import {
 } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { exportToCsv } from "../../lib/exportCsv";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  isSameDay,
-} from "date-fns";
+import { logError } from "../../lib/errorHandler";
+import { format, startOfMonth, endOfMonth, isSameDay, startOfDay } from "date-fns";
 
 // Parse a yyyy-MM-dd date string as LOCAL date (avoids UTC midnight shifting day in negative-offset timezones)
 const parseLocalDate = (dateStr: string): Date => {
   const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
+  return startOfDay(new Date(y, m - 1, d));
 };
 import { es } from "date-fns/locale";
 import { usePagination } from "../../hooks/usePagination";
@@ -55,14 +54,17 @@ const STATUS_OPTIONS = [
 
 export const CalendarView: React.FC = () => {
   const navigate = useNavigate();
+  const normalizedToday = startOfDay(new Date());
   const { addToast } = useToast();
   const [events, setEvents] = useState<EventWithClient[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date(),
+    normalizedToday,
   );
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(normalizedToday));
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
-  const [unavailableDates, setUnavailableDates] = useState<UnavailableDate[]>([]);
+  const [unavailableDates, setUnavailableDates] = useState<UnavailableDate[]>(
+    [],
+  );
   const [isBlockingDates, setIsBlockingDates] = useState(false);
   const [isConfirmingUnblock, setIsConfirmingUnblock] = useState(false);
 
@@ -70,10 +72,12 @@ export const CalendarView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchAllEvents = useCallback(async () => {
     try {
       setLoading(true);
+      setIsFetching(true);
       const data = (await eventService.getAll()) || [];
       // Sort events starting from today
       const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -82,53 +86,68 @@ export const CalendarView: React.FC = () => {
         .sort((a, b) => a.event_date.localeCompare(b.event_date));
       setEvents(upcomingEvents);
     } catch (error) {
-      console.error("Error fetching all events:", error);
+      logError("CalendarView:fetchAllEvents", error);
     } finally {
       setLoading(false);
+      setIsFetching(false);
     }
   }, []);
 
   const fetchEvents = useCallback(async (date: Date) => {
     try {
       setLoading(true);
+      setIsFetching(true); // Set fetching to true
       const start = startOfMonth(date);
       const endMonth = endOfMonth(date);
-      
+
       const [eventsData, unavailableData] = await Promise.all([
         eventService.getByDateRange(
           format(start, "yyyy-MM-dd"),
-          format(endMonth, "yyyy-MM-dd")
+          format(endMonth, "yyyy-MM-dd"),
         ),
         unavailableDatesService.getDates(
           format(start, "yyyy-MM-dd"),
-          format(endMonth, "yyyy-MM-dd")
-        )
+          format(endMonth, "yyyy-MM-dd"),
+        ),
       ]);
-      setEvents(eventsData || []);
+
+      setEvents((eventsData as EventWithClient[]) || []);
       setUnavailableDates(unavailableData || []);
     } catch (error) {
-      console.error("Error fetching events:", error);
+      logError("CalendarView:fetchEvents", error);
     } finally {
       setLoading(false);
+      setIsFetching(false); // Set fetching to false
     }
   }, []);
 
   useEffect(() => {
-    if (viewMode === "calendar") {
-      fetchEvents(currentMonth);
-    } else {
-      fetchAllEvents();
-    }
+    let isMounted = true;
+
+    const fetchData = async () => {
+      if (!isMounted) return;
+      if (viewMode === 'calendar') {
+        await fetchEvents(currentMonth);
+      } else {
+        await fetchAllEvents();
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentMonth, viewMode, fetchAllEvents, fetchEvents]);
 
   const handleMonthChange = (month: Date) => {
-    setCurrentMonth(month);
+    setCurrentMonth(startOfMonth(startOfDay(month)));
     setSelectedDate(undefined); // Clear selection when changing month
   };
 
   const goToToday = () => {
-    const today = new Date();
-    setCurrentMonth(today);
+    const today = startOfDay(new Date());
+    setCurrentMonth(startOfMonth(today));
     setSelectedDate(today);
   };
 
@@ -148,7 +167,8 @@ export const CalendarView: React.FC = () => {
   };
 
   const selectedEvents = (events || []).filter(
-    (e) => selectedDate && isSameDay(parseLocalDate(e.event_date), selectedDate),
+    (e) =>
+      selectedDate && isSameDay(parseLocalDate(e.event_date), selectedDate),
   );
 
   const selectedUnavailable = unavailableDates.find((d) => {
@@ -161,12 +181,14 @@ export const CalendarView: React.FC = () => {
     if (!selectedUnavailable) return;
     try {
       await unavailableDatesService.removeDate(selectedUnavailable.id);
-      setUnavailableDates((prev) => prev.filter((d) => d.id !== selectedUnavailable.id));
-      addToast('Fechas desbloqueadas exitosamente', 'success');
+      setUnavailableDates((prev) =>
+        prev.filter((d) => d.id !== selectedUnavailable.id),
+      );
+      addToast("Fechas desbloqueadas exitosamente", "success");
       setSelectedDate(undefined);
     } catch (error) {
       console.error(error);
-      addToast('Error al desbloquear las fechas', 'error');
+      addToast("Error al desbloquear las fechas", "error");
     } finally {
       setIsConfirmingUnblock(false);
     }
@@ -201,27 +223,39 @@ export const CalendarView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text">
-            Eventos
-          </h1>
+          <h1 className="text-2xl font-bold text-text">Eventos</h1>
           <p className="text-sm text-text-secondary mt-1">
             Gestiona tu agenda y el histórico de reservas.
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
           {(events || []).length > 0 && (
             <button
               type="button"
               onClick={() => {
                 const statusLabel = (s: string) =>
-                  s === 'confirmed' ? 'Confirmado' : s === 'completed' ? 'Completado' : s === 'cancelled' ? 'Cancelado' : 'Cotizado';
+                  s === "confirmed"
+                    ? "Confirmado"
+                    : s === "completed"
+                      ? "Completado"
+                      : s === "cancelled"
+                        ? "Cancelado"
+                        : "Cotizado";
                 exportToCsv(
-                  'eventos',
-                  ['Fecha', 'Tipo de Servicio', 'Cliente', 'Personas', 'Status', 'Total', 'Ubicación'],
-                  events.map(e => [
+                  "eventos",
+                  [
+                    "Fecha",
+                    "Tipo de Servicio",
+                    "Cliente",
+                    "Personas",
+                    "Status",
+                    "Total",
+                    "Ubicación",
+                  ],
+                  events.map((e) => [
                     e.event_date,
                     e.service_type,
-                    (e as any).client?.name || (e as any).clients?.name || '',
+                    (e as any).client?.name || (e as any).clients?.name || "",
                     e.num_people,
                     statusLabel(e.status),
                     e.total_amount?.toFixed(2),
@@ -303,7 +337,19 @@ export const CalendarView: React.FC = () => {
       </div>
 
       {viewMode === "calendar" ? (
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8 fade-in">
+        <div 
+          className="relative grid grid-cols-1 xl:grid-cols-5 gap-8 fade-in"
+          aria-busy={isFetching}
+        >
+          {isFetching && (
+            <div 
+              className="absolute inset-0 flex items-center justify-center bg-card/70 z-10 rounded-3xl"
+              role="status"
+              aria-label="Cargando eventos..."
+            >
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent" />
+            </div>
+          )}
           {/* Calendar Card */}
           <div className="bg-card shadow-sm rounded-3xl p-4 sm:p-8 xl:col-span-3 border border-border transition-colors">
             <div className="flex justify-end mb-2">
@@ -420,7 +466,10 @@ export const CalendarView: React.FC = () => {
               month={currentMonth}
               onMonthChange={handleMonthChange}
               modifiers={modifiers}
-              modifiersClassNames={{ booked: "rdp-booked", unavailable: "rdp-unavailable" }}
+              modifiersClassNames={{
+                booked: "rdp-booked",
+                unavailable: "rdp-unavailable",
+              }}
               className="flex justify-center"
             />
           </div>
@@ -452,17 +501,19 @@ export const CalendarView: React.FC = () => {
                     className="h-16 w-16 bg-error/10 rounded-full flex items-center justify-center mb-4"
                     aria-hidden="true"
                   >
-                    <Lock
-                      className="h-8 w-8 text-error"
-                      aria-hidden="true"
-                    />
+                    <Lock className="h-8 w-8 text-error" aria-hidden="true" />
                   </div>
                   <p className="text-text font-semibold text-sm mb-1">
                     Fecha Bloqueada
                   </p>
                   <p className="text-text-secondary text-xs">
-                    {selectedUnavailable.start_date === selectedUnavailable.end_date
-                      ? format(parseLocalDate(selectedUnavailable.start_date), "d 'de' MMMM yyyy", { locale: es })
+                    {selectedUnavailable.start_date ===
+                    selectedUnavailable.end_date
+                      ? format(
+                          parseLocalDate(selectedUnavailable.start_date),
+                          "d 'de' MMMM yyyy",
+                          { locale: es },
+                        )
                       : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: es })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: es })}`}
                   </p>
                   {selectedUnavailable.reason && (
@@ -618,7 +669,10 @@ export const CalendarView: React.FC = () => {
                 Buscar eventos por cliente o servicio
               </label>
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
+                <Search
+                  className="h-5 w-5 text-text-secondary"
+                  aria-hidden="true"
+                />
               </div>
               <input
                 id="event-search"
@@ -630,7 +684,11 @@ export const CalendarView: React.FC = () => {
                 aria-label="Buscar eventos por cliente o servicio"
               />
             </div>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar eventos por estado">
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label="Filtrar eventos por estado"
+            >
               {STATUS_OPTIONS.map((opt) => (
                 <button
                   key={opt.key}
@@ -736,9 +794,13 @@ export const CalendarView: React.FC = () => {
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-semibold text-text">
-                            {format(parseLocalDate(event.event_date), "d MMM yyyy", {
-                              locale: es,
-                            })}
+                            {format(
+                              parseLocalDate(event.event_date),
+                              "d MMM yyyy",
+                              {
+                                locale: es,
+                              },
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -835,7 +897,11 @@ export const CalendarView: React.FC = () => {
               </h3>
               <p className="text-sm text-text-secondary mb-1">
                 {selectedUnavailable.start_date === selectedUnavailable.end_date
-                  ? format(parseLocalDate(selectedUnavailable.start_date), "d 'de' MMMM yyyy", { locale: es })
+                  ? format(
+                      parseLocalDate(selectedUnavailable.start_date),
+                      "d 'de' MMMM yyyy",
+                      { locale: es },
+                    )
                   : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: es })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: es })}`}
               </p>
               {selectedUnavailable.reason && (

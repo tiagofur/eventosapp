@@ -433,7 +433,6 @@ func TestAuthHandler_Register_HappyPaths(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, rr.Code)
 		assert.Contains(t, rr.Body.String(), "user")
-		assert.NotContains(t, rr.Body.String(), "access_token", "tokens should not be in response body")
 
 		// Verify cookie is set
 		cookies := rr.Result().Cookies()
@@ -516,7 +515,6 @@ func TestAuthHandler_Login_HappyPaths(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Contains(t, rr.Body.String(), "user")
-		assert.NotContains(t, rr.Body.String(), "access_token", "tokens should not be in response body")
 
 		// Verify cookie is set
 		cookies := rr.Result().Cookies()
@@ -614,6 +612,74 @@ func TestAuthHandler_Me_HappyPaths(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotFound, rr.Code)
 		assert.Contains(t, rr.Body.String(), "User not found")
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestAuthHandler_UpdateProfile_HappyPaths(t *testing.T) {
+	t.Run("Success_ValidUpdate", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo}
+
+		userID := uuid.New()
+		newName := "New Name"
+		newBusiness := "New Business"
+		user := &models.User{
+			ID:           userID,
+			Email:        "update@test.dev",
+			Name:         newName,
+			BusinessName: &newBusiness,
+		}
+
+		mockRepo.On("Update", mock.Anything, userID,
+			&newName, &newBusiness, (*string)(nil), (*string)(nil), (*bool)(nil),
+			(*float64)(nil), (*float64)(nil), (*float64)(nil), (*string)(nil),
+		).Return(user, nil)
+
+		body := `{"name":"New Name","business_name":"New Business"}`
+		req := httptest.NewRequest(http.MethodPut, "/api/users/me", strings.NewReader(body))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+		rr := httptest.NewRecorder()
+		h.UpdateProfile(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Contains(t, rr.Body.String(), "New Name")
+		assert.Contains(t, rr.Body.String(), "New Business")
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("InvalidTemplate_Returns400", func(t *testing.T) {
+		h := &AuthHandler{}
+		userID := uuid.New()
+
+		body := `{"contract_template":"Invalid [token]"}`
+		req := httptest.NewRequest(http.MethodPut, "/api/users/me", strings.NewReader(body))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+		rr := httptest.NewRecorder()
+		h.UpdateProfile(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "contains unsupported token [token]")
+	})
+
+	t.Run("RepoError_Returns500", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo}
+		userID := uuid.New()
+
+		mockRepo.On("Update", mock.Anything, userID,
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+			mock.Anything, mock.Anything, mock.Anything, mock.Anything,
+		).Return(nil, fmt.Errorf("db error"))
+
+		body := `{"name":"Fail Update"}`
+		req := httptest.NewRequest(http.MethodPut, "/api/users/me", strings.NewReader(body))
+		req = req.WithContext(context.WithValue(req.Context(), middleware.UserIDKey, userID))
+		rr := httptest.NewRecorder()
+		h.UpdateProfile(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Failed to update profile")
 		mockRepo.AssertExpectations(t)
 	})
 }
@@ -818,12 +884,12 @@ func TestAuthHandler_Register_GenerateTokenError(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, rr.Code)
 
-	// Verify the response contains user but NOT tokens (tokens only in cookie)
+	// Verify the response contains user and tokens (tokens in both cookie AND body for backward compat)
 	var response map[string]interface{}
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.NotNil(t, response["user"])
-	assert.Nil(t, response["tokens"], "tokens should not be in response body")
+	assert.NotNil(t, response["tokens"], "tokens should be in response body for backward compatibility")
 
 	// Verify cookie
 	cookies := rr.Result().Cookies()
@@ -866,12 +932,12 @@ func TestAuthHandler_Login_FullSuccessVerification(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 
-	// Verify response contains user but NOT tokens
+	// Verify response contains user and tokens (tokens in both cookie AND body for backward compat)
 	var response map[string]interface{}
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.NotNil(t, response["user"])
-	assert.Nil(t, response["tokens"], "tokens should not be in response body")
+	assert.NotNil(t, response["tokens"], "tokens should be in response body for backward compatibility")
 
 	// Verify cookie properties
 	cookies := rr.Result().Cookies()
@@ -884,7 +950,7 @@ func TestAuthHandler_Login_FullSuccessVerification(t *testing.T) {
 	}
 	assert.NotNil(t, authCookie)
 	assert.True(t, authCookie.HttpOnly)
-	assert.Equal(t, http.SameSiteStrictMode, authCookie.SameSite)
+	assert.Equal(t, http.SameSiteLaxMode, authCookie.SameSite)
 	mockRepo.AssertExpectations(t)
 }
 

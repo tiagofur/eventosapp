@@ -3,12 +3,12 @@ package handlers
 import (
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v81"
-	"github.com/stripe/stripe-go/v81/checkout/session"
 	"github.com/tiagofur/solennix-backend/internal/config"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 )
@@ -17,18 +17,21 @@ import (
 type EventPaymentHandler struct {
 	eventRepo   FullEventRepository
 	paymentRepo FullPaymentRepository
+	stripe      StripeService
 	cfg         *config.Config
 }
 
 func NewEventPaymentHandler(
 	eventRepo FullEventRepository,
 	paymentRepo FullPaymentRepository,
+	stripeService StripeService,
 	cfg *config.Config,
 ) *EventPaymentHandler {
 	stripe.Key = cfg.StripeSecretKey
 	return &EventPaymentHandler{
 		eventRepo:   eventRepo,
 		paymentRepo: paymentRepo,
+		stripe:      stripeService,
 		cfg:         cfg,
 	}
 }
@@ -68,7 +71,8 @@ func (h *EventPaymentHandler) CreateEventCheckoutSession(w http.ResponseWriter, 
 	}
 
 	// Calculate amount in cents (Stripe uses smallest currency unit)
-	amountCents := int64(event.TotalAmount * 100)
+	// Use math.Round to avoid float truncation (e.g. 19.99*100 = 1998.999... → 1999)
+	amountCents := int64(math.Round(event.TotalAmount * 100))
 
 	// Build description
 	description := fmt.Sprintf("Evento: %s", event.ServiceType)
@@ -100,15 +104,14 @@ func (h *EventPaymentHandler) CreateEventCheckoutSession(w http.ResponseWriter, 
 			"user_id":  userID.String(),
 			"type":     "event_payment",
 		},
-		CustomerEmail: stripe.String(""), // Optional: pre-fill with client email if available
 	}
 
-	// Add client email if available
+	// Pre-fill client email if available (don't send empty string to Stripe)
 	if event.Client != nil && event.Client.Email != nil && *event.Client.Email != "" {
 		params.CustomerEmail = event.Client.Email
 	}
 
-	sess, err := session.New(params)
+	sess, err := h.stripe.NewCheckoutSession(params)
 	if err != nil {
 		slog.Error("Failed to create Stripe checkout session", "error", err, "event_id", eventID)
 		writeError(w, http.StatusInternalServerError, "Failed to create payment session")
@@ -144,7 +147,7 @@ func (h *EventPaymentHandler) HandleEventPaymentSuccess(w http.ResponseWriter, r
 	}
 
 	// Retrieve the session from Stripe
-	sess, err := session.Get(sessionID, nil)
+	sess, err := h.stripe.GetCheckoutSession(sessionID, nil)
 	if err != nil {
 		slog.Error("Failed to retrieve Stripe session", "error", err, "session_id", sessionID)
 		writeError(w, http.StatusInternalServerError, "Failed to retrieve payment session")
@@ -162,10 +165,15 @@ func (h *EventPaymentHandler) HandleEventPaymentSuccess(w http.ResponseWriter, r
 		return
 	}
 
+	var customerEmail string
+	if sess.CustomerDetails != nil {
+		customerEmail = sess.CustomerDetails.Email
+	}
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"session_id":     sess.ID,
 		"payment_status": sess.PaymentStatus,
 		"amount_total":   float64(sess.AmountTotal) / 100.0,
-		"customer_email": sess.CustomerDetails.Email,
+		"customer_email": customerEmail,
 	})
 }

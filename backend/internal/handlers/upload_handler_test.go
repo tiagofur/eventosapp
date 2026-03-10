@@ -22,19 +22,19 @@ import (
 
 func TestNewUploadHandler(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	if h == nil {
 		t.Fatal("NewUploadHandler returned nil")
 	}
-	// Verify directories were created
-	if _, err := os.Stat(filepath.Join(dir, "thumbnails")); os.IsNotExist(err) {
-		t.Fatal("thumbnails directory was not created")
+	// Verify base upload directory was created
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		t.Fatal("base upload directory was not created")
 	}
 }
 
 func TestUploadImage(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	t.Run("MissingFileField", func(t *testing.T) {
@@ -152,7 +152,7 @@ func TestUploadImage(t *testing.T) {
 func TestNewUploadHandler_InvalidDirectory(t *testing.T) {
 	// Create a handler with a read-only path that can't have subdirs
 	// On Linux, /proc/1 is typically not writable
-	h := NewUploadHandler("/proc/1/nonexistent_upload_dir")
+	h := NewUploadHandler("/proc/1/nonexistent_upload_dir", nil)
 	if h == nil {
 		t.Fatal("NewUploadHandler returned nil even with invalid dir")
 	}
@@ -161,7 +161,7 @@ func TestNewUploadHandler_InvalidDirectory(t *testing.T) {
 
 func TestUploadImage_BodyTooLarge(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	// Create a multipart form with a large body
@@ -193,7 +193,7 @@ func TestUploadImage_BodyTooLarge(t *testing.T) {
 
 func TestUploadImage_SuccessWithJpgExtension(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	body := &bytes.Buffer{}
@@ -230,11 +230,12 @@ func TestUploadImage_CreateFileFails(t *testing.T) {
 	// Use a valid temp dir for NewUploadHandler so it initializes,
 	// then swap uploadDir to a non-existent path so os.Create fails.
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
-	// Overwrite uploadDir to a non-existent directory so file creation fails
-	h.uploadDir = "/nonexistent-dir-for-test"
+	// Overwrite uploadDir to a path where directory creation will fail.
+	// Use a path component with invalid chars to ensure MkdirAll fails on both Windows and Linux.
+	h.uploadDir = filepath.Join(t.TempDir(), "invalid\x00path")
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -260,7 +261,7 @@ func TestUploadImage_BodyTooLargeExact(t *testing.T) {
 	// Ensure the exact "http: request body too large" error triggers the correct message.
 	// This exercises the exact string check on line 45-46.
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	// Create a multipart body that is exactly over the 10MB limit.
@@ -297,7 +298,7 @@ func TestUploadImage_BodyTooLargeRaw(t *testing.T) {
 	// This test sends a raw oversized body with correct multipart Content-Type
 	// to ensure ParseMultipartForm triggers the MaxBytesReader error.
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	// Build a multipart form with minimal overhead but a huge file part.
@@ -333,7 +334,7 @@ func TestUploadImage_BodyTooLargeRaw(t *testing.T) {
 func TestUploadImage_MultipleFileExtensions(t *testing.T) {
 	// Test with various file extensions
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	testCases := []struct {
@@ -376,7 +377,7 @@ func TestUploadImage_MultipleFileExtensions(t *testing.T) {
 
 func TestUploadImage_RejectsNonImageContent(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	body := &bytes.Buffer{}
@@ -404,7 +405,7 @@ func TestUploadImage_RejectsNonImageContent(t *testing.T) {
 
 func TestUploadImage_DisallowedExtension(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 	userID := uuid.New()
 
 	body := &bytes.Buffer{}
@@ -440,7 +441,7 @@ func TestUploadImage_DisallowedExtension(t *testing.T) {
 
 func TestGenerateThumbnail(t *testing.T) {
 	dir := t.TempDir()
-	h := NewUploadHandler(dir)
+	h := NewUploadHandler(dir, nil)
 
 	t.Run("ValidImage", func(t *testing.T) {
 		// Create a test image file
@@ -455,7 +456,9 @@ func TestGenerateThumbnail(t *testing.T) {
 		png.Encode(f, img)
 		f.Close()
 
-		h.generateThumbnail(imgPath, "thumb_test.jpg")
+		thumbDir := filepath.Join(dir, "thumbnails")
+		os.MkdirAll(thumbDir, 0755)
+		h.generateThumbnail(imgPath, thumbDir, "thumb_test.jpg")
 
 		thumbPath := filepath.Join(dir, "thumbnails", "thumb_test.jpg")
 		if _, err := os.Stat(thumbPath); os.IsNotExist(err) {
@@ -470,7 +473,9 @@ func TestGenerateThumbnail(t *testing.T) {
 		png.Encode(f, img)
 		f.Close()
 
-		h.generateThumbnail(imgPath, "thumb_portrait.jpg")
+		thumbDir := filepath.Join(dir, "thumbnails")
+		os.MkdirAll(thumbDir, 0755)
+		h.generateThumbnail(imgPath, thumbDir, "thumb_portrait.jpg")
 		thumbPath := filepath.Join(dir, "thumbnails", "thumb_portrait.jpg")
 		if _, err := os.Stat(thumbPath); os.IsNotExist(err) {
 			t.Fatal("portrait thumbnail was not generated")
@@ -479,14 +484,14 @@ func TestGenerateThumbnail(t *testing.T) {
 
 	t.Run("NonExistentFile", func(t *testing.T) {
 		// Should not panic, just log error
-		h.generateThumbnail("/nonexistent/file.png", "thumb.jpg")
+		h.generateThumbnail("/nonexistent/file.png", dir, "thumb.jpg")
 	})
 
 	t.Run("InvalidImageFile", func(t *testing.T) {
 		invalidPath := filepath.Join(dir, "invalid.png")
 		os.WriteFile(invalidPath, []byte("not an image"), 0644)
 		// Should not panic
-		h.generateThumbnail(invalidPath, "thumb_invalid.jpg")
+		h.generateThumbnail(invalidPath, dir, "thumb_invalid.jpg")
 	})
 
 	t.Run("VeryWideImage", func(t *testing.T) {
@@ -498,7 +503,9 @@ func TestGenerateThumbnail(t *testing.T) {
 		png.Encode(f, img)
 		f.Close()
 
-		h.generateThumbnail(imgPath, "thumb_wide.jpg")
+		thumbDir := filepath.Join(dir, "thumbnails")
+		os.MkdirAll(thumbDir, 0755)
+		h.generateThumbnail(imgPath, thumbDir, "thumb_wide.jpg")
 		thumbPath := filepath.Join(dir, "thumbnails", "thumb_wide.jpg")
 		if _, err := os.Stat(thumbPath); os.IsNotExist(err) {
 			t.Fatal("wide thumbnail was not generated")
@@ -513,7 +520,9 @@ func TestGenerateThumbnail(t *testing.T) {
 		png.Encode(f, img)
 		f.Close()
 
-		h.generateThumbnail(imgPath, "thumb_tall.jpg")
+		thumbDir := filepath.Join(dir, "thumbnails")
+		os.MkdirAll(thumbDir, 0755)
+		h.generateThumbnail(imgPath, thumbDir, "thumb_tall.jpg")
 		thumbPath := filepath.Join(dir, "thumbnails", "thumb_tall.jpg")
 		if _, err := os.Stat(thumbPath); os.IsNotExist(err) {
 			t.Fatal("tall thumbnail was not generated")
@@ -527,7 +536,9 @@ func TestGenerateThumbnail(t *testing.T) {
 		png.Encode(f, img)
 		f.Close()
 
-		h.generateThumbnail(imgPath, "thumb_square.jpg")
+		thumbDir := filepath.Join(dir, "thumbnails")
+		os.MkdirAll(thumbDir, 0755)
+		h.generateThumbnail(imgPath, thumbDir, "thumb_square.jpg")
 		thumbPath := filepath.Join(dir, "thumbnails", "thumb_square.jpg")
 		if _, err := os.Stat(thumbPath); os.IsNotExist(err) {
 			t.Fatal("square thumbnail was not generated")
