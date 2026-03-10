@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -447,6 +448,22 @@ func (h *SubscriptionHandler) DebugDowngrade(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+// stripeSubCacheEntry holds cached Stripe subscription data.
+type stripeSubCacheEntry struct {
+	cancelAtPeriodEnd bool
+	currentPeriodEnd  int64
+	fetchedAt         time.Time
+}
+
+// stripeSubCache is an in-memory cache for Stripe subscription lookups.
+// Key: provider subscription ID (string), Value: cached data.
+var stripeSubCache = struct {
+	mu      sync.RWMutex
+	entries map[string]*stripeSubCacheEntry
+}{entries: make(map[string]*stripeSubCacheEntry)}
+
+const stripeSubCacheTTL = 5 * time.Minute
+
 // GetSubscriptionStatus returns the current plan info for the authenticated user.
 // GET /api/subscriptions/status
 func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *http.Request) {
@@ -487,13 +504,36 @@ func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *ht
 				info.CurrentPeriodEnd = &formatted
 			}
 
-			// Check cancel_at_period_end from Stripe if user has a stripe customer
+			// Check cancel_at_period_end from Stripe (with caching to avoid rate limits)
 			if user.StripeCustomerID != nil && *user.StripeCustomerID != "" && sub.ProviderSubID != nil {
-				if stripeSub, err := stripeSub.Get(*sub.ProviderSubID, nil); err == nil {
-					info.CancelAtPeriodEnd = stripeSub.CancelAtPeriodEnd
-					// Also update period end from live data
-					end := time.Unix(stripeSub.CurrentPeriodEnd, 0).Format(time.RFC3339)
+				subID := *sub.ProviderSubID
+
+				// Check cache first
+				stripeSubCache.mu.RLock()
+				cached, ok := stripeSubCache.entries[subID]
+				stripeSubCache.mu.RUnlock()
+
+				if ok && time.Since(cached.fetchedAt) < stripeSubCacheTTL {
+					// Use cached data
+					info.CancelAtPeriodEnd = cached.cancelAtPeriodEnd
+					end := time.Unix(cached.currentPeriodEnd, 0).Format(time.RFC3339)
 					info.CurrentPeriodEnd = &end
+				} else {
+					// Fetch from Stripe and cache
+					if stripeSubData, err := stripeSub.Get(subID, nil); err == nil {
+						info.CancelAtPeriodEnd = stripeSubData.CancelAtPeriodEnd
+						end := time.Unix(stripeSubData.CurrentPeriodEnd, 0).Format(time.RFC3339)
+						info.CurrentPeriodEnd = &end
+
+						// Update cache
+						stripeSubCache.mu.Lock()
+						stripeSubCache.entries[subID] = &stripeSubCacheEntry{
+							cancelAtPeriodEnd: stripeSubData.CancelAtPeriodEnd,
+							currentPeriodEnd:  stripeSubData.CurrentPeriodEnd,
+							fetchedAt:         time.Now(),
+						}
+						stripeSubCache.mu.Unlock()
+					}
 				}
 			}
 

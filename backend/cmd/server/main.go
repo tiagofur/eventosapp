@@ -81,7 +81,7 @@ func main() {
 	subHandler := handlers.NewSubscriptionHandler(userRepo, subscriptionRepo, eventRepo, paymentRepo, cfg)
 	searchHandler := handlers.NewSearchHandler(clientRepo, productRepo, inventoryRepo, eventRepo)
 	eventPaymentHandler := handlers.NewEventPaymentHandler(eventRepo, paymentRepo, cfg)
-	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir)
+	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir, userRepo)
 	adminHandler := handlers.NewAdminHandler(adminRepo)
 	unavailHandler := handlers.NewUnavailableDateHandler(unavailRepo)
 

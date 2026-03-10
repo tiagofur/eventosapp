@@ -17,26 +17,68 @@ import (
 	"golang.org/x/image/draw"
 )
 
+// UploadHandler handles image uploads, organizing files by user ID.
 type UploadHandler struct {
 	uploadDir string
+	userRepo  UserRepository
 }
 
-func NewUploadHandler(uploadDir string) *UploadHandler {
-	// Ensure upload directories exist
-	for _, subdir := range []string{"", "thumbnails"} {
-		dir := filepath.Join(uploadDir, subdir)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			slog.Error("Failed to create upload directory", "dir", dir, "error", err)
+func NewUploadHandler(uploadDir string, userRepo UserRepository) *UploadHandler {
+	// Ensure base upload directory exists
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		slog.Error("Failed to create upload directory", "dir", uploadDir, "error", err)
+	}
+	return &UploadHandler{uploadDir: uploadDir, userRepo: userRepo}
+}
+
+// maxUploadsForPlan returns the maximum number of uploads allowed per user based on plan.
+func maxUploadsForPlan(plan string) int {
+	switch plan {
+	case "pro":
+		return 200
+	default: // basic
+		return 50
+	}
+}
+
+// countUserUploads counts the number of files in a user's upload directory.
+func countUserUploads(userDir string) int {
+	entries, err := os.ReadDir(userDir)
+	if err != nil {
+		return 0 // Directory doesn't exist yet, 0 uploads
+	}
+	count := 0
+	for _, e := range entries {
+		if !e.IsDir() {
+			count++
 		}
 	}
-	return &UploadHandler{uploadDir: uploadDir}
+	return count
 }
 
 // UploadImage handles POST /api/uploads/image
 // Accepts multipart/form-data with a "file" field.
+// Files are stored in {uploadDir}/{userID}/ for per-user organization.
 // Returns JSON with the image URL and thumbnail URL.
 func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
-	_ = middleware.GetUserID(r.Context()) // ensure authenticated
+	userID := middleware.GetUserID(r.Context())
+
+	// Check upload limits per user plan
+	if h.userRepo != nil {
+		user, err := h.userRepo.GetByID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "User not found")
+			return
+		}
+		userDir := filepath.Join(h.uploadDir, userID.String())
+		currentCount := countUserUploads(userDir)
+		maxUploads := maxUploadsForPlan(user.Plan)
+		if currentCount >= maxUploads {
+			writeError(w, http.StatusForbidden, fmt.Sprintf(
+				"Upload limit reached (%d/%d). Upgrade your plan for more uploads.", currentCount, maxUploads))
+			return
+		}
+	}
 
 	// Limit upload size to 10MB
 	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
@@ -82,8 +124,19 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 	filename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 
+	// Create user-specific directories
+	userDir := filepath.Join(h.uploadDir, userID.String())
+	userThumbDir := filepath.Join(userDir, "thumbnails")
+	for _, dir := range []string{userDir, userThumbDir} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			slog.Error("Failed to create user upload directory", "dir", dir, "error", err)
+			writeError(w, http.StatusInternalServerError, "Failed to save file")
+			return
+		}
+	}
+
 	// Save original file
-	dstPath := filepath.Join(h.uploadDir, filename)
+	dstPath := filepath.Join(userDir, filename)
 	dst, err := os.Create(dstPath)
 	if err != nil {
 		slog.Error("Failed to create file", "path", dstPath, "error", err)
@@ -98,18 +151,20 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate thumbnail (200x200 max)
+	// Generate thumbnail (200x200 max) — synchronous to ensure it exists before responding
 	thumbFilename := fmt.Sprintf("thumb_%s.jpg", strings.TrimSuffix(filename, ext))
-	go h.generateThumbnail(dstPath, thumbFilename)
+	h.generateThumbnail(dstPath, filepath.Join(userDir, "thumbnails"), thumbFilename)
+
+	slog.Info("Image uploaded", "user_id", userID, "filename", filename)
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"url":           fmt.Sprintf("/api/uploads/%s", filename),
-		"thumbnail_url": fmt.Sprintf("/api/uploads/thumbnails/%s", thumbFilename),
+		"url":           fmt.Sprintf("/api/uploads/%s/%s", userID.String(), filename),
+		"thumbnail_url": fmt.Sprintf("/api/uploads/%s/thumbnails/%s", userID.String(), thumbFilename),
 		"filename":      filename,
 	})
 }
 
-func (uh *UploadHandler) generateThumbnail(srcPath, thumbFilename string) {
+func (uh *UploadHandler) generateThumbnail(srcPath, thumbDir, thumbFilename string) {
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
 		slog.Error("Failed to open source for thumbnail", "error", err)
@@ -146,7 +201,7 @@ func (uh *UploadHandler) generateThumbnail(srcPath, thumbFilename string) {
 	thumb := image.NewRGBA(image.Rect(0, 0, newW, newH))
 	draw.ApproxBiLinear.Scale(thumb, thumb.Bounds(), srcImg, srcImg.Bounds(), draw.Over, nil)
 
-	thumbPath := filepath.Join(uh.uploadDir, "thumbnails", thumbFilename)
+	thumbPath := filepath.Join(thumbDir, thumbFilename)
 	thumbFile, err := os.Create(thumbPath)
 	if err != nil {
 		slog.Error("Failed to create thumbnail file", "error", err)
@@ -158,3 +213,4 @@ func (uh *UploadHandler) generateThumbnail(srcPath, thumbFilename string) {
 		slog.Error("Failed to encode thumbnail", "error", err)
 	}
 }
+

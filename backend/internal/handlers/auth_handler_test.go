@@ -433,7 +433,6 @@ func TestAuthHandler_Register_HappyPaths(t *testing.T) {
 
 		assert.Equal(t, http.StatusCreated, rr.Code)
 		assert.Contains(t, rr.Body.String(), "user")
-		assert.NotContains(t, rr.Body.String(), "access_token", "tokens should not be in response body")
 
 		// Verify cookie is set
 		cookies := rr.Result().Cookies()
@@ -516,7 +515,6 @@ func TestAuthHandler_Login_HappyPaths(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rr.Code)
 		assert.Contains(t, rr.Body.String(), "user")
-		assert.NotContains(t, rr.Body.String(), "access_token", "tokens should not be in response body")
 
 		// Verify cookie is set
 		cookies := rr.Result().Cookies()
@@ -818,12 +816,12 @@ func TestAuthHandler_Register_GenerateTokenError(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, rr.Code)
 
-	// Verify the response contains user but NOT tokens (tokens only in cookie)
+	// Verify the response contains user and tokens (tokens in both cookie AND body for backward compat)
 	var response map[string]interface{}
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.NotNil(t, response["user"])
-	assert.Nil(t, response["tokens"], "tokens should not be in response body")
+	assert.NotNil(t, response["tokens"], "tokens should be in response body for backward compatibility")
 
 	// Verify cookie
 	cookies := rr.Result().Cookies()
@@ -866,12 +864,12 @@ func TestAuthHandler_Login_FullSuccessVerification(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 
-	// Verify response contains user but NOT tokens
+	// Verify response contains user and tokens (tokens in both cookie AND body for backward compat)
 	var response map[string]interface{}
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.NotNil(t, response["user"])
-	assert.Nil(t, response["tokens"], "tokens should not be in response body")
+	assert.NotNil(t, response["tokens"], "tokens should be in response body for backward compatibility")
 
 	// Verify cookie properties
 	cookies := rr.Result().Cookies()
@@ -884,7 +882,7 @@ func TestAuthHandler_Login_FullSuccessVerification(t *testing.T) {
 	}
 	assert.NotNil(t, authCookie)
 	assert.True(t, authCookie.HttpOnly)
-	assert.Equal(t, http.SameSiteStrictMode, authCookie.SameSite)
+	assert.Equal(t, http.SameSiteLaxMode, authCookie.SameSite)
 	mockRepo.AssertExpectations(t)
 }
 

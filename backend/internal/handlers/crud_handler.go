@@ -218,6 +218,10 @@ func (h *CRUDHandler) GetUpcomingEvents(w http.ResponseWriter, r *http.Request) 
 			limit = parsed
 		}
 	}
+	// Cap limit to prevent abuse
+	if limit > 50 {
+		limit = 50
+	}
 	events, err := h.eventRepo.GetUpcoming(r.Context(), userID, limit)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch upcoming events")
@@ -255,8 +259,16 @@ func (h *CRUDHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate unavailable dates
+	// Validate event_date format
+	if event.EventDate == "" {
+		writeError(w, http.StatusBadRequest, "event_date is required")
+		return
+	}
 	startReqStr := strings.Split(event.EventDate, "T")[0]
+	if _, err := time.Parse("2006-01-02", startReqStr); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event_date format, expected YYYY-MM-DD")
+		return
+	}
 	endReqStr := startReqStr
 
 	unavailableDates, err := h.unavailRepo.GetByDateRange(r.Context(), userID, startReqStr, endReqStr)
@@ -318,6 +330,7 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 	oldClientID := existing.ClientID
 	oldStatus := existing.Status
+	oldEventDate := existing.EventDate
 
 	// Decode into existing event to handle partial updates
 	if err := decodeJSON(r, existing); err != nil {
@@ -334,18 +347,26 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate unavailable dates
+	// Validate unavailable dates (only if date changed)
 	startReqStr := strings.Split(existing.EventDate, "T")[0]
-	endReqStr := startReqStr
-
-	unavailableDates, err := h.unavailRepo.GetByDateRange(r.Context(), userID, startReqStr, endReqStr)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to verify unavailable dates")
+	if _, err := time.Parse("2006-01-02", startReqStr); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event_date format, expected YYYY-MM-DD")
 		return
 	}
-	if len(unavailableDates) > 0 {
-		writeError(w, http.StatusBadRequest, "Date range overlaps with unavailable dates")
-		return
+
+	// Only check unavailable dates if the event date actually changed
+	oldDateStr := strings.Split(oldEventDate, "T")[0]
+	if startReqStr != oldDateStr {
+		endReqStr := startReqStr
+		unavailableDates, err := h.unavailRepo.GetByDateRange(r.Context(), userID, startReqStr, endReqStr)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify unavailable dates")
+			return
+		}
+		if len(unavailableDates) > 0 {
+			writeError(w, http.StatusBadRequest, "Date range overlaps with unavailable dates")
+			return
+		}
 	}
 
 	if err := h.eventRepo.Update(r.Context(), existing); err != nil {
