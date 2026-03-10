@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   DrawerContentScrollView,
   DrawerContentComponentProps,
@@ -89,6 +90,7 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
     navigation.closeDrawer();
   };
 
+  const insets = useSafeAreaInsets();
   const initial = user?.name?.charAt(0)?.toUpperCase() || "U";
   const planLabel = user?.plan === "pro" ? "PRO" : "BASIC";
   const planColor = user?.plan === "pro" ? palette.primary : palette.textTertiary;
@@ -97,7 +99,7 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
     <View style={[styles.container, { backgroundColor: palette.card }]}>
       <DrawerContentScrollView
         {...props}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
       >
         {/* User header */}
         <View style={[styles.header, { borderBottomColor: palette.separator }]}>
