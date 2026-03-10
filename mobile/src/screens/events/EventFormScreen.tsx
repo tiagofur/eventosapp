@@ -166,6 +166,8 @@ export default function EventFormScreen({ navigation, route }: Props) {
   const [showSupplyPicker, setShowSupplyPicker] = useState(false);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [showClientPicker, setShowClientPicker] = useState(false);
   const [showQuickClient, setShowQuickClient] = useState(false);
   const [showProductPicker, setShowProductPicker] = useState(false);
@@ -804,6 +806,7 @@ export default function EventFormScreen({ navigation, route }: Props) {
               <DateTimePicker
                 value={new Date(formData.event_date)}
                 mode="date"
+                themeVariant={isDark ? "dark" : "light"}
                 onChange={(event, date) => {
                   setShowDatePicker(false);
                   if (date) {
@@ -819,25 +822,71 @@ export default function EventFormScreen({ navigation, route }: Props) {
             <View style={styles.row}>
               <View style={styles.halfInput}>
                 <Text style={styles.inputLabel}>Hora inicio</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.start_time}
-                  onChangeText={(v) =>
-                    setFormData({ ...formData, start_time: v })
-                  }
-                  placeholder="14:00"
-                />
+                <TouchableOpacity
+                  style={styles.selector}
+                  onPress={() => setShowStartTimePicker(true)}
+                >
+                  <Text style={formData.start_time ? styles.selectorValue : styles.selectorPlaceholder}>
+                    {formData.start_time || "Seleccionar..."}
+                  </Text>
+                </TouchableOpacity>
+                {showStartTimePicker && (
+                  <DateTimePicker
+                    value={(() => {
+                      const d = new Date();
+                      if (formData.start_time) {
+                        const [h, m] = formData.start_time.split(":").map(Number);
+                        d.setHours(h, m, 0, 0);
+                      }
+                      return d;
+                    })()}
+                    mode="time"
+                    is24Hour
+                    themeVariant={isDark ? "dark" : "light"}
+                    onChange={(event, date) => {
+                      setShowStartTimePicker(false);
+                      if (date) {
+                        const h = date.getHours().toString().padStart(2, "0");
+                        const m = date.getMinutes().toString().padStart(2, "0");
+                        setFormData({ ...formData, start_time: `${h}:${m}` });
+                      }
+                    }}
+                  />
+                )}
               </View>
               <View style={styles.halfInput}>
                 <Text style={styles.inputLabel}>Hora fin</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.end_time}
-                  onChangeText={(v) =>
-                    setFormData({ ...formData, end_time: v })
-                  }
-                  placeholder="18:00"
-                />
+                <TouchableOpacity
+                  style={styles.selector}
+                  onPress={() => setShowEndTimePicker(true)}
+                >
+                  <Text style={formData.end_time ? styles.selectorValue : styles.selectorPlaceholder}>
+                    {formData.end_time || "Seleccionar..."}
+                  </Text>
+                </TouchableOpacity>
+                {showEndTimePicker && (
+                  <DateTimePicker
+                    value={(() => {
+                      const d = new Date();
+                      if (formData.end_time) {
+                        const [h, m] = formData.end_time.split(":").map(Number);
+                        d.setHours(h, m, 0, 0);
+                      }
+                      return d;
+                    })()}
+                    mode="time"
+                    is24Hour
+                    themeVariant={isDark ? "dark" : "light"}
+                    onChange={(event, date) => {
+                      setShowEndTimePicker(false);
+                      if (date) {
+                        const h = date.getHours().toString().padStart(2, "0");
+                        const m = date.getMinutes().toString().padStart(2, "0");
+                        setFormData({ ...formData, end_time: `${h}:${m}` });
+                      }
+                    }}
+                  />
+                )}
               </View>
             </View>
 
@@ -930,11 +979,12 @@ export default function EventFormScreen({ navigation, route }: Props) {
                   </View>
                   <View style={styles.productQuantity}>
                     <TouchableOpacity
+                      style={styles.quantityBtnWrapper}
                       onPress={() =>
                         handleProductQuantityChange(index, p.quantity - 1)
                       }
                     >
-                      <Text style={styles.quantityBtn}>-</Text>
+                      <Text style={styles.quantityBtnText}>−</Text>
                     </TouchableOpacity>
                     <TextInput
                       style={styles.quantityInput}
@@ -945,11 +995,12 @@ export default function EventFormScreen({ navigation, route }: Props) {
                       keyboardType="number-pad"
                     />
                     <TouchableOpacity
+                      style={styles.quantityBtnWrapper}
                       onPress={() =>
                         handleProductQuantityChange(index, p.quantity + 1)
                       }
                     >
-                      <Text style={styles.quantityBtn}>+</Text>
+                      <Text style={styles.quantityBtnText}>+</Text>
                     </TouchableOpacity>
                   </View>
                   <TouchableOpacity onPress={() => handleRemoveProduct(index)}>
@@ -1186,82 +1237,90 @@ export default function EventFormScreen({ navigation, route }: Props) {
               return (
                 <View
                   key={i}
-                  style={[styles.productCard, { marginBottom: spacing.sm }]}
+                  style={styles.supplyCard}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.productName}>
-                      {item?.ingredient_name || "Insumo"}
-                    </Text>
-                    <Text
-                      style={{
-                        ...typography.caption,
-                        color: palette.statusQuoted,
-                      }}
-                    >
-                      ${(sup.quantity * sup.unit_cost).toFixed(2)} — {sup.source === 'stock' ? 'Del stock' : 'Compra nueva'}
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: spacing.xs,
-                        gap: spacing.sm,
-                      }}
-                    >
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <Text style={{ ...typography.caption, color: palette.textSecondary, marginRight: spacing.xs }}>
-                          Cant:
-                        </Text>
-                        <TextInput
-                          style={[
-                            styles.input,
-                            { width: 60, paddingVertical: spacing.xs, textAlign: "center" },
-                          ]}
-                          value={sup.quantity.toString()}
-                          onChangeText={(v) => {
-                            const next = [...selectedSupplies];
-                            next[i] = { ...next[i], quantity: Math.max(0.001, parseFloat(v) || 0.001) };
-                            setSelectedSupplies(next);
-                          }}
-                          keyboardType="decimal-pad"
-                        />
-                      </View>
-                      <TouchableOpacity
+                  {/* Header: name + delete */}
+                  <View style={styles.supplyCardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.productName}>
+                        {item?.ingredient_name || "Insumo"}
+                      </Text>
+                      <Text
                         style={{
-                          paddingHorizontal: spacing.sm,
-                          paddingVertical: spacing.xs,
-                          borderRadius: 8,
-                          backgroundColor: sup.source === 'stock' ? palette.successBg : palette.surface,
-                        }}
-                        onPress={() => {
-                          const next = [...selectedSupplies];
-                          next[i] = { ...next[i], source: sup.source === 'stock' ? 'purchase' : 'stock' };
-                          setSelectedSupplies(next);
+                          ...typography.caption,
+                          color: sup.exclude_cost ? palette.textMuted : palette.statusQuoted,
                         }}
                       >
-                        <Text style={{ ...typography.caption, color: sup.source === 'stock' ? palette.success : palette.textSecondary }}>
-                          {sup.source === 'stock' ? 'Del stock' : 'Compra nueva'}
-                        </Text>
-                      </TouchableOpacity>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                        <Switch
-                          value={sup.exclude_cost}
-                          onValueChange={(val) => {
-                            const next = [...selectedSupplies];
-                            next[i] = { ...next[i], exclude_cost: val };
-                            setSelectedSupplies(next);
-                          }}
-                          trackColor={{ true: palette.primary, false: palette.separator }}
-                        />
-                        <Text style={{ ...typography.caption, color: palette.textSecondary }}>
-                          Sin costo
-                        </Text>
-                      </View>
+                        {sup.exclude_cost ? "Sin costo" : `$${(sup.quantity * sup.unit_cost).toFixed(2)}`}
+                        {" — "}
+                        {sup.source === 'stock' ? 'Del stock' : 'Compra nueva'}
+                      </Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.supplyDeleteBtn}
+                      onPress={() => handleRemoveSupply(i)}
+                    >
+                      <Trash2 color={palette.error} size={16} />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => handleRemoveSupply(i)}>
-                    <Trash2 color={palette.error} size={18} />
-                  </TouchableOpacity>
+
+                  {/* Controls row: quantity + source */}
+                  <View style={styles.supplyControlsRow}>
+                    <View style={styles.supplyQuantityGroup}>
+                      <Text style={{ ...typography.caption, color: palette.textSecondary }}>
+                        Cant:
+                      </Text>
+                      <TextInput
+                        style={styles.supplyQuantityInput}
+                        value={sup.quantity.toString()}
+                        onChangeText={(v) => {
+                          const next = [...selectedSupplies];
+                          next[i] = { ...next[i], quantity: Math.max(0.001, parseFloat(v) || 0.001) };
+                          setSelectedSupplies(next);
+                        }}
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.supplySourceBtn,
+                        { backgroundColor: sup.source === 'stock' ? palette.successBg : palette.surface },
+                      ]}
+                      onPress={() => {
+                        const next = [...selectedSupplies];
+                        next[i] = { ...next[i], source: sup.source === 'stock' ? 'purchase' : 'stock' };
+                        setSelectedSupplies(next);
+                      }}
+                    >
+                      <Text style={{ ...typography.caption, color: sup.source === 'stock' ? palette.success : palette.textSecondary }}>
+                        {sup.source === 'stock' ? 'Del stock' : 'Compra nueva'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Exclude cost toggle - separate row */}
+                  <View style={styles.supplyToggleRow}>
+                    <Text style={{ ...typography.caption, color: palette.textSecondary }}>
+                      Excluir del costo total
+                    </Text>
+                    <Switch
+                      value={sup.exclude_cost}
+                      onValueChange={(val) => {
+                        const next = [...selectedSupplies];
+                        next[i] = { ...next[i], exclude_cost: val };
+                        setSelectedSupplies(next);
+                      }}
+                      trackColor={{
+                        false: palette.separator,
+                        true: palette.primary + "80",
+                      }}
+                      thumbColor={
+                        sup.exclude_cost
+                          ? palette.primary
+                          : palette.surface
+                      }
+                    />
+                  </View>
                 </View>
               );
             })}
@@ -1434,45 +1493,36 @@ export default function EventFormScreen({ navigation, route }: Props) {
               return (
                 <View
                   key={i}
-                  style={[styles.productCard, { marginBottom: spacing.sm }]}
+                  style={styles.supplyCard}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.productName}>
-                      {item?.ingredient_name || "Equipo"}
-                    </Text>
-                    <Text
-                      style={{
-                        ...typography.caption,
-                        color: palette.textMuted,
-                      }}
-                    >
-                      Sin costo - Activo reutilizable
-                    </Text>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginTop: spacing.xs,
-                      }}
-                    >
+                  <View style={styles.supplyCardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.productName}>
+                        {item?.ingredient_name || "Equipo"}
+                      </Text>
                       <Text
                         style={{
                           ...typography.caption,
-                          color: palette.textSecondary,
-                          marginRight: spacing.xs,
+                          color: palette.textMuted,
                         }}
                       >
+                        Activo reutilizable — No afecta costos
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.supplyDeleteBtn}
+                      onPress={() => handleRemoveEquipment(i)}
+                    >
+                      <Trash2 color={palette.error} size={16} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.supplyControlsRow}>
+                    <View style={styles.supplyQuantityGroup}>
+                      <Text style={{ ...typography.caption, color: palette.textSecondary }}>
                         Cant:
                       </Text>
                       <TextInput
-                        style={[
-                          styles.input,
-                          {
-                            width: 60,
-                            paddingVertical: spacing.xs,
-                            textAlign: "center",
-                          },
-                        ]}
+                        style={styles.supplyQuantityInput}
                         value={eq.quantity.toString()}
                         onChangeText={(v) => {
                           const next = [...selectedEquipment];
@@ -1486,9 +1536,6 @@ export default function EventFormScreen({ navigation, route }: Props) {
                       />
                     </View>
                   </View>
-                  <TouchableOpacity onPress={() => handleRemoveEquipment(i)}>
-                    <Trash2 color={palette.error} size={18} />
-                  </TouchableOpacity>
                 </View>
               );
             })}
@@ -2025,6 +2072,10 @@ const getStyles = (palette: typeof colors.light) =>
       ...typography.body,
       color: palette.text,
     },
+    selectorPlaceholder: {
+      ...typography.body,
+      color: palette.textMuted,
+    },
     inputLabel: {
       ...typography.caption,
       color: palette.textSecondary,
@@ -2116,23 +2167,32 @@ const getStyles = (palette: typeof colors.light) =>
       alignItems: "center",
       gap: spacing.xs,
     },
-    quantityBtn: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
+    quantityBtnWrapper: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
       backgroundColor: palette.surface,
-      textAlign: "center",
-      lineHeight: 26,
+      borderWidth: 1,
+      borderColor: palette.border,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+    },
+    quantityBtnText: {
       fontSize: 18,
+      fontWeight: "600" as const,
       color: palette.text,
+      lineHeight: 20,
     },
     quantityInput: {
-      width: 40,
-      height: 28,
+      width: 48,
+      height: 32,
       borderRadius: spacing.borderRadius.sm,
       backgroundColor: palette.surface,
-      textAlign: "center",
-      ...typography.bodySmall,
+      borderWidth: 1,
+      borderColor: palette.border,
+      textAlign: "center" as const,
+      ...typography.body,
+      fontWeight: "600" as const,
       color: palette.text,
     },
     totalRow: {
@@ -2190,6 +2250,60 @@ const getStyles = (palette: typeof colors.light) =>
       padding: spacing.xs,
       ...typography.bodySmall,
       color: palette.text,
+    },
+    supplyCard: {
+      backgroundColor: palette.surface,
+      borderRadius: spacing.borderRadius.md,
+      padding: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    supplyCardHeader: {
+      flexDirection: "row" as const,
+      alignItems: "flex-start" as const,
+      justifyContent: "space-between" as const,
+      marginBottom: spacing.sm,
+    },
+    supplyDeleteBtn: {
+      padding: spacing.xs,
+      borderRadius: spacing.borderRadius.sm,
+      marginLeft: spacing.sm,
+    },
+    supplyControlsRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.sm,
+    },
+    supplyQuantityGroup: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: spacing.xs,
+    },
+    supplyQuantityInput: {
+      width: 64,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+      textAlign: "center" as const,
+      backgroundColor: palette.background,
+      borderRadius: spacing.borderRadius.sm,
+      borderWidth: 1,
+      borderColor: palette.border,
+      ...typography.body,
+      fontWeight: "600" as const,
+      color: palette.text,
+    },
+    supplySourceBtn: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: 8,
+    },
+    supplyToggleRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      marginTop: spacing.sm,
+      paddingTop: spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: palette.separator,
     },
     totalsCard: {
       backgroundColor: palette.surface,
