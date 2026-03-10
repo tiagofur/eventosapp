@@ -176,7 +176,10 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
         <DrawerItem
           label="Configuración"
           icon={<Settings size={iconSize} color={activeRoute === "SettingsStack" ? palette.primary : palette.textSecondary} />}
-          onPress={() => navigateToScreen("SettingsStack")}
+          onPress={() => {
+            navigation.navigate("SettingsStack", { screen: "Settings" });
+            navigation.closeDrawer();
+          }}
           isActive={activeRoute === "SettingsStack"}
           palette={palette}
         />
