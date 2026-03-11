@@ -559,17 +559,9 @@ export const Settings: React.FC = () => {
                 <ContractTemplateEditor
                   template={contractTemplate}
                   onChange={setContractTemplate}
+                  onSave={handleUpdateContractSettings}
                   isBasicPlan={isBasicPlan}
                 />
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleUpdateContractSettings}
-                    className="bg-primary text-white font-medium px-6 py-3 rounded-md shadow-sm hover:bg-primary-dark transition-colors"
-                  >
-                    Guardar Cambios
-                  </button>
-                </div>
               </div>
             </div>
           )}

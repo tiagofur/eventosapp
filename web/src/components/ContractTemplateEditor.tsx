@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
-import { Eye, Pencil, RotateCcw, Save, Lock, Bold, Italic, Underline, Plus } from "lucide-react";
+import { Eye, Pencil, RotateCcw, Lock, Bold, Italic, Underline, Plus, Save } from "lucide-react";
 import {
   CONTRACT_TEMPLATE_PLACEHOLDERS,
   DEFAULT_CONTRACT_TEMPLATE,
@@ -76,12 +76,14 @@ const htmlToTemplate = (container: HTMLDivElement): string => {
 interface ContractTemplateEditorProps {
   template: string;
   onChange: (template: string) => void;
+  onSave: () => void;
   isBasicPlan: boolean;
 }
 
 export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
   template,
   onChange,
+  onSave,
   isBasicPlan,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -398,6 +400,14 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
             <RotateCcw className="h-3.5 w-3.5" />
             Restablecer
           </button>
+          <button
+            type="button"
+            onClick={onSave}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg hover:bg-orange-600 transition-colors"
+          >
+            <Save className="h-3.5 w-3.5" />
+            Guardar
+          </button>
         </div>
       </div>
 
@@ -449,6 +459,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
       {/* Editor / Preview */}
       {!isPreview ? (
         <div
+          key="template-editor"
           ref={editorRef}
           contentEditable={!isBasicPlan}
           suppressContentEditableWarning
@@ -464,7 +475,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
           data-placeholder="Escribe la plantilla de tu contrato aquí..."
         />
       ) : (
-        <div className="bg-white dark:bg-gray-900 border border-border rounded-2xl p-8 min-h-[400px] font-serif text-text leading-relaxed">
+        <div key="template-preview" className="bg-white dark:bg-gray-900 border border-border rounded-2xl p-8 min-h-[400px] font-serif text-text leading-relaxed">
           <div className="text-center mb-8">
             <h2 className="text-xl font-black uppercase tracking-[0.15em] text-text">
               Contrato de Servicios

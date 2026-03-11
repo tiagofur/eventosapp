@@ -33,6 +33,8 @@ var allowedContractTemplateTokens = map[string]struct{}{
 	"client_address":            {},
 	"client_city":               {},
 	"contract_city":             {},
+	"event_services_list":       {},
+	"event_paid_amount":         {},
 }
 
 var contractTemplateTokenAliases = map[string]string{
@@ -58,6 +60,8 @@ var contractTemplateTokenAliases = map[string]string{
 	"direccion del cliente":                "client_address",
 	"ciudad del cliente":                   "client_city",
 	"ciudad del contrato":                  "contract_city",
+	"servicios del evento":                 "event_services_list",
+	"total pagado":                         "event_paid_amount",
 }
 
 var contractTemplateDiacriticsReplacer = strings.NewReplacer(
