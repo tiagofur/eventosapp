@@ -178,7 +178,13 @@
       "Bash(find:*)",
       "Bash(gh repo:*)",
       "mcp__claude_ai_Canva__upload-asset-from-url",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(grep -r \"scroll\\\\|picker\\\\|hora.*input\" /Users/tiagofur/Desktop/creapolis/eventosapp/web/src --include=\"*.tsx\" --include=\"*.ts\" -l 2>/dev/null | head -10)",
+      "Bash(grep -r \"TimePicker\\\\|TimeSelect\\\\|HourPicker\\\\|time-picker\" /Users/tiagofur/Desktop/creapolis/eventosapp/web/src --include=\"*.tsx\" --include=\"*.ts\" -n 2>/dev/null | head -20)",
+      "Bash(grep -r \"TimePicker\\\\|picker\\\\|scroll\\\\|0078d4\\\\|0084ff\" /Users/tiagofur/Desktop/creapolis/eventosapp/mobile/src --include=\"*.tsx\" --include=\"*.ts\" -l 2>/dev/null | head -10)",
+      "Bash(git push:*)",
+      "Bash(CLAUDECODE= git add web/src/components/Modal.tsx && git commit -m \"$\\(cat <<'EOF'\nfix: modal dialog quedaba detrás del backdrop por z-index duplicado\n\nEl backdrop tenía z-[200] propio siendo fixed, lo que lo sacaba del stacking\ncontext del wrapper y tapaba el dialog. Removiendo el z-index del backdrop,\nqueda en el flujo del wrapper \\(z-[200]\\) y el dialog lo supera por orden DOM.\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\" && git push)",
+      "Bash(unset CLAUDECODE && git add web/src/components/Modal.tsx && git commit -m \"$\\(cat <<'EOF'\nfix: modal dialog quedaba detrás del backdrop por z-index duplicado\n\nEl backdrop tenía z-[200] propio siendo fixed, lo que lo sacaba del stacking\ncontext del wrapper y tapaba el dialog. Removiendo el z-index del backdrop,\nqueda en el flujo del wrapper \\(z-[200]\\) y el dialog lo supera por orden DOM.\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\" && git push)"
     ]
   }
 }
