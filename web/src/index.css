@@ -158,6 +158,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Time input accent color */
+input[type="time"] {
+  accent-color: var(--color-primary);
+}
+
 /* react-day-picker dark mode overrides */
 .dark .rdp-head_cell,
 .dark .rdp-weekday {

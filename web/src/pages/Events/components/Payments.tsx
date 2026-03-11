@@ -27,12 +27,14 @@ export const Payments: React.FC<PaymentsProps> = ({
   userId,
   eventStatus,
   onStatusChange,
+  eventData,
   initialAmount,
   autoOpenAdd,
 }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
+  const [modalTitle, setModalTitle] = useState("Registrar Pago");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -49,12 +51,27 @@ export const Payments: React.FC<PaymentsProps> = ({
 
   useEffect(() => {
     if (autoOpenAdd) {
+      setModalTitle("Registrar Pago");
       setIsAdding(true);
       if (initialAmount !== undefined) {
         setValue("amount", parseFloat(initialAmount.toFixed(2)));
       }
     }
   }, [autoOpenAdd, initialAmount, setValue]);
+
+  const openAddPayment = () => {
+    reset();
+    setModalTitle("Registrar Pago");
+    setIsAdding(true);
+  };
+
+  const openAddDeposit = () => {
+    reset();
+    setValue("amount", parseFloat(depositBalance.toFixed(2)));
+    setValue("notes", "Anticipo");
+    setModalTitle("Registrar Anticipo");
+    setIsAdding(true);
+  };
 
   useEffect(() => {
     loadPayments();
@@ -118,6 +135,9 @@ export const Payments: React.FC<PaymentsProps> = ({
   const balance = totalAmount - totalPaid;
   const progress = totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 0;
   const isFullyPaid = balance <= 0.01;
+  const depositPercent = eventData?.deposit_percent || 0;
+  const depositAmount = totalAmount * (depositPercent / 100);
+  const depositBalance = Math.max(depositAmount - totalPaid, 0);
 
   const getMethodIcon = (method: string) => {
     switch (method) {
@@ -164,24 +184,40 @@ export const Payments: React.FC<PaymentsProps> = ({
           </div>
           
           <div className="flex items-center gap-3">
+            {!isAdding && depositPercent > 0 && (
+              <button
+                type="button"
+                onClick={openAddDeposit}
+                className="inline-flex items-center px-4 py-2.5 bg-warning/10 text-warning border border-warning/30 text-sm font-black rounded-2xl hover:bg-warning/20 transition-all active:scale-95 uppercase tracking-tighter"
+              >
+                <Plus className="h-4 w-4 mr-1.5" />
+                Anticipo
+              </button>
+            )}
             {!isAdding && (
               <button
                 type="button"
-                onClick={() => { reset(); setIsAdding(true); }}
-                className="inline-flex items-center px-5 py-2.5 premium-gradient text-white text-sm font-black rounded-2xl hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 uppercase tracking-tighter"
+                onClick={openAddPayment}
+                className="inline-flex items-center px-4 py-2.5 premium-gradient text-white text-sm font-black rounded-2xl hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 uppercase tracking-tighter"
               >
-                <Plus className="h-4 w-4 mr-2" /> 
-                Registrar Pago
+                <Plus className="h-4 w-4 mr-1.5" />
+                Pago
               </button>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className={clsx("grid gap-6 mb-8", depositPercent > 0 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 md:grid-cols-3")}>
           <div className="bg-surface-alt/50 p-6 rounded-2xl border border-border/50">
              <p className="text-[10px] font-black text-text-tertiary uppercase tracking-tighter mb-1">Total del Evento</p>
              <p className="text-2xl font-black text-text">${totalAmount.toFixed(2)}</p>
           </div>
+          {depositPercent > 0 && (
+            <div className="bg-warning/5 p-6 rounded-2xl border border-warning/20">
+              <p className="text-[10px] font-black text-warning/70 uppercase tracking-tighter mb-1">Anticipo ({depositPercent}%)</p>
+              <p className="text-2xl font-black text-warning">${depositAmount.toFixed(2)}</p>
+            </div>
+          )}
           <div className="bg-success/5 p-6 rounded-2xl border border-success/10">
              <p className="text-[10px] font-black text-success/70 uppercase tracking-tighter mb-1">Total Pagado</p>
              <p className="text-2xl font-black text-success">${totalPaid.toFixed(2)}</p>
@@ -284,7 +320,7 @@ export const Payments: React.FC<PaymentsProps> = ({
         <Modal
           isOpen={isAdding}
           onClose={() => setIsAdding(false)}
-          title="Registrar Pago"
+          title={modalTitle}
           maxWidth="2xl"
         >
           <div className="animate-in zoom-in-95 fade-in duration-300">

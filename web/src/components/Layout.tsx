@@ -98,7 +98,7 @@ export const Layout: React.FC = () => {
       {/* Sidebar */}
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-bg lg:bg-transparent transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 lg:z-auto w-64 bg-bg lg:bg-transparent transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
           isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
         aria-label="Menú de navegación principal"
