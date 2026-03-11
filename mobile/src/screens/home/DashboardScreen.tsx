@@ -321,7 +321,7 @@ export default function DashboardScreen({ navigation }: Props) {
         <View style={styles.quickActions}>
           <PremiumButton
             label="Nuevo Evento"
-            icon={<Plus color="#ffffff" size={16} />}
+            icon={<Plus color={palette.textInverse} size={16} />}
             onPress={() => navigation.navigate("EventForm", {})}
             size="small"
             style={{ flex: 1 }}

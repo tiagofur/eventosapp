@@ -970,7 +970,7 @@ export default function EventDetailScreen({ navigation, route }: Props) {
         >
           <PremiumButton
             label="Checklist de Carga"
-            icon={<ClipboardList color="#ffffff" size={18} />}
+            icon={<ClipboardList color={palette.textInverse} size={18} />}
             onPress={() => navigation.navigate("EventChecklist", { id })}
             style={{ flex: 1 }}
           />

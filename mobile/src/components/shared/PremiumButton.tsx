@@ -88,7 +88,7 @@ export const PremiumButton: React.FC<PremiumButtonProps> = ({
         <View style={styles.contentContainer}>
           {icon && <View style={styles.iconContainer}>{icon}</View>}
           <Text
-            style={[styles.text, styles.primaryText, getTextStyle(), textStyle]}
+            style={[styles.text, { color: palette.textInverse }, getTextStyle(), textStyle]}
           >
             {loading ? "Cargando..." : label}
           </Text>
@@ -162,9 +162,6 @@ const styles = StyleSheet.create({
   },
   text: {
     textAlign: "center",
-  },
-  primaryText: {
-    color: "#ffffff", // Ensures text on gold gradient is always white
   },
   disabled: {
     opacity: 0.5,

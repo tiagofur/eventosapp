@@ -268,7 +268,7 @@ export default function EventChecklistScreen({ navigation, route }: Props) {
                       ]}
                     >
                       {isChecked && (
-                        <Check size={14} color="#fff" strokeWidth={3} />
+                        <Check size={14} color={palette.textInverse} strokeWidth={3} />
                       )}
                     </View>
                     <View style={styles.itemInfo}>

@@ -116,10 +116,10 @@ export default function ChangePasswordScreen({ navigation }: Props) {
             activeOpacity={0.8}
           >
             {submitting ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={palette.textInverse} size="small" />
             ) : (
               <>
-                <Save color="#fff" size={18} />
+                <Save color={palette.textInverse} size={18} />
                 <Text style={styles.buttonText}>Guardar</Text>
               </>
             )}
@@ -167,7 +167,7 @@ const getStyles = (palette: typeof colors.light) =>
     },
     buttonText: {
       ...typography.body,
-      color: "#fff",
+      color: palette.textInverse,
       fontWeight: "600",
     },
   });
