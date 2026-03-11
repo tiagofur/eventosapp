@@ -656,6 +656,10 @@ export const EventSummary: React.FC = () => {
           profile={profile}
           initialAmount={paymentInitialAmount}
           autoOpenAdd={autoOpenPayment}
+          onPaymentAdded={async () => {
+            const paymentsData = await paymentService.getByEventId(id);
+            setPayments(paymentsData || []);
+          }}
         />
       )}
 

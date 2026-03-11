@@ -19,6 +19,7 @@ interface PaymentsProps {
   profile?: any;
   initialAmount?: number;
   autoOpenAdd?: boolean;
+  onPaymentAdded?: () => void;
 }
 
 export const Payments: React.FC<PaymentsProps> = ({
@@ -30,6 +31,7 @@ export const Payments: React.FC<PaymentsProps> = ({
   eventData,
   initialAmount,
   autoOpenAdd,
+  onPaymentAdded,
 }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [, setLoading] = useState(true);
@@ -110,6 +112,7 @@ export const Payments: React.FC<PaymentsProps> = ({
       setIsAdding(false);
       reset();
       loadPayments();
+      onPaymentAdded?.();
       addToast("Pago registrado correctamente.", "success");
     } catch (err) {
       logError("Error creating payment", err);
@@ -125,6 +128,7 @@ export const Payments: React.FC<PaymentsProps> = ({
       setConfirmOpen(false);
       setDeleteId(null);
       loadPayments();
+      onPaymentAdded?.();
     } catch (err) {
       logError("Error deleting payment", err);
       addToast('Error al eliminar el pago.', 'error');
