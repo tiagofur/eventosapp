@@ -25,7 +25,13 @@ import com.creapolis.solennix.feature.events.ui.EventFormScreen
 import com.creapolis.solennix.feature.inventory.ui.InventoryListScreen
 import com.creapolis.solennix.feature.products.ui.ProductListScreen
 import com.creapolis.solennix.feature.search.ui.SearchScreen
+import com.creapolis.solennix.feature.settings.ui.AboutScreen
+import com.creapolis.solennix.feature.settings.ui.ChangePasswordScreen
+import com.creapolis.solennix.feature.settings.ui.EditProfileScreen
+import com.creapolis.solennix.feature.settings.ui.PricingScreen
+import com.creapolis.solennix.feature.settings.ui.PrivacyScreen
 import com.creapolis.solennix.feature.settings.ui.SettingsScreen
+import com.creapolis.solennix.feature.settings.ui.TermsScreen
 
 @Composable
 fun CompactBottomNavLayout() {
@@ -159,10 +165,48 @@ fun CompactBottomNavLayout() {
             composable("settings") {
                 SettingsScreen(
                     viewModel = hiltViewModel(),
-                    onEditProfile = { },
-                    onBusinessSettings = { },
-                    onPrivacy = { },
-                    onTerms = { }
+                    onEditProfile = { navController.navigate("edit_profile") },
+                    onChangePassword = { navController.navigate("change_password") },
+                    onBusinessSettings = { /* TODO: Business Settings */ },
+                    onPricing = { navController.navigate("pricing") },
+                    onAbout = { navController.navigate("about") },
+                    onPrivacy = { navController.navigate("privacy") },
+                    onTerms = { navController.navigate("terms") }
+                )
+            }
+
+            // Settings sub-screens
+            composable("edit_profile") {
+                EditProfileScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("change_password") {
+                ChangePasswordScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("pricing") {
+                PricingScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("about") {
+                AboutScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("privacy") {
+                PrivacyScreen(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            composable("terms") {
+                TermsScreen(
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable("search") {

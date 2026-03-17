@@ -1,0 +1,90 @@
+package com.creapolis.solennix.feature.settings.viewmodel
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.model.User
+import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.AuthManager
+import com.creapolis.solennix.core.network.Endpoints
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class EditProfileViewModel @Inject constructor(
+    private val authManager: AuthManager,
+    private val apiService: ApiService
+) : ViewModel() {
+
+    var name by mutableStateOf("")
+    var email by mutableStateOf("")
+
+    var isLoading by mutableStateOf(true)
+    var isSaving by mutableStateOf(false)
+    var saveSuccess by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
+
+    var hasAttemptedSubmit by mutableStateOf(false)
+
+    val nameError: String?
+        get() = if (hasAttemptedSubmit && name.isBlank()) "El nombre es requerido" else null
+
+    val emailError: String?
+        get() = when {
+            hasAttemptedSubmit && email.isBlank() -> "El correo es requerido"
+            hasAttemptedSubmit && email.isNotBlank() && !isValidEmail(email) -> "Formato de correo inválido"
+            else -> null
+        }
+
+    val isFormValid: Boolean
+        get() = name.isNotBlank() && email.isNotBlank() && isValidEmail(email)
+
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    }
+
+    init {
+        loadUser()
+    }
+
+    private fun loadUser() {
+        viewModelScope.launch {
+            isLoading = true
+            try {
+                val user = authManager.currentUser.value
+                if (user != null) {
+                    name = user.name
+                    email = user.email
+                }
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun saveProfile() {
+        hasAttemptedSubmit = true
+        if (!isFormValid) return
+
+        viewModelScope.launch {
+            isSaving = true
+            errorMessage = null
+            try {
+                val payload = mapOf(
+                    "name" to name,
+                    "email" to email
+                )
+                val updatedUser: User = apiService.put(Endpoints.UPDATE_PROFILE, payload)
+                authManager.storeUser(updatedUser)
+                saveSuccess = true
+            } catch (e: Exception) {
+                errorMessage = "Error al guardar: ${e.message}"
+            } finally {
+                isSaving = false
+            }
+        }
+    }
+}

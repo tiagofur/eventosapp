@@ -22,7 +22,10 @@ import com.creapolis.solennix.feature.settings.viewmodel.SettingsViewModel
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onEditProfile: () -> Unit,
+    onChangePassword: () -> Unit,
     onBusinessSettings: () -> Unit,
+    onPricing: () -> Unit,
+    onAbout: () -> Unit,
     onPrivacy: () -> Unit,
     onTerms: () -> Unit
 ) {
@@ -67,17 +70,18 @@ fun SettingsScreen(
 
             SettingsSection(title = "Cuenta") {
                 SettingsItem(icon = Icons.Default.Person, label = "Editar Perfil", onClick = onEditProfile)
-                SettingsItem(icon = Icons.Default.Lock, label = "Cambiar Contrasena", onClick = { /* TODO */ })
+                SettingsItem(icon = Icons.Default.Lock, label = "Cambiar Contraseña", onClick = onChangePassword)
                 SettingsItem(icon = Icons.Default.Business, label = "Ajustes del Negocio", onClick = onBusinessSettings)
             }
 
-            SettingsSection(title = "Suscripcion") {
-                SettingsItem(icon = Icons.Default.Star, label = "Gestionar Plan", onClick = { /* TODO */ })
+            SettingsSection(title = "Suscripción") {
+                SettingsItem(icon = Icons.Default.Star, label = "Gestionar Plan", onClick = onPricing)
             }
 
-            SettingsSection(title = "Legal") {
-                SettingsItem(icon = Icons.Default.Shield, label = "Politica de Privacidad", onClick = onPrivacy)
-                SettingsItem(icon = Icons.Default.Description, label = "Terminos y Condiciones", onClick = onTerms)
+            SettingsSection(title = "Información") {
+                SettingsItem(icon = Icons.Default.Info, label = "Acerca de", onClick = onAbout)
+                SettingsItem(icon = Icons.Default.Shield, label = "Política de Privacidad", onClick = onPrivacy)
+                SettingsItem(icon = Icons.Default.Description, label = "Términos y Condiciones", onClick = onTerms)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
