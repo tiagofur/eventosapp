@@ -5,7 +5,9 @@ import androidx.room.Room
 import com.creapolis.solennix.core.database.SolennixDatabase
 import com.creapolis.solennix.core.database.dao.ClientDao
 import com.creapolis.solennix.core.database.dao.EventDao
+import com.creapolis.solennix.core.database.dao.EventItemDao
 import com.creapolis.solennix.core.database.dao.InventoryDao
+import com.creapolis.solennix.core.database.dao.PaymentDao
 import com.creapolis.solennix.core.database.dao.ProductDao
 import dagger.Module
 import dagger.Provides
@@ -26,7 +28,7 @@ object DatabaseModule {
             context,
             SolennixDatabase::class.java,
             "solennix-database"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
@@ -40,4 +42,10 @@ object DatabaseModule {
 
     @Provides
     fun provideInventoryDao(database: SolennixDatabase): InventoryDao = database.inventoryDao()
+
+    @Provides
+    fun providePaymentDao(database: SolennixDatabase): PaymentDao = database.paymentDao()
+
+    @Provides
+    fun provideEventItemDao(database: SolennixDatabase): EventItemDao = database.eventItemDao()
 }

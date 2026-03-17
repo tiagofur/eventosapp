@@ -50,11 +50,25 @@ class CalendarViewModel @Inject constructor(
         initialValue = CalendarUiState(isLoading = true)
     )
 
+    init {
+        refresh()
+    }
+
     fun onDateSelected(date: LocalDate) {
         _selectedDate.value = date
     }
 
     fun onMonthChange(month: YearMonth) {
         _currentMonth.value = month
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            try {
+                eventRepository.syncEvents()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
     }
 }

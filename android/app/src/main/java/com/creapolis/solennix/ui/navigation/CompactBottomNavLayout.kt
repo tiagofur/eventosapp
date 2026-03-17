@@ -111,15 +111,49 @@ fun CompactBottomNavLayout() {
             composable("products") {
                 ProductListScreen(
                     viewModel = hiltViewModel(),
-                    onProductClick = { },
-                    onAddProductClick = { }
+                    onProductClick = { id -> navController.navigate("product_detail/$id") },
+                    onAddProductClick = { navController.navigate("product_form") }
+                )
+            }
+            
+            composable("product_detail/{productId}") { backStackEntry ->
+                val productId = backStackEntry.arguments?.getString("productId")
+                com.creapolis.solennix.feature.products.ui.ProductDetailScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditClick = { id -> navController.navigate("product_form?productId=$id") }
+                )
+            }
+            
+            composable("product_form?productId={productId}") { backStackEntry ->
+                val productId = backStackEntry.arguments?.getString("productId")
+                com.creapolis.solennix.feature.products.ui.ProductFormScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable("inventory") {
                 InventoryListScreen(
                     viewModel = hiltViewModel(),
-                    onItemClick = { },
-                    onAddItemClick = { }
+                    onItemClick = { id -> navController.navigate("inventory_detail/$id") },
+                    onAddItemClick = { navController.navigate("inventory_form") }
+                )
+            }
+            
+            composable("inventory_detail/{itemId}") { backStackEntry ->
+                val itemId = backStackEntry.arguments?.getString("itemId")
+                com.creapolis.solennix.feature.inventory.ui.InventoryDetailScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditClick = { id -> navController.navigate("inventory_form?itemId=$id") }
+                )
+            }
+            
+            composable("inventory_form?itemId={itemId}") { backStackEntry ->
+                val itemId = backStackEntry.arguments?.getString("itemId")
+                com.creapolis.solennix.feature.inventory.ui.InventoryFormScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable("settings") {
@@ -148,8 +182,13 @@ fun CompactBottomNavLayout() {
                 )
             }
             
-            composable("client_form?clientId={clientId}") {
-                PlaceholderScreen("Client Form — Phase 2")
+            composable("client_form?clientId={clientId}") { backStackEntry ->
+                val clientId = backStackEntry.arguments?.getString("clientId")
+                // Pass it to the ViewModel via SavedStateHandle, handled by Hilt
+                com.creapolis.solennix.feature.clients.ui.ClientFormScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
 
             composable("event_detail/{eventId}") {

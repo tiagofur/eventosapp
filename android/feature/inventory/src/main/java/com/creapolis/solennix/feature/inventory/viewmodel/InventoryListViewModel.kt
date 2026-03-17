@@ -35,6 +35,10 @@ class InventoryListViewModel @Inject constructor(
         initialValue = InventoryListUiState(isLoading = true)
     )
 
+    init {
+        refresh()
+    }
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }

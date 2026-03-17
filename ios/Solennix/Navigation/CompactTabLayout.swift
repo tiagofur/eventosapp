@@ -1,5 +1,7 @@
 import SwiftUI
 import SolennixDesign
+import SolennixFeatures
+import SolennixNetwork
 
 // MARK: - Compact Tab Layout (iPhone)
 
@@ -15,6 +17,7 @@ struct CompactTabLayout: View {
     @State private var calendarPath = NavigationPath()
     @State private var clientsPath = NavigationPath()
     @State private var morePath = NavigationPath()
+    @Environment(\.apiClient) private var apiClient
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -57,7 +60,7 @@ struct CompactTabLayout: View {
 
                 // More Tab
                 NavigationStack(path: $morePath) {
-                    MoreRootView()
+                    SettingsView(apiClient: apiClient)
                         .navigationDestination(for: Route.self) { route in
                             RouteDestination(route: route)
                         }
@@ -126,47 +129,6 @@ private struct ClientsRootView: View {
     var body: some View {
         PlaceholderView(title: "Clientes", phase: 2)
             .navigationTitle("Clientes")
-    }
-}
-
-/// Placeholder root view for the More tab.
-private struct MoreRootView: View {
-    var body: some View {
-        List {
-            Section("Cuenta") {
-                NavigationLink(value: Route.editProfile) {
-                    Label("Editar Perfil", systemImage: "person.circle")
-                }
-                NavigationLink(value: Route.changePassword) {
-                    Label("Cambiar Contrasena", systemImage: "lock.rotation")
-                }
-            }
-
-            Section("Negocio") {
-                NavigationLink(value: Route.businessSettings) {
-                    Label("Ajustes del Negocio", systemImage: "building.2")
-                }
-                NavigationLink(value: Route.contractDefaults) {
-                    Label("Valores del Contrato", systemImage: "doc.text")
-                }
-                NavigationLink(value: Route.pricing) {
-                    Label("Precios y Planes", systemImage: "creditcard")
-                }
-            }
-
-            Section("Legal") {
-                NavigationLink(value: Route.about) {
-                    Label("Acerca de", systemImage: "info.circle")
-                }
-                NavigationLink(value: Route.privacy) {
-                    Label("Privacidad", systemImage: "hand.raised")
-                }
-                NavigationLink(value: Route.terms) {
-                    Label("Terminos", systemImage: "doc.plaintext")
-                }
-            }
-        }
-        .navigationTitle("Mas")
     }
 }
 

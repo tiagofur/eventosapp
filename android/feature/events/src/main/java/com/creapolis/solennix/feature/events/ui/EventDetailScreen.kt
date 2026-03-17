@@ -1,24 +1,24 @@
 package com.creapolis.solennix.feature.events.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.*
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.feature.events.viewmodel.EventDetailViewModel
-
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.platform.LocalContext
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 
@@ -32,6 +32,8 @@ fun EventDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+    var showPaymentModal by remember { mutableStateOf(false) }
+
     val windowInfoTracker = WindowInfoTracker.getOrCreate(context)
     val windowLayoutInfo by windowInfoTracker.windowLayoutInfo(context as android.app.Activity)
         .collectAsState(initial = null)
@@ -68,36 +70,104 @@ fun EventDetailScreen(
             }
         } else if (uiState.event != null) {
             val event = uiState.event!!
-            
-            if (isTableTop) {
-                // Table-top mode: Split screen
-                Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        EventCard(event = event)
-                    }
-                    Box(modifier = Modifier.weight(1f).padding(16.dp)) {
-                        ActionGrid(onPdfClick = {}, onChecklistClick = {}, onPhotosClick = {})
-                    }
-                }
-            } else {
-                // Normal mode
+            val remaining = event.totalAmount - uiState.totalPaid
+
+            val content = @Composable {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(scrollState)
                         .padding(16.dp)
                 ) {
                     EventCard(event = event)
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Financial Summary
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Finanzas", style = MaterialTheme.typography.titleMedium)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            SummaryRow("Total del Evento", "$${event.totalAmount}", isTotal = true)
+                            SummaryRow("Pagado", "$${uiState.totalPaid}", color = SolennixTheme.colors.success)
+                            SummaryRow("Restante", "$${remaining}", color = if (remaining > 0) SolennixTheme.colors.error else SolennixTheme.colors.success)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Action Buttons
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PremiumButton(
+                            text = "Registrar Pago",
+                            onClick = { showPaymentModal = true },
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.Add
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text("Acciones", style = MaterialTheme.typography.titleMedium)
+                    Text("Generar Documentos", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(12.dp))
-                    ActionGrid(onPdfClick = {}, onChecklistClick = {}, onPhotosClick = {})
+                    ActionGrid(
+                        onPdfClick = { Toast.makeText(context, "Generando Cotización...", Toast.LENGTH_SHORT).show() },
+                        onChecklistClick = { Toast.makeText(context, "Generando Checklist...", Toast.LENGTH_SHORT).show() },
+                        onPhotosClick = { Toast.makeText(context, "Abriendo fotos...", Toast.LENGTH_SHORT).show() }
+                    )
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    Text("Detalles Financieros", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    SummaryRow("Total del Evento", "$${event.totalAmount}", isTotal = true)
+                    if (uiState.payments.isNotEmpty()) {
+                        Text("Historial de Pagos", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        uiState.payments.forEach { payment ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(payment.paymentDate, style = MaterialTheme.typography.bodySmall)
+                                        Text(payment.paymentMethod.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium)
+                                        if (!payment.notes.isNullOrEmpty()) {
+                                            Text(payment.notes!!, style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
+                                        }
+                                    }
+                                    Text("$${payment.amount}", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.success)
+                                }
+                            }
+                        }
+                    }
                 }
+            }
+
+            if (isTableTop) {
+                Row(modifier = Modifier.padding(padding).fillMaxSize()) {
+                    Box(modifier = Modifier.weight(1f).verticalScroll(scrollState)) {
+                        content()
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(scrollState)) {
+                    content()
+                }
+            }
+            
+            if (showPaymentModal) {
+                PaymentModal(
+                    remaining = remaining,
+                    onDismiss = { showPaymentModal = false },
+                    onConfirm = { amount, method, notes ->
+                        viewModel.addPayment(amount, method, notes)
+                        showPaymentModal = false
+                        Toast.makeText(context, "Pago registrado", Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
         }
     }
@@ -131,7 +201,32 @@ fun EventCard(event: com.creapolis.solennix.core.model.Event) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = SolennixTheme.colors.secondaryText
             )
+            if (!event.location.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = SolennixTheme.colors.secondaryText, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(event.location!!, style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun SummaryRow(label: String, value: String, isTotal: Boolean = false, color: androidx.compose.ui.graphics.Color = SolennixTheme.colors.primaryText) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(
+            text = label,
+            style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isTotal) androidx.compose.ui.text.font.FontWeight.Bold else null
+        )
+        Text(
+            text = value,
+            style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+            color = if (isTotal) SolennixTheme.colors.primary else color,
+            fontWeight = if (isTotal) androidx.compose.ui.text.font.FontWeight.Bold else null
+        )
     }
 }
 
@@ -140,7 +235,7 @@ fun ActionGrid(onPdfClick: () -> Unit, onChecklistClick: () -> Unit, onPhotosCli
     Row(modifier = Modifier.fillMaxWidth()) {
         ActionButton(
             icon = Icons.Default.Description,
-            label = "PDF",
+            label = "Cotización",
             modifier = Modifier.weight(1f),
             onClick = onPdfClick
         )
@@ -169,10 +264,74 @@ fun ActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: S
         shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Icon(imageVector = icon, contentDescription = null)
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = label, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PaymentModal(
+    remaining: Double,
+    onDismiss: () -> Unit,
+    onConfirm: (Double, String, String) -> Unit
+) {
+    var amount by remember { mutableStateOf(if (remaining > 0) remaining.toString() else "") }
+    var method by remember { mutableStateOf("efectivo") }
+    var notes by remember { mutableStateOf("") }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Text("Registrar Pago", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { amount = it },
+                label = { Text("Monto") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text("Método de Pago", style = MaterialTheme.typography.labelMedium)
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("efectivo", "transferencia", "tarjeta").forEach { opt ->
+                    FilterChip(
+                        selected = method == opt,
+                        onClick = { method = opt },
+                        label = { Text(opt.replaceFirstChar { it.uppercase() }) }
+                    )
+                }
+            }
+            
+            OutlinedTextField(
+                value = notes,
+                onValueChange = { notes = it },
+                label = { Text("Notas (Opcional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            PremiumButton(
+                text = "Guardar Pago",
+                onClick = {
+                    val amt = amount.toDoubleOrNull()
+                    if (amt != null && amt > 0) {
+                        onConfirm(amt, method, notes)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+

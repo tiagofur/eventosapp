@@ -26,54 +26,51 @@ class DashboardViewModel @Inject constructor(
     private val inventoryRepository: InventoryRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DashboardUiState())
-    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    private val _isRefreshing = MutableStateFlow(false)
+
+    val uiState: StateFlow<DashboardUiState> = combine(
+        eventRepository.getUpcomingEvents(5),
+        inventoryRepository.getLowStockItems(),
+        eventRepository.getEvents(),
+        _isRefreshing
+    ) { upcoming, lowStock, allEvents, isRefreshing ->
+        // Basic KPI calculation for this month
+        val now = java.time.LocalDate.now()
+        val eventsThisMonthList = allEvents.filter {
+            try {
+                val date = java.time.ZonedDateTime.parse(it.eventDate)
+                date.month == now.month && date.year == now.year
+            } catch (e: Exception) { false }
+        }
+
+        DashboardUiState(
+            upcomingEvents = upcoming,
+            lowStockItems = lowStock,
+            isLoading = false,
+            isRefreshing = isRefreshing,
+            revenueThisMonth = eventsThisMonthList.sumOf { it.totalAmount },
+            eventsThisMonth = eventsThisMonthList.size
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = DashboardUiState(isLoading = true)
+    )
 
     init {
-        loadData()
-    }
-
-    private fun loadData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            
-            combine(
-                eventRepository.getUpcomingEvents(5),
-                inventoryRepository.getLowStockItems(),
-                eventRepository.getEvents() // For KPI calculations
-            ) { upcoming, lowStock, allEvents ->
-                // Basic KPI calculation for this month
-                val now = java.time.LocalDate.now()
-                val eventsThisMonthList = allEvents.filter {
-                    try {
-                        val date = java.time.ZonedDateTime.parse(it.eventDate)
-                        date.month == now.month && date.year == now.year
-                    } catch (e: Exception) { false }
-                }
-                
-                DashboardUiState(
-                    upcomingEvents = upcoming,
-                    lowStockItems = lowStock,
-                    isLoading = false,
-                    revenueThisMonth = eventsThisMonthList.sumOf { it.totalAmount },
-                    eventsThisMonth = eventsThisMonthList.size
-                )
-            }.collect { newState ->
-                _uiState.value = newState
-            }
-        }
+        refresh()
     }
 
     fun refresh() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
+            _isRefreshing.value = true
             try {
                 eventRepository.syncEvents()
                 inventoryRepository.syncInventory()
             } catch (e: Exception) {
-                // Handle error
+                // Network sync errors are non-fatal
             } finally {
-                _uiState.update { it.copy(isRefreshing = false) }
+                _isRefreshing.value = false
             }
         }
     }

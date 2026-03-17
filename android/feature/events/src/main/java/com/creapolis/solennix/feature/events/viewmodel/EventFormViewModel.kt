@@ -11,11 +11,10 @@ import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -29,8 +28,27 @@ class EventFormViewModel @Inject constructor(
     // Step 1: General Info
     var selectedClient by mutableStateOf<Client?>(null)
     var eventDate by mutableStateOf(LocalDate.now())
+    var startTime by mutableStateOf(LocalTime.of(14, 0))
     var serviceType by mutableStateOf("")
     var numPeople by mutableStateOf("0")
+
+    // Client Picker Logic
+    private val _clientSearchQuery = MutableStateFlow("")
+    val clientSearchQuery = _clientSearchQuery.asStateFlow()
+    
+    val filteredClients: StateFlow<List<Client>> = _clientSearchQuery
+        .debounce(300)
+        .flatMapLatest { query ->
+            if (query.isBlank()) clientRepository.getClients()
+            else clientRepository.getClients().map { clients ->
+                clients.filter { it.name.contains(query, ignoreCase = true) }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun onClientSearchQueryChange(query: String) {
+        _clientSearchQuery.value = query
+    }
 
     // Step 2: Products
     val selectedProducts = mutableStateListOf<EventProduct>()
@@ -70,16 +88,61 @@ class EventFormViewModel @Inject constructor(
     }
 
     fun addProduct(product: Product, quantity: Int) {
-        val eventProduct = EventProduct(
+        val existing = selectedProducts.find { it.productId == product.id }
+        if (existing != null) {
+            val index = selectedProducts.indexOf(existing)
+            selectedProducts[index] = existing.copy(
+                quantity = existing.quantity + quantity,
+                totalPrice = (existing.quantity + quantity) * existing.unitPrice
+            )
+        } else {
+            val eventProduct = EventProduct(
+                id = UUID.randomUUID().toString(),
+                eventId = "", 
+                productId = product.id,
+                quantity = quantity,
+                unitPrice = product.basePrice,
+                totalPrice = product.basePrice * quantity,
+                createdAt = ""
+            )
+            selectedProducts.add(eventProduct)
+        }
+    }
+
+    fun removeProduct(productId: String) {
+        selectedProducts.removeAll { it.productId == productId }
+    }
+
+    fun updateProductQuantity(productId: String, newQuantity: Int) {
+        if (newQuantity <= 0) {
+            removeProduct(productId)
+            return
+        }
+        val existing = selectedProducts.find { it.productId == productId }
+        if (existing != null) {
+            val index = selectedProducts.indexOf(existing)
+            selectedProducts[index] = existing.copy(
+                quantity = newQuantity,
+                totalPrice = newQuantity * existing.unitPrice
+            )
+        }
+    }
+
+    fun addExtra(description: String, price: Double) {
+        if (description.isBlank() || price <= 0) return
+        val extra = EventExtra(
             id = UUID.randomUUID().toString(),
-            eventId = "", // Temp
-            productId = product.id,
-            quantity = quantity,
-            unitPrice = product.basePrice,
-            totalPrice = product.basePrice * quantity,
+            eventId = "",
+            description = description,
+            cost = 0.0, // Default cost to 0, price is what matters for total
+            price = price,
             createdAt = ""
         )
-        selectedProducts.add(eventProduct)
+        eventExtras.add(extra)
+    }
+
+    fun removeExtra(id: String) {
+        eventExtras.removeAll { it.id == id }
     }
 
     fun saveEvent() {
@@ -92,6 +155,7 @@ class EventFormViewModel @Inject constructor(
                     userId = "", // Handled by backend
                     clientId = client.id,
                     eventDate = eventDate.toString(),
+                    startTime = startTime.toString(),
                     serviceType = serviceType,
                     numPeople = numPeople.toIntOrNull() ?: 0,
                     status = EventStatus.QUOTED,
@@ -104,7 +168,17 @@ class EventFormViewModel @Inject constructor(
                     createdAt = "",
                     updatedAt = ""
                 )
-                eventRepository.createEvent(newEvent)
+                val createdEvent = eventRepository.createEvent(newEvent)
+
+                // Save products and extras for the event
+                if (selectedProducts.isNotEmpty() || eventExtras.isNotEmpty()) {
+                    eventRepository.updateItems(
+                        eventId = createdEvent.id,
+                        products = selectedProducts.toList(),
+                        extras = eventExtras.toList()
+                    )
+                }
+
                 saveSuccess = true
             } catch (e: Exception) {
                 // Handle error

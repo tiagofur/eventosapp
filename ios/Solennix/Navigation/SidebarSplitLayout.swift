@@ -1,5 +1,7 @@
 import SwiftUI
 import SolennixDesign
+import SolennixFeatures
+import SolennixNetwork
 
 // MARK: - Sidebar Split Layout (iPad / Mac)
 
@@ -12,6 +14,7 @@ struct SidebarSplitLayout: View {
 
     @State private var selectedSection: SidebarSection? = .dashboard
     @State private var detailPath = NavigationPath()
+    @Environment(\.apiClient) private var apiClient
 
     var body: some View {
         NavigationSplitView {
@@ -96,59 +99,20 @@ struct SidebarSplitLayout: View {
             SidebarSectionPlaceholder(section: section)
                 .navigationTitle(section.title)
         case .products:
-            SidebarSectionPlaceholder(section: section)
+            ProductListView(apiClient: apiClient)
                 .navigationTitle(section.title)
         case .inventory:
-            SidebarSectionPlaceholder(section: section)
+            InventoryListView(apiClient: apiClient)
                 .navigationTitle(section.title)
         case .search:
             SidebarSectionPlaceholder(section: section)
                 .navigationTitle(section.title)
         case .settings:
-            settingsListView
+            SettingsView(apiClient: apiClient)
                 .navigationTitle(section.title)
         }
     }
 
-    // MARK: - Settings List
-
-    @ViewBuilder
-    private var settingsListView: some View {
-        List {
-            Section("Cuenta") {
-                NavigationLink(value: Route.editProfile) {
-                    Label("Editar Perfil", systemImage: "person.circle")
-                }
-                NavigationLink(value: Route.changePassword) {
-                    Label("Cambiar Contrasena", systemImage: "lock.rotation")
-                }
-            }
-
-            Section("Negocio") {
-                NavigationLink(value: Route.businessSettings) {
-                    Label("Ajustes del Negocio", systemImage: "building.2")
-                }
-                NavigationLink(value: Route.contractDefaults) {
-                    Label("Valores del Contrato", systemImage: "doc.text")
-                }
-                NavigationLink(value: Route.pricing) {
-                    Label("Precios y Planes", systemImage: "creditcard")
-                }
-            }
-
-            Section("Legal") {
-                NavigationLink(value: Route.about) {
-                    Label("Acerca de", systemImage: "info.circle")
-                }
-                NavigationLink(value: Route.privacy) {
-                    Label("Privacidad", systemImage: "hand.raised")
-                }
-                NavigationLink(value: Route.terms) {
-                    Label("Terminos", systemImage: "doc.plaintext")
-                }
-            }
-        }
-    }
 }
 
 // MARK: - Sidebar Section Placeholder

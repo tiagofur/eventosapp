@@ -1,14 +1,16 @@
 import SwiftUI
+import SolennixFeatures
+import SolennixNetwork
 
 // MARK: - Route Destination
 
 /// Resolves a `Route` to its destination view.
 ///
-/// In Phase 1, most routes render placeholder views. Real views will be
-/// substituted as each feature module is implemented.
+/// Real views are substituted as each feature module is implemented.
 struct RouteDestination: View {
 
     let route: Route
+    @Environment(\.apiClient) private var apiClient
 
     var body: some View {
         switch route {
@@ -36,33 +38,33 @@ struct RouteDestination: View {
 
         // Products
         case .productDetail(let id):
-            PlaceholderView(title: "Detalle del Producto", id: id, phase: 3)
+            ProductDetailView(apiClient: apiClient, productId: id)
         case .productForm(let id):
-            PlaceholderView(title: "Formulario de Producto", id: id, phase: 3)
+            ProductFormView(apiClient: apiClient, productId: id)
 
         // Inventory
         case .inventoryDetail(let id):
-            PlaceholderView(title: "Detalle de Inventario", id: id, phase: 3)
+            InventoryDetailView(apiClient: apiClient, itemId: id)
         case .inventoryForm(let id):
-            PlaceholderView(title: "Formulario de Inventario", id: id, phase: 3)
+            InventoryFormView(apiClient: apiClient, itemId: id)
 
         // Settings
         case .editProfile:
-            PlaceholderView(title: "Editar Perfil", phase: 2)
+            EditProfileView(apiClient: apiClient)
         case .changePassword:
-            PlaceholderView(title: "Cambiar Contrasena", phase: 2)
+            ChangePasswordView(apiClient: apiClient)
         case .businessSettings:
-            PlaceholderView(title: "Ajustes del Negocio", phase: 2)
+            BusinessSettingsView(apiClient: apiClient)
         case .contractDefaults:
-            PlaceholderView(title: "Valores del Contrato", phase: 2)
+            ContractDefaultsView(apiClient: apiClient)
         case .pricing:
-            PlaceholderView(title: "Precios y Planes", phase: 4)
+            PricingView(apiClient: apiClient)
         case .about:
-            PlaceholderView(title: "Acerca de", phase: 2)
+            AboutView()
         case .privacy:
-            PlaceholderView(title: "Politica de Privacidad", phase: 2)
+            PrivacyView()
         case .terms:
-            PlaceholderView(title: "Terminos de Servicio", phase: 2)
+            TermsView()
         }
     }
 }

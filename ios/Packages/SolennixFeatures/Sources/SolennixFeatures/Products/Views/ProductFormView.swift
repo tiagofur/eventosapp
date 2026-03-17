@@ -1,0 +1,340 @@
+import SwiftUI
+import PhotosUI
+import SolennixCore
+import SolennixDesign
+import SolennixNetwork
+
+// MARK: - Product Form View
+
+public struct ProductFormView: View {
+
+    @State private var viewModel: ProductFormViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    public init(apiClient: APIClient, productId: String? = nil) {
+        _viewModel = State(initialValue: ProductFormViewModel(apiClient: apiClient, productId: productId))
+    }
+
+    public var body: some View {
+        Group {
+            if viewModel.isLoading {
+                ProgressView("Cargando...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                formContent
+            }
+        }
+        .navigationTitle(viewModel.isEditing ? "Editar Producto" : "Nuevo Producto")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                saveButton
+            }
+        }
+        .sheet(isPresented: $viewModel.showCategoryPicker) {
+            categoryPickerSheet
+        }
+        .task { await viewModel.loadData() }
+        .onChange(of: viewModel.selectedPhoto) { _, _ in
+            Task { await viewModel.handlePhotoSelection() }
+        }
+    }
+
+    // MARK: - Form Content
+
+    private var formContent: some View {
+        ScrollView {
+            VStack(spacing: Spacing.md) {
+                // Image section
+                imageSection
+
+                // Basic info section
+                basicInfoSection
+
+                // Recipe sections
+                RecipeSection(
+                    title: "Composicion / Insumos",
+                    description: "Solo insumos generan costo al producto.",
+                    items: viewModel.ingredients,
+                    inventoryItems: viewModel.ingredientInventoryItems,
+                    onAdd: { viewModel.addIngredient() },
+                    onRemove: { viewModel.removeIngredient(at: $0) },
+                    onSelectInventory: { viewModel.updateIngredient(at: $0, inventoryId: $1) },
+                    onUpdateQuantity: { index, qty in
+                        viewModel.ingredients[index].quantityRequired = qty
+                    }
+                )
+
+                RecipeSection(
+                    title: "Equipo Necesario",
+                    description: "Activos reutilizables. No se incluyen en el costo.",
+                    items: viewModel.equipment,
+                    inventoryItems: viewModel.equipmentInventoryItems,
+                    onAdd: { viewModel.addEquipment() },
+                    onRemove: { viewModel.removeEquipment(at: $0) },
+                    onSelectInventory: { viewModel.updateEquipment(at: $0, inventoryId: $1) },
+                    onUpdateQuantity: { index, qty in
+                        viewModel.equipment[index].quantityRequired = qty
+                    }
+                )
+
+                RecipeSection(
+                    title: "Insumos por Evento",
+                    description: "Costo fijo por evento (ej. aceite, gas).",
+                    items: viewModel.supplies,
+                    inventoryItems: viewModel.supplyInventoryItems,
+                    onAdd: { viewModel.addSupply() },
+                    onRemove: { viewModel.removeSupply(at: $0) },
+                    onSelectInventory: { viewModel.updateSupply(at: $0, inventoryId: $1) },
+                    onUpdateQuantity: { index, qty in
+                        viewModel.supplies[index].quantityRequired = qty
+                    }
+                )
+            }
+            .padding(Spacing.lg)
+        }
+    }
+
+    // MARK: - Image Section
+
+    private var imageSection: some View {
+        VStack(alignment: .center, spacing: Spacing.sm) {
+            PhotosPicker(
+                selection: $viewModel.selectedPhoto,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                ZStack {
+                    if let data = viewModel.localImageData,
+                       let uiImage = UIImage(data: data) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else if let imageUrl = viewModel.imageUrl,
+                              let url = URL(string: imageUrl) {
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            imagePlaceholder
+                        }
+                    } else {
+                        imagePlaceholder
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.lg)
+                        .stroke(SolennixColors.border, style: StrokeStyle(lineWidth: 2, dash: [8]))
+                )
+            }
+        }
+    }
+
+    private var imagePlaceholder: some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(SolennixColors.textTertiary)
+
+            Text("Agregar foto")
+                .font(.caption)
+                .foregroundStyle(SolennixColors.textTertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(SolennixColors.surface)
+    }
+
+    // MARK: - Basic Info Section
+
+    private var basicInfoSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text("Informacion del Producto")
+                .font(.headline)
+                .foregroundStyle(SolennixColors.text)
+
+            // Name
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Nombre")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+
+                TextField("Ej: Paquete Premium", text: $viewModel.name)
+                    .textFieldStyle(.roundedBorder)
+
+                if let error = viewModel.nameError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.error)
+                }
+            }
+
+            // Category
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Categoria")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+
+                Button {
+                    viewModel.showCategoryPicker = true
+                } label: {
+                    HStack {
+                        Text(viewModel.category.isEmpty ? "Seleccionar categoria..." : viewModel.category)
+                            .foregroundStyle(viewModel.category.isEmpty ? SolennixColors.textTertiary : SolennixColors.text)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.down")
+                            .foregroundStyle(SolennixColors.textTertiary)
+                    }
+                    .padding(Spacing.md)
+                    .background(SolennixColors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: CornerRadius.md)
+                            .stroke(viewModel.categoryError != nil ? SolennixColors.error : SolennixColors.border, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                if let error = viewModel.categoryError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.error)
+                }
+            }
+
+            // Base Price
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Precio Base")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+
+                HStack {
+                    Text("$")
+                        .foregroundStyle(SolennixColors.textSecondary)
+
+                    TextField("0.00", value: $viewModel.basePrice, format: .number)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(.roundedBorder)
+                }
+            }
+
+            // Active toggle
+            Toggle(isOn: $viewModel.isActive) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Producto Activo")
+                        .font(.body)
+                        .foregroundStyle(SolennixColors.text)
+
+                    Text("Visible en cotizaciones")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textTertiary)
+                }
+            }
+            .tint(SolennixColors.primary)
+        }
+        .padding(Spacing.md)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+    }
+
+    // MARK: - Category Picker Sheet
+
+    private var categoryPickerSheet: some View {
+        NavigationStack {
+            List {
+                // Existing categories
+                if !viewModel.existingCategories.isEmpty {
+                    Section("Categorias Existentes") {
+                        ForEach(viewModel.existingCategories, id: \.self) { cat in
+                            Button {
+                                viewModel.selectCategory(cat)
+                            } label: {
+                                HStack {
+                                    Text(cat)
+                                        .foregroundStyle(SolennixColors.text)
+
+                                    Spacer()
+
+                                    if viewModel.category == cat {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(SolennixColors.primary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Custom category
+                Section("Nueva Categoria") {
+                    HStack {
+                        TextField("Nueva categoria...", text: $viewModel.customCategory)
+
+                        Button {
+                            viewModel.selectCustomCategory()
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(
+                                    viewModel.customCategory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                        ? SolennixColors.textTertiary
+                                        : SolennixColors.primary
+                                )
+                        }
+                        .disabled(viewModel.customCategory.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+            .navigationTitle("Seleccionar Categoria")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cerrar") {
+                        viewModel.showCategoryPicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Save Button
+
+    private var saveButton: some View {
+        Button {
+            Task {
+                let success = await viewModel.save()
+                if success {
+                    dismiss()
+                }
+            }
+        } label: {
+            if viewModel.isSaving {
+                ProgressView()
+            } else {
+                Text("Guardar")
+                    .fontWeight(.semibold)
+            }
+        }
+        .disabled(viewModel.isSaving)
+    }
+}
+
+// MARK: - Preview
+
+#Preview("New Product") {
+    NavigationStack {
+        ProductFormView(apiClient: APIClient())
+    }
+}
+
+#Preview("Edit Product") {
+    NavigationStack {
+        ProductFormView(apiClient: APIClient(), productId: "prod-123")
+    }
+}

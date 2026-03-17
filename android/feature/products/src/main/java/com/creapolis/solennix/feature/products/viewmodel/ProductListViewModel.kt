@@ -35,6 +35,10 @@ class ProductListViewModel @Inject constructor(
         initialValue = ProductListUiState(isLoading = true)
     )
 
+    init {
+        refresh()
+    }
+
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }

@@ -28,4 +28,9 @@ interface DataModule {
     fun bindsInventoryRepository(
         repository: OfflineFirstInventoryRepository
     ): InventoryRepository
+
+    @Binds
+    fun bindsPaymentRepository(
+        repository: OfflineFirstPaymentRepository
+    ): PaymentRepository
 }
