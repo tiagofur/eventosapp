@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+
+# Kotlin and IntelliJ/Android Studio
+.kotlin/
+.idea/
+*.iml
+
+# Local configuration (contains SDK location, etc.)
+local.properties
+
+# Android artifacts and logs
+*.apk
+*.ap_
+*.dex
+*.class
+*.aab
+*.log
+captures/
+
+# Visual Studio Code items (just in case)
+.vscode/
+
+# Native build artifacts
+.externalNativeBuild/
+.cxx/
+
+# Keystores and sensitive sign files
+*.jks
+*.keystore
+*.p12
+*.jceks

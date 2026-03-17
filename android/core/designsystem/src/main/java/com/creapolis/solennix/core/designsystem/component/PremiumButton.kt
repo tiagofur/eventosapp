@@ -1,0 +1,132 @@
+package com.creapolis.solennix.core.designsystem.component
+
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.creapolis.solennix.core.designsystem.theme.SolennixGradient
+import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+
+enum class ButtonStyle {
+    Primary,
+    Secondary,
+    Destructive
+}
+
+@Composable
+fun PremiumButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    style: ButtonStyle = ButtonStyle.Primary,
+    isLoading: Boolean = false,
+    enabled: Boolean = true
+) {
+    val buttonModifier = modifier
+        .fillMaxWidth()
+        .height(50.dp)
+        .animateContentSize()
+
+    when (style) {
+        ButtonStyle.Primary -> {
+            Button(
+                onClick = onClick,
+                modifier = buttonModifier,
+                enabled = enabled && !isLoading,
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    disabledContainerColor = SolennixTheme.colors.border
+                ),
+                contentPadding = PaddingValues()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (enabled && !isLoading) Modifier.background(SolennixGradient.premiumBrush)
+                            else Modifier
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ButtonContent(text, icon, isLoading, Color.White)
+                }
+            }
+        }
+        ButtonStyle.Secondary -> {
+            OutlinedButton(
+                onClick = onClick,
+                modifier = buttonModifier,
+                enabled = enabled && !isLoading,
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = SolennixTheme.colors.primary
+                ),
+                border = BorderStroke(
+                    width = 1.dp,
+                    brush = if (enabled) SolennixGradient.premiumBrush else SolidColor(SolennixTheme.colors.border)
+                )
+            ) {
+                ButtonContent(text, icon, isLoading, SolennixTheme.colors.primary)
+            }
+        }
+        ButtonStyle.Destructive -> {
+            Button(
+                onClick = onClick,
+                modifier = buttonModifier,
+                enabled = enabled && !isLoading,
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = SolennixTheme.colors.error,
+                    contentColor = Color.White
+                )
+            ) {
+                ButtonContent(text, icon, isLoading, Color.White)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ButtonContent(
+    text: String,
+    icon: ImageVector?,
+    isLoading: Boolean,
+    contentColor: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = contentColor,
+                strokeWidth = 2.dp
+            )
+        } else {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
+        }
+    }
+}

@@ -1,0 +1,65 @@
+package com.creapolis.solennix.core.network
+
+object Endpoints {
+    // Auth
+    const val REGISTER = "/auth/register"
+    const val LOGIN = "/auth/login"
+    const val LOGOUT = "/auth/logout"
+    const val REFRESH = "/auth/refresh"
+    const val FORGOT_PASSWORD = "/auth/forgot-password"
+    const val RESET_PASSWORD = "/auth/reset-password"
+    const val ME = "/auth/me"
+    const val CHANGE_PASSWORD = "/auth/change-password"
+    const val GOOGLE_AUTH = "/auth/google"
+
+    // Clients
+    const val CLIENTS = "/clients"
+    fun client(id: String) = "/clients/$id"
+
+    // Events
+    const val EVENTS = "/events"
+    const val UPCOMING_EVENTS = "/events/upcoming"
+    fun event(id: String) = "/events/$id"
+    fun eventProducts(id: String) = "/events/$id/products"
+    fun eventExtras(id: String) = "/events/$id/extras"
+    fun eventItems(id: String) = "/events/$id/items"
+    fun eventEquipment(id: String) = "/events/$id/equipment"
+    fun eventSupplies(id: String) = "/events/$id/supplies"
+    const val EQUIPMENT_CONFLICTS = "/events/equipment/conflicts"
+    const val EQUIPMENT_SUGGESTIONS = "/events/equipment/suggestions"
+    const val SUPPLY_SUGGESTIONS = "/events/supplies/suggestions"
+
+    // Products
+    const val PRODUCTS = "/products"
+    fun product(id: String) = "/products/$id"
+    fun productIngredients(id: String) = "/products/$id/ingredients"
+    const val BATCH_INGREDIENTS = "/products/ingredients/batch"
+
+    // Inventory
+    const val INVENTORY = "/inventory"
+    fun inventoryItem(id: String) = "/inventory/$id"
+
+    // Payments
+    const val PAYMENTS = "/payments"
+    fun payment(id: String) = "/payments/$id"
+
+    // Unavailable Dates
+    const val UNAVAILABLE_DATES = "/unavailable-dates"
+    fun unavailableDate(id: String) = "/unavailable-dates/$id"
+
+    // Search
+    const val SEARCH = "/search"
+
+    // Uploads
+    const val UPLOAD_IMAGE = "/uploads/image"
+
+    // Profile
+    const val UPDATE_PROFILE = "/users/me"
+
+    // Subscriptions
+    const val SUBSCRIPTION_STATUS = "/subscriptions/status"
+
+    // Devices
+    const val REGISTER_DEVICE = "/devices/register"
+    const val UNREGISTER_DEVICE = "/devices/unregister"
+}

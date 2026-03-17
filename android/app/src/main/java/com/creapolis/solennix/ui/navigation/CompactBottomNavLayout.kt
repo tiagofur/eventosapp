@@ -1,0 +1,212 @@
+package com.creapolis.solennix.ui.navigation
+
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
+import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.creapolis.solennix.feature.calendar.ui.CalendarScreen
+import com.creapolis.solennix.feature.clients.ui.ClientDetailScreen
+import com.creapolis.solennix.feature.clients.ui.ClientListScreen
+import com.creapolis.solennix.feature.dashboard.ui.DashboardScreen
+import com.creapolis.solennix.feature.search.ui.SearchScreen
+
+import com.creapolis.solennix.feature.events.ui.EventDetailScreen
+import com.creapolis.solennix.feature.events.ui.EventFormScreen
+
+import com.creapolis.solennix.feature.products.ui.ProductListScreen
+import com.creapolis.solennix.feature.inventory.ui.InventoryListScreen
+import com.creapolis.solennix.feature.settings.ui.SettingsScreen
+
+@Composable
+fun CompactBottomNavLayout() {
+    var selectedDestination by remember { mutableStateOf(TopLevelDestination.HOME) }
+    val navController = rememberNavController()
+
+    Scaffold(
+        bottomBar = {
+            NavigationBar(containerColor = SolennixTheme.colors.tabBarBg) {
+                TopLevelDestination.entries.forEach { destination ->
+                    NavigationBarItem(
+                        selected = selectedDestination == destination,
+                        onClick = { 
+                            selectedDestination = destination
+                            navController.navigate(destination.route) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = {
+                            Icon(
+                                if (selectedDestination == destination) destination.selectedIcon
+                                else destination.unselectedIcon,
+                                contentDescription = destination.label
+                            )
+                        },
+                        label = { Text(destination.label) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = SolennixTheme.colors.tabBarActive,
+                            unselectedIconColor = SolennixTheme.colors.tabBarInactive,
+                            indicatorColor = SolennixTheme.colors.primaryLight
+                        )
+                    )
+                }
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { navController.navigate("event_form") },
+                containerColor = SolennixTheme.colors.primary,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = SolennixElevation.fab
+                )
+            ) {
+                Icon(Icons.Filled.Add, "Nuevo Evento", tint = Color.White)
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center
+    ) { padding ->
+        NavHost(
+            navController = navController,
+            startDestination = TopLevelDestination.HOME.route,
+            modifier = Modifier.padding(padding)
+        ) {
+            composable(TopLevelDestination.HOME.route) { 
+                DashboardScreen(viewModel = hiltViewModel())
+            }
+            composable(TopLevelDestination.CALENDAR.route) { 
+                CalendarScreen(viewModel = hiltViewModel(), onEventClick = { id -> 
+                    navController.navigate("event_detail/$id")
+                })
+            }
+            composable(TopLevelDestination.CLIENTS.route) { 
+                ClientListScreen(
+                    viewModel = hiltViewModel(), 
+                    onClientClick = { id -> navController.navigate("client_detail/$id") },
+                    onAddClientClick = { navController.navigate("client_form") }
+                )
+            }
+            composable(TopLevelDestination.MORE.route) { 
+                MoreMenuScreen(
+                    onProductsClick = { navController.navigate("products") },
+                    onInventoryClick = { navController.navigate("inventory") },
+                    onSettingsClick = { navController.navigate("settings") },
+                    onSearchClick = { navController.navigate("search") }
+                )
+            }
+
+            // More Menu Destinations
+            composable("products") {
+                ProductListScreen(
+                    viewModel = hiltViewModel(),
+                    onProductClick = { /* id -> navController.navigate("product_detail/$id") */ },
+                    onAddProductClick = { /* navController.navigate("product_form") */ }
+                )
+            }
+            composable("inventory") {
+                InventoryListScreen(
+                    viewModel = hiltViewModel(),
+                    onItemClick = { /* id -> navController.navigate("inventory_detail/$id") */ },
+                    onAddItemClick = { /* navController.navigate("inventory_form") */ }
+                )
+            }
+            composable("settings") {
+                SettingsScreen(
+                    viewModel = hiltViewModel(),
+                    onEditProfile = { /* navController.navigate("edit_profile") */ },
+                    onBusinessSettings = { /* navController.navigate("business_settings") */ },
+                    onPrivacy = { /* navController.navigate("privacy") */ },
+                    onTerms = { /* navController.navigate("terms") */ }
+                )
+            }
+            composable("search") {
+                SearchScreen(
+                    viewModel = hiltViewModel(),
+                    onClientClick = { id -> navController.navigate("client_detail/$id") },
+                    onEventClick = { id -> navController.navigate("event_detail/$id") }
+                )
+            }
+
+            // Detail routes
+            composable("client_detail/{clientId}") { 
+                ClientDetailScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditClick = { id -> navController.navigate("client_form?clientId=$id") }
+                )
+            }
+            
+            composable("client_form?clientId={clientId}") {
+                PlaceholderScreen("Client Form — Phase 2")
+            }
+
+            composable("event_detail/{eventId}") {
+                EventDetailScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditClick = { /* Navigate to edit */ }
+                )
+            }
+
+            composable("event_form") {
+                EventFormScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun MoreMenuScreen(
+    onProductsClick: () -> Unit,
+    onInventoryClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    onSearchClick: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Menu Principal", style = MaterialTheme.typography.headlineSmall, color = SolennixTheme.colors.primaryText)
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        MenuCard(title = "Productos", icon = Icons.Default.Inventory2, onClick = onProductsClick)
+        MenuCard(title = "Inventario", icon = Icons.Default.Archive, onClick = onInventoryClick)
+        MenuCard(title = "Busqueda Global", icon = Icons.Default.Search, onClick = onSearchClick)
+        MenuCard(title = "Ajustes", icon = Icons.Default.Settings, onClick = onSettingsClick)
+    }
+}
+
+@Composable
+fun MenuCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+    ) {
+        Row(modifier = Modifier.padding(20.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = SolennixTheme.colors.primary)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = SolennixTheme.colors.secondaryText)
+        }
+    }
+}
+
+@Composable
+fun PlaceholderScreen(text: String) {
+    Surface(modifier = Modifier.padding(16.dp)) {
+        Text(text = text, style = MaterialTheme.typography.headlineMedium)
+    }
+}
