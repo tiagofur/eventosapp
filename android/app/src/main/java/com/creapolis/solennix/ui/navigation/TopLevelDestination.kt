@@ -1,14 +1,7 @@
 package com.creapolis.solennix.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class TopLevelDestination(
@@ -17,8 +10,8 @@ enum class TopLevelDestination(
     val selectedIcon: ImageVector,
     val route: String
 ) {
-    HOME("Inicio", Icons.Outlined.Home, Icons.Filled.Home, "home"),
-    CALENDAR("Calendario", Icons.Outlined.CalendarMonth, Icons.Filled.CalendarMonth, "calendar"),
-    CLIENTS("Clientes", Icons.Outlined.People, Icons.Filled.People, "clients"),
-    MORE("Mas", Icons.Outlined.MoreHoriz, Icons.Filled.MoreHoriz, "more")
+    HOME("Inicio", Icons.Default.Home, Icons.Filled.Home, "home"),
+    CALENDAR("Calendario", Icons.Default.DateRange, Icons.Filled.DateRange, "calendar"),
+    CLIENTS("Clientes", Icons.Default.Person, Icons.Filled.Person, "clients"),
+    MORE("Mas", Icons.Default.Menu, Icons.Filled.Menu, "more")
 }

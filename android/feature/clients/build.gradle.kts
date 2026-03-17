@@ -46,6 +46,7 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

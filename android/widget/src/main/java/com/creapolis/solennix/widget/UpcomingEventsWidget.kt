@@ -12,6 +12,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 
+import androidx.compose.ui.unit.sp
+
 class UpcomingEventsWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
@@ -30,7 +32,7 @@ class UpcomingEventsWidget : GlanceAppWidget() {
         ) {
             Text(
                 text = "Proximo Evento",
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.glanceSp)
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp)
             )
             Spacer(modifier = GlanceModifier.height(8.dp))
             Box(
@@ -40,11 +42,9 @@ class UpcomingEventsWidget : GlanceAppWidget() {
             ) {
                 Column {
                     Text(text = "Boda Perez", style = TextStyle(fontWeight = FontWeight.Medium))
-                    Text(text = "15 de Octubre", style = TextStyle(fontSize = 12.glanceSp))
+                    Text(text = "15 de Octubre", style = TextStyle(fontSize = 12.sp))
                 }
             }
         }
     }
 }
-
-private val Int.glanceSp get() = androidx.glance.unit.sp(this)

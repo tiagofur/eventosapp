@@ -46,6 +46,7 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -55,7 +56,7 @@ dependencies {
     implementation(libs.navigation.compose)
 
     // Vico Charts
-    implementation(libs.vico-compose)
-    implementation(libs.vico-compose-m3)
-    implementation(libs.vico-core)
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
 }

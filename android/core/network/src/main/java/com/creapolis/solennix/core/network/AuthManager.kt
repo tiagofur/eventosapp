@@ -131,6 +131,21 @@ class AuthManager @Inject constructor(
         }
     }
 
+    suspend fun logout() {
+        try {
+            refreshHttpClient.post(BuildConfig.API_BASE_URL + Endpoints.LOGOUT) {
+                val tokens = getBearerTokens()
+                if (tokens != null) {
+                    bearerAuth(tokens.accessToken)
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore logout failure
+        } finally {
+            clearTokens()
+        }
+    }
+
     fun clearTokens() {
         encryptedPrefs.edit()
             .remove(KEY_ACCESS_TOKEN)

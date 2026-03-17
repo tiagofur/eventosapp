@@ -10,8 +10,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ChevronLeft
-import androidx.compose.material.icons.automirrored.filled.ChevronRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.designsystem.component.StatusBadge
 import com.creapolis.solennix.feature.calendar.viewmodel.CalendarViewModel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -104,7 +104,7 @@ fun CalendarHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onPreviousMonth) {
-            Icon(Icons.AutoMirrored.Filled.ChevronLeft, contentDescription = "Previous")
+            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Previous")
         }
         Text(
             text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "MX")).replaceFirstChar { it.uppercase() }} ${currentMonth.year}",
@@ -112,7 +112,7 @@ fun CalendarHeader(
             color = SolennixTheme.colors.primaryText
         )
         IconButton(onClick = onNextMonth) {
-            Icon(Icons.AutoMirrored.Filled.ChevronRight, contentDescription = "Next")
+            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Next")
         }
     }
 }

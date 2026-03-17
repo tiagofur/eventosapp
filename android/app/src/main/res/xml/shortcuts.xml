@@ -3,7 +3,7 @@
     <shortcut
         android:shortcutId="new_event"
         android:enabled="true"
-        android:icon="@android:drawable/ic_menu_add"
+        android:icon="@android:drawable/ic_input_add"
         android:shortcutShortLabel="@string/shortcut_new_event"
         android:shortcutLongLabel="@string/shortcut_new_event_long">
         <intent
@@ -15,7 +15,7 @@
     <shortcut
         android:shortcutId="calendar"
         android:enabled="true"
-        android:icon="@android:drawable/ic_menu_calendar"
+        android:icon="@android:drawable/ic_menu_today"
         android:shortcutShortLabel="@string/shortcut_calendar">
         <intent
             android:action="android.intent.action.VIEW"

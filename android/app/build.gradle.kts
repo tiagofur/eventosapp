@@ -56,7 +56,11 @@ dependencies {
     implementation(project(":feature:products"))
     implementation(project(":feature:inventory"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:events"))
     implementation(project(":widget"))
+
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.compose.material.icons)
 
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)

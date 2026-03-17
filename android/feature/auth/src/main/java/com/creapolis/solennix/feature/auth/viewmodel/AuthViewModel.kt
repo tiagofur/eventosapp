@@ -40,7 +40,7 @@ class AuthViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
             try {
-                val response: AuthResponse = apiService.post(
+                val response: AuthResponse = apiService.post<AuthResponse>(
                     Endpoints.LOGIN,
                     mapOf("email" to loginEmail, "password" to loginPassword)
                 )
@@ -70,7 +70,7 @@ class AuthViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
             try {
-                val response: AuthResponse = apiService.post(
+                val response: AuthResponse = apiService.post<AuthResponse>(
                     Endpoints.REGISTER,
                     mapOf(
                         "name" to registerName,
@@ -98,7 +98,7 @@ class AuthViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
             try {
-                apiService.post(Endpoints.FORGOT_PASSWORD, mapOf("email" to forgotEmail))
+                apiService.post<Unit>(Endpoints.FORGOT_PASSWORD, mapOf("email" to forgotEmail))
                 forgotSuccess = true
             } catch (e: Exception) {
                 errorMessage = "Error al enviar el enlace. Revisa el correo."
@@ -120,7 +120,7 @@ class AuthViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
             try {
-                apiService.post(
+                apiService.post<Unit>(
                     Endpoints.RESET_PASSWORD,
                     mapOf("token" to resetToken, "password" to newPassword)
                 )
@@ -138,7 +138,7 @@ class AuthViewModel @Inject constructor(
             isLoading = true
             errorMessage = null
             try {
-                val response: AuthResponse = apiService.post(
+                val response: AuthResponse = apiService.post<AuthResponse>(
                     Endpoints.GOOGLE_AUTH,
                     mapOf("id_token" to idToken, "full_name" to fullName)
                 )

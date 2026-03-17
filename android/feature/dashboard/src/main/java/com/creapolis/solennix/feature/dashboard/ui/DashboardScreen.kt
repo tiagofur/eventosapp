@@ -20,6 +20,11 @@ import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.dashboard.viewmodel.DashboardViewModel
 
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(

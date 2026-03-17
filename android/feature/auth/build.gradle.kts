@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.navigation.compose)
+    implementation(libs.compose.material.icons)
 
     // Google One Tap
     implementation(libs.credentials)

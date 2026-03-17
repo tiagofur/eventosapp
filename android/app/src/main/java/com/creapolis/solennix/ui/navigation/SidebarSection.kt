@@ -5,11 +5,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class SidebarSection(val label: String, val icon: ImageVector) {
-    DASHBOARD("Inicio", Icons.Filled.Home),
-    CALENDAR("Calendario", Icons.Filled.CalendarMonth),
-    CLIENTS("Clientes", Icons.Filled.People),
-    PRODUCTS("Productos", Icons.Filled.Inventory2),
-    INVENTORY("Inventario", Icons.Filled.Archive),
-    SEARCH("Buscar", Icons.Filled.Search),
-    SETTINGS("Ajustes", Icons.Filled.Settings)
+    DASHBOARD("Inicio", Icons.Default.Home),
+    CALENDAR("Calendario", Icons.Default.DateRange),
+    CLIENTS("Clientes", Icons.Default.Person),
+    PRODUCTS("Productos", Icons.Default.ShoppingCart),
+    INVENTORY("Inventario", Icons.Default.Inventory),
+    SEARCH("Buscar", Icons.Default.Search),
+    SETTINGS("Ajustes", Icons.Default.Settings)
 }

@@ -35,6 +35,7 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(libs.kotlinx.serialization.json)
 
     // Room
     implementation(libs.room.runtime)

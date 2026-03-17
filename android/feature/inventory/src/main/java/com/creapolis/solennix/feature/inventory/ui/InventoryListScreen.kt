@@ -17,6 +17,8 @@ import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.feature.inventory.viewmodel.InventoryListViewModel
 
+import androidx.compose.foundation.clickable
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InventoryListScreen(
@@ -81,7 +83,7 @@ fun InventoryListItem(
     val isLowStock = item.currentStock <= item.minimumStock
 
     Row(
-        modifier = androidx.compose.foundation.clickable(onClick = onClick)
+        modifier = Modifier.clickable(onClick = onClick)
             .fillMaxWidth()
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically

@@ -20,6 +20,8 @@ import com.creapolis.solennix.core.designsystem.component.SolennixTextField
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.feature.auth.viewmodel.AuthViewModel
 
+import androidx.compose.ui.graphics.vector.ImageVector
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(

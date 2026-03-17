@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.settings.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -111,18 +112,18 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
             modifier = Modifier.fillMaxWidth(),
             color = SolennixTheme.colors.card
         ) {
-            Column(content = content) { }
+            Column(content = content)
         }
     }
 }
 
 @Composable
 fun SettingsItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    androidx.compose.material3.ListItem(
+    ListItem(
         headlineContent = { Text(label) },
         leadingContent = { Icon(icon, contentDescription = null, tint = SolennixTheme.colors.secondaryText) },
-        trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
-        modifier = Modifier.androidx.compose.foundation.clickable(onClick = onClick)
+        trailingContent = { Icon(Icons.Default.KeyboardArrowRight, contentDescription = null) },
+        modifier = Modifier.clickable(onClick = onClick)
     )
     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
 }
