@@ -41,6 +41,7 @@ class KtorClient @Inject constructor(
             url(BuildConfig.API_BASE_URL)
             contentType(ContentType.Application.Json)
         }
+        expectSuccess = true
         engine {
             config {
                 connectTimeout(30, TimeUnit.SECONDS)

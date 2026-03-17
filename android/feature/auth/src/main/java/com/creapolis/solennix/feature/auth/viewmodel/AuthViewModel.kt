@@ -47,7 +47,11 @@ class AuthViewModel @Inject constructor(
                 authManager.storeTokens(response.accessToken, response.refreshToken)
                 authManager.storeUser(response.user)
             } catch (e: Exception) {
-                errorMessage = "Email o contrasena incorrectos"
+                errorMessage = when {
+                    e.message?.contains("401") == true -> "Email o contrasena incorrectos"
+                    e.message?.contains("404") == true -> "Error de configuracion del servidor (404)"
+                    else -> "Error de conexion: ${e.localizedMessage}"
+                }
             } finally {
                 isLoading = false
             }

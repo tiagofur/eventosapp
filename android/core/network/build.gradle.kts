@@ -16,7 +16,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
         
-        buildConfigField("String", "API_BASE_URL", "\"https://api.solennix.com\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://api.solennix.com/api/\"")
     }
 
     buildTypes {
