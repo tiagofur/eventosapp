@@ -1,0 +1,173 @@
+import SwiftUI
+import LocalAuthentication
+import SolennixDesign
+import SolennixNetwork
+
+// MARK: - Biometric Gate View
+
+/// Shown when `authState == .biometricLocked`. Prompts the user for Face ID / Touch ID
+/// to unlock the app, with a fallback to password-based login.
+public struct BiometricGateView: View {
+
+    @Environment(AuthManager.self) private var authManager
+
+    @State private var biometricType: BiometricType = .none
+    @State private var errorMessage: String?
+    @State private var showLogin: Bool = false
+
+    public init() {}
+
+    public var body: some View {
+        if showLogin {
+            NavigationStack {
+                LoginView()
+            }
+        } else {
+            biometricContent
+                .onAppear {
+                    biometricType = detectBiometricType()
+                    // Auto-prompt on appear
+                    Task { await authenticate() }
+                }
+        }
+    }
+
+    // MARK: - Content
+
+    private var biometricContent: some View {
+        VStack(spacing: Spacing.xxl) {
+            Spacer()
+
+            // App logo / brand
+            VStack(spacing: Spacing.md) {
+                Text("Solennix")
+                    .font(.solennixTitle)
+                    .foregroundStyle(SolennixColors.primary)
+
+                Text("CADA DETALLE IMPORTA")
+                    .font(.caption)
+                    .fontWeight(.light)
+                    .tracking(5.5)
+                    .foregroundStyle(SolennixColors.textSecondary)
+            }
+
+            Spacer()
+
+            // Biometric icon
+            VStack(spacing: Spacing.lg) {
+                Image(systemName: biometricIconName)
+                    .font(.system(size: 64))
+                    .foregroundStyle(SolennixColors.primary)
+
+                Text("Desbloquea Solennix")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.text)
+
+                // Error message
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.subheadline)
+                        .foregroundStyle(SolennixColors.error)
+                        .multilineTextAlignment(.center)
+                }
+            }
+
+            Spacer()
+
+            // Actions
+            VStack(spacing: Spacing.md) {
+                PremiumButton(title: biometricButtonTitle) {
+                    Task { await authenticate() }
+                }
+
+                Button {
+                    // Fallback: navigate to login
+                    authManager.clearTokens()
+                    showLogin = true
+                } label: {
+                    Text("Usar contrasena")
+                        .font(.body)
+                        .foregroundStyle(SolennixColors.primary)
+                }
+            }
+            .padding(.bottom, Spacing.xxl)
+        }
+        .padding(.horizontal, Spacing.xl)
+        .background(SolennixColors.background.ignoresSafeArea())
+    }
+
+    // MARK: - Biometric Type Detection
+
+    private enum BiometricType {
+        case faceID
+        case touchID
+        case none
+    }
+
+    private func detectBiometricType() -> BiometricType {
+        let context = LAContext()
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            return .none
+        }
+        switch context.biometryType {
+        case .faceID:
+            return .faceID
+        case .touchID:
+            return .touchID
+        default:
+            return .none
+        }
+    }
+
+    private var biometricIconName: String {
+        switch biometricType {
+        case .faceID:
+            return "faceid"
+        case .touchID:
+            return "touchid"
+        case .none:
+            return "lock.fill"
+        }
+    }
+
+    private var biometricButtonTitle: String {
+        switch biometricType {
+        case .faceID:
+            return "Usar Face ID"
+        case .touchID:
+            return "Usar Touch ID"
+        case .none:
+            return "Desbloquear"
+        }
+    }
+
+    // MARK: - Authentication
+
+    @MainActor
+    private func authenticate() async {
+        errorMessage = nil
+        do {
+            let success = try await authManager.authenticateWithBiometrics()
+            if success {
+                // AuthManager should transition state to .authenticated
+                // after successful biometric auth. Trigger session restore.
+                await authManager.checkAuth()
+            }
+        } catch {
+            if let laError = error as? LAError, laError.code == .userCancel {
+                // User cancelled — no error message needed
+                return
+            }
+            errorMessage = "No se pudo verificar tu identidad. Intenta de nuevo."
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    BiometricGateView()
+        .environment(AuthManager())
+}
