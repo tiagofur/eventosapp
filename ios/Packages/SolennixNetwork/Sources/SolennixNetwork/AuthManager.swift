@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import LocalAuthentication
 import SolennixCore
+import SolennixFeatures
 
 // MARK: - Auth State
 
@@ -132,6 +133,7 @@ public final class AuthManager {
             let user: User = try await client.get(Endpoint.me)
             currentUser = user
             authState = .authenticated(user)
+            SentryHelper.setUser(id: user.id, email: user.email, name: user.name)
         } catch {
             // Token might be expired; try refresh
             let refreshed = try? await refreshToken()
@@ -141,6 +143,7 @@ public final class AuthManager {
                    let user: User = try? await client.get(Endpoint.me) {
                     currentUser = user
                     authState = .authenticated(user)
+                    SentryHelper.setUser(id: user.id, email: user.email, name: user.name)
                 } else {
                     clearTokens()
                     authState = .unauthenticated
@@ -171,6 +174,7 @@ public final class AuthManager {
         storeTokens(access: response.accessToken, refresh: response.refreshToken)
         currentUser = response.user
         authState = .authenticated(response.user)
+        SentryHelper.setUser(id: response.user.id, email: response.user.email, name: response.user.name)
         return response.user
     }
 
@@ -193,6 +197,7 @@ public final class AuthManager {
         storeTokens(access: response.accessToken, refresh: response.refreshToken)
         currentUser = response.user
         authState = .authenticated(response.user)
+        SentryHelper.setUser(id: response.user.id, email: response.user.email, name: response.user.name)
         return response.user
     }
 
@@ -211,6 +216,7 @@ public final class AuthManager {
         clearTokens()
         currentUser = nil
         authState = .unauthenticated
+        SentryHelper.clearUser()
     }
 
     // MARK: - Token Refresh
@@ -286,6 +292,7 @@ public final class AuthManager {
     public func clearTokens() {
         keychain.delete(for: KeychainHelper.Keys.accessToken)
         keychain.delete(for: KeychainHelper.Keys.refreshToken)
+        SentryHelper.clearUser()
     }
 
     // MARK: - Private Helpers

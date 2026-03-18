@@ -8,6 +8,7 @@ import SolennixNetwork
 public struct ProductListView: View {
 
     @State private var viewModel: ProductListViewModel
+    @Environment(PlanLimitsManager.self) private var planLimitsManager
 
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: ProductListViewModel(apiClient: apiClient))
@@ -38,7 +39,10 @@ public struct ProductListView: View {
         } message: { product in
             Text("Estas seguro de que quieres eliminar \"\(product.name)\"? Esta accion no se puede deshacer.")
         }
-        .task { await viewModel.loadProducts() }
+        .task { 
+            await viewModel.loadProducts() 
+            await planLimitsManager.checkLimits()
+        }
     }
 
     // MARK: - Content
@@ -67,8 +71,17 @@ public struct ProductListView: View {
         } else {
             VStack(spacing: 0) {
                 // Plan limit warning
-                if viewModel.isApproachingLimit {
-                    planLimitWarning
+                if !planLimitsManager.canCreateCatalogItem {
+                    UpgradeBannerView(
+                        type: .limitReached,
+                        resource: "Catalogo",
+                        currentUsage: planLimitsManager.catalogCount,
+                        limit: PlanLimitsManager.catalogLimit
+                    ) {
+                        // Action to go to Pricing
+                    }
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.top, Spacing.sm)
                 }
 
                 // Category chips
@@ -246,43 +259,7 @@ public struct ProductListView: View {
         }
     }
 
-    // MARK: - Plan Limit Warning
-
-    private var planLimitWarning: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(SolennixColors.warning)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Limite de productos")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(SolennixColors.text)
-
-                Text("Te quedan \(viewModel.remainingProducts) productos en el plan basico")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
-            }
-
-            Spacer()
-
-            NavigationLink(value: Route.pricing) {
-                Text("Mejorar")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, Spacing.md)
-                    .padding(.vertical, Spacing.xs)
-                    .background(SolennixColors.primary)
-                    .clipShape(Capsule())
-            }
-        }
-        .padding(Spacing.md)
-        .background(SolennixColors.warningBg)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .padding(.horizontal, Spacing.lg)
-        .padding(.top, Spacing.sm)
-    }
+    // REMOVED Custom plan limit warning (using UpgradeBannerView instead)
 
     // MARK: - FAB
 
@@ -291,15 +268,14 @@ public struct ProductListView: View {
             Image(systemName: "plus")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(planLimitsManager.canCreateCatalogItem ? Color.white : SolennixColors.textTertiary)
                 .frame(width: 56, height: 56)
-                .background(SolennixGradient.premium)
+                .background(planLimitsManager.canCreateCatalogItem ? AnyShapeStyle(SolennixGradient.premium) : AnyShapeStyle(SolennixColors.surfaceAlt))
                 .clipShape(Circle())
                 .shadowFab()
         }
         .padding(Spacing.lg)
-        .opacity(viewModel.isAtLimit ? 0.5 : 1)
-        .disabled(viewModel.isAtLimit)
+        .disabled(!planLimitsManager.canCreateCatalogItem)
     }
 }
 

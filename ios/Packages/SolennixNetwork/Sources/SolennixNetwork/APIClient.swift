@@ -38,6 +38,9 @@ public actor APIClient {
 
     /// Task that guards concurrent refresh attempts — only one refresh runs at a time.
     private var refreshTask: Task<Bool, Error>?
+    
+    /// Global toast manager to display networking errors automatically to the user.
+    private weak var toastManager: ToastManager?
 
     // MARK: - Init
 
@@ -65,8 +68,12 @@ public actor APIClient {
     }
 
     /// Set the auth manager reference after both objects are initialized.
-    public func setAuthManager(_ authManager: AuthManager) {
-        self._authManager = authManager
+    public func setAuthManager(_ manager: AuthManager) {
+        self._authManager = manager
+    }
+    
+    public func setToastManager(_ manager: ToastManager) {
+        self.toastManager = manager
     }
 
     // MARK: - Public HTTP Methods
@@ -173,34 +180,19 @@ public actor APIClient {
         _ request: URLRequest,
         isRetry: Bool = false
     ) async throws -> T {
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.unknown
+        let data: Data
+        do {
+            data = try await perform(request, isRetry: isRetry)
+        } catch let urlError as URLError {
+            let err = APIError.networkError(urlError)
+            showErrorToast(for: err)
+            throw err
+        } catch {
+            throw error
         }
-
-        // Handle 401 — attempt token refresh once
-        if httpResponse.statusCode == 401 && !isRetry {
-            let refreshed = await attemptRefresh()
-            if refreshed {
-                // Rebuild the request with the new token
-                var retryRequest = request
-                if let newToken = keychainHelper.readString(for: KeychainHelper.Keys.accessToken) {
-                    retryRequest.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
-                }
-                return try await execute(retryRequest, isRetry: true)
-            } else {
-                // Refresh failed — clear tokens and throw unauthorized
-                _authManager?.clearTokens()
-                throw APIError.unauthorized
-            }
-        }
-
-        // Validate response status
-        try validateResponse(httpResponse, data: data)
 
         // Handle 204 No Content
-        if httpResponse.statusCode == 204 {
+        if data.isEmpty { // Assuming empty data for 204 No Content
             if let empty = EmptyResponse() as? T {
                 return empty
             }
@@ -244,28 +236,50 @@ public actor APIClient {
         case 200...299:
             return // Success
         case 401:
+            // Handled during token refresh flow
             throw APIError.unauthorized
         case 403, 404:
             // Try to extract error message from response body
             let message = extractErrorMessage(from: data)
-            throw APIError.serverError(
+            let err = APIError.serverError(
                 statusCode: response.statusCode,
                 message: message ?? "Request failed with status \(response.statusCode)"
             )
+            showErrorToast(for: err)
+            throw err
         case 400...499:
             let message = extractErrorMessage(from: data)
-            throw APIError.serverError(
+            let err = APIError.serverError(
                 statusCode: response.statusCode,
                 message: message ?? "Request failed with status \(response.statusCode)"
             )
+            showErrorToast(for: err)
+            throw err
         case 500...599:
             let message = extractErrorMessage(from: data)
-            throw APIError.serverError(
+            let err = APIError.serverError(
                 statusCode: response.statusCode,
                 message: message ?? "Error del servidor"
             )
+            showErrorToast(for: err)
+            throw err
         default:
+            showErrorToast(for: .unknown)
             throw APIError.unknown
+        }
+    }
+
+    private func showErrorToast(for error: APIError) {
+        // Only show toasts for interesting errors that the user needs to see
+        switch error {
+        case .unauthorized:
+            // Silently fail auth; let AuthManager redirect to login
+            break
+        default:
+            let message = error.userFriendlyMessage
+            Task { @MainActor in
+                toastManager?.show(message: message, type: .error)
+            }
         }
     }
 

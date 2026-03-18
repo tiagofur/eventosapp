@@ -16,25 +16,21 @@ struct RouteDestination: View {
         switch route {
         // Events
         case .eventDetail(let id):
-            PlaceholderView(title: "Detalle del Evento", id: id, phase: 2)
-        case .eventForm(let id, let clientId, let date):
-            PlaceholderView(
-                title: "Formulario de Evento",
-                id: id,
-                subtitle: [
-                    clientId.map { "Cliente: \($0)" },
-                    date.map { "Fecha: \($0.formatted(date: .abbreviated, time: .omitted))" }
-                ].compactMap { $0 }.joined(separator: " | "),
-                phase: 2
-            )
+            EventDetailView(eventId: id, apiClient: apiClient)
+        case .eventForm(let id, _, _):
+            EventFormView(eventId: id, apiClient: apiClient)
         case .eventChecklist(let id):
-            PlaceholderView(title: "Checklist del Evento", id: id, phase: 2)
+            EventChecklistView(eventId: id, apiClient: apiClient)
 
         // Clients
+        case .clientList:
+            ClientListView(apiClient: apiClient)
         case .clientDetail(let id):
-            PlaceholderView(title: "Detalle del Cliente", id: id, phase: 2)
+            ClientDetailView(clientId: id, apiClient: apiClient)
         case .clientForm(let id):
-            PlaceholderView(title: "Formulario de Cliente", id: id, phase: 2)
+            ClientFormView(clientId: id, apiClient: apiClient)
+        case .quickQuote:
+            QuickQuoteView(apiClient: apiClient)
 
         // Products
         case .productDetail(let id):

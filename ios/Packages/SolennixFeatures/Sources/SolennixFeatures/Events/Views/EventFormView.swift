@@ -171,7 +171,13 @@ public struct EventFormView: View {
                 ) {
                     Task {
                         do {
+                            let isNewEvent = viewModel.eventId == nil
                             try await viewModel.save()
+                            
+                            if isNewEvent {
+                                StoreReviewHelper.recordEventCreated()
+                            }
+                            
                             dismiss()
                         } catch {
                             viewModel.errorMessage = "Error al guardar el evento. Intenta de nuevo."

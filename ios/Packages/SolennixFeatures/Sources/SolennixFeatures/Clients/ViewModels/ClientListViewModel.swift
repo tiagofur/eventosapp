@@ -45,6 +45,19 @@ public final class ClientListViewModel {
     public var deleteTarget: Client?
     public var showDeleteConfirm: Bool = false
     public var errorMessage: String?
+    
+    // MARK: - Pagination
+    
+    public var currentPage: Int = 1
+    public let pageSize: Int = 20
+    public var hasMorePages: Bool = false
+    
+    // Computed property for the currently displayed items based on pagination
+    public var paginatedClients: [Client] {
+        let endIndex = min(currentPage * pageSize, filteredClients.count)
+        guard endIndex > 0 else { return [] }
+        return Array(filteredClients[0..<endIndex])
+    }
 
     // MARK: - Dependencies
 
@@ -73,12 +86,20 @@ public final class ClientListViewModel {
         do {
             let result: [Client] = try await apiClient.get(Endpoint.clients)
             clients = result
+            currentPage = 1
             applyFilters()
         } catch {
             errorMessage = mapError(error)
         }
 
         isLoading = false
+    }
+    
+    @MainActor
+    public func loadMore() {
+        guard !isLoading && hasMorePages else { return }
+        currentPage += 1
+        hasMorePages = (currentPage * pageSize) < filteredClients.count
     }
 
     // MARK: - Delete
@@ -129,6 +150,10 @@ public final class ClientListViewModel {
         }
 
         filteredClients = result
+        
+        // Reset pagination when filters change
+        currentPage = 1
+        hasMorePages = filteredClients.count > pageSize
     }
 
     // MARK: - Error Mapping

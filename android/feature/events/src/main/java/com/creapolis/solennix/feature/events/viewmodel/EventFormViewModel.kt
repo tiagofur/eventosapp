@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
+import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class EventFormViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val clientRepository: ClientRepository,
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val inventoryRepository: InventoryRepository
 ) : ViewModel() {
 
     // Step 1: General Info
@@ -60,12 +62,29 @@ class EventFormViewModel @Inject constructor(
     var discount by mutableStateOf("0")
     var discountType by mutableStateOf(DiscountType.PERCENT)
 
-    // Step 4: Location & Details
+    // Step 4: Equipment
+    val selectedEquipment = mutableStateListOf<EventEquipment>()
+    private val _equipmentConflicts = MutableStateFlow<List<EquipmentConflict>>(emptyList())
+    val equipmentConflicts: StateFlow<List<EquipmentConflict>> = _equipmentConflicts.asStateFlow()
+    private val _equipmentSuggestions = MutableStateFlow<List<EquipmentSuggestion>>(emptyList())
+    val equipmentSuggestions: StateFlow<List<EquipmentSuggestion>> = _equipmentSuggestions.asStateFlow()
+    private val _availableEquipment = MutableStateFlow<List<InventoryItem>>(emptyList())
+    val availableEquipment: StateFlow<List<InventoryItem>> = _availableEquipment.asStateFlow()
+    var isCheckingConflicts by mutableStateOf(false)
+
+    // Step 5: Supplies
+    val selectedSupplies = mutableStateListOf<EventSupply>()
+    private val _supplySuggestions = MutableStateFlow<List<SupplySuggestion>>(emptyList())
+    val supplySuggestions: StateFlow<List<SupplySuggestion>> = _supplySuggestions.asStateFlow()
+    private val _availableSupplies = MutableStateFlow<List<InventoryItem>>(emptyList())
+    val availableSupplies: StateFlow<List<InventoryItem>> = _availableSupplies.asStateFlow()
+
+    // Step 6: Location & Details (moved to GeneralInfo in UI)
     var location by mutableStateOf("")
     var city by mutableStateOf("")
     var notes by mutableStateOf("")
 
-    // Step 5: Summary Logic
+    // Summary Logic
     val subtotal: Double get() = selectedProducts.sumOf { it.totalPrice ?: 0.0 } + eventExtras.sumOf { it.price }
     val total: Double get() {
         val d = discount.toDoubleOrNull() ?: 0.0
@@ -83,6 +102,14 @@ class EventFormViewModel @Inject constructor(
         viewModelScope.launch {
             productRepository.getProducts().collect {
                 _availableProducts.value = it
+            }
+        }
+        viewModelScope.launch {
+            inventoryRepository.getInventoryItems().collect { items ->
+                _availableEquipment.value = items.filter { it.type == InventoryType.EQUIPMENT }
+                _availableSupplies.value = items.filter {
+                    it.type == InventoryType.SUPPLY || it.type == InventoryType.INGREDIENT
+                }
             }
         }
     }
@@ -145,6 +172,191 @@ class EventFormViewModel @Inject constructor(
         eventExtras.removeAll { it.id == id }
     }
 
+    // Equipment Methods
+    fun addEquipment(item: InventoryItem, quantity: Int) {
+        val existing = selectedEquipment.find { it.inventoryId == item.id }
+        if (existing != null) {
+            val index = selectedEquipment.indexOf(existing)
+            selectedEquipment[index] = existing.copy(quantity = existing.quantity + quantity)
+        } else {
+            val equipment = EventEquipment(
+                id = UUID.randomUUID().toString(),
+                eventId = "",
+                inventoryId = item.id,
+                quantity = quantity,
+                createdAt = "",
+                equipmentName = item.ingredientName,
+                unit = item.unit,
+                currentStock = item.currentStock
+            )
+            selectedEquipment.add(equipment)
+        }
+        checkEquipmentConflicts()
+    }
+
+    fun removeEquipment(inventoryId: String) {
+        selectedEquipment.removeAll { it.inventoryId == inventoryId }
+        checkEquipmentConflicts()
+    }
+
+    fun updateEquipmentQuantity(inventoryId: String, newQuantity: Int) {
+        if (newQuantity <= 0) {
+            removeEquipment(inventoryId)
+            return
+        }
+        val existing = selectedEquipment.find { it.inventoryId == inventoryId }
+        if (existing != null) {
+            val index = selectedEquipment.indexOf(existing)
+            selectedEquipment[index] = existing.copy(quantity = newQuantity)
+        }
+        checkEquipmentConflicts()
+    }
+
+    fun checkEquipmentConflicts() {
+        if (selectedEquipment.isEmpty()) {
+            _equipmentConflicts.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            isCheckingConflicts = true
+            try {
+                val conflicts = eventRepository.getEquipmentConflicts(
+                    eventDate = eventDate.toString(),
+                    equipmentIds = selectedEquipment.map { it.inventoryId }
+                )
+                _equipmentConflicts.value = conflicts
+            } catch (e: Exception) {
+                _equipmentConflicts.value = emptyList()
+            } finally {
+                isCheckingConflicts = false
+            }
+        }
+    }
+
+    fun fetchEquipmentSuggestions() {
+        if (selectedProducts.isEmpty()) {
+            _equipmentSuggestions.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val suggestions = eventRepository.getEquipmentSuggestions(
+                    productIds = selectedProducts.map { it.productId }
+                )
+                _equipmentSuggestions.value = suggestions
+            } catch (e: Exception) {
+                _equipmentSuggestions.value = emptyList()
+            }
+        }
+    }
+
+    fun addEquipmentFromSuggestion(suggestion: EquipmentSuggestion) {
+        val existing = selectedEquipment.find { it.inventoryId == suggestion.id }
+        if (existing == null) {
+            val equipment = EventEquipment(
+                id = UUID.randomUUID().toString(),
+                eventId = "",
+                inventoryId = suggestion.id,
+                quantity = suggestion.suggestedQuantity.toInt().coerceAtLeast(1),
+                createdAt = "",
+                equipmentName = suggestion.ingredientName,
+                unit = suggestion.unit,
+                currentStock = suggestion.currentStock
+            )
+            selectedEquipment.add(equipment)
+            checkEquipmentConflicts()
+        }
+    }
+
+    // Supplies Methods
+    fun addSupply(item: InventoryItem, quantity: Double, source: SupplySource = SupplySource.STOCK) {
+        val existing = selectedSupplies.find { it.inventoryId == item.id }
+        if (existing != null) {
+            val index = selectedSupplies.indexOf(existing)
+            selectedSupplies[index] = existing.copy(quantity = existing.quantity + quantity)
+        } else {
+            val supply = EventSupply(
+                id = UUID.randomUUID().toString(),
+                eventId = "",
+                inventoryId = item.id,
+                quantity = quantity,
+                unitCost = item.unitCost ?: 0.0,
+                source = source,
+                createdAt = "",
+                supplyName = item.ingredientName,
+                unit = item.unit,
+                currentStock = item.currentStock
+            )
+            selectedSupplies.add(supply)
+        }
+    }
+
+    fun removeSupply(inventoryId: String) {
+        selectedSupplies.removeAll { it.inventoryId == inventoryId }
+    }
+
+    fun updateSupplyQuantity(inventoryId: String, newQuantity: Double) {
+        if (newQuantity <= 0) {
+            removeSupply(inventoryId)
+            return
+        }
+        val existing = selectedSupplies.find { it.inventoryId == inventoryId }
+        if (existing != null) {
+            val index = selectedSupplies.indexOf(existing)
+            selectedSupplies[index] = existing.copy(quantity = newQuantity)
+        }
+    }
+
+    fun updateSupplySource(inventoryId: String, source: SupplySource) {
+        val existing = selectedSupplies.find { it.inventoryId == inventoryId }
+        if (existing != null) {
+            val index = selectedSupplies.indexOf(existing)
+            selectedSupplies[index] = existing.copy(source = source)
+        }
+    }
+
+    fun fetchSupplySuggestions() {
+        if (selectedProducts.isEmpty()) {
+            _supplySuggestions.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val suggestions = eventRepository.getSupplySuggestions(
+                    productIds = selectedProducts.map { it.productId },
+                    numPeople = numPeople.toIntOrNull() ?: 0
+                )
+                _supplySuggestions.value = suggestions
+            } catch (e: Exception) {
+                _supplySuggestions.value = emptyList()
+            }
+        }
+    }
+
+    fun addSupplyFromSuggestion(suggestion: SupplySuggestion) {
+        val existing = selectedSupplies.find { it.inventoryId == suggestion.id }
+        if (existing == null) {
+            val source = if (suggestion.currentStock >= suggestion.suggestedQuantity) {
+                SupplySource.STOCK
+            } else {
+                SupplySource.PURCHASE
+            }
+            val supply = EventSupply(
+                id = UUID.randomUUID().toString(),
+                eventId = "",
+                inventoryId = suggestion.id,
+                quantity = suggestion.suggestedQuantity,
+                unitCost = suggestion.unitCost,
+                source = source,
+                createdAt = "",
+                supplyName = suggestion.ingredientName,
+                unit = suggestion.unit,
+                currentStock = suggestion.currentStock
+            )
+            selectedSupplies.add(supply)
+        }
+    }
+
     fun saveEvent() {
         val client = selectedClient ?: return
         viewModelScope.launch {
@@ -176,6 +388,22 @@ class EventFormViewModel @Inject constructor(
                         eventId = createdEvent.id,
                         products = selectedProducts.toList(),
                         extras = eventExtras.toList()
+                    )
+                }
+
+                // Save equipment for the event
+                if (selectedEquipment.isNotEmpty()) {
+                    eventRepository.updateEventEquipment(
+                        eventId = createdEvent.id,
+                        equipment = selectedEquipment.toList()
+                    )
+                }
+
+                // Save supplies for the event
+                if (selectedSupplies.isNotEmpty()) {
+                    eventRepository.updateEventSupplies(
+                        eventId = createdEvent.id,
+                        supplies = selectedSupplies.toList()
                     )
                 }
 

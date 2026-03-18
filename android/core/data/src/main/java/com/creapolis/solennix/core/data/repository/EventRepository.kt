@@ -5,8 +5,14 @@ import com.creapolis.solennix.core.database.dao.EventItemDao
 import com.creapolis.solennix.core.database.entity.asEntity
 import com.creapolis.solennix.core.database.entity.asExternalModel
 import com.creapolis.solennix.core.model.Event
+import com.creapolis.solennix.core.model.EventEquipment
 import com.creapolis.solennix.core.model.EventExtra
+import com.creapolis.solennix.core.model.EventPhoto
 import com.creapolis.solennix.core.model.EventProduct
+import com.creapolis.solennix.core.model.EventSupply
+import com.creapolis.solennix.core.model.EquipmentConflict
+import com.creapolis.solennix.core.model.EquipmentSuggestion
+import com.creapolis.solennix.core.model.SupplySuggestion
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.Endpoints
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +33,30 @@ interface EventRepository {
     fun getEventProducts(eventId: String): Flow<List<EventProduct>>
     fun getEventExtras(eventId: String): Flow<List<EventExtra>>
     suspend fun syncEventItems(eventId: String)
+
+    // Equipment and Supplies
+    suspend fun getEquipmentConflicts(
+        eventDate: String,
+        equipmentIds: List<String>,
+        excludeEventId: String? = null
+    ): List<EquipmentConflict>
+
+    suspend fun getEquipmentSuggestions(
+        productIds: List<String>
+    ): List<EquipmentSuggestion>
+
+    suspend fun getSupplySuggestions(
+        productIds: List<String>,
+        numPeople: Int
+    ): List<SupplySuggestion>
+
+    suspend fun updateEventEquipment(eventId: String, equipment: List<EventEquipment>)
+    suspend fun updateEventSupplies(eventId: String, supplies: List<EventSupply>)
+
+    // Photos
+    suspend fun getEventPhotos(eventId: String): List<EventPhoto>
+    suspend fun uploadEventPhoto(eventId: String, imageUrl: String, caption: String? = null): EventPhoto
+    suspend fun deleteEventPhoto(eventId: String, photoId: String)
 }
 
 @Singleton
@@ -106,6 +136,80 @@ class OfflineFirstEventRepository @Inject constructor(
         eventItemDao.deleteExtrasByEventId(eventId)
         eventItemDao.insertProducts(response.products.map { it.asEntity() })
         eventItemDao.insertExtras(response.extras.map { it.asEntity() })
+    }
+
+    override suspend fun getEquipmentConflicts(
+        eventDate: String,
+        equipmentIds: List<String>,
+        excludeEventId: String?
+    ): List<EquipmentConflict> {
+        if (equipmentIds.isEmpty()) return emptyList()
+        val params = buildMap {
+            put("event_date", eventDate)
+            put("equipment_ids", equipmentIds.joinToString(","))
+            excludeEventId?.let { put("exclude_event_id", it) }
+        }
+        return apiService.get(Endpoints.EQUIPMENT_CONFLICTS, params)
+    }
+
+    override suspend fun getEquipmentSuggestions(
+        productIds: List<String>
+    ): List<EquipmentSuggestion> {
+        if (productIds.isEmpty()) return emptyList()
+        val params = mapOf("product_ids" to productIds.joinToString(","))
+        return apiService.get(Endpoints.EQUIPMENT_SUGGESTIONS, params)
+    }
+
+    override suspend fun getSupplySuggestions(
+        productIds: List<String>,
+        numPeople: Int
+    ): List<SupplySuggestion> {
+        if (productIds.isEmpty()) return emptyList()
+        val params = mapOf(
+            "product_ids" to productIds.joinToString(","),
+            "num_people" to numPeople.toString()
+        )
+        return apiService.get(Endpoints.SUPPLY_SUGGESTIONS, params)
+    }
+
+    override suspend fun updateEventEquipment(eventId: String, equipment: List<EventEquipment>) {
+        val payload = equipment.map {
+            mapOf(
+                "inventory_id" to it.inventoryId,
+                "quantity" to it.quantity,
+                "notes" to it.notes
+            )
+        }
+        apiService.put<Any>(Endpoints.eventEquipment(eventId), mapOf("equipment" to payload))
+    }
+
+    override suspend fun updateEventSupplies(eventId: String, supplies: List<EventSupply>) {
+        val payload = supplies.map {
+            mapOf(
+                "inventory_id" to it.inventoryId,
+                "quantity" to it.quantity,
+                "unit_cost" to it.unitCost,
+                "source" to it.source.name.lowercase(),
+                "exclude_cost" to it.excludeCost
+            )
+        }
+        apiService.put<Any>(Endpoints.eventSupplies(eventId), mapOf("supplies" to payload))
+    }
+
+    override suspend fun getEventPhotos(eventId: String): List<EventPhoto> {
+        return apiService.get(Endpoints.eventPhotos(eventId))
+    }
+
+    override suspend fun uploadEventPhoto(eventId: String, imageUrl: String, caption: String?): EventPhoto {
+        val payload = buildMap<String, Any?> {
+            put("url", imageUrl)
+            caption?.let { put("caption", it) }
+        }
+        return apiService.post(Endpoints.eventPhotos(eventId), payload)
+    }
+
+    override suspend fun deleteEventPhoto(eventId: String, photoId: String) {
+        apiService.delete(Endpoints.eventPhoto(eventId, photoId))
     }
 }
 

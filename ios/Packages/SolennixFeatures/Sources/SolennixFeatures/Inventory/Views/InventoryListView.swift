@@ -7,6 +7,7 @@ import SolennixNetwork
 
 public struct InventoryListView: View {
 
+    @Environment(PlanLimitsManager.self) private var planLimitsManager
     @State private var viewModel: InventoryListViewModel
 
     public init(apiClient: APIClient) {
@@ -44,37 +45,55 @@ public struct InventoryListView: View {
         .sheet(isPresented: $viewModel.showStockAdjustment) {
             stockAdjustmentSheet
         }
-        .task { await viewModel.loadItems() }
+        .task { 
+            await viewModel.loadItems()
+            await planLimitsManager.checkLimits()
+        }
     }
 
     // MARK: - Content
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isLoading && viewModel.items.isEmpty {
-            skeletonList
-        } else if viewModel.filteredItems.isEmpty && !viewModel.isLoading {
-            if viewModel.searchText.isEmpty && !viewModel.showLowStockOnly {
-                EmptyStateView(
-                    icon: "archivebox",
-                    title: "Sin inventario",
-                    message: "Agrega tu primer item al inventario",
-                    actionTitle: "Nuevo Item"
+        VStack(spacing: 0) {
+            if !planLimitsManager.canCreateCatalogItem {
+                UpgradeBannerView(
+                    type: .limitReached,
+                    resource: "Catalogo",
+                    currentUsage: planLimitsManager.catalogCount,
+                    limit: PlanLimitsManager.catalogLimit
                 ) {
-                    // FAB handles navigation
+                    // Action to go to Pricing
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.sm)
+            }
+
+            if viewModel.isLoading && viewModel.items.isEmpty {
+                skeletonList
+            } else if viewModel.filteredItems.isEmpty && !viewModel.isLoading {
+                if viewModel.searchText.isEmpty && !viewModel.showLowStockOnly {
+                    EmptyStateView(
+                        icon: "archivebox",
+                        title: "Sin inventario",
+                        message: "Agrega tu primer item al inventario",
+                        actionTitle: "Nuevo Item"
+                    ) {
+                        // FAB handles navigation
+                    }
+                } else {
+                    EmptyStateView(
+                        icon: "magnifyingglass",
+                        title: "Sin resultados",
+                        message: viewModel.showLowStockOnly
+                            ? "No hay items con stock bajo"
+                            : "No se encontraron items que coincidan con la busqueda"
+                    )
                 }
             } else {
-                EmptyStateView(
-                    icon: "magnifyingglass",
-                    title: "Sin resultados",
-                    message: viewModel.showLowStockOnly
-                        ? "No hay items con stock bajo"
-                        : "No se encontraron items que coincidan con la busqueda"
-                )
+                inventoryList
             }
-        } else {
-            inventoryList
-        }
+        } // End VStack
     }
 
     // MARK: - Inventory List
@@ -362,13 +381,14 @@ public struct InventoryListView: View {
             Image(systemName: "plus")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(planLimitsManager.canCreateCatalogItem ? Color.white : SolennixColors.textTertiary)
                 .frame(width: 56, height: 56)
-                .background(SolennixGradient.premium)
+                .background(planLimitsManager.canCreateCatalogItem ? AnyShapeStyle(SolennixGradient.premium) : AnyShapeStyle(SolennixColors.surfaceAlt))
                 .clipShape(Circle())
                 .shadowFab()
         }
         .padding(Spacing.lg)
+        .disabled(!planLimitsManager.canCreateCatalogItem)
     }
 }
 

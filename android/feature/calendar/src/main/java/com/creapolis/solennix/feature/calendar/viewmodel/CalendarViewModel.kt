@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.model.Event
+import com.creapolis.solennix.core.model.EventStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,11 +12,26 @@ import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
 
+enum class CalendarViewMode {
+    CALENDAR, LIST
+}
+
+data class StatusFilter(
+    val status: EventStatus?,  // null means "All"
+    val label: String,
+    val count: Int = 0
+)
+
 data class CalendarUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val currentMonth: YearMonth = YearMonth.now(),
     val events: List<Event> = emptyList(),
     val eventsForSelectedDate: List<Event> = emptyList(),
+    val filteredEvents: List<Event> = emptyList(),
+    val viewMode: CalendarViewMode = CalendarViewMode.CALENDAR,
+    val selectedStatus: EventStatus? = null,
+    val searchQuery: String = "",
+    val statusFilters: List<StatusFilter> = emptyList(),
     val isLoading: Boolean = false
 )
 
@@ -26,22 +42,64 @@ class CalendarViewModel @Inject constructor(
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     private val _currentMonth = MutableStateFlow(YearMonth.now())
+    private val _viewMode = MutableStateFlow(CalendarViewMode.CALENDAR)
+    private val _selectedStatus = MutableStateFlow<EventStatus?>(null)
+    private val _searchQuery = MutableStateFlow("")
 
     val uiState: StateFlow<CalendarUiState> = combine(
         eventRepository.getEvents(),
         _selectedDate,
-        _currentMonth
-    ) { events, selected, month ->
+        _currentMonth,
+        _viewMode,
+        _selectedStatus,
+        _searchQuery
+    ) { values ->
+        val events = values[0] as List<Event>
+        val selected = values[1] as LocalDate
+        val month = values[2] as YearMonth
+        val viewMode = values[3] as CalendarViewMode
+        val selectedStatus = values[4] as EventStatus?
+        val searchQuery = values[5] as String
+
+        // Build status filters with counts
+        val statusFilters = buildStatusFilters(events)
+
+        // Filter events by status
+        val statusFilteredEvents = if (selectedStatus != null) {
+            events.filter { it.status == selectedStatus }
+        } else {
+            events
+        }
+
+        // Filter by search query in list mode
+        val filteredEvents = if (searchQuery.isBlank()) {
+            statusFilteredEvents
+        } else {
+            statusFilteredEvents.filter { event ->
+                event.serviceType.contains(searchQuery, ignoreCase = true) ||
+                event.location?.contains(searchQuery, ignoreCase = true) == true ||
+                event.city?.contains(searchQuery, ignoreCase = true) == true
+            }
+        }
+
+        // Events for selected date (also apply status filter)
+        val eventsForSelectedDate = statusFilteredEvents.filter {
+            try {
+                val date = java.time.ZonedDateTime.parse(it.eventDate).toLocalDate()
+                date == selected
+            } catch (e: Exception) { false }
+        }
+
         CalendarUiState(
             selectedDate = selected,
             currentMonth = month,
             events = events,
-            eventsForSelectedDate = events.filter {
-                try {
-                    val date = java.time.ZonedDateTime.parse(it.eventDate).toLocalDate()
-                    date == selected
-                } catch (e: Exception) { false }
-            },
+            eventsForSelectedDate = eventsForSelectedDate,
+            filteredEvents = filteredEvents.sortedByDescending { it.eventDate },
+            viewMode = viewMode,
+            selectedStatus = selectedStatus,
+            searchQuery = searchQuery,
+            statusFilters = statusFilters,
             isLoading = false
         )
     }.stateIn(
@@ -49,6 +107,17 @@ class CalendarViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = CalendarUiState(isLoading = true)
     )
+
+    private fun buildStatusFilters(events: List<Event>): List<StatusFilter> {
+        val counts = events.groupingBy { it.status }.eachCount()
+        return listOf(
+            StatusFilter(null, "Todos", events.size),
+            StatusFilter(EventStatus.QUOTED, "Cotizado", counts[EventStatus.QUOTED] ?: 0),
+            StatusFilter(EventStatus.CONFIRMED, "Confirmado", counts[EventStatus.CONFIRMED] ?: 0),
+            StatusFilter(EventStatus.COMPLETED, "Completado", counts[EventStatus.COMPLETED] ?: 0),
+            StatusFilter(EventStatus.CANCELLED, "Cancelado", counts[EventStatus.CANCELLED] ?: 0)
+        )
+    }
 
     init {
         refresh()
@@ -60,6 +129,18 @@ class CalendarViewModel @Inject constructor(
 
     fun onMonthChange(month: YearMonth) {
         _currentMonth.value = month
+    }
+
+    fun onViewModeChange(mode: CalendarViewMode) {
+        _viewMode.value = mode
+    }
+
+    fun onStatusFilterChange(status: EventStatus?) {
+        _selectedStatus.value = status
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
     }
 
     fun refresh() {

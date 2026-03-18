@@ -856,6 +856,9 @@ Cada componente del RN mapeado a su equivalente SwiftUI:
 | Date/Time pickers | @react-native-community/datetimepicker | DatePicker | Nativo, accesible |
 | Iconos | lucide-react-native (575) | SF Symbols 5 (5000+) | Peso/escala variables |
 | Onboarding tips | Custom OnboardingChecklist | TipKit | Sistema de tips nativo |
+| Cotización Rápida (Quick Quote) | No disponible en Mobile RN | QuickQuoteViewModel + Sheet | Paridad con aplicación Web |
+| Eventos Pendientes Alert | Solo lógico en listados | PendingEventsModalView overlay | Alarma visual preventiva automática |
+| Notificaciones de Error | Toasts dispersos | ToastOverlay + APIClient direct pipe | Toasts automáticos en fallos globales |
 
 ---
 
@@ -929,7 +932,7 @@ Cada componente del RN mapeado a su equivalente SwiftUI:
 
 1. **Header de saludo**
    - "Hola, {firstName}" + fecha formateada en espanol
-   - Quick action buttons: "Nuevo Evento" + "Nuevo Cliente"
+   - Quick action buttons: "Nuevo Evento", "Nuevo Cliente", "Cotización Rápida" (Quick Quote)
 
 2. **Onboarding Checklist** (solo nuevos usuarios, reemplazado por TipKit)
    - 3 pasos: Agregar cliente, Agregar producto, Crear evento
@@ -1088,6 +1091,7 @@ El formulario mas complejo de la app. 5 pasos en `TabView(.page)`:
 **Fuente RN:** `mobile/src/screens/clients/ClientListScreen.tsx`
 
 - **Lista:** Nombre, telefono, email, avatar (foto o iniciales)
+- **Header/Toolbar:** Botón "Cotización Rápida" (abre modal Quick Quote)
 - **Busqueda:** `.searchable` modifier
 - **Ordenamiento:** Menu con opciones:
   - Fecha actualizacion (default desc)

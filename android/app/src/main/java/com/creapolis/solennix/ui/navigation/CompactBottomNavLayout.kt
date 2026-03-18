@@ -20,6 +20,7 @@ import com.creapolis.solennix.feature.calendar.ui.CalendarScreen
 import com.creapolis.solennix.feature.clients.ui.ClientDetailScreen
 import com.creapolis.solennix.feature.clients.ui.ClientListScreen
 import com.creapolis.solennix.feature.dashboard.ui.DashboardScreen
+import com.creapolis.solennix.feature.events.ui.EventChecklistScreen
 import com.creapolis.solennix.feature.events.ui.EventDetailScreen
 import com.creapolis.solennix.feature.events.ui.EventFormScreen
 import com.creapolis.solennix.feature.inventory.ui.InventoryListScreen
@@ -239,7 +240,15 @@ fun CompactBottomNavLayout() {
                 EventDetailScreen(
                     viewModel = hiltViewModel(),
                     onNavigateBack = { navController.popBackStack() },
-                    onEditClick = { }
+                    onEditClick = { id -> navController.navigate("event_form?eventId=$id") },
+                    onChecklistClick = { id -> navController.navigate("event_checklist/$id") }
+                )
+            }
+
+            composable("event_checklist/{eventId}") {
+                EventChecklistScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

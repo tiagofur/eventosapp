@@ -18,6 +18,7 @@ struct CompactTabLayout: View {
     @State private var clientsPath = NavigationPath()
     @State private var morePath = NavigationPath()
     @Environment(\.apiClient) private var apiClient
+    @Environment(PlanLimitsManager.self) private var planLimitsManager
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -60,7 +61,7 @@ struct CompactTabLayout: View {
 
                 // More Tab
                 NavigationStack(path: $morePath) {
-                    SettingsView(apiClient: apiClient)
+                    MoreMenuView()
                         .navigationDestination(for: Route.self) { route in
                             RouteDestination(route: route)
                         }
@@ -73,9 +74,11 @@ struct CompactTabLayout: View {
             .tint(SolennixColors.tabBarActive)
 
             // FAB overlay
-            NewEventFAB {
-                selectedTab = .home
-                homePath.append(Route.eventForm())
+            NewEventFAB(isDisabled: !planLimitsManager.canCreateEvent) {
+                if planLimitsManager.canCreateEvent {
+                    selectedTab = .home
+                    homePath.append(Route.eventForm())
+                }
             }
             .padding(.bottom, 54) // Position above the tab bar
         }
@@ -87,48 +90,53 @@ struct CompactTabLayout: View {
 /// Circular floating action button with premium gradient for creating new events.
 private struct NewEventFAB: View {
 
+    let isDisabled: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(SolennixGradient.premium)
+                    .fill(isDisabled ? AnyShapeStyle(SolennixColors.surfaceAlt) : AnyShapeStyle(SolennixGradient.premium))
                     .frame(width: 56, height: 56)
 
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(SolennixColors.textInverse)
+                    .foregroundStyle(isDisabled ? SolennixColors.textTertiary : SolennixColors.textInverse)
             }
         }
+        .disabled(isDisabled)
         .shadowFab()
         .accessibilityLabel("Nuevo Evento")
     }
 }
 
-// MARK: - Tab Root Views (Phase 1 Placeholders)
+// MARK: - Tab Root Views
 
-/// Placeholder root view for the Home (Dashboard) tab.
+/// Root view for the Home (Dashboard) tab.
 private struct HomeRootView: View {
     var body: some View {
-        PlaceholderView(title: "Dashboard", phase: 2)
-            .navigationTitle("Inicio")
+        DashboardView()
     }
 }
 
-/// Placeholder root view for the Calendar tab.
+/// Root view for the Calendar tab.
 private struct CalendarRootView: View {
+    @Environment(\.apiClient) private var apiClient
+
     var body: some View {
-        PlaceholderView(title: "Calendario", phase: 2)
+        CalendarView(viewModel: CalendarViewModel(apiClient: apiClient))
             .navigationTitle("Calendario")
+            .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-/// Placeholder root view for the Clients tab.
+/// Root view for the Clients tab.
 private struct ClientsRootView: View {
+    @Environment(\.apiClient) private var apiClient
+
     var body: some View {
-        PlaceholderView(title: "Clientes", phase: 2)
-            .navigationTitle("Clientes")
+        ClientListView(apiClient: apiClient)
     }
 }
 

@@ -2,15 +2,20 @@ package com.creapolis.solennix.feature.calendar.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,9 +30,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.designsystem.component.StatusBadge
+import com.creapolis.solennix.core.model.Event
+import com.creapolis.solennix.core.model.EventStatus
+import com.creapolis.solennix.feature.calendar.viewmodel.CalendarUiState
 import com.creapolis.solennix.feature.calendar.viewmodel.CalendarViewModel
+import com.creapolis.solennix.feature.calendar.viewmodel.CalendarViewMode
+import com.creapolis.solennix.feature.calendar.viewmodel.StatusFilter
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
 
@@ -47,43 +59,245 @@ fun CalendarScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            CalendarHeader(
-                currentMonth = uiState.currentMonth,
-                onPreviousMonth = { viewModel.onMonthChange(uiState.currentMonth.minusMonths(1)) },
-                onNextMonth = { viewModel.onMonthChange(uiState.currentMonth.plusMonths(1)) }
-            )
-            
-            CalendarGrid(
-                currentMonth = uiState.currentMonth,
-                selectedDate = uiState.selectedDate,
-                onDateSelected = { viewModel.onDateSelected(it) },
-                events = uiState.events
+            // View Mode Toggle
+            ViewModeToggle(
+                currentMode = uiState.viewMode,
+                onModeChange = { viewModel.onViewModeChange(it) }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "Eventos del dia",
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.titleMedium,
-                color = SolennixTheme.colors.primaryText
+            // Status Filter Chips
+            StatusFilterRow(
+                filters = uiState.statusFilters,
+                selectedStatus = uiState.selectedStatus,
+                onFilterSelected = { viewModel.onStatusFilterChange(it) }
             )
 
-            if (uiState.eventsForSelectedDate.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+            when (uiState.viewMode) {
+                CalendarViewMode.CALENDAR -> {
+                    CalendarViewContent(
+                        uiState = uiState,
+                        onPreviousMonth = { viewModel.onMonthChange(uiState.currentMonth.minusMonths(1)) },
+                        onNextMonth = { viewModel.onMonthChange(uiState.currentMonth.plusMonths(1)) },
+                        onDateSelected = { viewModel.onDateSelected(it) },
+                        onEventClick = onEventClick
+                    )
+                }
+                CalendarViewMode.LIST -> {
+                    ListViewContent(
+                        uiState = uiState,
+                        searchQuery = uiState.searchQuery,
+                        onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+                        onEventClick = onEventClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ViewModeToggle(
+    currentMode: CalendarViewMode,
+    onModeChange: (CalendarViewMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        SingleChoiceSegmentedButtonRow {
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                onClick = { onModeChange(CalendarViewMode.CALENDAR) },
+                selected = currentMode == CalendarViewMode.CALENDAR,
+                icon = {
+                    Icon(
+                        Icons.Outlined.CalendarMonth,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            ) {
+                Text("Calendario")
+            }
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                onClick = { onModeChange(CalendarViewMode.LIST) },
+                selected = currentMode == CalendarViewMode.LIST,
+                icon = {
+                    Icon(
+                        Icons.Outlined.ViewList,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            ) {
+                Text("Lista")
+            }
+        }
+    }
+}
+
+@Composable
+fun StatusFilterRow(
+    filters: List<StatusFilter>,
+    selectedStatus: EventStatus?,
+    onFilterSelected: (EventStatus?) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        filters.forEach { filter ->
+            val isSelected = filter.status == selectedStatus
+            FilterChip(
+                selected = isSelected,
+                onClick = { onFilterSelected(filter.status) },
+                label = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(filter.label)
+                        if (filter.count > 0) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Badge(
+                                containerColor = if (isSelected)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    SolennixTheme.colors.secondaryText.copy(alpha = 0.3f)
+                            ) {
+                                Text(
+                                    filter.count.toString(),
+                                    color = if (isSelected) Color.White else SolennixTheme.colors.primaryText
+                                )
+                            }
+                        }
+                    }
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = SolennixTheme.colors.primaryLight,
+                    selectedLabelColor = SolennixTheme.colors.primary
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun CalendarViewContent(
+    uiState: CalendarUiState,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onDateSelected: (LocalDate) -> Unit,
+    onEventClick: (String) -> Unit
+) {
+    Column {
+        CalendarHeader(
+            currentMonth = uiState.currentMonth,
+            onPreviousMonth = onPreviousMonth,
+            onNextMonth = onNextMonth
+        )
+
+        CalendarGrid(
+            currentMonth = uiState.currentMonth,
+            selectedDate = uiState.selectedDate,
+            onDateSelected = onDateSelected,
+            events = uiState.events,
+            selectedStatus = uiState.selectedStatus
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Eventos del dia",
+            modifier = Modifier.padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.titleMedium,
+            color = SolennixTheme.colors.primaryText
+        )
+
+        if (uiState.eventsForSelectedDate.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No hay eventos para este dia",
+                    color = SolennixTheme.colors.secondaryText
+                )
+            }
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(uiState.eventsForSelectedDate) { event ->
+                    CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ListViewContent(
+    uiState: CalendarUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onEventClick: (String) -> Unit
+) {
+    Column {
+        // Search Field
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text("Buscar eventos...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = SolennixTheme.colors.primary,
+                unfocusedBorderColor = SolennixTheme.colors.divider
+            )
+        )
+
+        if (uiState.filteredEvents.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.EventBusy,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No hay eventos para este dia",
+                        text = if (searchQuery.isNotEmpty())
+                            "No se encontraron eventos"
+                        else
+                            "No hay eventos",
                         color = SolennixTheme.colors.secondaryText
                     )
                 }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(uiState.eventsForSelectedDate) { event ->
-                        CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
-                    }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp)
+            ) {
+                items(uiState.filteredEvents) { event ->
+                    ListEventItem(event = event, onClick = { onEventClick(event.id) })
                 }
             }
         }
@@ -122,13 +336,21 @@ fun CalendarGrid(
     currentMonth: YearMonth,
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    events: List<com.creapolis.solennix.core.model.Event>
+    events: List<Event>,
+    selectedStatus: EventStatus? = null
 ) {
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 // Sunday = 0
     val days = (1..daysInMonth).toList()
     val previousMonthDays = (0 until firstDayOfMonth).map { null }
     val allDays = previousMonthDays + days
+
+    // Filter events by status if selected
+    val filteredEvents = if (selectedStatus != null) {
+        events.filter { it.status == selectedStatus }
+    } else {
+        events
+    }
 
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -142,7 +364,7 @@ fun CalendarGrid(
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
 
         LazyVerticalGrid(
@@ -153,11 +375,12 @@ fun CalendarGrid(
                 if (day != null) {
                     val date = currentMonth.atDay(day)
                     val isSelected = date == selectedDate
-                    val hasEvents = events.any {
+                    val eventsOnDate = filteredEvents.filter {
                         try {
-                            java.time.ZonedDateTime.parse(it.eventDate).toLocalDate() == date
+                            ZonedDateTime.parse(it.eventDate).toLocalDate() == date
                         } catch (e: Exception) { false }
                     }
+                    val hasEvents = eventsOnDate.isNotEmpty()
 
                     Box(
                         modifier = Modifier
@@ -176,12 +399,17 @@ fun CalendarGrid(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                             if (hasEvents && !isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(SolennixTheme.colors.primary)
-                                )
+                                // Show colored dots based on event status
+                                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    eventsOnDate.take(3).forEach { event ->
+                                        Box(
+                                            modifier = Modifier
+                                                .size(4.dp)
+                                                .clip(CircleShape)
+                                                .background(getStatusColor(event.status))
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -194,8 +422,18 @@ fun CalendarGrid(
 }
 
 @Composable
+private fun getStatusColor(status: EventStatus): Color {
+    return when (status) {
+        EventStatus.QUOTED -> SolennixTheme.colors.statusQuoted
+        EventStatus.CONFIRMED -> SolennixTheme.colors.statusConfirmed
+        EventStatus.COMPLETED -> SolennixTheme.colors.statusCompleted
+        EventStatus.CANCELLED -> SolennixTheme.colors.statusCancelled
+    }
+}
+
+@Composable
 fun CalendarEventItem(
-    event: com.creapolis.solennix.core.model.Event,
+    event: Event,
     onClick: () -> Unit
 ) {
     Card(
@@ -215,15 +453,21 @@ fun CalendarEventItem(
                     .width(4.dp)
                     .height(40.dp)
                     .clip(CircleShape)
-                    .background(SolennixTheme.colors.primary)
+                    .background(getStatusColor(event.status))
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = event.serviceType,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = SolennixTheme.colors.primaryText
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = event.serviceType,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = SolennixTheme.colors.primaryText
+                    )
+                    StatusBadge(status = event.status.name.lowercase())
+                }
                 Text(
                     text = event.startTime ?: "Todo el dia",
                     style = MaterialTheme.typography.bodySmall,
@@ -231,10 +475,133 @@ fun CalendarEventItem(
                 )
             }
             Text(
-                text = "$${event.totalAmount}",
+                text = "$${String.format("%.2f", event.totalAmount)}",
                 style = MaterialTheme.typography.labelLarge,
                 color = SolennixTheme.colors.primary
             )
+        }
+    }
+}
+
+@Composable
+fun ListEventItem(
+    event: Event,
+    onClick: () -> Unit
+) {
+    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
+    val eventDate = try {
+        ZonedDateTime.parse(event.eventDate).toLocalDate().format(dateFormatter)
+    } catch (e: Exception) {
+        event.eventDate
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = event.serviceType,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SolennixTheme.colors.primaryText
+                )
+                StatusBadge(status = event.status.name.lowercase())
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.CalendarToday,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = eventDate,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = event.startTime ?: "Todo el dia",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            }
+
+            event.location?.let { location ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = location,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText,
+                        maxLines = 1
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(color = SolennixTheme.colors.divider)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.People,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${event.numPeople} personas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+                Text(
+                    text = "$${String.format("%.2f", event.totalAmount)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = SolennixTheme.colors.primary
+                )
+            }
         }
     }
 }

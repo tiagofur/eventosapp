@@ -25,6 +25,8 @@ object Endpoints {
     fun eventItems(id: String) = "events/$id/items"
     fun eventEquipment(id: String) = "events/$id/equipment"
     fun eventSupplies(id: String) = "events/$id/supplies"
+    fun eventPhotos(id: String) = "events/$id/photos"
+    fun eventPhoto(eventId: String, photoId: String) = "events/$eventId/photos/$photoId"
     const val EQUIPMENT_CONFLICTS = "events/equipment/conflicts"
     const val EQUIPMENT_SUGGESTIONS = "events/equipment/suggestions"
     const val SUPPLY_SUGGESTIONS = "events/supplies/suggestions"

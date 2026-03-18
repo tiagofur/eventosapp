@@ -1,6 +1,7 @@
 import SwiftUI
 import SolennixNetwork
 import SolennixDesign
+import SolennixFeatures
 
 // MARK: - APIClient Environment Key
 
@@ -27,6 +28,7 @@ extension EnvironmentValues {
 struct SolennixApp: App {
 
     @State private var authManager: AuthManager
+    @State private var planLimitsManager: PlanLimitsManager
     @State private var toastManager = ToastManager()
     @State private var networkMonitor = NetworkMonitor()
 
@@ -44,12 +46,22 @@ struct SolennixApp: App {
         let auth = AuthManager(keychain: keychain)
         auth.apiClient = client
 
+        let limits = PlanLimitsManager(apiClient: client)
+        limits.setAuthManager(auth)
+
         // Use Task to set auth manager on the actor after init
         let authRef = auth
         Task { await client.setAuthManager(authRef) }
 
         _authManager = State(initialValue: auth)
+        _planLimitsManager = State(initialValue: limits)
         self.apiClient = client
+        
+        // Configure TipKit for Onboarding
+        TipsHelper.configure()
+        
+        // Configure Sentry
+        SentryHelper.configure()
     }
 
     // MARK: - Scene
@@ -58,11 +70,14 @@ struct SolennixApp: App {
         WindowGroup {
             ContentView()
                 .environment(authManager)
+                .environment(planLimitsManager)
                 .environment(\.apiClient, apiClient)
                 .environment(toastManager)
+                .toastOverlay(toastManager)
                 .environment(networkMonitor)
                 .preferredColorScheme(resolvedColorScheme)
                 .task {
+                    // Start checking for auth tokens
                     await authManager.checkAuth()
                 }
         }

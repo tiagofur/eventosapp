@@ -7,14 +7,26 @@ Este documento resume el estado general del proyecto Solennix.
 ## Estado Actual
 
 - **Web**: 97% completa — producto funcional y pulido, fotos, export CSV
-- **Mobile**: 95% completa — excelente paridad con web, fotos de eventos
+- **Mobile (React Native)**: 95% completa — excelente paridad con web, fotos de eventos
+- **iOS Nativa (SwiftUI)**: 85% completa — Vistas core conectadas, componentes y diseño nativo premium, con paridad de características críticas (Quick Quote, Plan Limits) y onboarding TipKit.
 - **Backend**: 97% completo — la mayoría de endpoints consumidos por frontends
 - **Tests**: 783 tests web (100% passing), tests backend passing
 - **Diseño**: Estandarizado entre plataformas (colores, iconos, UX patterns)
 
 ---
 
-## Logros Recientes (2026-03-02)
+## Logros Recientes (2026-03-18)
+
+### App Nativa iOS (Fases A a D)
+- [x] **Conectividad Total Core:** Remoción de placeholders en Dashboard, Caledar y ClientList.
+- [x] **Quick Quote & Pending Events:** Implementación nativa en sheets y overlays para paridad Web.
+- [x] **Límites de Plan & Banners:** Integración de alertas y popover tips para bloqueos de plan básico.
+- [x] **Native Polish:** Incorporación Haptics centralizada, TipKit onboarding guías, y SKStoreReview triggers.
+- [x] **Gestión Error Toast:** Conexión de APIClient directo al layout overlay de ToastManager.
+
+---
+
+## Logros Anteriores (2026-03-02)
 
 ### Seguridad y Auth
 - [x] Token refresh implementado en web y mobile (deduplicación de requests concurrentes)

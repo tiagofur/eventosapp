@@ -2,13 +2,17 @@ import SwiftUI
 import SolennixCore
 import SolennixDesign
 import SolennixNetwork
+import TipKit
 
 // MARK: - Client List View
 
 public struct ClientListView: View {
 
     @State private var viewModel: ClientListViewModel
+    @State private var showQuickQuote = false
     @Environment(\.openURL) private var openURL
+    @Environment(PlanLimitsManager.self) private var planLimitsManager
+    @Environment(\.apiClient) private var apiClient
 
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: ClientListViewModel(apiClient: apiClient))
@@ -24,8 +28,21 @@ public struct ClientListView: View {
         .refreshable { await viewModel.loadClients() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                sortMenu
+                HStack(spacing: Spacing.sm) {
+                    Button {
+                        showQuickQuote = true
+                    } label: {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.body)
+                            .foregroundStyle(SolennixColors.primary)
+                    }
+                    sortMenu
+                }
             }
+        }
+        .sheet(isPresented: $showQuickQuote) {
+            QuickQuoteView(apiClient: apiClient)
+                .presentationDetents([.large])
         }
         .confirmationDialog(
             "Eliminar cliente",
@@ -33,21 +50,39 @@ public struct ClientListView: View {
             presenting: viewModel.deleteTarget
         ) { client in
             Button("Eliminar", role: .destructive) {
+                HapticsHelper.play(.success)
                 Task { await viewModel.deleteClient(client) }
             }
             Button("Cancelar", role: .cancel) {}
         } message: { client in
             Text("Estas seguro de que quieres eliminar a \(client.name)? Esta accion no se puede deshacer.")
         }
-        .task { await viewModel.loadClients() }
+        .task { 
+            await viewModel.loadClients()
+            await planLimitsManager.checkLimits()
+        }
     }
 
     // MARK: - Content
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isLoading && viewModel.clients.isEmpty {
-            skeletonList
+        VStack(spacing: 0) {
+            if !planLimitsManager.canCreateClient {
+                UpgradeBannerView(
+                    type: .limitReached,
+                    resource: "Clientes",
+                    currentUsage: planLimitsManager.clientsCount,
+                    limit: PlanLimitsManager.clientLimit
+                ) {
+                    // Action to go to Pricing
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.sm)
+            }
+
+            if viewModel.isLoading && viewModel.clients.isEmpty {
+                skeletonList
         } else if viewModel.filteredClients.isEmpty && !viewModel.isLoading {
             if viewModel.searchText.isEmpty {
                 EmptyStateView(
@@ -62,57 +97,79 @@ public struct ClientListView: View {
                 EmptyStateView(
                     icon: "magnifyingglass",
                     title: "Sin resultados",
-                    message: "No se encontraron clientes que coincidan con \"\(viewModel.searchText)\""
+                    message: "No se encontraron clientes que coincidan con tu busqueda"
                 )
             }
         } else {
             clientList
         }
+        } // End VStack
     }
 
     // MARK: - Client List
 
     private var clientList: some View {
-        List(viewModel.filteredClients) { client in
-            NavigationLink(value: Route.clientDetail(id: client.id)) {
-                clientRow(client)
-            }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button(role: .destructive) {
-                    viewModel.deleteTarget = client
-                    viewModel.showDeleteConfirm = true
-                } label: {
-                    Label("Eliminar", systemImage: "trash")
+        List {
+            ForEach(viewModel.paginatedClients) { client in
+                NavigationLink(value: Route.clientDetail(id: client.id)) {
+                    clientRow(client)
                 }
-
-                NavigationLink(value: Route.clientForm(id: client.id)) {
-                    Label("Editar", systemImage: "pencil")
-                }
-                .tint(.blue)
-            }
-            .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                if let email = client.email, !email.isEmpty,
-                   let url = URL(string: "mailto:\(email)") {
-                    Button {
-                        openURL(url)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        HapticsHelper.play(.warning)
+                        viewModel.deleteTarget = client
+                        viewModel.showDeleteConfirm = true
                     } label: {
-                        Label("Email", systemImage: "envelope.fill")
+                        Label("Eliminar", systemImage: "trash")
+                    }
+
+                    NavigationLink(value: Route.clientForm(id: client.id)) {
+                        Label("Editar", systemImage: "pencil")
                     }
                     .tint(.blue)
                 }
-
-                if !client.phone.isEmpty,
-                   let url = URL(string: "tel:\(client.phone)") {
-                    Button {
-                        openURL(url)
-                    } label: {
-                        Label("Llamar", systemImage: "phone.fill")
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                    if let email = client.email, !email.isEmpty,
+                       let url = URL(string: "mailto:\(email)") {
+                        Button {
+                            HapticsHelper.play(.success)
+                            openURL(url)
+                        } label: {
+                            Label("Email", systemImage: "envelope.fill")
+                        }
+                        .tint(.blue)
                     }
-                    .tint(.green)
+
+                    if !client.phone.isEmpty,
+                       let url = URL(string: "tel:\(client.phone)") {
+                        Button {
+                            HapticsHelper.play(.success)
+                            openURL(url)
+                        } label: {
+                            Label("Llamar", systemImage: "phone.fill")
+                        }
+                        .tint(.green)
+                    }
                 }
+                .onAppear {
+                    if client == viewModel.paginatedClients.last {
+                        viewModel.loadMore()
+                    }
+                }
+            }
+            
+            if viewModel.hasMorePages {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
         }
         .listStyle(.plain)
+        .popoverTip(SwipeActionTip(), arrowEdge: .top)
     }
 
     // MARK: - Client Row
@@ -219,12 +276,13 @@ public struct ClientListView: View {
             Image(systemName: "plus")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundStyle(.white)
+                .foregroundStyle(planLimitsManager.canCreateClient ? Color.white : SolennixColors.textTertiary)
                 .frame(width: 56, height: 56)
-                .background(SolennixGradient.premium)
+                .background(planLimitsManager.canCreateClient ? AnyShapeStyle(SolennixGradient.premium) : AnyShapeStyle(SolennixColors.surfaceAlt))
                 .clipShape(Circle())
                 .shadowFab()
         }
+        .disabled(!planLimitsManager.canCreateClient)
         .padding(Spacing.lg)
     }
 }

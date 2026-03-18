@@ -36,12 +36,14 @@ import java.io.File
 fun EventDetailScreen(
     viewModel: EventDetailViewModel,
     onNavigateBack: () -> Unit,
-    onEditClick: (String) -> Unit
+    onEditClick: (String) -> Unit,
+    onChecklistClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     var showPaymentModal by remember { mutableStateOf(false) }
+    var showPhotoGallery by remember { mutableStateOf(false) }
 
     val windowInfoTracker = WindowInfoTracker.getOrCreate(context)
     val windowLayoutInfo by windowInfoTracker.windowLayoutInfo(context as android.app.Activity)
@@ -123,6 +125,11 @@ fun EventDetailScreen(
                         context = context,
                         onSharePdf = { file ->
                             sharePdfFile(context, file)
+                        },
+                        onChecklistClick = { onChecklistClick(event.id) },
+                        onPhotosClick = {
+                            viewModel.loadPhotos()
+                            showPhotoGallery = true
                         }
                     )
 
@@ -177,6 +184,23 @@ fun EventDetailScreen(
                         viewModel.addPayment(amount, method, notes)
                         showPaymentModal = false
                         Toast.makeText(context, "Pago registrado", Toast.LENGTH_SHORT).show()
+                    }
+                )
+            }
+
+            if (showPhotoGallery) {
+                PhotoGallerySheet(
+                    photos = uiState.photos,
+                    isLoading = uiState.isPhotosLoading,
+                    isUploading = uiState.isPhotoUploading,
+                    onDismiss = { showPhotoGallery = false },
+                    onPhotoSelected = { uri ->
+                        // For now, we just use the URI as a placeholder
+                        // In production, you'd upload the image to a server and get a URL
+                        viewModel.uploadPhoto(uri.toString())
+                    },
+                    onDeletePhoto = { photo ->
+                        viewModel.deletePhoto(photo)
                     }
                 )
             }
@@ -245,7 +269,9 @@ private fun SummaryRow(label: String, value: String, isTotal: Boolean = false, c
 fun DocumentActionsGrid(
     uiState: EventDetailUiState,
     context: android.content.Context,
-    onSharePdf: (File) -> Unit
+    onSharePdf: (File) -> Unit,
+    onChecklistClick: () -> Unit = {},
+    onPhotosClick: () -> Unit = {}
 ) {
     val event = uiState.event ?: return
     val client = uiState.client ?: Client(
@@ -358,16 +384,18 @@ fun DocumentActionsGrid(
             )
             Spacer(modifier = Modifier.width(8.dp))
             ActionButton(
+                icon = Icons.Default.PlaylistAddCheck,
+                label = "Lista",
+                modifier = Modifier.weight(1f),
+                onClick = onChecklistClick
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            ActionButton(
                 icon = Icons.Default.PhotoLibrary,
                 label = "Fotos",
                 modifier = Modifier.weight(1f),
-                onClick = {
-                    Toast.makeText(context, "Próximamente...", Toast.LENGTH_SHORT).show()
-                }
+                onClick = onPhotosClick
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            // Empty space for alignment
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 

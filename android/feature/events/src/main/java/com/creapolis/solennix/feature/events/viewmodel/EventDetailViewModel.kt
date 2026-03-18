@@ -9,6 +9,7 @@ import com.creapolis.solennix.core.data.repository.PaymentRepository
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventExtra
+import com.creapolis.solennix.core.model.EventPhoto
 import com.creapolis.solennix.core.model.EventProduct
 import com.creapolis.solennix.core.model.Payment
 import com.creapolis.solennix.core.model.User
@@ -28,9 +29,12 @@ data class EventDetailUiState(
     val products: List<EventProduct> = emptyList(),
     val extras: List<EventExtra> = emptyList(),
     val payments: List<Payment> = emptyList(),
+    val photos: List<EventPhoto> = emptyList(),
     val totalPaid: Double = 0.0,
     val currentUser: User? = null,
     val isLoading: Boolean = false,
+    val isPhotosLoading: Boolean = false,
+    val isPhotoUploading: Boolean = false,
     val errorMessage: String? = null
 )
 
@@ -49,6 +53,9 @@ class EventDetailViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _event = MutableStateFlow<Event?>(null)
     private val _client = MutableStateFlow<Client?>(null)
+    private val _photos = MutableStateFlow<List<EventPhoto>>(emptyList())
+    private val _isPhotosLoading = MutableStateFlow(false)
+    private val _isPhotoUploading = MutableStateFlow(false)
 
     val uiState: StateFlow<EventDetailUiState> = combine(
         _event,
@@ -57,7 +64,10 @@ class EventDetailViewModel @Inject constructor(
         eventRepository.getEventExtras(eventId),
         paymentRepository.getPaymentsByEventId(eventId),
         _isLoading,
-        _errorMessage
+        _errorMessage,
+        _photos,
+        _isPhotosLoading,
+        _isPhotoUploading
     ) { values ->
         val event = values[0] as Event?
         val client = values[1] as Client?
@@ -69,6 +79,10 @@ class EventDetailViewModel @Inject constructor(
         val payments = values[4] as List<Payment>
         val isLoading = values[5] as Boolean
         val errorMessage = values[6] as String?
+        @Suppress("UNCHECKED_CAST")
+        val photos = values[7] as List<EventPhoto>
+        val isPhotosLoading = values[8] as Boolean
+        val isPhotoUploading = values[9] as Boolean
 
         EventDetailUiState(
             event = event,
@@ -76,9 +90,12 @@ class EventDetailViewModel @Inject constructor(
             products = products,
             extras = extras,
             payments = payments,
+            photos = photos,
             totalPaid = payments.sumOf { it.amount },
             currentUser = authManager.currentUser.value,
             isLoading = isLoading,
+            isPhotosLoading = isPhotosLoading,
+            isPhotoUploading = isPhotoUploading,
             errorMessage = errorMessage
         )
     }.stateIn(
@@ -138,6 +155,45 @@ class EventDetailViewModel @Inject constructor(
                 // Flow automatically updates via Room → paymentRepository.getPaymentsByEventId
             } catch (e: Exception) {
                 _errorMessage.value = "Error adding payment: ${e.message}"
+            }
+        }
+    }
+
+    fun loadPhotos() {
+        viewModelScope.launch {
+            _isPhotosLoading.value = true
+            try {
+                val photos = eventRepository.getEventPhotos(eventId)
+                _photos.value = photos
+            } catch (e: Exception) {
+                _errorMessage.value = "Error loading photos: ${e.message}"
+            } finally {
+                _isPhotosLoading.value = false
+            }
+        }
+    }
+
+    fun uploadPhoto(imageUrl: String, caption: String? = null) {
+        viewModelScope.launch {
+            _isPhotoUploading.value = true
+            try {
+                val newPhoto = eventRepository.uploadEventPhoto(eventId, imageUrl, caption)
+                _photos.value = _photos.value + newPhoto
+            } catch (e: Exception) {
+                _errorMessage.value = "Error uploading photo: ${e.message}"
+            } finally {
+                _isPhotoUploading.value = false
+            }
+        }
+    }
+
+    fun deletePhoto(photo: EventPhoto) {
+        viewModelScope.launch {
+            try {
+                eventRepository.deleteEventPhoto(eventId, photo.id)
+                _photos.value = _photos.value.filter { it.id != photo.id }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error deleting photo: ${e.message}"
             }
         }
     }

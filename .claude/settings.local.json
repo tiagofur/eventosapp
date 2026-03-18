@@ -191,7 +191,16 @@
       "Bash(./gradlew :app:assembleDebug:*)",
       "Bash(cmd.exe:*)",
       "Bash(.gradlew :app:assembleDebug:*)",
-      "Bash(./gradlew :feature:events:compileDebugKotlin:*)"
+      "Bash(./gradlew :feature:events:compileDebugKotlin:*)",
+      "mcp__ai-context__explore",
+      "Bash(.gradlew :feature:events:compileDebugKotlin:*)",
+      "Bash(.gradlew:*)",
+      "Bash(gradlew.bat :feature:calendar:compileDebugKotlin:*)",
+      "Bash(.gradlew.bat assembleDebug:*)",
+      "Bash(pushd:*)",
+      "Bash(cmd /c \"gradlew.bat assembleDebug\")",
+      "Bash(cmd /c \"cd /d c:\\\\Users\\\\tfurt\\\\source\\\\repos\\\\eventosapp\\\\android && gradlew.bat assembleDebug\")",
+      "Bash(c:Userstfurtsourcereposeventosappandroidgradlew.bat -p c:Userstfurtsourcereposeventosappandroid assembleDebug)"
     ]
   }
 }

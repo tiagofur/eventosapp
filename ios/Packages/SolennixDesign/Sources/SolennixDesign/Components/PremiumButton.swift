@@ -25,6 +25,9 @@ public struct PremiumButton: View {
     public var body: some View {
         Button(action: {
             guard !isLoading && !isDisabled else { return }
+            // Haptic feedback for premium feel
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
             action()
         }) {
             HStack(spacing: Spacing.sm) {

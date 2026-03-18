@@ -2,14 +2,18 @@ import SwiftUI
 import SolennixCore
 import SolennixDesign
 import SolennixNetwork
+import TipKit
 
 // MARK: - Dashboard View
 
 public struct DashboardView: View {
 
     @Environment(AuthManager.self) private var authManager
+    @Environment(PlanLimitsManager.self) private var planLimitsManager
+    @Environment(\.apiClient) private var apiClient
     @State private var viewModel: DashboardViewModel?
     @State private var showSearch = false
+    @State private var showQuickQuote = false
 
     public init() {}
 
@@ -18,6 +22,26 @@ public struct DashboardView: View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 // Header
                 headerSection
+
+                // Plan Limits Banner
+                if !planLimitsManager.canCreateEvent {
+                    UpgradeBannerView(
+                        type: .limitReached,
+                        resource: "Eventos",
+                        currentUsage: planLimitsManager.eventsThisMonth,
+                        limit: PlanLimitsManager.freePlanEventLimit
+                    ) {
+                        // Action to go to Pricing — will be implemented via navigation
+                    }
+                    .padding(.horizontal, Spacing.md)
+                } else if planLimitsManager.isBasicPlan {
+                    UpgradeBannerView(
+                        type: .upsell
+                    ) {
+                        // Action to go to Pricing
+                    }
+                    .padding(.horizontal, Spacing.md)
+                }
 
                 // Quick Actions
                 quickActionsSection
@@ -50,18 +74,27 @@ public struct DashboardView: View {
             if viewModel == nil, let client = authManager.apiClient {
                 viewModel = DashboardViewModel(apiClient: client)
             }
-            Task { await viewModel?.loadDashboard() }
+            Task { 
+                await viewModel?.loadDashboard() 
+                await planLimitsManager.checkLimits()
+            }
         }
         .sheet(isPresented: $showSearch) {
             NavigationStack {
                 SearchView()
             }
         }
+        .sheet(isPresented: $showQuickQuote) {
+            QuickQuoteView(apiClient: apiClient)
+                .presentationDetents([.large])
+        }
         .overlay {
             if viewModel?.isLoading == true && viewModel?.eventsThisMonth.isEmpty == true {
                 ProgressView()
                     .tint(SolennixColors.primary)
             }
+            
+            PendingEventsModalView(apiClient: apiClient)
         }
     }
 
@@ -82,17 +115,32 @@ public struct DashboardView: View {
 
             Spacer()
 
-            Button {
-                showSearch = true
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundStyle(SolennixColors.text)
-                    .frame(width: 44, height: 44)
-                    .background(SolennixColors.card)
-                    .clipShape(Circle())
-                    .shadowSm()
+            HStack(spacing: Spacing.sm) {
+                Button {
+                    showQuickQuote = true
+                } label: {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundStyle(SolennixColors.text)
+                        .frame(width: 44, height: 44)
+                        .background(SolennixColors.card)
+                        .clipShape(Circle())
+                        .shadowSm()
+                }
+
+                Button {
+                    showSearch = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.title3)
+                        .fontWeight(.medium)
+                        .foregroundStyle(SolennixColors.text)
+                        .frame(width: 44, height: 44)
+                        .background(SolennixColors.card)
+                        .clipShape(Circle())
+                        .shadowSm()
+                }
             }
         }
         .padding(.horizontal, Spacing.md)
@@ -119,15 +167,37 @@ public struct DashboardView: View {
 
     private var quickActionsSection: some View {
         HStack(spacing: Spacing.md) {
-            NavigationLink(value: Route.eventForm()) {
-                quickActionButton(icon: "plus.circle.fill", label: "Nuevo Evento", color: SolennixColors.primary)
+            Button {
+                HapticsHelper.play(.light)
+            } label: {
+                if planLimitsManager.canCreateEvent {
+                    NavigationLink(value: Route.eventForm()) {
+                        quickActionButton(icon: "plus.circle.fill", label: "Nuevo Evento", color: SolennixColors.primary)
+                    }
+                } else {
+                    quickActionButton(icon: "plus.circle.fill", label: "Nuevo Evento", color: SolennixColors.textTertiary)
+                        .opacity(0.6)
+                }
             }
+            .buttonStyle(.plain)
 
-            NavigationLink(value: Route.clientForm()) {
-                quickActionButton(icon: "person.badge.plus", label: "Nuevo Cliente", color: SolennixColors.statusConfirmed)
+            Button {
+                HapticsHelper.play(.light)
+            } label: {
+                if planLimitsManager.canCreateClient {
+                    NavigationLink(value: Route.clientForm()) {
+                        quickActionButton(icon: "person.badge.plus", label: "Nuevo Cliente", color: SolennixColors.statusConfirmed)
+                    }
+                } else {
+                    quickActionButton(icon: "person.badge.plus", label: "Nuevo Cliente", color: SolennixColors.textTertiary)
+                        .opacity(0.6)
+                }
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, Spacing.md)
+        .popoverTip(NewEventTip(), arrowEdge: .bottom)
+        .popoverTip(QuickQuoteTip(), arrowEdge: .top)
     }
 
     private func quickActionButton(icon: String, label: String, color: Color) -> some View {
