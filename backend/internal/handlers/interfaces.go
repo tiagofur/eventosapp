@@ -17,6 +17,12 @@ type FullUserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	Update(ctx context.Context, id uuid.UUID, name, businessName, logoURL, brandColor *string, showBusinessNameInPdf *bool, depositPercent, cancellationDays, refundPercent *float64, contractTemplate *string) (*models.User, error)
 	UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
+	// OAuth methods
+	GetByGoogleUserID(ctx context.Context, googleUserID string) (*models.User, error)
+	GetByAppleUserID(ctx context.Context, appleUserID string) (*models.User, error)
+	CreateWithOAuth(ctx context.Context, user *models.User) error
+	LinkGoogleAccount(ctx context.Context, userID uuid.UUID, googleUserID string) error
+	LinkAppleAccount(ctx context.Context, userID uuid.UUID, appleUserID string) error
 }
 
 // FullEventRepository is the complete interface for event repo operations.

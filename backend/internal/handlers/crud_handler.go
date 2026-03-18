@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -593,6 +594,60 @@ func (h *CRUDHandler) CheckEquipmentConflicts(w http.ResponseWriter, r *http.Req
 	writeJSON(w, http.StatusOK, conflicts)
 }
 
+// CheckEquipmentConflictsGET handles GET requests with query params (for mobile apps)
+func (h *CRUDHandler) CheckEquipmentConflictsGET(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	eventDate := r.URL.Query().Get("event_date")
+	inventoryIDsStr := r.URL.Query().Get("inventory_ids")
+	excludeEventIDStr := r.URL.Query().Get("exclude_event_id")
+	startTime := r.URL.Query().Get("start_time")
+	endTime := r.URL.Query().Get("end_time")
+
+	if eventDate == "" || inventoryIDsStr == "" {
+		writeJSON(w, http.StatusOK, []models.EquipmentConflict{})
+		return
+	}
+
+	var inventoryUUIDs []uuid.UUID
+	for _, idStr := range splitCSV(inventoryIDsStr) {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid inventory ID: "+idStr)
+			return
+		}
+		inventoryUUIDs = append(inventoryUUIDs, id)
+	}
+
+	var excludeID *uuid.UUID
+	if excludeEventIDStr != "" {
+		parsed, err := uuid.Parse(excludeEventIDStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid exclude_event_id")
+			return
+		}
+		excludeID = &parsed
+	}
+
+	var startTimePtr, endTimePtr *string
+	if startTime != "" {
+		startTimePtr = &startTime
+	}
+	if endTime != "" {
+		endTimePtr = &endTime
+	}
+
+	conflicts, err := h.eventRepo.CheckEquipmentConflicts(r.Context(), userID,
+		eventDate, startTimePtr, endTimePtr, inventoryUUIDs, excludeID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to check equipment conflicts")
+		return
+	}
+	if conflicts == nil {
+		conflicts = []models.EquipmentConflict{}
+	}
+	writeJSON(w, http.StatusOK, conflicts)
+}
+
 func (h *CRUDHandler) GetEquipmentSuggestions(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	var req struct {
@@ -622,6 +677,37 @@ func (h *CRUDHandler) GetEquipmentSuggestions(w http.ResponseWriter, r *http.Req
 			qty = 1
 		}
 		productQtys = append(productQtys, repository.ProductQuantity{ID: id, Quantity: qty})
+	}
+
+	suggestions, err := h.eventRepo.GetEquipmentSuggestionsFromProducts(r.Context(), userID, productQtys)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch equipment suggestions")
+		return
+	}
+	if suggestions == nil {
+		suggestions = []models.EquipmentSuggestion{}
+	}
+	writeJSON(w, http.StatusOK, suggestions)
+}
+
+// GetEquipmentSuggestionsGET handles GET requests with query params (for mobile apps)
+func (h *CRUDHandler) GetEquipmentSuggestionsGET(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	productIDsStr := r.URL.Query().Get("product_ids")
+
+	if productIDsStr == "" {
+		writeJSON(w, http.StatusOK, []models.EquipmentSuggestion{})
+		return
+	}
+
+	var productQtys []repository.ProductQuantity
+	for _, idStr := range splitCSV(productIDsStr) {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid product ID: "+idStr)
+			return
+		}
+		productQtys = append(productQtys, repository.ProductQuantity{ID: id, Quantity: 1})
 	}
 
 	suggestions, err := h.eventRepo.GetEquipmentSuggestionsFromProducts(r.Context(), userID, productQtys)
@@ -693,6 +779,185 @@ func (h *CRUDHandler) GetSupplySuggestions(w http.ResponseWriter, r *http.Reques
 		suggestions = []models.SupplySuggestion{}
 	}
 	writeJSON(w, http.StatusOK, suggestions)
+}
+
+// GetSupplySuggestionsGET handles GET requests with query params (for mobile apps)
+func (h *CRUDHandler) GetSupplySuggestionsGET(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	productIDsStr := r.URL.Query().Get("product_ids")
+
+	if productIDsStr == "" {
+		writeJSON(w, http.StatusOK, []models.SupplySuggestion{})
+		return
+	}
+
+	var productQtys []repository.ProductQuantity
+	for _, idStr := range splitCSV(productIDsStr) {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid product ID: "+idStr)
+			return
+		}
+		productQtys = append(productQtys, repository.ProductQuantity{ID: id, Quantity: 1})
+	}
+
+	suggestions, err := h.eventRepo.GetSupplySuggestionsFromProducts(r.Context(), userID, productQtys)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch supply suggestions")
+		return
+	}
+	if suggestions == nil {
+		suggestions = []models.SupplySuggestion{}
+	}
+	writeJSON(w, http.StatusOK, suggestions)
+}
+
+// ===================
+// EVENT PHOTOS
+// ===================
+
+// GetEventPhotos handles GET /api/events/{id}/photos
+func (h *CRUDHandler) GetEventPhotos(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+
+	event, err := h.eventRepo.GetByID(r.Context(), eventID, userID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
+		return
+	}
+
+	photos := parseEventPhotos(event.Photos)
+	writeJSON(w, http.StatusOK, photos)
+}
+
+// AddEventPhoto handles POST /api/events/{id}/photos
+func (h *CRUDHandler) AddEventPhoto(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+
+	event, err := h.eventRepo.GetByID(r.Context(), eventID, userID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
+		return
+	}
+
+	var req struct {
+		URL          string  `json:"url"`
+		ThumbnailURL *string `json:"thumbnail_url,omitempty"`
+		Caption      *string `json:"caption,omitempty"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if req.URL == "" {
+		writeError(w, http.StatusBadRequest, "url is required")
+		return
+	}
+
+	photos := parseEventPhotos(event.Photos)
+
+	newPhoto := models.EventPhoto{
+		ID:           uuid.New(),
+		URL:          req.URL,
+		ThumbnailURL: req.ThumbnailURL,
+		Caption:      req.Caption,
+		CreatedAt:    time.Now(),
+	}
+	photos = append(photos, newPhoto)
+
+	photosJSON, err := json.Marshal(photos)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to serialize photos")
+		return
+	}
+	photosStr := string(photosJSON)
+	event.Photos = &photosStr
+
+	if err := h.eventRepo.Update(r.Context(), event); err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to add photo")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, newPhoto)
+}
+
+// DeleteEventPhoto handles DELETE /api/events/{id}/photos/{photoId}
+func (h *CRUDHandler) DeleteEventPhoto(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	eventID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		return
+	}
+	photoID, err := uuid.Parse(chi.URLParam(r, "photoId"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid photo ID")
+		return
+	}
+
+	event, err := h.eventRepo.GetByID(r.Context(), eventID, userID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "Event not found")
+		return
+	}
+
+	photos := parseEventPhotos(event.Photos)
+
+	// Find and remove the photo
+	found := false
+	newPhotos := make([]models.EventPhoto, 0, len(photos))
+	for _, p := range photos {
+		if p.ID == photoID {
+			found = true
+			continue
+		}
+		newPhotos = append(newPhotos, p)
+	}
+
+	if !found {
+		writeError(w, http.StatusNotFound, "Photo not found")
+		return
+	}
+
+	photosJSON, err := json.Marshal(newPhotos)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to serialize photos")
+		return
+	}
+	photosStr := string(photosJSON)
+	event.Photos = &photosStr
+
+	if err := h.eventRepo.Update(r.Context(), event); err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to delete photo")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// parseEventPhotos parses the photos JSON string into a slice of EventPhoto
+func parseEventPhotos(photosJSON *string) []models.EventPhoto {
+	if photosJSON == nil || *photosJSON == "" || *photosJSON == "null" {
+		return []models.EventPhoto{}
+	}
+
+	var photos []models.EventPhoto
+	if err := json.Unmarshal([]byte(*photosJSON), &photos); err != nil {
+		slog.Warn("Failed to parse event photos JSON", "error", err)
+		return []models.EventPhoto{}
+	}
+	return photos
 }
 
 // ===================

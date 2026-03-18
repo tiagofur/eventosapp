@@ -22,6 +22,8 @@ type User struct {
 	Plan                    string     `json:"plan"`
 	Role                    string     `json:"role"`
 	StripeCustomerID        *string    `json:"stripe_customer_id,omitempty"`
+	GoogleUserID            *string    `json:"google_user_id,omitempty"`
+	AppleUserID             *string    `json:"apple_user_id,omitempty"`
 	PlanExpiresAt           *time.Time `json:"plan_expires_at,omitempty"`
 	CreatedAt               time.Time  `json:"created_at"`
 	UpdatedAt               time.Time  `json:"updated_at"`
@@ -238,6 +240,25 @@ type UnavailableDate struct {
 	StartDate string    `json:"start_date"` // DATE as string
 	EndDate   string    `json:"end_date"`   // DATE as string
 	Reason    *string   `json:"reason,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// EventPhoto represents a photo attached to an event
+type EventPhoto struct {
+	ID           uuid.UUID `json:"id"`
+	URL          string    `json:"url"`
+	ThumbnailURL *string   `json:"thumbnail_url,omitempty"`
+	Caption      *string   `json:"caption,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// DeviceToken represents a device registered for push notifications
+type DeviceToken struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Token     string    `json:"token"`
+	Platform  string    `json:"platform"` // 'ios' | 'android' | 'web'
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

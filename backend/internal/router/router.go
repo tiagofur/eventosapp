@@ -13,7 +13,7 @@ import (
 
 func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, subHandler *handlers.SubscriptionHandler,
 	searchHandler *handlers.SearchHandler, eventPaymentHandler *handlers.EventPaymentHandler, uploadHandler *handlers.UploadHandler,
-	adminHandler *handlers.AdminHandler, unavailHandler *handlers.UnavailableDateHandler,
+	adminHandler *handlers.AdminHandler, unavailHandler *handlers.UnavailableDateHandler, deviceHandler *handlers.DeviceHandler,
 	authService *services.AuthService, userRepo *repository.UserRepo, corsOrigins []string, uploadDir string) http.Handler {
 
 	r := chi.NewRouter()
@@ -43,6 +43,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 			r.Post("/refresh", authHandler.RefreshToken)
 			r.Post("/forgot-password", authHandler.ForgotPassword)
 			r.Post("/reset-password", authHandler.ResetPassword) // Reset password with token
+			r.Post("/google", authHandler.GoogleSignIn)          // Google OAuth sign-in
 
 			// Protected auth routes
 			r.Group(func(r chi.Router) {
@@ -117,9 +118,17 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 				r.Put("/{id}/items", crudHandler.UpdateEventItems)
 				r.Get("/{id}/equipment", crudHandler.GetEventEquipment)
 				r.Get("/{id}/supplies", crudHandler.GetEventSupplies)
+				// Event photos
+				r.Get("/{id}/photos", crudHandler.GetEventPhotos)
+				r.Post("/{id}/photos", crudHandler.AddEventPhoto)
+				r.Delete("/{id}/photos/{photoId}", crudHandler.DeleteEventPhoto)
 				// Equipment conflict detection & suggestions (no event ID needed)
+				// POST for web (JSON body), GET for mobile (query params)
+				r.Get("/equipment/conflicts", crudHandler.CheckEquipmentConflictsGET)
 				r.Post("/equipment/conflicts", crudHandler.CheckEquipmentConflicts)
+				r.Get("/equipment/suggestions", crudHandler.GetEquipmentSuggestionsGET)
 				r.Post("/equipment/suggestions", crudHandler.GetEquipmentSuggestions)
+				r.Get("/supplies/suggestions", crudHandler.GetSupplySuggestionsGET)
 				r.Post("/supplies/suggestions", crudHandler.GetSupplySuggestions)
 				// Event payment routes
 				r.Post("/{id}/checkout-session", eventPaymentHandler.CreateEventCheckoutSession)
@@ -160,6 +169,12 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 				r.Get("/", unavailHandler.GetUnavailableDates)
 				r.Post("/", unavailHandler.CreateUnavailableDate)
 				r.Delete("/{id}", unavailHandler.DeleteUnavailableDate)
+			})
+
+			// Device registration for push notifications
+			r.Route("/devices", func(r chi.Router) {
+				r.Post("/register", deviceHandler.RegisterDevice)
+				r.Post("/unregister", deviceHandler.UnregisterDevice)
 			})
 
 			// Search — rate limited to prevent abuse

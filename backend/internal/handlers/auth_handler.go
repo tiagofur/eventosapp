@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
@@ -466,4 +470,163 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, user)
+}
+
+// GoogleSignIn handles POST /api/auth/google
+// Validates a Google ID token and returns user + JWT tokens
+func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IDToken  string  `json:"id_token"`
+		FullName *string `json:"full_name,omitempty"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if req.IDToken == "" {
+		writeError(w, http.StatusBadRequest, "id_token is required")
+		return
+	}
+
+	// Validate Google ID token
+	claims, err := validateGoogleIDToken(r.Context(), req.IDToken)
+	if err != nil {
+		slog.Warn("Invalid Google ID token", "error", err)
+		writeError(w, http.StatusUnauthorized, "Invalid Google ID token")
+		return
+	}
+
+	googleUserID := claims.Subject
+	email := claims.Email
+	name := claims.Name
+	if req.FullName != nil && *req.FullName != "" {
+		name = *req.FullName
+	}
+	if name == "" {
+		name = email // Fallback to email if name is not provided
+	}
+
+	// Try to find user by Google ID first
+	user, err := h.userRepo.GetByGoogleUserID(r.Context(), googleUserID)
+	if err == nil && user != nil {
+		// User exists with this Google ID - login
+		tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
+		if err != nil {
+			slog.Error("Failed to generate tokens", "error", err)
+			writeError(w, http.StatusInternalServerError, "Internal server error")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"user":   user,
+			"tokens": tokens,
+		})
+		return
+	}
+
+	// Try to find user by email
+	user, err = h.userRepo.GetByEmail(r.Context(), email)
+	if err == nil && user != nil {
+		// User exists with this email - link Google account
+		if err := h.userRepo.LinkGoogleAccount(r.Context(), user.ID, googleUserID); err != nil {
+			slog.Error("Failed to link Google account", "error", err)
+			writeError(w, http.StatusInternalServerError, "Failed to link Google account")
+			return
+		}
+		tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
+		if err != nil {
+			slog.Error("Failed to generate tokens", "error", err)
+			writeError(w, http.StatusInternalServerError, "Internal server error")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"user":   user,
+			"tokens": tokens,
+		})
+		return
+	}
+
+	// Create new user with Google account
+	newUser := &models.User{
+		Email:        email,
+		Name:         name,
+		Plan:         "basic",
+		GoogleUserID: &googleUserID,
+	}
+	if err := h.userRepo.CreateWithOAuth(r.Context(), newUser); err != nil {
+		slog.Error("Failed to create user", "error", err)
+		writeError(w, http.StatusInternalServerError, "Failed to create account")
+		return
+	}
+
+	tokens, err := h.authService.GenerateTokenPair(newUser.ID, newUser.Email)
+	if err != nil {
+		slog.Error("Failed to generate tokens", "error", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]interface{}{
+		"user":   newUser,
+		"tokens": tokens,
+	})
+}
+
+// GoogleIDTokenClaims represents the claims from a Google ID token
+type GoogleIDTokenClaims struct {
+	Subject string `json:"sub"`
+	Email   string `json:"email"`
+	Name    string `json:"name"`
+}
+
+// validateGoogleIDToken validates a Google ID token and returns the claims
+func validateGoogleIDToken(ctx context.Context, idToken string) (*GoogleIDTokenClaims, error) {
+	// Call Google's tokeninfo endpoint to validate the token
+	url := fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", idToken)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate token: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("token validation failed with status %d", resp.StatusCode)
+	}
+
+	var result struct {
+		Sub           string `json:"sub"`
+		Email         string `json:"email"`
+		EmailVerified string `json:"email_verified"`
+		Name          string `json:"name"`
+		Aud           string `json:"aud"`
+		Iss           string `json:"iss"`
+		Exp           string `json:"exp"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode token response: %w", err)
+	}
+
+	// Verify email is verified
+	if result.EmailVerified != "true" {
+		return nil, fmt.Errorf("email not verified")
+	}
+
+	// Verify issuer
+	if result.Iss != "https://accounts.google.com" && result.Iss != "accounts.google.com" {
+		return nil, fmt.Errorf("invalid token issuer")
+	}
+
+	return &GoogleIDTokenClaims{
+		Subject: result.Sub,
+		Email:   result.Email,
+		Name:    result.Name,
+	}, nil
 }

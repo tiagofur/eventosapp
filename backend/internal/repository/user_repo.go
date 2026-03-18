@@ -147,3 +147,94 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, passwor
 	}
 	return nil
 }
+
+// GetByGoogleUserID finds a user by their Google OAuth user ID
+func (r *UserRepo) GetByGoogleUserID(ctx context.Context, googleUserID string) (*models.User, error) {
+	user := &models.User{}
+	query := `SELECT id, email, password_hash, name, business_name, logo_url, brand_color, show_business_name_in_pdf,
+		default_deposit_percent, default_cancellation_days, default_refund_percent,
+		contract_template,
+		plan, role, stripe_customer_id, google_user_id, apple_user_id, created_at, updated_at
+		FROM users WHERE google_user_id = $1`
+	err := r.pool.QueryRow(ctx, query, googleUserID).Scan(
+		&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.BusinessName, &user.LogoURL, &user.BrandColor, &user.ShowBusinessNameInPdf,
+		&user.DefaultDepositPercent, &user.DefaultCancellationDays, &user.DefaultRefundPercent,
+		&user.ContractTemplate,
+		&user.Plan, &user.Role, &user.StripeCustomerID, &user.GoogleUserID, &user.AppleUserID, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	return user, nil
+}
+
+// GetByAppleUserID finds a user by their Apple OAuth user ID
+func (r *UserRepo) GetByAppleUserID(ctx context.Context, appleUserID string) (*models.User, error) {
+	user := &models.User{}
+	query := `SELECT id, email, password_hash, name, business_name, logo_url, brand_color, show_business_name_in_pdf,
+		default_deposit_percent, default_cancellation_days, default_refund_percent,
+		contract_template,
+		plan, role, stripe_customer_id, google_user_id, apple_user_id, created_at, updated_at
+		FROM users WHERE apple_user_id = $1`
+	err := r.pool.QueryRow(ctx, query, appleUserID).Scan(
+		&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.BusinessName, &user.LogoURL, &user.BrandColor, &user.ShowBusinessNameInPdf,
+		&user.DefaultDepositPercent, &user.DefaultCancellationDays, &user.DefaultRefundPercent,
+		&user.ContractTemplate,
+		&user.Plan, &user.Role, &user.StripeCustomerID, &user.GoogleUserID, &user.AppleUserID, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("user not found: %w", err)
+	}
+	return user, nil
+}
+
+// CreateWithOAuth creates a new user with OAuth provider ID (no password)
+func (r *UserRepo) CreateWithOAuth(ctx context.Context, user *models.User) error {
+	query := `
+		INSERT INTO users (email, name, plan, role, google_user_id, apple_user_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, created_at, updated_at`
+	if user.Role == "" {
+		user.Role = "user"
+	}
+	if user.Plan == "" {
+		user.Plan = "basic"
+	}
+	return r.pool.QueryRow(ctx, query,
+		user.Email, user.Name, user.Plan, user.Role, user.GoogleUserID, user.AppleUserID,
+	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+}
+
+// LinkGoogleAccount links a Google account to an existing user
+func (r *UserRepo) LinkGoogleAccount(ctx context.Context, userID uuid.UUID, googleUserID string) error {
+	query := `
+		UPDATE users SET
+			google_user_id = $2,
+			updated_at = NOW()
+		WHERE id = $1`
+	tag, err := r.pool.Exec(ctx, query, userID, googleUserID)
+	if err != nil {
+		return fmt.Errorf("failed to link Google account: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}
+
+// LinkAppleAccount links an Apple account to an existing user
+func (r *UserRepo) LinkAppleAccount(ctx context.Context, userID uuid.UUID, appleUserID string) error {
+	query := `
+		UPDATE users SET
+			apple_user_id = $2,
+			updated_at = NOW()
+		WHERE id = $1`
+	tag, err := r.pool.Exec(ctx, query, userID, appleUserID)
+	if err != nil {
+		return fmt.Errorf("failed to link Apple account: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
+}
