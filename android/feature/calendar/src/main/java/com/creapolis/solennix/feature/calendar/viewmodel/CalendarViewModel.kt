@@ -11,6 +11,7 @@ import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -36,7 +37,8 @@ data class CalendarUiState(
     val selectedStatus: EventStatus? = null,
     val searchQuery: String = "",
     val statusFilters: List<StatusFilter> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val filteredCount: Int = 0
 )
 
 @HiltViewModel
@@ -92,24 +94,24 @@ class CalendarViewModel @Inject constructor(
 
         // Events for selected date (also apply status filter)
         val eventsForSelectedDate = statusFilteredEvents.filter {
-            try {
-                val date = java.time.ZonedDateTime.parse(it.eventDate).toLocalDate()
-                date == selected
-            } catch (e: Exception) { false }
+            parseFlexibleDate(it.eventDate) == selected
         }
+
+        val sortedFiltered = filteredEvents.sortedByDescending { it.eventDate }
 
         CalendarUiState(
             selectedDate = selected,
             currentMonth = month,
             events = events,
             eventsForSelectedDate = eventsForSelectedDate,
-            filteredEvents = filteredEvents.sortedByDescending { it.eventDate },
+            filteredEvents = sortedFiltered,
             unavailableDates = unavailableDates,
             viewMode = viewMode,
             selectedStatus = selectedStatus,
             searchQuery = searchQuery,
             statusFilters = statusFilters,
-            isLoading = false
+            isLoading = false,
+            filteredCount = sortedFiltered.size
         )
     }.stateIn(
         scope = viewModelScope,
@@ -140,6 +142,13 @@ class CalendarViewModel @Inject constructor(
     fun onMonthChange(month: YearMonth) {
         _currentMonth.value = month
         loadUnavailableDates(month)
+    }
+
+    fun goToToday() {
+        val today = LocalDate.now()
+        _selectedDate.value = today
+        _currentMonth.value = YearMonth.from(today)
+        loadUnavailableDates(YearMonth.from(today))
     }
 
     fun onViewModeChange(mode: CalendarViewMode) {
@@ -180,6 +189,24 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
+    fun loadAllUnavailableDates() {
+        viewModelScope.launch {
+            try {
+                // Load a wide range to show all blocked dates in management sheet
+                val now = LocalDate.now()
+                val start = now.minusMonths(6).toString()
+                val end = now.plusMonths(12).toString()
+                val dates: List<UnavailableDate> = apiService.get(
+                    Endpoints.UNAVAILABLE_DATES,
+                    mapOf("start" to start, "end" to end)
+                )
+                _unavailableDates.value = dates
+            } catch (e: Exception) {
+                // Keep existing dates on error
+            }
+        }
+    }
+
     fun toggleDateBlock(date: LocalDate, reason: String? = null) {
         viewModelScope.launch {
             try {
@@ -200,6 +227,37 @@ class CalendarViewModel @Inject constructor(
                     apiService.post<UnavailableDate>(Endpoints.UNAVAILABLE_DATES, payload)
                 }
                 loadUnavailableDates(_currentMonth.value)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun blockDateRange(startDate: LocalDate, endDate: LocalDate, reason: String?) {
+        viewModelScope.launch {
+            try {
+                val payload = buildMap<String, String> {
+                    put("start_date", startDate.toString())
+                    put("end_date", endDate.toString())
+                    if (!reason.isNullOrBlank()) {
+                        put("reason", reason)
+                    }
+                }
+                apiService.post<UnavailableDate>(Endpoints.UNAVAILABLE_DATES, payload)
+                loadUnavailableDates(_currentMonth.value)
+                loadAllUnavailableDates()
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun deleteUnavailableDate(id: String) {
+        viewModelScope.launch {
+            try {
+                apiService.delete(Endpoints.unavailableDate(id))
+                loadUnavailableDates(_currentMonth.value)
+                loadAllUnavailableDates()
             } catch (e: Exception) {
                 // Handle error
             }

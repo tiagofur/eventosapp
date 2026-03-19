@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,7 +47,7 @@ import com.creapolis.solennix.feature.calendar.viewmodel.CalendarViewMode
 import com.creapolis.solennix.feature.calendar.viewmodel.StatusFilter
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZonedDateTime
+import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.*
@@ -61,12 +62,26 @@ fun CalendarScreen(
     var showBlockDialog by remember { mutableStateOf(false) }
     var showUnblockDialog by remember { mutableStateOf(false) }
     var longPressedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var showManageUnavailableSheet by remember { mutableStateOf(false) }
+    var showAddRangeDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Calendario") }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.loadAllUnavailableDates()
+                    showManageUnavailableSheet = true
+                },
+                containerColor = SolennixTheme.colors.primary,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Block, contentDescription = "Gestionar Fechas No Disponibles")
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
@@ -89,6 +104,7 @@ fun CalendarScreen(
                         uiState = uiState,
                         onPreviousMonth = { viewModel.onMonthChange(uiState.currentMonth.minusMonths(1)) },
                         onNextMonth = { viewModel.onMonthChange(uiState.currentMonth.plusMonths(1)) },
+                        onGoToToday = { viewModel.goToToday() },
                         onDateSelected = { viewModel.onDateSelected(it) },
                         onDateLongPress = { date ->
                             longPressedDate = date
@@ -144,6 +160,27 @@ fun CalendarScreen(
                 showUnblockDialog = false
                 longPressedDate = null
             }
+        )
+    }
+
+    // Manage unavailable dates bottom sheet
+    if (showManageUnavailableSheet) {
+        ManageUnavailableDatesSheet(
+            unavailableDates = uiState.unavailableDates,
+            onDismiss = { showManageUnavailableSheet = false },
+            onDelete = { id -> viewModel.deleteUnavailableDate(id) },
+            onAddRange = { showAddRangeDialog = true }
+        )
+    }
+
+    // Add date range dialog
+    if (showAddRangeDialog) {
+        AddDateRangeDialog(
+            onConfirm = { startDate, endDate, reason ->
+                viewModel.blockDateRange(startDate, endDate, reason)
+                showAddRangeDialog = false
+            },
+            onDismiss = { showAddRangeDialog = false }
         )
     }
 }
@@ -243,6 +280,7 @@ fun CalendarViewContent(
     uiState: CalendarUiState,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
+    onGoToToday: () -> Unit = {},
     onDateSelected: (LocalDate) -> Unit,
     onDateLongPress: (LocalDate) -> Unit = {},
     onEventClick: (String) -> Unit
@@ -251,7 +289,8 @@ fun CalendarViewContent(
         CalendarHeader(
             currentMonth = uiState.currentMonth,
             onPreviousMonth = onPreviousMonth,
-            onNextMonth = onNextMonth
+            onNextMonth = onNextMonth,
+            onGoToToday = onGoToToday
         )
 
         CalendarGrid(
@@ -266,8 +305,10 @@ fun CalendarViewContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Show formatted selected date like the web
+        val dateFormatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
         Text(
-            text = "Eventos del dia",
+            text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
             modifier = Modifier.padding(horizontal = 16.dp),
             style = MaterialTheme.typography.titleMedium,
             color = SolennixTheme.colors.primaryText
@@ -278,10 +319,19 @@ fun CalendarViewContent(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "No hay eventos para este dia",
-                    color = SolennixTheme.colors.secondaryText
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Outlined.CalendarMonth,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "No hay eventos programados",
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -308,7 +358,7 @@ fun ListViewContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text("Buscar eventos...") },
+            placeholder = { Text("Buscar por cliente o servicio...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -323,6 +373,14 @@ fun ListViewContent(
                 focusedBorderColor = SolennixTheme.colors.primary,
                 unfocusedBorderColor = SolennixTheme.colors.divider
             )
+        )
+
+        // Results count
+        Text(
+            text = "${uiState.filteredCount} evento${if (uiState.filteredCount != 1) "s" else ""}",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelMedium,
+            color = SolennixTheme.colors.secondaryText
         )
 
         if (uiState.filteredEvents.isEmpty()) {
@@ -345,6 +403,14 @@ fun ListViewContent(
                             "No hay eventos",
                         color = SolennixTheme.colors.secondaryText
                     )
+                    if (searchQuery.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Intenta ajustar los filtros de busqueda",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
                 }
             }
         } else {
@@ -364,7 +430,8 @@ fun ListViewContent(
 fun CalendarHeader(
     currentMonth: YearMonth,
     onPreviousMonth: () -> Unit,
-    onNextMonth: () -> Unit
+    onNextMonth: () -> Unit,
+    onGoToToday: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -374,15 +441,35 @@ fun CalendarHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onPreviousMonth) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Mes anterior")
         }
         Text(
             text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "MX")).replaceFirstChar { it.uppercase() }} ${currentMonth.year}",
             style = MaterialTheme.typography.titleLarge,
             color = SolennixTheme.colors.primaryText
         )
-        IconButton(onClick = onNextMonth) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next")
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            OutlinedButton(
+                onClick = onGoToToday,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                border = ButtonDefaults.outlinedButtonBorder.copy(
+                    brush = androidx.compose.ui.graphics.SolidColor(SolennixTheme.colors.primary)
+                ),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text(
+                    "Hoy",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            IconButton(onClick = onNextMonth) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Mes siguiente")
+            }
         }
     }
 }
@@ -412,6 +499,7 @@ fun CalendarGrid(
     }
 
     val errorColor = SolennixTheme.colors.error
+    val today = LocalDate.now()
 
     Column(modifier = Modifier.padding(horizontal = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -436,29 +524,39 @@ fun CalendarGrid(
                 if (day != null) {
                     val date = currentMonth.atDay(day)
                     val isSelected = date == selectedDate
+                    val isToday = date == today
                     val dateStr = date.toString()
                     val isBlocked = unavailableDates.any { ud ->
                         dateStr >= ud.startDate && dateStr <= ud.endDate
                     }
                     val eventsOnDate = filteredEvents.filter {
-                        try {
-                            ZonedDateTime.parse(it.eventDate).toLocalDate() == date
-                        } catch (e: Exception) { false }
+                        parseFlexibleDate(it.eventDate) == date
                     }
                     val hasEvents = eventsOnDate.isNotEmpty()
 
                     val bgColor = when {
                         isSelected -> SolennixTheme.colors.primary
+                        isToday -> SolennixTheme.colors.primaryLight
                         isBlocked -> errorColor.copy(alpha = 0.15f)
                         else -> Color.Transparent
                     }
 
-                    Box(
-                        modifier = Modifier
+                    val borderModifier = if (isToday && !isSelected) {
+                        Modifier
                             .aspectRatio(1f)
                             .padding(4.dp)
                             .clip(CircleShape)
                             .background(bgColor)
+                    } else {
+                        Modifier
+                            .aspectRatio(1f)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(bgColor)
+                    }
+
+                    Box(
+                        modifier = borderModifier
                             .combinedClickable(
                                 onClick = { onDateSelected(date) },
                                 onLongClick = { onDateLongPress(date) }
@@ -470,12 +568,14 @@ fun CalendarGrid(
                                 text = day.toString(),
                                 color = when {
                                     isSelected -> Color.White
+                                    isToday -> SolennixTheme.colors.primary
                                     isBlocked -> errorColor
                                     else -> SolennixTheme.colors.primaryText
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = when {
                                     isSelected -> FontWeight.Bold
+                                    isToday -> FontWeight.Bold
                                     isBlocked -> FontWeight.SemiBold
                                     else -> FontWeight.Normal
                                 }
@@ -571,11 +671,7 @@ fun ListEventItem(
     onClick: () -> Unit
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
-    val eventDate = try {
-        ZonedDateTime.parse(event.eventDate).toLocalDate().format(dateFormatter)
-    } catch (e: Exception) {
-        event.eventDate
-    }
+    val eventDate = parseFlexibleDate(event.eventDate)?.format(dateFormatter) ?: event.eventDate
 
     Card(
         modifier = Modifier
@@ -782,4 +878,370 @@ fun UnblockDateDialog(
             }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ManageUnavailableDatesSheet(
+    unavailableDates: List<UnavailableDate>,
+    onDismiss: () -> Unit,
+    onDelete: (String) -> Unit,
+    onAddRange: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SolennixTheme.colors.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Fechas No Disponibles",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = SolennixTheme.colors.primaryText
+                )
+                FilledTonalButton(
+                    onClick = onAddRange,
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = SolennixTheme.colors.primaryLight,
+                        contentColor = SolennixTheme.colors.primary
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Agregar rango")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (unavailableDates.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.EventAvailable,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = SolennixTheme.colors.secondaryText
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "No hay fechas bloqueadas",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Todas las fechas estan disponibles",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    text = "${unavailableDates.size} rango${if (unavailableDates.size != 1) "s" else ""} bloqueado${if (unavailableDates.size != 1) "s" else ""}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(unavailableDates) { ud ->
+                        var showDeleteConfirm by remember { mutableStateOf(false) }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = SolennixTheme.colors.error.copy(alpha = 0.08f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Block,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = SolennixTheme.colors.error
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    val startFormatted = try {
+                                        LocalDate.parse(ud.startDate).format(dateFormatter)
+                                    } catch (e: Exception) { ud.startDate }
+                                    val endFormatted = try {
+                                        LocalDate.parse(ud.endDate).format(dateFormatter)
+                                    } catch (e: Exception) { ud.endDate }
+
+                                    Text(
+                                        text = if (ud.startDate == ud.endDate) {
+                                            startFormatted
+                                        } else {
+                                            "$startFormatted - $endFormatted"
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                    if (!ud.reason.isNullOrBlank()) {
+                                        Text(
+                                            text = ud.reason.orEmpty(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = SolennixTheme.colors.secondaryText,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                                IconButton(
+                                    onClick = { showDeleteConfirm = true }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Eliminar",
+                                        tint = SolennixTheme.colors.error
+                                    )
+                                }
+                            }
+                        }
+
+                        if (showDeleteConfirm) {
+                            AlertDialog(
+                                onDismissRequest = { showDeleteConfirm = false },
+                                title = { Text("Eliminar bloqueo") },
+                                text = {
+                                    Text("¿Estas seguro de que deseas eliminar este rango bloqueado?")
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        onDelete(ud.id)
+                                        showDeleteConfirm = false
+                                    }) {
+                                        Text("Eliminar", color = SolennixTheme.colors.error)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showDeleteConfirm = false }) {
+                                        Text("Cancelar")
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddDateRangeDialog(
+    onConfirm: (LocalDate, LocalDate, String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var startDate by remember { mutableStateOf(LocalDate.now()) }
+    var endDate by remember { mutableStateOf(LocalDate.now()) }
+    var reason by remember { mutableStateOf("") }
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bloquear rango de fechas") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Start date
+                Text(
+                    "Fecha inicio",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                OutlinedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showStartPicker = true },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = SolennixTheme.colors.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = startDate.format(dateFormatter),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SolennixTheme.colors.primaryText
+                        )
+                    }
+                }
+
+                // End date
+                Text(
+                    "Fecha fin",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                OutlinedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showEndPicker = true },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = SolennixTheme.colors.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = endDate.format(dateFormatter),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SolennixTheme.colors.primaryText
+                        )
+                    }
+                }
+
+                // Reason
+                OutlinedTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    label = { Text("Motivo (opcional)") },
+                    placeholder = { Text("Ej: Vacaciones, mantenimiento...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SolennixTheme.colors.primary,
+                        unfocusedBorderColor = SolennixTheme.colors.divider
+                    )
+                )
+
+                // Validation message
+                if (endDate.isBefore(startDate)) {
+                    Text(
+                        text = "La fecha fin no puede ser anterior a la fecha inicio",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(startDate, endDate, reason.ifBlank { null }) },
+                enabled = !endDate.isBefore(startDate)
+            ) {
+                Text("Bloquear", color = if (!endDate.isBefore(startDate)) SolennixTheme.colors.error else SolennixTheme.colors.secondaryText)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+
+    // Start date picker
+    if (showStartPicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = startDate.toEpochDay() * 86400000L
+        )
+        DatePickerDialog(
+            onDismissRequest = { showStartPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        startDate = LocalDate.ofEpochDay(millis / 86400000L)
+                        if (endDate.isBefore(startDate)) {
+                            endDate = startDate
+                        }
+                    }
+                    showStartPicker = false
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartPicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    // End date picker
+    if (showEndPicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = endDate.toEpochDay() * 86400000L
+        )
+        DatePickerDialog(
+            onDismissRequest = { showEndPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        endDate = LocalDate.ofEpochDay(millis / 86400000L)
+                    }
+                    showEndPicker = false
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndPicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 }

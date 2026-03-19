@@ -25,6 +25,7 @@ import com.creapolis.solennix.feature.dashboard.ui.DashboardScreen
 import com.creapolis.solennix.feature.events.ui.EventChecklistScreen
 import com.creapolis.solennix.feature.events.ui.EventDetailScreen
 import com.creapolis.solennix.feature.events.ui.EventFormScreen
+import com.creapolis.solennix.feature.events.ui.EventListScreen
 import com.creapolis.solennix.feature.inventory.ui.InventoryListScreen
 import com.creapolis.solennix.feature.products.ui.ProductListScreen
 import com.creapolis.solennix.feature.search.ui.SearchScreen
@@ -87,7 +88,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { navController.navigate("event_form") },
+                onClick = { navController.navigate("event_form?eventId=") },
                 containerColor = SolennixTheme.colors.primary,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = SolennixElevation.fab
@@ -103,8 +104,13 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             startDestination = TopLevelDestination.HOME.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(TopLevelDestination.HOME.route) { 
-                DashboardScreen(viewModel = hiltViewModel())
+            composable(TopLevelDestination.HOME.route) {
+                DashboardScreen(
+                    viewModel = hiltViewModel(),
+                    onEventClick = { id -> navController.navigate("event_detail/$id") },
+                    onInventoryClick = { id -> navController.navigate("inventory_detail/$id") },
+                    onUpgradeClick = { navController.navigate("pricing") }
+                )
             }
             composable(TopLevelDestination.CALENDAR.route) { 
                 CalendarScreen(viewModel = hiltViewModel(), onEventClick = { id -> 
@@ -118,8 +124,9 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onAddClientClick = { navController.navigate("client_form") }
                 )
             }
-            composable(TopLevelDestination.MORE.route) { 
+            composable(TopLevelDestination.MORE.route) {
                 MoreMenuScreen(
+                    onEventsClick = { navController.navigate("events") },
                     onProductsClick = { navController.navigate("products") },
                     onInventoryClick = { navController.navigate("inventory") },
                     onSettingsClick = { navController.navigate("settings") },
@@ -128,6 +135,13 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
 
             // More Menu Destinations
+            composable("events") {
+                EventListScreen(
+                    viewModel = hiltViewModel(),
+                    onEventClick = { id -> navController.navigate("event_detail/$id") },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
             composable("products") {
                 ProductListScreen(
                     viewModel = hiltViewModel(),
@@ -247,11 +261,12 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
 
             // Detail routes
-            composable("client_detail/{clientId}") { 
+            composable("client_detail/{clientId}") {
                 ClientDetailScreen(
                     viewModel = hiltViewModel(),
                     onNavigateBack = { navController.popBackStack() },
-                    onEditClick = { id -> navController.navigate("client_form?clientId=$id") }
+                    onEditClick = { id -> navController.navigate("client_form?clientId=$id") },
+                    onEventClick = { id -> navController.navigate("event_detail/$id") }
                 )
             }
             
@@ -280,7 +295,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 )
             }
 
-            composable("event_form") {
+            composable("event_form?eventId={eventId}") { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId")
                 EventFormScreen(
                     viewModel = hiltViewModel(),
                     onNavigateBack = { navController.popBackStack() }
@@ -292,6 +308,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
 
 @Composable
 fun MoreMenuScreen(
+    onEventsClick: () -> Unit,
     onProductsClick: () -> Unit,
     onInventoryClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -300,7 +317,8 @@ fun MoreMenuScreen(
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Menu Principal", style = MaterialTheme.typography.headlineSmall, color = SolennixTheme.colors.primaryText)
         Spacer(modifier = Modifier.height(24.dp))
-        
+
+        MenuCard(title = "Eventos", icon = Icons.Default.Event, onClick = onEventsClick)
         MenuCard(title = "Productos", icon = Icons.AutoMirrored.Filled.List, onClick = onProductsClick)
         MenuCard(title = "Inventario", icon = Icons.Default.Build, onClick = onInventoryClick)
         MenuCard(title = "Busqueda Global", icon = Icons.Default.Search, onClick = onSearchClick)

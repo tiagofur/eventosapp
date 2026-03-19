@@ -31,7 +31,7 @@ import com.creapolis.solennix.core.database.entity.CachedEventProduct
         CachedEventProduct::class,
         CachedEventExtra::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(JsonConverters::class)
@@ -54,7 +54,7 @@ abstract class SolennixDatabase : RoomDatabase() {
                     SolennixDatabase::class.java,
                     "solennix_database"
                 )
-                    .fallbackToDestructiveMigrationOnDowngrade()
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

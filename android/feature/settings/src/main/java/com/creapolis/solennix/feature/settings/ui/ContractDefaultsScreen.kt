@@ -1,16 +1,25 @@
 package com.creapolis.solennix.feature.settings.ui
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Preview
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
@@ -236,7 +245,7 @@ fun ContractDefaultsScreen(
 
                 // Contract Template Section
                 Text(
-                    text = "Plantilla del Contrato",
+                    text = "Plantilla de Contrato",
                     style = MaterialTheme.typography.labelLarge,
                     color = SolennixTheme.colors.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -249,36 +258,131 @@ fun ContractDefaultsScreen(
                     tonalElevation = 1.dp
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
+                        var textFieldValue by remember(viewModel.contractTemplate) {
+                            mutableStateOf(TextFieldValue(viewModel.contractTemplate))
+                        }
+
                         OutlinedTextField(
-                            value = viewModel.contractTemplate,
-                            onValueChange = { viewModel.contractTemplate = it },
-                            label = { Text("Texto adicional del contrato") },
+                            value = textFieldValue,
+                            onValueChange = {
+                                textFieldValue = it
+                                viewModel.contractTemplate = it.text
+                            },
+                            label = { Text("Texto de la plantilla del contrato") },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 150.dp),
-                            maxLines = 10,
+                            maxLines = 15,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = SolennixTheme.colors.primary,
                                 cursorColor = SolennixTheme.colors.primary
                             )
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Tokens disponibles (toca para insertar):",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = SolennixTheme.colors.secondaryText,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        val tokens = listOf(
+                            "{nombre_cliente}" to "Cliente",
+                            "{fecha_evento}" to "Fecha",
+                            "{lugar}" to "Lugar",
+                            "{total}" to "Total",
+                            "{anticipo}" to "Anticipo",
+                            "{tipo_evento}" to "Tipo",
+                            "{num_personas}" to "Personas",
+                            "{nombre_negocio}" to "Negocio"
+                        )
+
+                        val chipScrollState = rememberScrollState()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(chipScrollState),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            tokens.forEach { (token, chipLabel) ->
+                                AssistChip(
+                                    onClick = {
+                                        val cursorPos = textFieldValue.selection.start
+                                        val currentText = textFieldValue.text
+                                        val newText = currentText.substring(0, cursorPos) +
+                                            token +
+                                            currentText.substring(cursorPos)
+                                        val newCursorPos = cursorPos + token.length
+                                        textFieldValue = TextFieldValue(
+                                            text = newText,
+                                            selection = TextRange(newCursorPos)
+                                        )
+                                        viewModel.contractTemplate = newText
+                                    },
+                                    label = {
+                                        Text(
+                                            text = chipLabel,
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    },
+                                    colors = AssistChipDefaults.assistChipColors(
+                                        containerColor = SolennixTheme.colors.primary.copy(alpha = 0.1f),
+                                        labelColor = SolennixTheme.colors.primary
+                                    ),
+                                    border = BorderStroke(1.dp, SolennixTheme.colors.primary.copy(alpha = 0.3f))
+                                )
+                            }
+                        }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Puedes personalizar el texto adicional que aparecera en tus contratos. Usa {{nombre_cliente}}, {{fecha_evento}}, {{total}} para variables.",
+                    text = "Personaliza el texto de tus contratos. Usa los tokens para insertar datos del evento automaticamente.",
                     style = MaterialTheme.typography.bodySmall,
                     color = SolennixTheme.colors.secondaryText,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Preview Button
+                var showPreviewDialog by remember { mutableStateOf(false) }
+
+                OutlinedButton(
+                    onClick = { showPreviewDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = SolennixTheme.colors.primary
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder(
+                        enabled = true
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Preview,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Vista Previa")
+                }
+
+                if (showPreviewDialog) {
+                    ContractTemplatePreviewDialog(
+                        template = viewModel.contractTemplate,
+                        onDismiss = { showPreviewDialog = false }
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Preview Section
+                // Terms Preview Section
                 Text(
-                    text = "Vista Previa",
+                    text = "Vista Previa de Terminos",
                     style = MaterialTheme.typography.labelLarge,
                     color = SolennixTheme.colors.primary,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -291,13 +395,6 @@ fun ContractDefaultsScreen(
                     tonalElevation = 1.dp
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Vista previa de terminos",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = SolennixTheme.colors.primaryText,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
@@ -345,6 +442,91 @@ fun ContractDefaultsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ContractTemplatePreviewDialog(
+    template: String,
+    onDismiss: () -> Unit
+) {
+    val sampleData = mapOf(
+        "{nombre_cliente}" to "Maria Garcia Lopez",
+        "{fecha_evento}" to "15 de junio de 2026",
+        "{lugar}" to "Salon Royal, Guadalajara",
+        "{total}" to "$25,000.00",
+        "{anticipo}" to "$12,500.00",
+        "{tipo_evento}" to "Boda",
+        "{num_personas}" to "150",
+        "{nombre_negocio}" to "Eventos Brillantes"
+    )
+
+    var renderedText = template
+    sampleData.forEach { (token, value) ->
+        renderedText = renderedText.replace(token, value)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Vista Previa del Contrato",
+                style = MaterialTheme.typography.titleMedium,
+                color = SolennixTheme.colors.primaryText
+            )
+        },
+        text = {
+            Column {
+                if (template.isBlank()) {
+                    Text(
+                        text = "La plantilla esta vacia. Escribe el texto del contrato y usa los tokens para insertar datos automaticamente.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                } else {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = SolennixTheme.colors.surfaceGrouped
+                    ) {
+                        Text(
+                            text = renderedText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SolennixTheme.colors.primaryText,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Datos de ejemplo utilizados:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = SolennixTheme.colors.secondaryText,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+
+                    sampleData.forEach { (token, value) ->
+                        if (template.contains(token)) {
+                            Text(
+                                text = "$token → $value",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SolennixTheme.colors.secondaryText
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    "Cerrar",
+                    color = SolennixTheme.colors.primary
+                )
+            }
+        },
+        containerColor = SolennixTheme.colors.card
+    )
 }
 
 @Composable

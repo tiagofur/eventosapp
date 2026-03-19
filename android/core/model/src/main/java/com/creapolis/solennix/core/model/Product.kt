@@ -2,7 +2,6 @@ package com.creapolis.solennix.core.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class Product(
@@ -11,7 +10,7 @@ data class Product(
     val name: String,
     val category: String,
     @SerialName("base_price") val basePrice: Double,
-    val recipe: JsonElement? = null,
+    val recipe: String? = null,
     @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("created_at") val createdAt: String,

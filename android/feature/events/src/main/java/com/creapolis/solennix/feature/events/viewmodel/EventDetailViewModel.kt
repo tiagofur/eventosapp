@@ -6,15 +6,20 @@ import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
+import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
+import com.creapolis.solennix.core.model.EventEquipment
 import com.creapolis.solennix.core.model.EventExtra
 import com.creapolis.solennix.core.model.EventPhoto
 import com.creapolis.solennix.core.model.EventProduct
+import com.creapolis.solennix.core.model.EventSupply
 import com.creapolis.solennix.core.model.Payment
 import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.core.model.EventStatus
+import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.AuthManager
+import com.creapolis.solennix.core.network.Endpoints
 import com.creapolis.solennix.core.network.EventDayNotificationManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,8 +39,11 @@ data class EventDetailUiState(
     val client: Client? = null,
     val products: List<EventProduct> = emptyList(),
     val extras: List<EventExtra> = emptyList(),
+    val equipment: List<EventEquipment> = emptyList(),
+    val supplies: List<EventSupply> = emptyList(),
     val payments: List<Payment> = emptyList(),
     val photos: List<EventPhoto> = emptyList(),
+    val productNames: Map<String, String> = emptyMap(),
     val totalPaid: Double = 0.0,
     val currentUser: User? = null,
     val isLoading: Boolean = false,
@@ -48,6 +57,8 @@ class EventDetailViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val clientRepository: ClientRepository,
     private val paymentRepository: PaymentRepository,
+    private val productRepository: ProductRepository,
+    private val apiService: ApiService,
     private val authManager: AuthManager,
     private val eventDayNotificationManager: EventDayNotificationManager,
     savedStateHandle: SavedStateHandle
@@ -59,6 +70,9 @@ class EventDetailViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     private val _event = MutableStateFlow<Event?>(null)
     private val _client = MutableStateFlow<Client?>(null)
+    private val _equipment = MutableStateFlow<List<EventEquipment>>(emptyList())
+    private val _supplies = MutableStateFlow<List<EventSupply>>(emptyList())
+    private val _productNames = MutableStateFlow<Map<String, String>>(emptyMap())
     private val _photos = MutableStateFlow<List<EventPhoto>>(emptyList())
     private val _isPhotosLoading = MutableStateFlow(false)
     private val _isPhotoUploading = MutableStateFlow(false)
@@ -73,7 +87,10 @@ class EventDetailViewModel @Inject constructor(
         _errorMessage,
         _photos,
         _isPhotosLoading,
-        _isPhotoUploading
+        _isPhotoUploading,
+        _equipment,
+        _supplies,
+        _productNames
     ) { values ->
         val event = values[0] as Event?
         val client = values[1] as Client?
@@ -89,14 +106,23 @@ class EventDetailViewModel @Inject constructor(
         val photos = values[7] as List<EventPhoto>
         val isPhotosLoading = values[8] as Boolean
         val isPhotoUploading = values[9] as Boolean
+        @Suppress("UNCHECKED_CAST")
+        val equipment = values[10] as List<EventEquipment>
+        @Suppress("UNCHECKED_CAST")
+        val supplies = values[11] as List<EventSupply>
+        @Suppress("UNCHECKED_CAST")
+        val productNames = values[12] as Map<String, String>
 
         EventDetailUiState(
             event = event,
             client = client,
             products = products,
             extras = extras,
+            equipment = equipment,
+            supplies = supplies,
             payments = payments,
             photos = photos,
+            productNames = productNames,
             totalPaid = payments.sumOf { it.amount },
             currentUser = authManager.currentUser.value,
             isLoading = isLoading,
@@ -136,6 +162,12 @@ class EventDetailViewModel @Inject constructor(
                     _client.value = clientRepository.getClient(clientId)
                 }
 
+                // Load equipment and supplies from API
+                loadEquipmentAndSupplies()
+
+                // Load product names for display
+                loadProductNames()
+
                 // Auto-mostrar notificacion persistente si el evento es hoy y confirmado
                 checkAndShowEventDayNotification(event, _client.value)
 
@@ -147,23 +179,76 @@ class EventDetailViewModel @Inject constructor(
         }
     }
 
-    fun addPayment(amount: Double, method: String, notes: String?) {
+    private suspend fun loadEquipmentAndSupplies() {
+        try {
+            val equipment: List<EventEquipment> = apiService.get(Endpoints.eventEquipment(eventId))
+            _equipment.value = equipment
+        } catch (e: Exception) {
+            // Non-fatal, equipment may not exist for this event
+            _equipment.value = emptyList()
+        }
+
+        try {
+            val supplies: List<EventSupply> = apiService.get(Endpoints.eventSupplies(eventId))
+            _supplies.value = supplies
+        } catch (e: Exception) {
+            // Non-fatal, supplies may not exist for this event
+            _supplies.value = emptyList()
+        }
+    }
+
+    private suspend fun loadProductNames() {
+        try {
+            val namesMap = mutableMapOf<String, String>()
+            val products = eventRepository.getEventProducts(eventId).first()
+            for (product in products) {
+                val p = productRepository.getProduct(product.productId)
+                if (p != null) {
+                    namesMap[product.productId] = p.name
+                }
+            }
+            _productNames.value = namesMap
+        } catch (e: Exception) {
+            // Non-fatal
+        }
+    }
+
+    fun addPayment(amount: Double, method: String, notes: String?, date: String? = null) {
         viewModelScope.launch {
             try {
+                val currentEvent = _event.value
                 val newPayment = Payment(
                     id = "", // Backend will generate or override if empty
                     eventId = eventId,
-                    userId = uiState.value.event?.userId ?: "",
+                    userId = currentEvent?.userId ?: "",
                     amount = amount,
-                    paymentDate = java.time.LocalDate.now().toString(),
+                    paymentDate = date ?: java.time.LocalDate.now().toString(),
                     paymentMethod = method,
                     notes = notes,
                     createdAt = ""
                 )
                 paymentRepository.createPayment(newPayment)
-                // Flow automatically updates via Room → paymentRepository.getPaymentsByEventId
+                // Flow automatically updates via Room -> paymentRepository.getPaymentsByEventId
+
+                // Auto status change: if event is "quoted", change to "confirmed" on first payment
+                if (currentEvent != null && currentEvent.status == EventStatus.QUOTED) {
+                    val updated = currentEvent.copy(status = EventStatus.CONFIRMED)
+                    eventRepository.updateEvent(updated)
+                    _event.value = updated
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Error adding payment: ${e.message}"
+            }
+        }
+    }
+
+    fun deletePayment(paymentId: String) {
+        viewModelScope.launch {
+            try {
+                paymentRepository.deletePayment(paymentId)
+                // Flow automatically updates via Room -> paymentRepository.getPaymentsByEventId
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar pago: ${e.message}"
             }
         }
     }

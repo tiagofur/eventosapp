@@ -213,7 +213,10 @@
       "Bash(find /c/Users/tfurt/source/repos/eventosapp/mobile/src -type f \\\\\\(-name *Navigation* -o -name *Stack* -o -name *navigation.ts \\\\\\))",
       "Bash(find /c/Users/tfurt/source/repos/eventosapp/android -type f \\\\\\(-name *NavHost* -o -name *Stack* -o -name *Navigation* \\\\\\))",
       "Bash(cat:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(./gradlew clean:*)",
+      "Bash(./gradlew :feature:calendar:compileDebugKotlin)",
+      "Bash(grep -r TopLevelDestination.CALENDAR /c/Users/tfurt/source/repos/eventosapp/android --include=*.kt)"
     ]
   }
 }

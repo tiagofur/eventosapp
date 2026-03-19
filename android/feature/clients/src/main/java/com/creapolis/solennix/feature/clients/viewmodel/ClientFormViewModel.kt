@@ -1,5 +1,8 @@
 package com.creapolis.solennix.feature.clients.viewmodel
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,6 +11,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -16,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ClientFormViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
+    private val apiService: ApiService,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -27,9 +33,11 @@ class ClientFormViewModel @Inject constructor(
     var address by mutableStateOf("")
     var city by mutableStateOf("")
     var notes by mutableStateOf("")
+    var photoUrl by mutableStateOf("")
 
     var isLoading by mutableStateOf(false)
     var isSaving by mutableStateOf(false)
+    var isUploadingPhoto by mutableStateOf(false)
     var saveSuccess by mutableStateOf(false)
     var errorMessage by mutableStateOf<String?>(null)
 
@@ -84,6 +92,7 @@ class ClientFormViewModel @Inject constructor(
                     address = client.address ?: ""
                     city = client.city ?: ""
                     notes = client.notes ?: ""
+                    photoUrl = client.photoUrl ?: ""
                 }
             } catch (e: Exception) {
                 errorMessage = "Error al cargar cliente: ${e.message}"
@@ -110,7 +119,7 @@ class ClientFormViewModel @Inject constructor(
                     address = address.takeIf { it.isNotBlank() },
                     city = city.takeIf { it.isNotBlank() },
                     notes = notes.takeIf { it.isNotBlank() },
-                    photoUrl = null,
+                    photoUrl = photoUrl.takeIf { it.isNotBlank() },
                     totalEvents = 0,
                     totalSpent = 0.0,
                     createdAt = "", // Handled by backend
@@ -129,5 +138,50 @@ class ClientFormViewModel @Inject constructor(
                 isSaving = false
             }
         }
+    }
+
+    fun uploadPhoto(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            isUploadingPhoto = true
+            errorMessage = null
+            try {
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                val fileName = getFileName(context, uri) ?: "client_photo.jpg"
+                val inputStream = contentResolver.openInputStream(uri)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+
+                if (bytes != null) {
+                    val uploadedUrl: String = apiService.upload(
+                        Endpoints.UPLOAD_IMAGE,
+                        bytes,
+                        fileName,
+                        mimeType
+                    )
+                    photoUrl = uploadedUrl
+                } else {
+                    errorMessage = "No se pudo leer la imagen seleccionada"
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error al subir foto: ${e.message}"
+            } finally {
+                isUploadingPhoto = false
+            }
+        }
+    }
+
+    private fun getFileName(context: Context, uri: Uri): String? {
+        var name: String? = null
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) {
+                    name = it.getString(index)
+                }
+            }
+        }
+        return name
     }
 }

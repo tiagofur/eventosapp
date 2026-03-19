@@ -10,7 +10,7 @@ data class CachedEventProduct(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "event_id") val eventId: String,
     @ColumnInfo(name = "product_id") val productId: String,
-    val quantity: Int,
+    val quantity: Double,
     @ColumnInfo(name = "unit_price") val unitPrice: Double,
     val discount: Double,
     @ColumnInfo(name = "total_price") val totalPrice: Double?,

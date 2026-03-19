@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -24,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.*
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.model.SupplySource
@@ -52,7 +54,7 @@ fun EventFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nuevo Evento") },
+                title = { Text(if (viewModel.isEditMode) "Editar Evento" else "Nuevo Evento") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -74,7 +76,8 @@ fun EventFormScreen(
                 onBack = {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
                 },
-                isLoading = viewModel.isLoading
+                isLoading = viewModel.isLoading,
+                isEditMode = viewModel.isEditMode
             )
         }
     ) { padding ->
@@ -96,7 +99,7 @@ fun EventFormScreen(
                     2 -> StepExtras(viewModel)
                     3 -> StepEquipment(viewModel)
                     4 -> StepSupplies(viewModel)
-                    5 -> StepSummary(viewModel)
+                    5 -> StepSummary(viewModel, isEditMode = viewModel.isEditMode)
                 }
             }
         }
@@ -113,7 +116,8 @@ fun BottomStepNavigation(
     totalPages: Int = 6,
     onNext: () -> Unit,
     onBack: () -> Unit,
-    isLoading: Boolean
+    isLoading: Boolean,
+    isEditMode: Boolean = false
 ) {
     val isLastPage = currentPage == totalPages - 1
     Surface(
@@ -135,7 +139,7 @@ fun BottomStepNavigation(
             }
 
             PremiumButton(
-                text = if (isLastPage) "Finalizar" else "Siguiente",
+                text = if (isLastPage) (if (isEditMode) "Guardar Cambios" else "Finalizar") else "Siguiente",
                 onClick = onNext,
                 modifier = Modifier.weight(1f),
                 icon = if (isLastPage) Icons.Default.Check else Icons.AutoMirrored.Filled.ArrowForward,
@@ -150,96 +154,233 @@ fun BottomStepNavigation(
 fun StepGeneralInfo(viewModel: EventFormViewModel) {
     var showClientPicker by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showQuickClientDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.padding(24.dp)) {
-        Text("Información General", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        // Client Selection
-        Text("Cliente", style = MaterialTheme.typography.labelMedium, color = SolennixTheme.colors.secondaryText)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .clickable { showClientPicker = true },
-            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface)
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Person, contentDescription = null, tint = SolennixTheme.colors.primary)
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = viewModel.selectedClient?.name ?: "Seleccionar Cliente",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (viewModel.selectedClient == null) SolennixTheme.colors.tertiaryText else SolennixTheme.colors.primaryText
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(Icons.Default.Search, contentDescription = null, tint = SolennixTheme.colors.secondaryText)
+    val statusLabels = mapOf(
+        EventStatus.QUOTED to "Cotizado",
+        EventStatus.CONFIRMED to "Confirmado",
+        EventStatus.COMPLETED to "Completado",
+        EventStatus.CANCELLED to "Cancelado"
+    )
+
+    LazyColumn(modifier = Modifier.padding(24.dp)) {
+        item {
+            Text("Información General", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Client Selection
+            Text("Cliente", style = MaterialTheme.typography.labelMedium, color = SolennixTheme.colors.secondaryText)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clickable { showClientPicker = true },
+                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface)
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = SolennixTheme.colors.primary)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = viewModel.selectedClient?.name ?: "Seleccionar Cliente",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (viewModel.selectedClient == null) SolennixTheme.colors.tertiaryText else SolennixTheme.colors.primaryText
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.Search, contentDescription = null, tint = SolennixTheme.colors.secondaryText)
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // Quick Client Creation button
+            TextButton(
+                onClick = { showQuickClientDialog = true },
+                modifier = Modifier.padding(start = 4.dp)
+            ) {
+                Icon(
+                    Icons.Default.PersonAdd,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Nuevo Cliente", color = SolennixTheme.colors.primary)
+            }
 
-        SolennixTextField(
-            value = viewModel.serviceType,
-            onValueChange = { viewModel.serviceType = it },
-            label = "Tipo de Evento",
-            placeholder = "Boda, Graduación, etc.",
-            leadingIcon = Icons.Default.Event
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Client History Stats (Gap 4)
+            if (viewModel.selectedClient != null && (viewModel.clientEventCount != null || viewModel.clientTotalSpent != null)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.info.copy(alpha = 0.08f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.info.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.History, null, tint = SolennixTheme.colors.info, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                "Historial del Cliente",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = SolennixTheme.colors.info
+                            )
+                            Text(
+                                "${viewModel.clientEventCount ?: 0} eventos realizados, Total gastado: ${(viewModel.clientTotalSpent ?: 0.0).asMXN()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SolennixTheme.colors.secondaryText
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             SolennixTextField(
-                value = viewModel.numPeople,
-                onValueChange = { viewModel.numPeople = it },
-                label = "Personas",
-                leadingIcon = Icons.Default.People,
-                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
-                modifier = Modifier.weight(1f)
+                value = viewModel.serviceType,
+                onValueChange = { viewModel.serviceType = it },
+                label = "Tipo de Evento",
+                placeholder = "Boda, Graduación, etc.",
+                leadingIcon = Icons.Default.Event
             )
 
-            // Date Selection
-            Box(modifier = Modifier.weight(1.2f)) {
-                OutlinedTextField(
-                    value = viewModel.eventDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                    onValueChange = {},
-                    label = { Text("Fecha") },
-                    readOnly = true,
-                    leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
-                    modifier = Modifier.clickable { showDatePicker = true },
-                    enabled = false, // To allow click on parent or box
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = SolennixTheme.colors.primaryText,
-                        disabledBorderColor = SolennixTheme.colors.border,
-                        disabledLabelColor = SolennixTheme.colors.secondaryText,
-                        disabledLeadingIconColor = SolennixTheme.colors.secondaryText
-                    )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SolennixTextField(
+                    value = viewModel.numPeople,
+                    onValueChange = { viewModel.numPeople = it },
+                    label = "Personas",
+                    leadingIcon = Icons.Default.People,
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                    modifier = Modifier.weight(1f)
                 )
-                // Transparent overlay to catch clicks because disabled TextField doesn't
-                Box(Modifier.matchParentSize().clickable { showDatePicker = true })
+
+                // Date Selection
+                Box(modifier = Modifier.weight(1.2f)) {
+                    OutlinedTextField(
+                        value = viewModel.eventDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                        onValueChange = {},
+                        label = { Text("Fecha") },
+                        readOnly = true,
+                        leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null) },
+                        modifier = Modifier.clickable { showDatePicker = true },
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = SolennixTheme.colors.primaryText,
+                            disabledBorderColor = SolennixTheme.colors.border,
+                            disabledLabelColor = SolennixTheme.colors.secondaryText,
+                            disabledLeadingIconColor = SolennixTheme.colors.secondaryText
+                        )
+                    )
+                    Box(Modifier.matchParentSize().clickable { showDatePicker = true })
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // Unavailable date warning
+            viewModel.dateUnavailableWarning?.let { warning ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.error
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = warning,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.error
+                    )
+                }
+            }
 
-        SolennixTextField(
-            value = viewModel.location,
-            onValueChange = { viewModel.location = it },
-            label = "Lugar del Evento",
-            leadingIcon = Icons.Default.LocationOn,
-            placeholder = "Nombre del salón o dirección"
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+            // Time pickers row
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SolennixTextField(
+                    value = viewModel.startTime,
+                    onValueChange = { viewModel.startTime = it },
+                    label = "Hora Inicio",
+                    placeholder = "HH:MM",
+                    leadingIcon = Icons.Default.Schedule,
+                    modifier = Modifier.weight(1f)
+                )
 
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SolennixTextField(
+                    value = viewModel.endTime,
+                    onValueChange = { viewModel.endTime = it },
+                    label = "Hora Fin",
+                    placeholder = "HH:MM",
+                    leadingIcon = Icons.Default.Schedule,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SolennixTextField(
+                value = viewModel.location,
+                onValueChange = { viewModel.location = it },
+                label = "Lugar del Evento",
+                leadingIcon = Icons.Default.LocationOn,
+                placeholder = "Nombre del salón o dirección"
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             SolennixTextField(
                 value = viewModel.city,
                 onValueChange = { viewModel.city = it },
                 label = "Ciudad",
-                leadingIcon = Icons.Default.LocationCity,
-                modifier = Modifier.weight(1f)
+                leadingIcon = Icons.Default.LocationCity
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Status selector
+            Text("Estado", style = MaterialTheme.typography.labelMedium, color = SolennixTheme.colors.secondaryText)
+            Spacer(modifier = Modifier.height(8.dp))
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                EventStatus.entries.forEachIndexed { index, eventStatus ->
+                    SegmentedButton(
+                        selected = viewModel.status == eventStatus,
+                        onClick = { viewModel.status = eventStatus },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = EventStatus.entries.size)
+                    ) {
+                        Text(
+                            statusLabels[eventStatus] ?: eventStatus.name,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Notes text area
+            OutlinedTextField(
+                value = viewModel.notes,
+                onValueChange = { viewModel.notes = it },
+                label = { Text("Notas") },
+                placeholder = { Text("Notas adicionales sobre el evento...") },
+                leadingIcon = { Icon(Icons.Default.Notes, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 100.dp),
+                minLines = 3,
+                maxLines = 5,
+                shape = MaterialTheme.shapes.small,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = SolennixTheme.colors.primary,
+                    focusedLabelColor = SolennixTheme.colors.primary,
+                    cursorColor = SolennixTheme.colors.primary
+                )
             )
         }
     }
@@ -249,7 +390,7 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
             viewModel = viewModel,
             onDismiss = { showClientPicker = false },
             onClientSelected = {
-                viewModel.selectedClient = it
+                viewModel.onClientSelected(it)
                 showClientPicker = false
             }
         )
@@ -264,8 +405,10 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
-                        viewModel.eventDate = java.time.Instant.ofEpochMilli(it)
+                        val newDate = java.time.Instant.ofEpochMilli(it)
                             .atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        viewModel.eventDate = newDate
+                        viewModel.checkDateAvailability(newDate)
                     }
                     showDatePicker = false
                 }) { Text("Aceptar") }
@@ -277,6 +420,129 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
             DatePicker(state = datePickerState)
         }
     }
+
+    if (showQuickClientDialog) {
+        QuickClientDialog(
+            isCreating = viewModel.isCreatingClient,
+            error = viewModel.quickClientError,
+            onDismiss = {
+                showQuickClientDialog = false
+                viewModel.quickClientError = null
+            },
+            onSave = { name, email, phone ->
+                viewModel.createQuickClient(name, email, phone)
+            }
+        )
+    }
+
+    // Auto-close dialog when client is created successfully
+    LaunchedEffect(viewModel.selectedClient, viewModel.isCreatingClient) {
+        if (viewModel.selectedClient != null && !viewModel.isCreatingClient && showQuickClientDialog) {
+            showQuickClientDialog = false
+            viewModel.quickClientError = null
+        }
+    }
+}
+
+@Composable
+fun QuickClientDialog(
+    isCreating: Boolean,
+    error: String?,
+    onDismiss: () -> Unit,
+    onSave: (name: String, email: String, phone: String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = { if (!isCreating) onDismiss() },
+        title = {
+            Text("Nuevo Cliente", style = MaterialTheme.typography.titleLarge)
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre *") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    isError = error != null && name.isBlank(),
+                    shape = MaterialTheme.shapes.small,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SolennixTheme.colors.primary,
+                        focusedLabelColor = SolennixTheme.colors.primary,
+                        cursorColor = SolennixTheme.colors.primary
+                    )
+                )
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                    shape = MaterialTheme.shapes.small,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SolennixTheme.colors.primary,
+                        focusedLabelColor = SolennixTheme.colors.primary,
+                        cursorColor = SolennixTheme.colors.primary
+                    )
+                )
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = { Text("Teléfono") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                    shape = MaterialTheme.shapes.small,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SolennixTheme.colors.primary,
+                        focusedLabelColor = SolennixTheme.colors.primary,
+                        cursorColor = SolennixTheme.colors.primary
+                    )
+                )
+
+                if (error != null) {
+                    Text(
+                        text = error,
+                        color = SolennixTheme.colors.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(name, email, phone) },
+                enabled = !isCreating && name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = SolennixTheme.colors.primary)
+            ) {
+                if (isCreating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isCreating
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -309,6 +575,8 @@ fun StepProducts(viewModel: EventFormViewModel) {
                         item = item,
                         availableProducts = viewModel.availableProducts.value,
                         onQuantityChange = { viewModel.updateProductQuantity(item.productId, it) },
+                        onDiscountChange = { viewModel.updateProductDiscount(item.productId, it) },
+                        onSetNumPeople = { viewModel.setProductQuantityToNumPeople(item.productId) },
                         onRemove = { viewModel.removeProduct(item.productId) }
                     )
                 }
@@ -321,7 +589,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
             viewModel = viewModel,
             onDismiss = { showProductPicker = false },
             onProductSelected = { product ->
-                viewModel.addProduct(product, 1)
+                viewModel.addProduct(product, 1.0)
                 showProductPicker = false
             }
         )
@@ -332,34 +600,74 @@ fun StepProducts(viewModel: EventFormViewModel) {
 fun ProductSelectionItem(
     item: com.creapolis.solennix.core.model.EventProduct,
     availableProducts: List<com.creapolis.solennix.core.model.Product>,
-    onQuantityChange: (Int) -> Unit,
+    onQuantityChange: (Double) -> Unit,
+    onDiscountChange: (Double) -> Unit,
+    onSetNumPeople: () -> Unit,
     onRemove: () -> Unit
 ) {
     val product = availableProducts.find { it.id == item.productId } ?: return
-    
+    var discountText by remember(item.discount) { mutableStateOf(if (item.discount > 0) item.discount.toString() else "") }
+    val effectivePrice = item.unitPrice - item.discount
+    val lineTotal = effectivePrice * item.quantity
+
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight)
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(product.name, style = MaterialTheme.typography.titleSmall)
-                Text(item.unitPrice.asMXN(), style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.primary)
-            }
-            
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { onQuantityChange(item.quantity - 1) }) {
-                    Icon(Icons.Default.Remove, contentDescription = "Menos", modifier = Modifier.size(18.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(product.name, style = MaterialTheme.typography.titleSmall)
+                    Text(item.unitPrice.asMXN(), style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.primary)
                 }
-                Text(item.quantity.toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
-                IconButton(onClick = { onQuantityChange(item.quantity + 1) }) {
-                    Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(18.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { onQuantityChange(item.quantity - 1.0) }) {
+                        Icon(Icons.Default.Remove, contentDescription = "Menos", modifier = Modifier.size(18.dp))
+                    }
+                    Text(item.quantity.toInt().toString(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 4.dp))
+                    IconButton(onClick = { onQuantityChange(item.quantity + 1.0) }) {
+                        Icon(Icons.Default.Add, contentDescription = "Mas", modifier = Modifier.size(18.dp))
+                    }
+                    // Set quantity to num_people button (Gap 3)
+                    IconButton(onClick = onSetNumPeople, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.People, contentDescription = "Usar num. personas", tint = SolennixTheme.colors.info, modifier = Modifier.size(18.dp))
+                    }
+                }
+
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = SolennixTheme.colors.error, modifier = Modifier.size(20.dp))
                 }
             }
-            
-            IconButton(onClick = onRemove) {
-                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = SolennixTheme.colors.error, modifier = Modifier.size(20.dp))
+
+            // Per-product discount row (Gap 2)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                OutlinedTextField(
+                    value = discountText,
+                    onValueChange = { value ->
+                        discountText = value
+                        val d = value.toDoubleOrNull() ?: 0.0
+                        onDiscountChange(d)
+                    },
+                    label = { Text("Descuento", style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.width(110.dp).height(52.dp),
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                    shape = MaterialTheme.shapes.small
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Total: ${lineTotal.asMXN()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (item.discount > 0) SolennixTheme.colors.success else SolennixTheme.colors.primaryText
+                )
             }
         }
     }
@@ -369,7 +677,9 @@ fun ProductSelectionItem(
 fun StepExtras(viewModel: EventFormViewModel) {
     var showAddExtra by remember { mutableStateOf(false) }
     var extraDesc by remember { mutableStateOf("") }
+    var extraCost by remember { mutableStateOf("") }
     var extraPrice by remember { mutableStateOf("") }
+    var extraExcludeUtility by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.padding(24.dp)) {
         Text("Extras y Descuentos", style = MaterialTheme.typography.headlineSmall)
@@ -383,31 +693,66 @@ fun StepExtras(viewModel: EventFormViewModel) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Nuevo Extra", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(8.dp))
-                    SolennixTextField(value = extraDesc, onValueChange = { extraDesc = it }, label = "Descripción")
+                    SolennixTextField(value = extraDesc, onValueChange = { extraDesc = it }, label = "Descripcion")
                     Spacer(modifier = Modifier.height(8.dp))
-                    SolennixTextField(
-                        value = extraPrice, 
-                        onValueChange = { extraPrice = it }, 
-                        label = "Precio", 
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SolennixTextField(
+                            value = extraCost,
+                            onValueChange = {
+                                extraCost = it
+                                if (extraExcludeUtility) extraPrice = it
+                            },
+                            label = "Costo",
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+                            modifier = Modifier.weight(1f)
+                        )
+                        SolennixTextField(
+                            value = extraPrice,
+                            onValueChange = { if (!extraExcludeUtility) extraPrice = it },
+                            label = "Precio",
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+                            modifier = Modifier.weight(1f),
+                            enabled = !extraExcludeUtility
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = extraExcludeUtility,
+                            onCheckedChange = { checked ->
+                                extraExcludeUtility = checked
+                                if (checked) extraPrice = extraCost
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Solo cobrar costo", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row {
-                        TextButton(onClick = { showAddExtra = false }) { Text("Cancelar") }
+                        TextButton(onClick = {
+                            showAddExtra = false
+                            extraExcludeUtility = false
+                        }) { Text("Cancelar") }
                         Spacer(modifier = Modifier.weight(1f))
                         Button(onClick = {
+                            val c = extraCost.toDoubleOrNull() ?: 0.0
                             val p = extraPrice.toDoubleOrNull() ?: 0.0
-                            viewModel.addExtra(extraDesc, p)
+                            viewModel.addExtra(extraDesc, c, p, extraExcludeUtility)
                             extraDesc = ""
+                            extraCost = ""
                             extraPrice = ""
+                            extraExcludeUtility = false
                             showAddExtra = false
-                        }) { Text("Añadir") }
+                        }) { Text("Anadir") }
                     }
                 }
             }
         } else {
             PremiumButton(
-                text = "Añadir Cargo Extra", 
+                text = "Anadir Cargo Extra",
                 onClick = { showAddExtra = true },
                 style = ButtonStyle.Secondary,
                 icon = Icons.Default.Add
@@ -418,18 +763,28 @@ fun StepExtras(viewModel: EventFormViewModel) {
 
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(viewModel.eventExtras) { extra ->
-                ListItem(
-                    headlineContent = { Text(extra.description) },
-                    trailingContent = { 
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(extra.price.asMXN(), color = SolennixTheme.colors.primary)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(extra.description, style = MaterialTheme.typography.titleSmall)
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Text("Costo: ${extra.cost.asMXN()}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
+                                    Text("Precio: ${extra.price.asMXN()}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.primary)
+                                }
+                                if (extra.excludeUtility) {
+                                    Text("Solo cobrar costo", style = MaterialTheme.typography.labelSmall, color = SolennixTheme.colors.warning)
+                                }
+                            }
                             IconButton(onClick = { viewModel.removeExtra(extra.id) }) {
                                 Icon(Icons.Default.Close, contentDescription = "Quitar", tint = SolennixTheme.colors.error)
                             }
                         }
                     }
-                )
-                HorizontalDivider(color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+                }
             }
         }
 
@@ -744,17 +1099,6 @@ fun StepSupplies(viewModel: EventFormViewModel) {
             }
         }
 
-        // Notes at the bottom
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-            SolennixTextField(
-                value = viewModel.notes,
-                onValueChange = { viewModel.notes = it },
-                label = "Notas Adicionales",
-                leadingIcon = Icons.Default.Notes,
-                modifier = Modifier.heightIn(min = 100.dp)
-            )
-        }
     }
 
     if (showSupplyPicker) {
@@ -837,58 +1181,179 @@ fun SupplySelectionItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StepSummary(viewModel: EventFormViewModel) {
-    Column(modifier = Modifier.padding(24.dp)) {
-        Text("Resumen del Evento", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text(viewModel.serviceType.ifBlank { "Nuevo Evento" }, style = MaterialTheme.typography.titleLarge)
-                Text(viewModel.selectedClient?.name ?: "Sin cliente asignado", color = SolennixTheme.colors.secondaryText)
-                Spacer(modifier = Modifier.height(16.dp))
-                Row {
-                    Icon(Icons.Default.CalendarToday, null, Modifier.size(16.dp), tint = SolennixTheme.colors.tertiaryText)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(viewModel.eventDate.toString(), style = MaterialTheme.typography.bodySmall)
+fun StepSummary(viewModel: EventFormViewModel, isEditMode: Boolean = false) {
+    LazyColumn(modifier = Modifier.padding(24.dp)) {
+        item {
+            Text("Resumen y Finanzas", style = MaterialTheme.typography.headlineSmall)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Event summary card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(viewModel.serviceType.ifBlank { "Nuevo Evento" }, style = MaterialTheme.typography.titleLarge)
+                    Text(viewModel.selectedClient?.name ?: "Sin cliente asignado", color = SolennixTheme.colors.secondaryText)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row {
+                        Icon(Icons.Default.CalendarToday, null, Modifier.size(16.dp), tint = SolennixTheme.colors.tertiaryText)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(viewModel.eventDate.toString(), style = MaterialTheme.typography.bodySmall)
+                        if (viewModel.startTime.isNotBlank()) {
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Icon(Icons.Default.Schedule, null, Modifier.size(16.dp), tint = SolennixTheme.colors.tertiaryText)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                "${viewModel.startTime} - ${viewModel.endTime}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                 }
             }
-        }
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        SummaryRow("Subtotal", viewModel.subtotal.asMXN())
-        if (viewModel.discount.toDoubleOrNull() ?: 0.0 > 0) {
-            val label = if (viewModel.discountType == com.creapolis.solennix.core.model.DiscountType.PERCENT) "Descuento (${viewModel.discount}%)" else "Descuento"
-            val discountValue = if (viewModel.discountType == com.creapolis.solennix.core.model.DiscountType.PERCENT) 
-                viewModel.subtotal * (viewModel.discount.toDouble() / 100)
-            else viewModel.discount.toDouble()
-            
-            SummaryRow(label, "-${discountValue.asMXN()}", color = SolennixTheme.colors.success)
-        }
-        
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-        SummaryRow("Total a Cobrar", viewModel.total.asMXN(), isTotal = true)
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        Surface(
-            color = SolennixTheme.colors.info.copy(alpha = 0.1f),
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Info, null, tint = SolennixTheme.colors.info)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    "Al finalizar, se creará el evento en estado 'Cotizado'. Podrás generar el PDF de presupuesto desde el detalle.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = SolennixTheme.colors.info
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Invoice section ---
+            Text("Facturación", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Requiere Factura", style = MaterialTheme.typography.bodyLarge)
+                Switch(
+                    checked = viewModel.requiresInvoice,
+                    onCheckedChange = { viewModel.requiresInvoice = it },
+                    colors = SwitchDefaults.colors(checkedTrackColor = SolennixTheme.colors.primary)
                 )
+            }
+
+            if (viewModel.requiresInvoice) {
+                Spacer(modifier = Modifier.height(12.dp))
+                SolennixTextField(
+                    value = viewModel.taxRate,
+                    onValueChange = { viewModel.taxRate = it },
+                    label = "Tasa IVA (%)",
+                    leadingIcon = Icons.Default.Receipt,
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Payment conditions ---
+            Text("Condiciones de Pago", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SolennixTextField(
+                value = viewModel.depositPercent,
+                onValueChange = { viewModel.depositPercent = it },
+                label = "Anticipo (%)",
+                leadingIcon = Icons.Default.Payments,
+                keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SolennixTextField(
+                    value = viewModel.cancellationDays,
+                    onValueChange = { viewModel.cancellationDays = it },
+                    label = "Días Cancelación",
+                    leadingIcon = Icons.Default.EventBusy,
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+                    modifier = Modifier.weight(1f)
+                )
+
+                SolennixTextField(
+                    value = viewModel.refundPercent,
+                    onValueChange = { viewModel.refundPercent = it },
+                    label = "Reembolso (%)",
+                    leadingIcon = Icons.Default.Undo,
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Financial summary ---
+            Text("Desglose Financiero", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SummaryRow("Subtotal Productos", viewModel.subtotalProducts.asMXN())
+            SummaryRow("Subtotal Extras", viewModel.subtotalExtras.asMXN())
+
+            if (viewModel.discountAmount > 0) {
+                val discLabel = if (viewModel.discountType == com.creapolis.solennix.core.model.DiscountType.PERCENT)
+                    "Descuento (${viewModel.discount}%)" else "Descuento"
+                SummaryRow(discLabel, "-${viewModel.discountAmount.asMXN()}", color = SolennixTheme.colors.success)
+            }
+
+            if (viewModel.requiresInvoice && viewModel.taxAmount > 0) {
+                SummaryRow("IVA (${viewModel.taxRate}%)", "+${viewModel.taxAmount.asMXN()}")
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            SummaryRow("Total a Cobrar", viewModel.total.asMXN(), isTotal = true)
+
+            // Deposit info
+            val depositPct = viewModel.depositPercent.toDoubleOrNull() ?: 0.0
+            if (depositPct > 0) {
+                val depositAmount = viewModel.total * (depositPct / 100)
+                Spacer(modifier = Modifier.height(8.dp))
+                SummaryRow("Anticipo (${viewModel.depositPercent}%)", depositAmount.asMXN(), color = SolennixTheme.colors.info)
+                SummaryRow("Resto", (viewModel.total - depositAmount).asMXN(), color = SolennixTheme.colors.secondaryText)
+            }
+
+            // Profitability Metrics (Gap 5)
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text("Rentabilidad (Interno)", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SummaryRow("Costo Productos", viewModel.costProducts.asMXN(), color = SolennixTheme.colors.secondaryText)
+            SummaryRow("Costo Extras", viewModel.costExtras.asMXN(), color = SolennixTheme.colors.secondaryText)
+            if (viewModel.costSupplies > 0) {
+                SummaryRow("Costo Insumos", viewModel.costSupplies.asMXN(), color = SolennixTheme.colors.warning)
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = SolennixTheme.colors.divider.copy(alpha = 0.3f))
+            SummaryRow("Costo Total", viewModel.totalCosts.asMXN(), color = SolennixTheme.colors.secondaryText)
+
+            Spacer(modifier = Modifier.height(8.dp))
+            SummaryRow("Ganancia Neta", viewModel.netProfit.asMXN(), color = if (viewModel.netProfit >= 0) SolennixTheme.colors.success else SolennixTheme.colors.error)
+            SummaryRow("Margen", String.format("%.1f%%", viewModel.profitMargin), color = SolennixTheme.colors.info)
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Surface(
+                color = SolennixTheme.colors.info.copy(alpha = 0.1f),
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, null, tint = SolennixTheme.colors.info)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        if (isEditMode) "Al guardar, se actualizarán los datos del evento."
+                        else "Al finalizar, se creará el evento. Podrás generar el PDF de presupuesto desde el detalle.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.info
+                    )
+                }
             }
         }
     }

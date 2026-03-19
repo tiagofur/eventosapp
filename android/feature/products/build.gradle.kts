@@ -27,7 +27,6 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
 
-    // Serialization (for JsonElement in Product model)
     implementation(libs.kotlinx.serialization.json)
 
     val composeBom = platform(libs.compose.bom)

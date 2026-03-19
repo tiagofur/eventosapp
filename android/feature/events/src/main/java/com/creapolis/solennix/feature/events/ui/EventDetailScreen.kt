@@ -1,10 +1,11 @@
 package com.creapolis.solennix.feature.events.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,13 +18,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.*
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.model.DiscountType
+import com.creapolis.solennix.core.model.EventEquipment
+import com.creapolis.solennix.core.model.EventExtra
+import com.creapolis.solennix.core.model.EventProduct
 import com.creapolis.solennix.core.model.EventStatus
+import com.creapolis.solennix.core.model.EventSupply
+import com.creapolis.solennix.core.model.SupplySource
+import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.pdf.BudgetPdfGenerator
 import com.creapolis.solennix.feature.events.pdf.ChecklistPdfGenerator
 import com.creapolis.solennix.feature.events.pdf.ContractPdfGenerator
@@ -49,6 +59,7 @@ fun EventDetailScreen(
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     var showPaymentModal by remember { mutableStateOf(false) }
+    var paymentInitialAmount by remember { mutableStateOf<Double?>(null) }
     var showPhotoGallery by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -108,46 +119,113 @@ fun EventDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    EventCard(event = event)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // A. Client Info Header
+                    ClientInfoHeader(
+                        client = uiState.client,
+                        onPhoneClick = { phone ->
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone"))
+                            context.startActivity(intent)
+                        },
+                        onEmailClick = { email ->
+                            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$email"))
+                            context.startActivity(intent)
+                        }
+                    )
+
+                    // B. Event Info Card
+                    EventInfoCard(event = event)
 
                     // Status Change Section
                     StatusChangeSection(
                         currentStatus = event.status,
                         onStatusChange = { newStatus -> viewModel.updateEventStatus(newStatus) }
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Financial Summary
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Finanzas", style = MaterialTheme.typography.titleMedium)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            SummaryRow("Total del Evento", "$${event.totalAmount}", isTotal = true)
-                            SummaryRow("Pagado", "$${uiState.totalPaid}", color = SolennixTheme.colors.success)
-                            SummaryRow("Restante", "$${remaining}", color = if (remaining > 0) SolennixTheme.colors.error else SolennixTheme.colors.success)
-                        }
+                    // C. Products Section
+                    if (uiState.products.isNotEmpty()) {
+                        ProductsSection(
+                            products = uiState.products,
+                            productNames = uiState.productNames
+                        )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // D. Extras Section
+                    if (uiState.extras.isNotEmpty()) {
+                        ExtrasSection(extras = uiState.extras)
+                    }
+
+                    // E. Equipment Section
+                    if (uiState.equipment.isNotEmpty()) {
+                        EquipmentSection(equipment = uiState.equipment)
+                    }
+
+                    // F. Supplies Section
+                    if (uiState.supplies.isNotEmpty()) {
+                        SuppliesSection(supplies = uiState.supplies)
+                    }
+
+                    // G. Financial Breakdown Card
+                    FinancialBreakdownCard(
+                        event = event,
+                        products = uiState.products,
+                        extras = uiState.extras,
+                        totalPaid = uiState.totalPaid
+                    )
 
                     // Action Buttons
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PremiumButton(
                             text = "Registrar Pago",
-                            onClick = { showPaymentModal = true },
+                            onClick = {
+                                paymentInitialAmount = null
+                                showPaymentModal = true
+                            },
                             modifier = Modifier.weight(1f),
                             icon = Icons.Default.Add
                         )
+
+                        // Anticipo (deposit) quick-pay button
+                        val depositPct = event.depositPercent
+                        if (depositPct != null && depositPct > 0) {
+                            val depositTarget = event.totalAmount * depositPct / 100
+                            val depositRemaining = (depositTarget - uiState.totalPaid).coerceAtLeast(0.0)
+                            if (depositRemaining > 0) {
+                                OutlinedButton(
+                                    onClick = {
+                                        paymentInitialAmount = depositRemaining
+                                        showPaymentModal = true
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    shape = MaterialTheme.shapes.medium
+                                ) {
+                                    Icon(
+                                        Icons.Default.Savings,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Anticipo")
+                                }
+                            }
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    // H. Payments Section (existing)
+                    if (uiState.payments.isNotEmpty()) {
+                        PaymentsSection(
+                            uiState = uiState,
+                            onDeletePayment = { paymentId -> viewModel.deletePayment(paymentId) }
+                        )
+                    }
+
+                    // I. Checklist link
+                    ChecklistButton(onClick = { onChecklistClick(event.id) })
+
+                    // J. Documents/PDFs (existing)
                     Text("Generar Documentos", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(12.dp))
                     DocumentActionsGrid(
                         uiState = uiState,
                         context = context,
@@ -161,34 +239,8 @@ fun EventDetailScreen(
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    if (uiState.payments.isNotEmpty()) {
-                        Text("Historial de Pagos", style = MaterialTheme.typography.titleMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        uiState.payments.forEach { payment ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(payment.paymentDate, style = MaterialTheme.typography.bodySmall)
-                                        Text(payment.paymentMethod.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium)
-                                        if (!payment.notes.isNullOrEmpty()) {
-                                            Text(payment.notes.orEmpty(), style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
-                                        }
-                                    }
-                                    Text("$${payment.amount}", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.success)
-                                }
-                            }
-                        }
-                    }
+                    // Bottom spacing
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
 
@@ -207,9 +259,10 @@ fun EventDetailScreen(
             if (showPaymentModal) {
                 PaymentModal(
                     remaining = remaining,
+                    initialAmount = paymentInitialAmount,
                     onDismiss = { showPaymentModal = false },
-                    onConfirm = { amount, method, notes ->
-                        viewModel.addPayment(amount, method, notes)
+                    onConfirm = { amount, method, notes, date ->
+                        viewModel.addPayment(amount, method, notes, date)
                         showPaymentModal = false
                         Toast.makeText(context, "Pago registrado", Toast.LENGTH_SHORT).show()
                     }
@@ -223,8 +276,6 @@ fun EventDetailScreen(
                     isUploading = uiState.isPhotoUploading,
                     onDismiss = { showPhotoGallery = false },
                     onPhotoSelected = { uri ->
-                        // For now, we just use the URI as a placeholder
-                        // In production, you'd upload the image to a server and get a URL
                         viewModel.uploadPhoto(uri.toString())
                     },
                     onDeletePhoto = { photo ->
@@ -259,6 +310,905 @@ fun EventDetailScreen(
         }
     }
 }
+
+// ==================== A. Client Info Header ====================
+
+@Composable
+private fun ClientInfoHeader(
+    client: Client?,
+    onPhoneClick: (String) -> Unit,
+    onEmailClick: (String) -> Unit
+) {
+    if (client == null) return
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Avatar(name = client.name, photoUrl = client.photoUrl, size = 48.dp)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = client.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = SolennixTheme.colors.primaryText,
+                        fontWeight = FontWeight.Bold
+                    )
+                    val clientCity = client.city
+                    if (clientCity != null) {
+                        Text(
+                            text = clientCity,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            HorizontalDivider(color = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Phone
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onPhoneClick(client.phone) }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Phone,
+                    contentDescription = null,
+                    tint = SolennixTheme.colors.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = client.phone,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = SolennixTheme.colors.primary
+                )
+            }
+
+            // Email
+            if (!client.email.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onEmailClick(client.email!!) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Email,
+                        contentDescription = null,
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = client.email!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==================== B. Event Info Card ====================
+
+@Composable
+private fun EventInfoCard(event: com.creapolis.solennix.core.model.Event) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Celebration,
+                    contentDescription = null,
+                    tint = SolennixTheme.colors.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = event.serviceType,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = SolennixTheme.colors.primaryText,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Date
+            EventInfoRow(
+                icon = Icons.Default.CalendarToday,
+                label = "Fecha",
+                value = event.eventDate
+            )
+
+            // Time
+            val timeText = buildString {
+                event.startTime?.let { append(it) }
+                event.endTime?.let {
+                    if (isNotEmpty()) append(" - ")
+                    append(it)
+                }
+            }
+            if (timeText.isNotEmpty()) {
+                EventInfoRow(
+                    icon = Icons.Default.Schedule,
+                    label = "Horario",
+                    value = timeText
+                )
+            }
+
+            // Location
+            if (!event.location.isNullOrEmpty()) {
+                EventInfoRow(
+                    icon = Icons.Default.LocationOn,
+                    label = "Lugar",
+                    value = buildString {
+                        append(event.location)
+                        event.city?.let {
+                            if (it.isNotEmpty()) append(", $it")
+                        }
+                    }
+                )
+            }
+
+            // Num people
+            EventInfoRow(
+                icon = Icons.Default.People,
+                label = "Personas",
+                value = "${event.numPeople}"
+            )
+
+            // Status
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = null,
+                    tint = SolennixTheme.colors.secondaryText,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                StatusBadge(status = event.status.name)
+            }
+
+            // Notes
+            if (!event.notes.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f))
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Notas",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = event.notes!!,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = SolennixTheme.colors.primaryText
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventInfoRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = SolennixTheme.colors.secondaryText,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = SolennixTheme.colors.secondaryText
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = SolennixTheme.colors.primaryText
+            )
+        }
+    }
+}
+
+// ==================== C. Products Section ====================
+
+@Composable
+private fun ProductsSection(
+    products: List<EventProduct>,
+    productNames: Map<String, String>
+) {
+    var expanded by remember { mutableStateOf(true) }
+    val subtotal = products.sumOf { it.totalPrice ?: (it.quantity * it.unitPrice) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.ShoppingBag,
+                        contentDescription = null,
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Productos (${products.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Colapsar" else "Expandir",
+                    tint = SolennixTheme.colors.secondaryText
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    products.forEach { product ->
+                        val name = productNames[product.productId] ?: "Producto"
+                        val total = product.totalPrice ?: (product.quantity * product.unitPrice)
+                        ProductRow(
+                            name = name,
+                            quantity = product.quantity,
+                            unitPrice = product.unitPrice,
+                            total = total
+                        )
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Subtotal Productos",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = subtotal.asMXN(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SolennixTheme.colors.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductRow(
+    name: String,
+    quantity: Double,
+    unitPrice: Double,
+    total: Double
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = SolennixTheme.colors.primaryText,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "${quantity.formatQuantity()} x ${unitPrice.asMXN()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = SolennixTheme.colors.secondaryText
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = total.asMXN(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = SolennixTheme.colors.primaryText,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+// ==================== D. Extras Section ====================
+
+@Composable
+private fun ExtrasSection(extras: List<EventExtra>) {
+    var expanded by remember { mutableStateOf(true) }
+    val subtotal = extras.sumOf { it.price }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.AddCircleOutline,
+                        contentDescription = null,
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Extras (${extras.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Colapsar" else "Expandir",
+                    tint = SolennixTheme.colors.secondaryText
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    extras.forEach { extra ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = extra.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = SolennixTheme.colors.primaryText,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = extra.price.asMXN(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = SolennixTheme.colors.primaryText,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Subtotal Extras",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = subtotal.asMXN(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SolennixTheme.colors.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== E. Equipment Section ====================
+
+@Composable
+private fun EquipmentSection(equipment: List<EventEquipment>) {
+    var expanded by remember { mutableStateOf(true) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Inventory2,
+                        contentDescription = null,
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Equipo (${equipment.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Colapsar" else "Expandir",
+                    tint = SolennixTheme.colors.secondaryText
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    equipment.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.equipmentName ?: "Equipo",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = SolennixTheme.colors.primaryText
+                                )
+                                if (!item.notes.isNullOrEmpty()) {
+                                    Text(
+                                        text = item.notes!!,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = SolennixTheme.colors.secondaryText
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "x${item.quantity}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = SolennixTheme.colors.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== F. Supplies Section ====================
+
+@Composable
+private fun SuppliesSection(supplies: List<EventSupply>) {
+    var expanded by remember { mutableStateOf(true) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.LocalGroceryStore,
+                        contentDescription = null,
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Insumos (${supplies.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Colapsar" else "Expandir",
+                    tint = SolennixTheme.colors.secondaryText
+                )
+            }
+
+            AnimatedVisibility(visible = expanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    supplies.forEach { supply ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = supply.supplyName ?: "Insumo",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = SolennixTheme.colors.primaryText
+                                )
+                                val sourceLabel = when (supply.source) {
+                                    SupplySource.STOCK -> "Stock"
+                                    SupplySource.PURCHASE -> "Comprar"
+                                }
+                                Text(
+                                    text = "${supply.quantity.formatQuantity()} ${supply.unit ?: "pz"} | $sourceLabel",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SolennixTheme.colors.secondaryText
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = supply.unitCost.asMXN(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = SolennixTheme.colors.primaryText,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== G. Financial Breakdown Card ====================
+
+@Composable
+private fun FinancialBreakdownCard(
+    event: com.creapolis.solennix.core.model.Event,
+    products: List<EventProduct>,
+    extras: List<EventExtra>,
+    totalPaid: Double
+) {
+    val productsTotal = products.sumOf { it.totalPrice ?: (it.quantity * it.unitPrice) }
+    val extrasTotal = extras.sumOf { it.price }
+    val subtotal = productsTotal + extrasTotal
+    val remaining = event.totalAmount - totalPaid
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.AccountBalance,
+                    contentDescription = null,
+                    tint = SolennixTheme.colors.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Desglose Financiero",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Subtotal products
+            if (products.isNotEmpty()) {
+                FinancialRow("Subtotal Productos", productsTotal.asMXN())
+            }
+
+            // Subtotal extras
+            if (extras.isNotEmpty()) {
+                FinancialRow("Subtotal Extras", extrasTotal.asMXN())
+            }
+
+            // Subtotal
+            if (products.isNotEmpty() && extras.isNotEmpty()) {
+                FinancialRow("Subtotal", subtotal.asMXN())
+            }
+
+            // Discount
+            if (event.discount > 0) {
+                val discountLabel = if (event.discountType == DiscountType.PERCENT) {
+                    "Descuento (${event.discount.toInt()}%)"
+                } else {
+                    "Descuento"
+                }
+                val discountAmount = if (event.discountType == DiscountType.PERCENT) {
+                    subtotal * event.discount / 100
+                } else {
+                    event.discount
+                }
+                FinancialRow(
+                    discountLabel,
+                    "-${discountAmount.asMXN()}",
+                    valueColor = SolennixTheme.colors.error
+                )
+            }
+
+            // IVA/Tax
+            if (event.requiresInvoice && event.taxRate > 0) {
+                FinancialRow(
+                    "IVA (${event.taxRate.toInt()}%)",
+                    event.taxAmount.asMXN()
+                )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                color = SolennixTheme.colors.secondaryText.copy(alpha = 0.3f)
+            )
+
+            // Total
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "TOTAL",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = SolennixTheme.colors.primaryText
+                )
+                Text(
+                    text = event.totalAmount.asMXN(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = SolennixTheme.colors.primary
+                )
+            }
+
+            // Paid
+            FinancialRow(
+                "Pagado",
+                totalPaid.asMXN(),
+                valueColor = SolennixTheme.colors.success
+            )
+
+            // Remaining
+            FinancialRow(
+                "Restante",
+                remaining.asMXN(),
+                valueColor = if (remaining > 0) SolennixTheme.colors.error else SolennixTheme.colors.success
+            )
+
+            // Payment Progress Bar
+            if (event.totalAmount > 0) {
+                Spacer(modifier = Modifier.height(12.dp))
+                val paymentProgress = (totalPaid / event.totalAmount).coerceIn(0.0, 1.0)
+                val percentText = "${(paymentProgress * 100).toInt()}% pagado"
+                Text(
+                    text = percentText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { paymentProgress.toFloat() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp),
+                    color = SolennixTheme.colors.success,
+                    trackColor = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f),
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+            }
+
+            // Deposit
+            val depositPct = event.depositPercent
+            if (depositPct != null && depositPct > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(
+                    color = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                val depositAmount = event.totalAmount * depositPct / 100
+                FinancialRow(
+                    "Anticipo (${depositPct.toInt()}%)",
+                    depositAmount.asMXN(),
+                    valueColor = SolennixTheme.colors.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinancialRow(
+    label: String,
+    value: String,
+    valueColor: androidx.compose.ui.graphics.Color = SolennixTheme.colors.primaryText
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SolennixTheme.colors.secondaryText
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = valueColor,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+// ==================== H. Payments Section ====================
+
+@Composable
+private fun PaymentsSection(
+    uiState: EventDetailUiState,
+    onDeletePayment: (String) -> Unit = {}
+) {
+    var paymentToDelete by remember { mutableStateOf<String?>(null) }
+
+    Text(
+        text = "Historial de Pagos (${uiState.payments.size})",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold
+    )
+    uiState.payments.forEach { payment ->
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(payment.paymentDate, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        when (payment.paymentMethod) {
+                            "cash", "efectivo" -> "Efectivo"
+                            "transfer", "transferencia" -> "Transferencia"
+                            "card", "tarjeta" -> "Tarjeta"
+                            "check", "cheque" -> "Cheque"
+                            else -> payment.paymentMethod.replaceFirstChar { it.uppercase() }
+                        },
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    if (!payment.notes.isNullOrEmpty()) {
+                        Text(
+                            payment.notes.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
+                }
+                Text(
+                    payment.amount.asMXN(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SolennixTheme.colors.success
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = { paymentToDelete = payment.id },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Eliminar pago",
+                        tint = SolennixTheme.colors.secondaryText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+
+    if (paymentToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { paymentToDelete = null },
+            title = { Text("Eliminar Pago") },
+            text = { Text("\u00bfEst\u00e1s seguro de que deseas eliminar este pago? El saldo se actualizar\u00e1 autom\u00e1ticamente.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        paymentToDelete?.let { onDeletePayment(it) }
+                        paymentToDelete = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = SolennixTheme.colors.error)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { paymentToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+// ==================== I. Checklist Button ====================
+
+@Composable
+private fun ChecklistButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Icon(
+            Icons.AutoMirrored.Filled.PlaylistAddCheck,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text("Ver Checklist del Evento")
+    }
+}
+
+// ==================== Status Change Section ====================
 
 @Composable
 fun StatusChangeSection(
@@ -314,62 +1264,7 @@ fun StatusChangeSection(
     }
 }
 
-@Composable
-fun EventCard(event: com.creapolis.solennix.core.model.Event) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusBadge(status = event.status.name)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = event.eventDate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = SolennixTheme.colors.secondaryText
-                )
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = event.serviceType,
-                style = MaterialTheme.typography.headlineSmall,
-                color = SolennixTheme.colors.primaryText
-            )
-            Text(
-                text = "${event.numPeople} personas",
-                style = MaterialTheme.typography.bodyMedium,
-                color = SolennixTheme.colors.secondaryText
-            )
-            if (!event.location.isNullOrEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = SolennixTheme.colors.secondaryText, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(event.location.orEmpty(), style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryRow(label: String, value: String, isTotal: Boolean = false, color: androidx.compose.ui.graphics.Color = SolennixTheme.colors.primaryText) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            text = label,
-            style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isTotal) androidx.compose.ui.text.font.FontWeight.Bold else null
-        )
-        Text(
-            text = value,
-            style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-            color = if (isTotal) SolennixTheme.colors.primary else color,
-            fontWeight = if (isTotal) androidx.compose.ui.text.font.FontWeight.Bold else null
-        )
-    }
-}
+// ==================== Documents Grid ====================
 
 @Composable
 fun DocumentActionsGrid(
@@ -453,7 +1348,7 @@ fun DocumentActionsGrid(
                             event = event,
                             client = client,
                             products = uiState.products,
-                            inventoryItems = emptyList(), // TODO: Load inventory items
+                            inventoryItems = emptyList(),
                             user = uiState.currentUser
                         )
                         onSharePdf(file)
@@ -524,7 +1419,7 @@ fun DocumentActionsGrid(
                             context = context,
                             event = event,
                             client = client,
-                            supplies = emptyList(), // TODO: Load event supplies
+                            supplies = emptyList(),
                             user = uiState.currentUser
                         )
                         onSharePdf(file)
@@ -549,7 +1444,7 @@ fun DocumentActionsGrid(
                             context = context,
                             event = event,
                             client = client,
-                            inventoryItems = emptyList(), // TODO: Load inventory items
+                            inventoryItems = emptyList(),
                             user = uiState.currentUser
                         )
                         onSharePdf(file)
@@ -623,12 +1518,44 @@ fun ActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, label: S
 @Composable
 fun PaymentModal(
     remaining: Double,
+    initialAmount: Double? = null,
     onDismiss: () -> Unit,
-    onConfirm: (Double, String, String) -> Unit
+    onConfirm: (Double, String, String, String) -> Unit
 ) {
-    var amount by remember { mutableStateOf(if (remaining > 0) remaining.toString() else "") }
+    val prefillAmount = initialAmount ?: if (remaining > 0) remaining else null
+    var amount by remember { mutableStateOf(prefillAmount?.toString() ?: "") }
     var method by remember { mutableStateOf("efectivo") }
     var notes by remember { mutableStateOf("") }
+    var paymentDate by remember { mutableStateOf(java.time.LocalDate.now().toString()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val instant = java.time.Instant.ofEpochMilli(millis)
+                        val localDate = instant.atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        paymentDate = localDate.toString()
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Aceptar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -648,13 +1575,39 @@ fun PaymentModal(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Payment Date
+            OutlinedTextField(
+                value = paymentDate,
+                onValueChange = {},
+                label = { Text("Fecha de Pago") },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "Seleccionar fecha")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text("M\u00e9todo de Pago", style = MaterialTheme.typography.labelMedium)
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("efectivo", "transferencia", "tarjeta").forEach { opt ->
+                listOf("efectivo" to "Efectivo", "transferencia" to "Transferencia", "tarjeta" to "Tarjeta").forEach { (key, label) ->
                     FilterChip(
-                        selected = method == opt,
-                        onClick = { method = opt },
-                        label = { Text(opt.replaceFirstChar { it.uppercase() }) }
+                        selected = method == key,
+                        onClick = { method = key },
+                        label = { Text(label) }
+                    )
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("cheque" to "Cheque", "otro" to "Otro").forEach { (key, label) ->
+                    FilterChip(
+                        selected = method == key,
+                        onClick = { method = key },
+                        label = { Text(label) }
                     )
                 }
             }
@@ -672,12 +1625,22 @@ fun PaymentModal(
                 onClick = {
                     val amt = amount.toDoubleOrNull()
                     if (amt != null && amt > 0) {
-                        onConfirm(amt, method, notes)
+                        onConfirm(amt, method, notes, paymentDate)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+// ==================== Utility ====================
+
+private fun Double.formatQuantity(): String {
+    return if (this == this.toLong().toDouble()) {
+        this.toLong().toString()
+    } else {
+        "%.1f".format(this)
     }
 }

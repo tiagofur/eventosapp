@@ -1,12 +1,17 @@
 package com.creapolis.solennix.feature.inventory.ui
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -15,9 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.InventoryItem
+import com.creapolis.solennix.core.model.InventoryType
 import com.creapolis.solennix.feature.inventory.viewmodel.InventoryListViewModel
-
-import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,34 +44,101 @@ fun InventoryListScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { viewModel.onSearchQueryChange(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                placeholder = { Text("Buscar en inventario...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                shape = MaterialTheme.shapes.medium,
-                singleLine = true
-            )
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text("Buscar en inventario...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    shape = MaterialTheme.shapes.medium,
+                    singleLine = true
+                )
 
-            if (uiState.isLoading && uiState.items.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                // Type filter chips
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = uiState.selectedType == null,
+                        onClick = { viewModel.onTypeFilterChange(null) },
+                        label = { Text("Todos") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SolennixTheme.colors.primaryLight,
+                            selectedLabelColor = SolennixTheme.colors.primary
+                        )
+                    )
+                    FilterChip(
+                        selected = uiState.selectedType == InventoryType.INGREDIENT,
+                        onClick = { viewModel.onTypeFilterChange(InventoryType.INGREDIENT) },
+                        label = { Text("Ingredientes") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SolennixTheme.colors.primaryLight,
+                            selectedLabelColor = SolennixTheme.colors.primary
+                        )
+                    )
+                    FilterChip(
+                        selected = uiState.selectedType == InventoryType.EQUIPMENT,
+                        onClick = { viewModel.onTypeFilterChange(InventoryType.EQUIPMENT) },
+                        label = { Text("Equipo") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SolennixTheme.colors.primaryLight,
+                            selectedLabelColor = SolennixTheme.colors.primary
+                        )
+                    )
+                    FilterChip(
+                        selected = uiState.selectedType == InventoryType.SUPPLY,
+                        onClick = { viewModel.onTypeFilterChange(InventoryType.SUPPLY) },
+                        label = { Text("Insumos") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SolennixTheme.colors.primaryLight,
+                            selectedLabelColor = SolennixTheme.colors.primary
+                        )
+                    )
+
+                    FilterChip(
+                        selected = uiState.lowStockOnly,
+                        onClick = { viewModel.onLowStockToggle(!uiState.lowStockOnly) },
+                        label = { Text("Solo bajo stock") },
+                        leadingIcon = if (uiState.lowStockOnly) {
+                            { Icon(Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else null,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = SolennixTheme.colors.error.copy(alpha = 0.1f),
+                            selectedLabelColor = SolennixTheme.colors.error
+                        )
+                    )
                 }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(uiState.items) { item ->
-                        InventoryListItem(
-                            item = item,
-                            onClick = { onItemClick(item.id) }
-                        )
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = SolennixTheme.colors.divider.copy(alpha = 0.5f)
-                        )
+
+                if (uiState.isLoading && uiState.items.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(uiState.items) { item ->
+                            InventoryListItem(
+                                item = item,
+                                onClick = { onItemClick(item.id) }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                color = SolennixTheme.colors.divider.copy(alpha = 0.5f)
+                            )
+                        }
                     }
                 }
             }

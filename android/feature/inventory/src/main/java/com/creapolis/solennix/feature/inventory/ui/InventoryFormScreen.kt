@@ -9,13 +9,14 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
+import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.model.InventoryType
 import com.creapolis.solennix.feature.inventory.viewmodel.InventoryFormViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +65,31 @@ fun InventoryFormScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Type selector
+                Text(
+                    text = "Tipo *",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    val types = listOf(
+                        InventoryType.INGREDIENT to "Ingrediente",
+                        InventoryType.EQUIPMENT to "Equipo",
+                        InventoryType.SUPPLY to "Insumo"
+                    )
+                    types.forEachIndexed { index, (type, label) ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = types.size),
+                            onClick = { viewModel.type = type },
+                            selected = viewModel.type == type
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     SolennixTextField(
                         value = viewModel.currentStock,
@@ -82,14 +108,53 @@ fun InventoryFormScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Unit dropdown with common options
+                val commonUnits = listOf("pieza", "kg", "g", "l", "ml", "caja", "paquete")
+                var unitExpanded by remember { mutableStateOf(false) }
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    SolennixTextField(
-                        value = viewModel.unit,
-                        onValueChange = { viewModel.unit = it },
-                        label = "Unidad (ej. kg) *",
-                        leadingIcon = Icons.Default.Scale,
+                    ExposedDropdownMenuBox(
+                        expanded = unitExpanded,
+                        onExpandedChange = { unitExpanded = it },
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = viewModel.unit,
+                            onValueChange = { viewModel.unit = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryEditable),
+                            label = { Text("Unidad *") },
+                            leadingIcon = { Icon(Icons.Default.Scale, contentDescription = null) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
+                            shape = MaterialTheme.shapes.small,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = SolennixTheme.colors.primary,
+                                focusedLabelColor = SolennixTheme.colors.primary,
+                                cursorColor = SolennixTheme.colors.primary
+                            ),
+                            singleLine = true
+                        )
+                        val filteredUnits = commonUnits.filter {
+                            it.contains(viewModel.unit, ignoreCase = true)
+                        }
+                        if (filteredUnits.isNotEmpty()) {
+                            ExposedDropdownMenu(
+                                expanded = unitExpanded,
+                                onDismissRequest = { unitExpanded = false }
+                            ) {
+                                filteredUnits.forEach { unitOption ->
+                                    DropdownMenuItem(
+                                        text = { Text(unitOption) },
+                                        onClick = {
+                                            viewModel.unit = unitOption
+                                            unitExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     SolennixTextField(
                         value = viewModel.unitCost,
                         onValueChange = { viewModel.unitCost = it },

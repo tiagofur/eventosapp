@@ -25,6 +25,7 @@ class KtorClient @Inject constructor(
                 ignoreUnknownKeys = true
                 isLenient = true
                 encodeDefaults = false
+                coerceInputValues = true
             })
         }
         install(Auth) {
