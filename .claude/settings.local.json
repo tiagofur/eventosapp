@@ -216,7 +216,8 @@
       "Read(//tmp/**)",
       "Bash(./gradlew clean:*)",
       "Bash(./gradlew :feature:calendar:compileDebugKotlin)",
-      "Bash(grep -r TopLevelDestination.CALENDAR /c/Users/tfurt/source/repos/eventosapp/android --include=*.kt)"
+      "Bash(grep -r TopLevelDestination.CALENDAR /c/Users/tfurt/source/repos/eventosapp/android --include=*.kt)",
+      "Bash(grep:*)"
     ]
   }
 }

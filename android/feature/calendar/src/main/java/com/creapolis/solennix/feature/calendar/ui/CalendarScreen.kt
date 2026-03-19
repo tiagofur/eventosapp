@@ -285,59 +285,66 @@ fun CalendarViewContent(
     onDateLongPress: (LocalDate) -> Unit = {},
     onEventClick: (String) -> Unit
 ) {
-    Column {
-        CalendarHeader(
-            currentMonth = uiState.currentMonth,
-            onPreviousMonth = onPreviousMonth,
-            onNextMonth = onNextMonth,
-            onGoToToday = onGoToToday
-        )
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
 
-        CalendarGrid(
-            currentMonth = uiState.currentMonth,
-            selectedDate = uiState.selectedDate,
-            onDateSelected = onDateSelected,
-            onDateLongPress = onDateLongPress,
-            events = uiState.events,
-            unavailableDates = uiState.unavailableDates,
-            selectedStatus = uiState.selectedStatus
-        )
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        item {
+            CalendarHeader(
+                currentMonth = uiState.currentMonth,
+                onPreviousMonth = onPreviousMonth,
+                onNextMonth = onNextMonth,
+                onGoToToday = onGoToToday
+            )
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        item {
+            CalendarGrid(
+                currentMonth = uiState.currentMonth,
+                selectedDate = uiState.selectedDate,
+                onDateSelected = onDateSelected,
+                onDateLongPress = onDateLongPress,
+                events = uiState.events,
+                unavailableDates = uiState.unavailableDates,
+                selectedStatus = uiState.selectedStatus
+            )
+        }
 
-        // Show formatted selected date like the web
-        val dateFormatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
-        Text(
-            text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
-            modifier = Modifier.padding(horizontal = 16.dp),
-            style = MaterialTheme.typography.titleMedium,
-            color = SolennixTheme.colors.primaryText
-        )
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
+                modifier = Modifier.padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = SolennixTheme.colors.primaryText
+            )
+        }
 
         if (uiState.eventsForSelectedDate.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Outlined.CalendarMonth,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "No hay eventos programados",
-                        color = SolennixTheme.colors.secondaryText
-                    )
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Outlined.CalendarMonth,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = SolennixTheme.colors.secondaryText
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "No hay eventos programados",
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
                 }
             }
         } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(uiState.eventsForSelectedDate) { event ->
-                    CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
-                }
+            items(uiState.eventsForSelectedDate) { event ->
+                CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
             }
         }
     }
