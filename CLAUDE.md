@@ -1,165 +1,265 @@
-# Agent Teams Lite — Orchestrator Instructions
-
-Add this section to your existing `~/.claude/CLAUDE.md` or project-level `CLAUDE.md`.
+# Solennix — Instrucciones para Claude Code
 
 ---
 
-## Agent Teams Orchestrator
+## Regla de Paridad Cross-Platform (OBLIGATORIA)
 
-You are a COORDINATOR, not an executor. Your only job is to maintain one thin conversation thread with the user, delegate ALL real work to skill-based phases, and synthesize their results.
+Solennix es un proyecto multi-plataforma: **iOS (SwiftUI)**, **Android (Kotlin/Compose)**, **Web (React/TypeScript)** y **Backend (Go)**.
 
-### Delegation Rules (ALWAYS ACTIVE)
+Cada vez que se corrija un bug o se implemente una feature en CUALQUIER plataforma, DEBES verificar y aplicar el equivalente en TODAS las demás plataformas antes de considerar la tarea completa.
 
-| Rule | Instruction |
-|------|------------|
-| No inline work | Reading/writing code, analysis, tests → delegate to sub-agent |
-| Prefer delegate | Always use `delegate` (async) over `task` (sync). Only use `task` when you NEED the result before your next action |
-| Allowed actions | Short answers, coordinate phases, show summaries, ask decisions, track state |
-| Self-check | "Am I about to read/write code or analyze? → delegate" |
-| Why | Inline work bloats context → compaction → state loss |
+| Plataforma modificada | Debe revisarse y actualizarse también |
+|-----------------------|---------------------------------------|
+| iOS                   | Android, Web, Backend                 |
+| Android               | iOS, Web, Backend                     |
+| Web                   | iOS, Android, Backend                 |
+| Backend               | iOS, Android, Web                     |
+| iOS + Android         | Web, Backend                          |
+| iOS + Web             | Android, Backend                      |
+| Android + Web         | iOS, Backend                          |
+| Frontend (todos)      | Backend                               |
+| Backend               | iOS, Android, Web                     |
 
-### Hard Stop Rule (ZERO EXCEPTIONS)
+### Archivos clave por plataforma
 
-Before using Read, Edit, Write, or Grep tools on source/config/skill files:
-1. **STOP** — ask yourself: "Is this orchestration or execution?"
-2. If execution → **delegate to sub-agent. NO size-based exceptions.**
-3. The ONLY files the orchestrator reads directly are: git status/log output, engram results, and todo state.
-4. **"It's just a small change" is NOT a valid reason to skip delegation.** Two edits across two files is still execution work.
-5. If you catch yourself about to use Edit or Write on a non-state file, that's a **delegation failure** — launch a sub-agent instead.
+| Área de cambio | iOS | Android | Web | Backend |
+|----------------|-----|---------|-----|---------|
+| Modelo de datos | `ios/Packages/SolennixCore/Sources/SolennixCore/Models/` | `android/core/model/` | `web/src/types/` | `backend/internal/model/` |
+| Llamadas API / Red | `ios/Packages/SolennixNetwork/Sources/SolennixNetwork/` | `android/core/network/` | `web/src/services/` o `web/src/api/` | `backend/internal/handler/` |
+| ViewModels / Estado | `ios/Packages/SolennixFeatures/Sources/SolennixFeatures/**/ViewModels/` | `android/feature/**/viewmodel/` | `web/src/stores/` o `web/src/hooks/` | N/A |
+| Vistas / UI | `ios/Packages/SolennixFeatures/Sources/SolennixFeatures/**/Views/` | `android/feature/**/ui/` | `web/src/pages/` y `web/src/components/` | N/A |
+| Navegación | `ios/Solennix/Navigation/` | `android/app/src/main/java/**/navigation/` | `web/src/router/` | N/A |
+| Autenticación | `ios/Packages/SolennixNetwork/Sources/SolennixNetwork/AuthManager.swift` | `android/core/network/**/AuthInterceptor.kt` | `web/src/contexts/AuthContext.tsx` o `web/src/stores/authStore.ts` | `backend/internal/handler/auth.go` y `backend/internal/middleware/auth.go` |
+| Repositorio / DB | N/A | N/A | N/A | `backend/internal/repository/` |
+| Rutas API | N/A | N/A | N/A | `backend/internal/router/` o `backend/cmd/` |
 
-### Delegate-First Rule
-
-ALWAYS prefer `delegate` (async, background) over `task` (sync, blocking).
-
-| Situation | Use |
-|-----------|-----|
-| Sub-agent work where you can continue | `delegate` — always |
-| Parallel phases (e.g., spec + design) | `delegate` × N — launch all at once |
-| You MUST have the result before your next step | `task` — only exception |
-| User is waiting and there's nothing else to do | `task` — acceptable |
-
-The default is `delegate`. You need a REASON to use `task`.
-
-### Anti-Patterns (NEVER do these)
-
-- **DO NOT** read source code files to "understand" the codebase — delegate.
-- **DO NOT** write or edit code — delegate.
-- **DO NOT** write specs, proposals, designs, or task breakdowns — delegate.
-- **DO NOT** do "quick" analysis inline "to save time" — it bloats context.
-
-### Task Escalation
-
-| Size | Action |
-|------|--------|
-| Simple question | Answer if known, else delegate (async) |
-| Small task | delegate to sub-agent (async) |
-| Substantial feature | Suggest SDD: `/sdd-new {name}`, then delegate phases (async) |
+**Esto no es opcional.** El objetivo es mantener todas las plataformas funcionalmente idénticas y libres de los mismos bugs. Siempre revisa proactivamente las plataformas equivalentes — no esperes a que el usuario lo solicite.
 
 ---
 
-## SDD Workflow (Spec-Driven Development)
+## Regla de Mantenimiento del PRD (OBLIGATORIA)
 
-SDD is the structured planning layer for substantial changes.
+El PRD unificado vive en `PRD/` con los siguientes documentos:
 
-### Artifact Store Policy
+| # | Archivo | Contenido |
+|---|---------|-----------|
+| 01 | `PRODUCT_VISION.md` | Visión, objetivos, usuarios objetivo, propuesta de valor |
+| 02 | `FEATURES.md` | Features completas con tabla de paridad cross-platform |
+| 03 | `COMPETITIVE_ANALYSIS.md` | Análisis competitivo en el mercado LATAM |
+| 04 | `MONETIZATION.md` | Precios, tiers (Gratis/Pro/Business), feature gating |
+| 05 | `TECHNICAL_ARCHITECTURE_IOS.md` | Arquitectura iOS: SwiftUI + SPM packages |
+| 06 | `TECHNICAL_ARCHITECTURE_ANDROID.md` | Arquitectura Android: Compose + multi-module |
+| 07 | `TECHNICAL_ARCHITECTURE_WEB.md` | Arquitectura Web: React + TypeScript |
+| 08 | `TECHNICAL_ARCHITECTURE_BACKEND.md` | Arquitectura Backend: Go + PostgreSQL |
+| 09 | `ROADMAP.md` | Timeline y estimaciones todas las plataformas |
+| 10 | `COLLABORATION_GUIDE.md` | Guía de trabajo con Claude Code |
+| 11 | `CURRENT_STATUS.md` | Estado actual de implementación + brechas |
 
-| Mode | Behavior |
-|------|----------|
-| `engram` | Default when available. Persistent memory across sessions. |
-| `openspec` | File-based artifacts. Use only when user explicitly requests. |
-| `hybrid` | Both backends. Cross-session recovery + local files. More tokens per op. |
-| `none` | Return results inline only. Recommend enabling engram or openspec. |
+**Después de completar cualquier feature, bug fix o modificación significativa**, DEBES verificar si el cambio afecta algún documento del PRD y actualizarlo:
 
-### Commands
-- `/sdd-init` -> run `sdd-init`
-- `/sdd-explore <topic>` -> run `sdd-explore`
-- `/sdd-new <change>` -> run `sdd-explore` then `sdd-propose`
-- `/sdd-continue [change]` -> create next missing artifact in dependency chain
-- `/sdd-ff [change]` -> run `sdd-propose` -> `sdd-spec` -> `sdd-design` -> `sdd-tasks`
-- `/sdd-apply [change]` -> run `sdd-apply` in batches
-- `/sdd-verify [change]` -> run `sdd-verify`
-- `/sdd-archive [change]` -> run `sdd-archive`
-- `/sdd-new`, `/sdd-continue`, and `/sdd-ff` are meta-commands handled by YOU (the orchestrator). Do NOT invoke them as skills.
+| Tipo de cambio | Documentos del PRD a actualizar |
+|----------------|--------------------------------|
+| Nueva feature implementada | `02_FEATURES.md` (tabla de paridad), `11_CURRENT_STATUS.md` |
+| Bug fix | `11_CURRENT_STATUS.md` (si era una brecha conocida) |
+| Cambio de arquitectura iOS | `05_TECHNICAL_ARCHITECTURE_IOS.md`, `11_CURRENT_STATUS.md` |
+| Cambio de arquitectura Android | `06_TECHNICAL_ARCHITECTURE_ANDROID.md`, `11_CURRENT_STATUS.md` |
+| Cambio de arquitectura Web | `07_TECHNICAL_ARCHITECTURE_WEB.md`, `11_CURRENT_STATUS.md` |
+| Cambio de arquitectura Backend | `08_TECHNICAL_ARCHITECTURE_BACKEND.md`, `11_CURRENT_STATUS.md` |
+| Nueva dependencia agregada | Doc de arquitectura de la plataforma correspondiente |
+| Cambio de monetización/precios | `04_MONETIZATION.md` |
+| Nuevo competidor descubierto | `03_COMPETITIVE_ANALYSIS.md` |
+| Hito del roadmap alcanzado | `09_ROADMAP.md`, `11_CURRENT_STATUS.md` |
+| Nueva integración de plataforma | `02_FEATURES.md`, `11_CURRENT_STATUS.md` |
+| Cambio en visión o público objetivo | `01_PRODUCT_VISION.md` |
+| Cambio en flujos de trabajo con Claude | `10_COLLABORATION_GUIDE.md` |
 
-### Dependency Graph
+**Esto no es opcional.** Mantener el PRD sincronizado con el codebase asegura que futuras sesiones tengan contexto preciso.
+
+---
+
+## Regla de Auto-Commit (OBLIGATORIA)
+
+Después de completar cualquier corrección, cambio, mejora o nueva feature, DEBES crear un commit de git inmediatamente — no esperes a que el usuario lo solicite.
+
+### Convención de Commits
+
+- **Formato**: Conventional Commits → `type(scope): description`
+- **Idioma**: Inglés para mensajes de commit
+- **Co-autor**: Siempre incluir `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>`
+
+### Types permitidos
+
+| Type | Uso |
+|------|-----|
+| `feat` | Nueva funcionalidad |
+| `fix` | Corrección de bug |
+| `refactor` | Reestructuración sin cambio funcional |
+| `docs` | Documentación (PRD, README, comentarios) |
+| `test` | Agregar o modificar tests |
+| `chore` | Mantenimiento, configuración, dependencias |
+| `style` | Formato, linting, sin cambio funcional |
+| `perf` | Mejora de rendimiento |
+
+### Scopes permitidos
+
+| Scope | Plataforma |
+|-------|------------|
+| `ios` | iOS (SwiftUI, SPM packages) |
+| `android` | Android (Kotlin, Compose, Gradle) |
+| `web` | Web (React, TypeScript) |
+| `backend` | Backend (Go, API, DB) |
+| `prd` | Documentos del PRD |
+| `infra` | Infraestructura, CI/CD, Docker |
+
+### Ejemplos
+
 ```
-proposal -> specs --> tasks -> apply -> verify -> archive
-             ^
-             |
-           design
+feat(ios): add quick quote generation from client detail
+feat(android): implement inventory search with filters
+fix(backend): correct event date parsing for timezone offset
+fix(web): resolve payment status not updating in real-time
+refactor(ios,android): extract shared validation logic
+docs(prd): update feature parity table after inventory release
+chore(infra): upgrade PostgreSQL to 16.x in docker-compose
+test(backend): add unit tests for event repository
 ```
 
-### Result Contract
-Each phase returns: `status`, `executive_summary`, `artifacts`, `next_recommended`, `risks`.
+### Cuándo hacer commit
 
-### Sub-Agent Launch Pattern
-ALL sub-agent launch prompts MUST include pre-resolved skill references:
-```
-  SKILL: Load `{skill-path}` before starting.
-```
-The ORCHESTRATOR resolves skill paths from the registry ONCE (at session start or first delegation), then passes the exact path to each sub-agent. Sub-agents do NOT search for the skill registry themselves.
+| Situación | Acción |
+|-----------|--------|
+| Feature implementada en una plataforma | Commit inmediatamente |
+| Misma feature en múltiples plataformas | Un commit por plataforma, o uno combinado |
+| Bug fix | Commit inmediatamente después de verificar |
+| Refactor / mejora | Commit inmediatamente |
+| Actualización del PRD o documentación | Commit inmediatamente |
+| Varios cambios pequeños relacionados | Agrupar en un commit lógico |
 
-**Orchestrator skill resolution (do once per session):**
-1. `mem_search(query: "skill-registry", project: "{project}")` → get registry
-2. Cache the skill-name → path mapping for the session
-3. For each sub-agent launch, include: `SKILL: Load \`{resolved-path}\` before starting.`
-4. If no registry exists, skip skill loading — the sub-agent proceeds with its phase skill only.
+### Qué NO hacer commit
 
-### Sub-Agent Context Protocol
+- Trabajo incompleto (features a medio implementar)
+- Archivos con secretos (`.env`, credenciales, API keys)
+- Archivos generados que deberían estar en `.gitignore` (`node_modules/`, `build/`, `.gradle/`, `DerivedData/`)
+- Código temporal de debug (`print()`, `console.log()` de depuración)
+- Artefactos de build (`.ipa`, `.apk`, `.aab`)
 
-Sub-agents get a fresh context with NO memory. The orchestrator controls context access.
+**Esto no es opcional.** Commits atómicos y frecuentes crean un historial limpio y reducen el riesgo de perder trabajo.
 
-#### Non-SDD Tasks (general delegation)
+---
 
-- **Read context**: The ORCHESTRATOR searches engram (`mem_search`) for relevant prior context and passes it in the sub-agent prompt. The sub-agent does NOT search engram itself.
-- **Write context**: The sub-agent MUST save significant discoveries, decisions, or bug fixes to engram via `mem_save` before returning. It has the full detail — if it waits for the orchestrator, nuance is lost.
-- **When to include engram write instructions**: Always. Add to the sub-agent prompt: `"If you make important discoveries, decisions, or fix bugs, save them to engram via mem_save with project: '{project}'."`
-- **Skills**: The orchestrator pre-resolves skill paths from the registry and passes them directly: `SKILL: Load \`{path}\` before starting.` Sub-agents do NOT search for the registry themselves.
+## Terminología del Dominio Solennix
 
-#### SDD Phases
+Estos términos deben usarse de forma consistente en toda la aplicación, UI, código y documentación:
 
-Each SDD phase has explicit read/write rules based on the dependency graph:
+| Término | Descripción | Contexto |
+|---------|-------------|----------|
+| **Evento** | Celebración o acontecimiento que el usuario organiza | Entidad principal del sistema |
+| **Cliente** | Persona que contrata al organizador para un evento | Vinculado a uno o más eventos |
+| **Producto** | Servicio o artículo que el organizador ofrece (ej. pastel, decoración, show) | Forma parte de la cotización |
+| **Inventario** (Item de inventario) | Artículo físico que el organizador posee y puede asignar a eventos | Se rastrea cantidad disponible vs. asignada |
+| **Cotización** | Presupuesto o propuesta económica para un evento | Incluye productos, extras, descuentos |
+| **Contrato** | Documento legal/formal entre organizador y cliente | Se genera desde la cotización |
+| **Pago** | Registro de abono o liquidación del cliente | Vinculado a un evento, puede ser parcial |
+| **Equipo** (Equipment) | Artículo reutilizable del inventario (ej. mesas, sillas, manteles) | Subcategoría de inventario |
+| **Insumo** (Supply) | Material consumible (ej. globos, servilletas, velas) | Subcategoría de inventario |
+| **Extra** | Artículo o servicio adicional fuera del catálogo estándar | Se agrega ad-hoc a un evento |
+| **Receta** (Recipe/Ingredients) | Lista de ingredientes o materiales necesarios para un producto | Vinculada a un producto |
+| **Plan** | Nivel de suscripción (Gratis, Pro, Business) | Determina features disponibles |
+| **Checklist** | Lista de tareas pendientes para un evento | Ayuda al seguimiento del evento |
+| **Dashboard** | Panel principal con KPIs y resumen | Pantalla de inicio |
 
-| Phase | Reads artifacts from backend | Writes artifact |
-|-------|------------------------------|-----------------|
-| `sdd-explore` | Nothing | Yes (`explore`) |
-| `sdd-propose` | Exploration (if exists, optional) | Yes (`proposal`) |
-| `sdd-spec` | Proposal (required) | Yes (`spec`) |
-| `sdd-design` | Proposal (required) | Yes (`design`) |
-| `sdd-tasks` | Spec + Design (required) | Yes (`tasks`) |
-| `sdd-apply` | Tasks + Spec + Design | Yes (`apply-progress`) |
-| `sdd-verify` | Spec + Tasks | Yes (`verify-report`) |
-| `sdd-archive` | All artifacts | Yes (`archive-report`) |
+### Reglas de uso
 
-For SDD phases with required dependencies, the sub-agent reads them directly from the backend (engram or openspec) — the orchestrator passes artifact references (topic keys or file paths), NOT the content itself.
+- En la **UI**: siempre en español (el idioma de la app es español para el mercado LATAM).
+- En el **código** (variables, funciones, structs, clases): inglés. Ej: `Event`, `Client`, `Product`, `InventoryItem`, `Quote`, `Contract`, `Payment`, `EventExtra`.
+- En la **base de datos**: inglés con `snake_case`. Ej: `events`, `clients`, `products`, `inventory_items`, `quotes`, `contracts`, `payments`, `event_extras`.
+- En **endpoints API**: inglés con `kebab-case` o `snake_case`. Ej: `/api/events`, `/api/clients`, `/api/inventory-items`.
 
-#### Engram Topic Key Format
+---
 
-| Artifact | Topic Key |
-|----------|-----------|
-| Project context | `sdd-init/{project}` |
-| Exploration | `sdd/{change-name}/explore` |
-| Proposal | `sdd/{change-name}/proposal` |
-| Spec | `sdd/{change-name}/spec` |
-| Design | `sdd/{change-name}/design` |
-| Tasks | `sdd/{change-name}/tasks` |
-| Apply progress | `sdd/{change-name}/apply-progress` |
-| Verify report | `sdd/{change-name}/verify-report` |
-| Archive report | `sdd/{change-name}/archive-report` |
-| DAG state | `sdd/{change-name}/state` |
+## Convenciones de la App
 
-Sub-agents retrieve full content via two steps:
-1. `mem_search(query: "{topic_key}", project: "{project}")` → get observation ID
-2. `mem_get_observation(id: {id})` → full content (REQUIRED — search results are truncated)
+### General
 
-### State and Conventions
+| Aspecto | Convención |
+|---------|------------|
+| Idioma de la UI | Español (mercado LATAM) |
+| Idioma del código | Inglés |
+| API base path | `/api/` |
+| Autenticación | JWT Bearer tokens en header `Authorization` |
+| Base de datos | PostgreSQL con columnas en `snake_case` |
+| Formato de fechas API | ISO 8601 (`2026-03-20T15:30:00Z`) |
+| Formato de moneda | Peso mexicano (MXN) como default, configurable por usuario |
+| Zona horaria | Almacenar en UTC, mostrar en zona local del usuario |
 
-Convention files under `~/.claude/skills/_shared/` (global) or `.agent/skills/_shared/` (workspace): `engram-convention.md`, `persistence-contract.md`, `openspec-convention.md`.
+### iOS — SwiftUI
 
-### Recovery Rule
+| Aspecto | Convención |
+|---------|------------|
+| Framework UI | SwiftUI (no UIKit, excepto cuando sea estrictamente necesario) |
+| Arquitectura | MVVM con `@Observable` (Observation framework, iOS 17+) |
+| Gestión de paquetes | Swift Package Manager (SPM) |
+| Estructura de paquetes | `SolennixCore` (modelos), `SolennixNetwork` (API), `SolennixFeatures` (features) |
+| Navegación | `NavigationStack` + `NavigationSplitView` con enum `Route` |
+| Inyección de dependencias | SwiftUI Environment (`@Environment`) |
+| Async/Await | `async/await` nativo (no Combine para nuevas features) |
+| Naming | `PascalCase` para tipos, `camelCase` para variables/funciones |
+| Archivos de vistas | Sufijo `View.swift` (ej. `EventFormView.swift`) |
+| Archivos de ViewModels | Sufijo `ViewModel.swift` (ej. `EventFormViewModel.swift`) |
+| Target mínimo | iOS 17.0 |
+| Proyecto | Xcode project con `project.yml` (XcodeGen) |
 
-| Mode | Recovery |
-|------|----------|
-| `engram` | `mem_search(...)` → `mem_get_observation(...)` |
-| `openspec` | read `openspec/changes/*/state.yaml` |
-| `none` | State not persisted — explain to user |
+### Android — Kotlin / Jetpack Compose
+
+| Aspecto | Convención |
+|---------|------------|
+| Framework UI | Jetpack Compose (no XML layouts) |
+| Arquitectura | MVVM con `ViewModel` de AndroidX |
+| Inyección de dependencias | Hilt (Dagger) |
+| Estructura de módulos | Multi-module: `app`, `core/network`, `core/model`, `feature/*` |
+| Navegación | Compose Navigation con type-safe routes |
+| Networking | Ktor Client |
+| Serialización | Kotlinx Serialization |
+| Naming | `PascalCase` para clases, `camelCase` para funciones/variables |
+| Archivos de UI | Sufijo `Screen.kt` (ej. `EventFormScreen.kt`) |
+| Archivos de ViewModels | Sufijo `ViewModel.kt` (ej. `EventFormViewModel.kt`) |
+| Min SDK | 26 (Android 8.0) |
+| Build system | Gradle con Kotlin DSL |
+
+### Web — React / TypeScript
+
+| Aspecto | Convención |
+|---------|------------|
+| Framework | React 18+ con TypeScript |
+| Estilos | Tailwind CSS |
+| Estado global | Zustand |
+| Routing | React Router |
+| HTTP Client | Axios o fetch con wrapper tipado |
+| Naming componentes | `PascalCase` (ej. `EventFormScreen.tsx`) |
+| Naming hooks/utils | `camelCase` (ej. `useEventForm.ts`) |
+| Estructura | `pages/`, `components/`, `services/`, `stores/`, `types/`, `hooks/` |
+| Formularios | React Hook Form + Zod para validación |
+| Build tool | Vite |
+
+### Backend — Go
+
+| Aspecto | Convención |
+|---------|------------|
+| Router | Chi (`go-chi/chi`) |
+| Arquitectura | Repository pattern: `handler` → `service` → `repository` |
+| Base de datos | PostgreSQL via `pgx` o `sqlx` |
+| Migraciones | SQL files versionados |
+| Autenticación | JWT con middleware |
+| Estructura | `cmd/` (entrypoints), `internal/` (código privado), `pkg/` (código reutilizable) |
+| Naming | `PascalCase` para exportados, `camelCase` para internos, `snake_case` para JSON/DB |
+| Error handling | Errores explícitos (no panic), errors envueltos con `fmt.Errorf("...: %w", err)` |
+| Logging | Structured logging (slog o zerolog) |
+| Config | Variables de entorno (12-factor app) |
+| API responses | JSON con estructura consistente: `{ "data": ..., "error": ..., "message": ... }` |
+
+---
+
+## Enlaces Legales
+
+- Términos de uso: https://creapolis.dev/terms-of-use/
+- Política de privacidad: https://creapolis.dev/privacy-policy/
