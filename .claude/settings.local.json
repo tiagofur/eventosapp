@@ -217,7 +217,18 @@
       "Bash(./gradlew clean:*)",
       "Bash(./gradlew :feature:calendar:compileDebugKotlin)",
       "Bash(grep -r TopLevelDestination.CALENDAR /c/Users/tfurt/source/repos/eventosapp/android --include=*.kt)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(xcodegen generate:*)",
+      "Bash(rm:*)",
+      "Bash(swift build:*)",
+      "Bash(osascript -e 'quit app \"\"Xcode\"\"')",
+      "Bash(xcodebuild -resolvePackageDependencies -project Solennix.xcodeproj -scheme Solennix)",
+      "Bash(xcodebuild -project /Users/tiagofur/Dev/eventosapp/ios/Solennix.xcodeproj -scheme Solennix -destination 'platform=iOS Simulator,name=iPhone 16' build)",
+      "Bash(xcodebuild -project /Users/tiagofur/Dev/eventosapp/ios/Solennix.xcodeproj -scheme Solennix -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build)",
+      "Bash(xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build)",
+      "Bash(xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build)",
+      "Bash(chmod:*)",
+      "Bash(./gradlew assembleDebug --no-configuration-cache)"
     ]
   }
 }
