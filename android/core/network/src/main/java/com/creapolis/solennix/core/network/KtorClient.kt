@@ -3,8 +3,7 @@ package com.creapolis.solennix.core.network
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.auth.*
-import io.ktor.client.plugins.auth.providers.*
+import io.ktor.client.plugins.api.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
@@ -28,12 +27,17 @@ class KtorClient @Inject constructor(
                 coerceInputValues = true
             })
         }
-        install(Auth) {
-            bearer {
-                loadTokens { authManager.getBearerTokens() }
-                refreshTokens { authManager.refreshAndGetTokens() }
+        // Manual bearer auth: reads token fresh from storage on every request.
+        // This avoids the caching issue in Ktor's Auth plugin where tokens
+        // stored after login are not picked up for subsequent API calls.
+        install(createClientPlugin("BearerAuth") {
+            onRequest { request, _ ->
+                val tokens = authManager.getBearerTokens()
+                if (tokens != null) {
+                    request.bearerAuth(tokens.accessToken)
+                }
             }
-        }
+        })
         install(Logging) {
             level = LogLevel.HEADERS
             logger = Logger.DEFAULT
