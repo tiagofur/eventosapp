@@ -1368,6 +1368,36 @@ fun StepSummary(viewModel: EventFormViewModel, isEditMode: Boolean = false) {
             HorizontalDivider(color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- Discount editor ---
+            Text("Descuento", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                SolennixTextField(
+                    value = viewModel.discount,
+                    onValueChange = { viewModel.discount = it },
+                    label = "Valor",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
+                    SegmentedButton(
+                        selected = viewModel.discountType == com.creapolis.solennix.core.model.DiscountType.PERCENT,
+                        onClick = { viewModel.discountType = com.creapolis.solennix.core.model.DiscountType.PERCENT },
+                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                    ) { Text("%") }
+                    SegmentedButton(
+                        selected = viewModel.discountType == com.creapolis.solennix.core.model.DiscountType.FIXED,
+                        onClick = { viewModel.discountType = com.creapolis.solennix.core.model.DiscountType.FIXED },
+                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                    ) { Text("$") }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(24.dp))
+
             // --- Financial summary ---
             Text("Desglose Financiero", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(16.dp))

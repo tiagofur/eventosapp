@@ -180,22 +180,25 @@ class EventFormViewModel @Inject constructor(
     // Summary Logic
     val subtotalProducts: Double get() = selectedProducts.sumOf { it.totalPrice ?: 0.0 }
     val subtotalExtras: Double get() = eventExtras.sumOf { it.price }
-    val subtotal: Double get() = subtotalProducts + subtotalExtras
+    val subtotalNormalExtras: Double get() = eventExtras.filter { !it.excludeUtility }.sumOf { it.price }
+    val subtotalPassThroughExtras: Double get() = eventExtras.filter { it.excludeUtility }.sumOf { it.price }
+    val discountableBase: Double get() = subtotalProducts + subtotalNormalExtras
     val discountAmount: Double get() {
         val d = discount.toDoubleOrNull() ?: 0.0
         return if (discountType == DiscountType.PERCENT) {
-            subtotal * (d / 100)
+            discountableBase * (d / 100)
         } else {
-            d
+            d.coerceAtMost(discountableBase)
         }
     }
     val taxAmount: Double get() {
         if (!requiresInvoice) return 0.0
         val rate = taxRate.toDoubleOrNull() ?: 0.0
-        return (subtotal - discountAmount) * (rate / 100)
+        val baseTotal = discountableBase - discountAmount + subtotalPassThroughExtras
+        return baseTotal * (rate / 100)
     }
     val total: Double get() {
-        return (subtotal - discountAmount + taxAmount).coerceAtLeast(0.0)
+        return (discountableBase - discountAmount + subtotalPassThroughExtras + taxAmount).coerceAtLeast(0.0)
     }
 
     // Profitability Metrics

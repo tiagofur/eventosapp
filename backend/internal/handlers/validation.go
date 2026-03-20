@@ -23,9 +23,12 @@ func ValidateEvent(event *models.Event) error {
 		return ValidationError{Field: "num_people", Message: "must be at least 1"}
 	}
 
-	// Validate discount (0-100%)
-	if event.Discount < 0 || event.Discount > 100 {
-		return ValidationError{Field: "discount", Message: "must be between 0 and 100"}
+	// Validate discount based on type
+	if event.Discount < 0 {
+		return ValidationError{Field: "discount", Message: "must be greater than or equal to 0"}
+	}
+	if event.DiscountType != "fixed" && event.Discount > 100 {
+		return ValidationError{Field: "discount", Message: "must be between 0 and 100 for percentage discounts"}
 	}
 
 	// Validate tax_rate (0-100%)
@@ -100,9 +103,9 @@ func ValidateEventProduct(ep *models.EventProduct) error {
 		return ValidationError{Field: "unit_price", Message: "must be greater than or equal to 0"}
 	}
 
-	// Validate discount (0-100%)
-	if ep.Discount < 0 || ep.Discount > 100 {
-		return ValidationError{Field: "discount", Message: "must be between 0 and 100"}
+	// Validate discount (fixed amount per unit, must be non-negative)
+	if ep.Discount < 0 {
+		return ValidationError{Field: "discount", Message: "must be greater than or equal to 0"}
 	}
 
 	return nil
