@@ -14,6 +14,9 @@
     <string name="nav_clients">Clientes</string>
     <string name="nav_more">Mas</string>
     
+    <!-- Google Sign-In: Replace with your Web Client ID from Google Cloud Console -->
+    <string name="google_web_client_id">YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+
     <!-- General -->
     <string name="ok">Aceptar</string>
     <string name="cancel">Cancelar</string>

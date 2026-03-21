@@ -64,12 +64,7 @@ class AuthViewModel @Inject constructor(
                 )
                 authManager.storeTokens(response.accessToken, response.refreshToken)
                 authManager.storeUser(response.user)
-                // Sync RevenueCat user identity for cross-platform subscription recognition
-                Purchases.sharedInstance.logInWith(
-                    appUserID = response.user.id,
-                    onError = { /* non-fatal */ },
-                    onSuccess = { _, _ -> }
-                )
+                syncRevenueCat(response.user.id)
                 _loginSuccess.tryEmit(Unit)
             } catch (e: Exception) {
                 errorMessage = when {
@@ -109,7 +104,7 @@ class AuthViewModel @Inject constructor(
                 )
                 authManager.storeTokens(response.accessToken, response.refreshToken)
                 authManager.storeUser(response.user)
-                // TODO: Call Purchases.sharedInstance.logInWith(response.user.id) for RevenueCat.
+                syncRevenueCat(response.user.id)
                 _loginSuccess.tryEmit(Unit)
             } catch (e: Exception) {
                 errorMessage = "Error al crear la cuenta. Intenta de nuevo."
@@ -164,6 +159,19 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** Sync RevenueCat user identity for cross-platform subscription recognition */
+    private fun syncRevenueCat(userId: String) {
+        try {
+            Purchases.sharedInstance.logInWith(
+                appUserID = userId,
+                onError = { /* non-fatal */ },
+                onSuccess = { _, _ -> }
+            )
+        } catch (_: Exception) {
+            // RevenueCat may not be configured in debug builds
+        }
+    }
+
     fun loginWithGoogle(idToken: String, fullName: String?) {
         viewModelScope.launch {
             isLoading = true
@@ -175,7 +183,7 @@ class AuthViewModel @Inject constructor(
                 )
                 authManager.storeTokens(response.accessToken, response.refreshToken)
                 authManager.storeUser(response.user)
-                // TODO: Call Purchases.sharedInstance.logInWith(response.user.id) for RevenueCat.
+                syncRevenueCat(response.user.id)
                 _loginSuccess.tryEmit(Unit)
             } catch (e: Exception) {
                 errorMessage = "Error al iniciar sesion con Google"

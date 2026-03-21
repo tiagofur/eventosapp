@@ -162,8 +162,11 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         GoogleSignInButton(
-            onSuccess = { idToken, fullName -> 
+            onSuccess = { idToken, fullName ->
                 viewModel.loginWithGoogle(idToken, fullName)
+            },
+            onError = { error ->
+                viewModel.errorMessage = error
             }
         )
 
