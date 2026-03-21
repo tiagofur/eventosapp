@@ -33,8 +33,8 @@ extension AuthResponse: Decodable {
     }
 
     private enum TokensCodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
+        case accessToken
+        case refreshToken
     }
 
     public init(from decoder: Decoder) throws {
@@ -66,8 +66,8 @@ private struct RefreshResponse: Decodable {
     let refreshToken: String
 
     enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
+        case accessToken
+        case refreshToken
     }
 }
 
