@@ -82,9 +82,11 @@ public struct BiometricGateView: View {
                 }
 
                 Button {
-                    // Fallback: navigate to login
-                    authManager.clearTokens()
-                    showLogin = true
+                    // Fallback: sign out properly (invalidates server session, then clears local tokens)
+                    Task {
+                        await authManager.signOut()
+                        showLogin = true
+                    }
                 } label: {
                     Text("Usar contrasena")
                         .font(.body)

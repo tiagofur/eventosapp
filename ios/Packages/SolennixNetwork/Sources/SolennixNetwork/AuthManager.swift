@@ -15,9 +15,8 @@ public enum AuthState: Sendable {
 
 // MARK: - Auth Response
 
-/// Flexible response struct that handles both token formats from the backend:
-/// - Format 1 (legacy): `{ token: "...", user: { ... } }`
-/// - Format 2 (current): `{ tokens: { access_token: "...", refresh_token: "..." }, user: { ... } }`
+/// Response from authentication endpoints.
+/// Backend always returns `{ tokens: { access_token: "...", refresh_token: "..." }, user: { ... } }`.
 public struct AuthResponse: Sendable {
     public let user: User
     public let accessToken: String
@@ -28,7 +27,6 @@ extension AuthResponse: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case user
-        case token
         case tokens
     }
 
@@ -41,20 +39,12 @@ extension AuthResponse: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         user = try container.decode(User.self, forKey: .user)
 
-        // Format 1: { token: "..." } — legacy single token
-        if let singleToken = try? container.decode(String.self, forKey: .token) {
-            accessToken = singleToken
-            refreshToken = singleToken
-        }
-        // Format 2: { tokens: { access_token, refresh_token } }
-        else {
-            let tokensContainer = try container.nestedContainer(
-                keyedBy: TokensCodingKeys.self,
-                forKey: .tokens
-            )
-            accessToken = try tokensContainer.decode(String.self, forKey: .accessToken)
-            refreshToken = try tokensContainer.decode(String.self, forKey: .refreshToken)
-        }
+        let tokensContainer = try container.nestedContainer(
+            keyedBy: TokensCodingKeys.self,
+            forKey: .tokens
+        )
+        accessToken = try tokensContainer.decode(String.self, forKey: .accessToken)
+        refreshToken = try tokensContainer.decode(String.self, forKey: .refreshToken)
     }
 }
 
@@ -147,7 +137,21 @@ public final class AuthManager {
             authState = .authenticated(user)
             userTrackingDelegate?.setUser(id: user.id, email: user.email, name: user.name)
         } catch {
-            // Token might be expired; try refresh
+            // Distinguish network errors (timeout, no connection) from auth errors (401/403).
+            // A timeout does NOT mean the token is invalid — it means we can't verify right now.
+            if isNetworkError(error) {
+                // Network issue: preserve session with cached user if available
+                if let cachedUser = currentUser {
+                    authState = .authenticated(cachedUser)
+                } else {
+                    // No cached user but tokens exist — optimistically assume authenticated.
+                    // The next API call will trigger token refresh or re-auth if truly expired.
+                    authState = .unauthenticated
+                }
+                return
+            }
+
+            // Auth error (401, 403, etc.): token is truly invalid, try refresh
             let refreshed = try? await refreshToken()
             if refreshed == true {
                 // Retry fetching user after refresh
@@ -165,6 +169,22 @@ public final class AuthManager {
                 authState = .unauthenticated
             }
         }
+    }
+
+    // MARK: - Error Classification
+
+    /// Returns `true` if the error is a network connectivity / timeout issue
+    /// (as opposed to an HTTP-level auth error like 401 or 403).
+    private func isNetworkError(_ error: Error) -> Bool {
+        // URLError covers timeout, no connection, DNS failures, etc.
+        if error is URLError {
+            return true
+        }
+        // APIError.networkError is thrown by APIClient when it catches a URLError
+        if case APIError.networkError = error {
+            return true
+        }
+        return false
     }
 
     // MARK: - Sign In
