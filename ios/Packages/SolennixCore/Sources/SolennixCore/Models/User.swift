@@ -2,13 +2,26 @@ import Foundation
 
 // MARK: - Plan
 
+/// User subscription plan. Uses a custom decoder to handle any unknown
+/// plan strings the backend might send (e.g., "business") by falling back to `.basic`.
 public enum Plan: String, Codable, Sendable, CaseIterable, Hashable {
     case basic
+    case pro
     case premium
+    case business
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        self = Plan(rawValue: raw) ?? .basic
+    }
 }
 
 // MARK: - User
 
+/// Note: The APIClient uses `keyDecodingStrategy = .convertFromSnakeCase`,
+/// so we use camelCase property names directly — no explicit CodingKeys needed.
+/// Extra fields from the backend (role, google_user_id, etc.) are safely ignored.
 public struct User: Codable, Identifiable, Sendable, Hashable {
     public let id: String
     public let email: String
@@ -23,24 +36,7 @@ public struct User: Codable, Identifiable, Sendable, Hashable {
     public var contractTemplate: String?
     public let plan: Plan
     public var stripeCustomerId: String?
+    public var planExpiresAt: String?
     public let createdAt: String
     public let updatedAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case email
-        case name
-        case businessName = "business_name"
-        case logoUrl = "logo_url"
-        case brandColor = "brand_color"
-        case showBusinessNameInPdf = "show_business_name_in_pdf"
-        case defaultDepositPercent = "default_deposit_percent"
-        case defaultCancellationDays = "default_cancellation_days"
-        case defaultRefundPercent = "default_refund_percent"
-        case contractTemplate = "contract_template"
-        case plan
-        case stripeCustomerId = "stripe_customer_id"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
-    }
 }
