@@ -11,7 +11,7 @@ final class ProductDetailViewModel {
     var product: Product?
     var ingredients: [ProductIngredient] = []
     var demandData: [DemandDataPoint] = []
-    var isLoading: Bool = false
+    var isLoading: Bool = true
     var errorMessage: String?
     var showDeleteConfirm: Bool = false
 
@@ -105,7 +105,7 @@ public struct ProductDetailView: View {
 
     public var body: some View {
         Group {
-            if viewModel.isLoading {
+            if viewModel.isLoading && viewModel.product == nil {
                 ProgressView("Cargando...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let product = viewModel.product {
@@ -115,6 +115,12 @@ public struct ProductDetailView: View {
                     "Error",
                     systemImage: "exclamationmark.triangle",
                     description: Text(error)
+                )
+            } else {
+                ContentUnavailableView(
+                    "Producto no encontrado",
+                    systemImage: "shippingbox",
+                    description: Text("No se pudo cargar la informacion del producto.")
                 )
             }
         }
