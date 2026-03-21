@@ -9,7 +9,6 @@ import TipKit
 public struct ClientListView: View {
 
     @State private var viewModel: ClientListViewModel
-    @State private var showQuickQuote = false
     @Environment(\.openURL) private var openURL
     @Environment(PlanLimitsManager.self) private var planLimitsManager
     @Environment(\.apiClient) private var apiClient
@@ -27,14 +26,6 @@ public struct ClientListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Spacing.sm) {
-                    Button {
-                        showQuickQuote = true
-                    } label: {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.body)
-                            .foregroundStyle(SolennixColors.primary)
-                    }
-
                     NavigationLink(value: Route.clientForm()) {
                         Image(systemName: "plus.circle")
                             .font(.body)
@@ -45,10 +36,6 @@ public struct ClientListView: View {
                     sortMenu
                 }
             }
-        }
-        .sheet(isPresented: $showQuickQuote) {
-            QuickQuoteView(apiClient: apiClient)
-                .presentationDetents([.large])
         }
         .confirmationDialog(
             "Eliminar cliente",
