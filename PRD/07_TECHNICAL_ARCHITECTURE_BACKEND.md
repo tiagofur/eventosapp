@@ -161,7 +161,8 @@ backend/
 │       ├── auth_service.go            # JWT (generación, validación), bcrypt (hash, verify)
 │       ├── auth_service_test.go       # Tests del servicio de auth
 │       ├── email_service.go           # Envío de emails con Resend (templates HTML)
-│       └── email_service_test.go      # Tests del servicio de email
+│       ├── email_service_test.go      # Tests del servicio de email
+│       └── revenuecat_service.go      # Sync Stripe↔RevenueCat (grant/revoke entitlements)
 │
 ├── go.mod                             # Dependencias del módulo Go
 ├── go.sum                             # Checksums de dependencias
@@ -866,11 +867,13 @@ El sistema usa **tres tipos de token**, todos firmados con HS256:
 
 ### 9.2 RevenueCat
 
-**Archivo:** `handlers/subscription_handler.go`
+**Archivos:** `handlers/subscription_handler.go`, `services/revenuecat_service.go`
 
-- `POST /api/subscriptions/webhook/revenuecat` — Procesa webhooks v2 de RevenueCat
-- Verificado por header de autorización con `REVENUECAT_WEBHOOK_SECRET`
-- Sincroniza el estado de suscripciones de iOS (App Store) y Android (Google Play) con la base de datos
+- `POST /api/subscriptions/webhook/revenuecat` — Procesa webhooks v2 de RevenueCat (verificado por header `REVENUECAT_WEBHOOK_SECRET`)
+- `RevenueCatService` — Sync bidireccional Stripe ↔ RevenueCat via REST API v1:
+  - `GrantPromotionalEntitlement` — Cuando un usuario compra por Stripe (web), se le otorga el entitlement `pro_access` en RevenueCat para que iOS/Android lo vean
+  - `RevokePromotionalEntitlement` — Cuando se cancela/elimina la suscripcion Stripe, se revoca el entitlement en RevenueCat
+- **Variables de entorno:** `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_API_KEY` (secret key para server-to-server)
 
 ### 9.3 Resend
 
@@ -996,6 +999,7 @@ services:
 | `STRIPE_PRO_PRICE_ID` | No | — | Price ID del plan Pro en Stripe |
 | `STRIPE_PORTAL_CONFIG_ID` | No | — | Config ID del portal de facturación |
 | `REVENUECAT_WEBHOOK_SECRET` | No | — | Secreto para webhooks de RevenueCat |
+| `REVENUECAT_API_KEY` | No | — | Secret API key de RevenueCat para sync Stripe→RC |
 | `UPLOAD_DIR` | No | `./uploads` | Directorio de uploads |
 | `BOOTSTRAP_ADMIN_EMAIL` | No | — | Email a promover a admin al iniciar |
 | `TRUST_PROXY` | No | `false` | Confiar en `X-Forwarded-For` |

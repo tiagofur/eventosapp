@@ -478,8 +478,8 @@ Sistema de suscripciones multi-proveedor con gestion de planes.
 | Proveedor | Plataforma | Detalle |
 |-----------|------------|---------|
 | Stripe | [Web] | Checkout Session + Customer Portal |
-| StoreKit 2 | [iOS] | Compras in-app gestionadas via RevenueCat |
-| Google Play Billing | [Android] | In-app purchases via RevenueCat |
+| RevenueCat SDK | [iOS] | Wraps StoreKit 2, maneja compras y entitlements |
+| RevenueCat SDK | [Android] | Wraps Google Play Billing, maneja compras y entitlements |
 
 #### Endpoints Backend
 
@@ -493,7 +493,7 @@ Sistema de suscripciones multi-proveedor con gestion de planes.
 **Modelo de datos Subscription:** Incluye `provider` (stripe/apple/google), `status` (active/past_due/canceled/trialing), periodos de facturacion.
 
 **Vistas por plataforma:**
-- **[iOS]**: `PricingView` (StoreKit 2)
+- **[iOS]**: `PricingView` (RevenueCat SDK)
 - **[Android]**: `PricingScreen`, `SubscriptionScreen`
 - **[Web]**: `Pricing` (Stripe)
 

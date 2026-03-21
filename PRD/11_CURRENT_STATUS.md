@@ -380,7 +380,7 @@
 |------|-----------|-------|
 | Widgets (Glance) | P1 | No implementados |
 | Generacion de PDF | P1 | No implementado |
-| Play Billing | P0 | No implementado |
+| ~~Play Billing~~ | ✅ | Implementado via RevenueCat SDK |
 | Push notifications (FCM) | P1 | No implementado |
 | Deep linking completo | P2 | Parcial |
 | Navigation Rail (tablets) | P2 | No implementado |

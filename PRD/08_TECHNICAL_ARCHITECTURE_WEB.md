@@ -328,7 +328,7 @@ interface User {
   business_name?: string;
   logo_url?: string;
   brand_color?: string;
-  plan: string;               // 'free' | 'pro'
+  plan: 'basic' | 'pro' | 'premium'; // 'basic' (gratis) o 'pro'/'premium' (pagado)
   role?: string;              // 'admin' | undefined
   stripe_customer_id?: string;
   default_deposit_percent?: number;

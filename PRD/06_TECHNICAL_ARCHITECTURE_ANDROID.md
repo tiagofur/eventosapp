@@ -304,7 +304,7 @@ android/
 │       │   ├── ContractDefaultsViewModel.kt
 │       │   └── SubscriptionViewModel.kt
 │       └── billing/
-│           └── BillingManager.kt          # Play Billing 7.1.1 wrapper
+│           └── BillingManager.kt          # RevenueCat SDK wrapper
 │
 └── widget/                                 # Home Screen Widgets (Glance)
     └── build.gradle.kts

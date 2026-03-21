@@ -20,7 +20,7 @@
 | Widgets | WidgetKit (4 widgets + 1 interactivo) | iOS 17 |
 | Dynamic Island | ActivityKit (Live Activity) | iOS 16.1+ |
 | Spotlight | CoreSpotlight (indexacion de eventos/clientes) | iOS 17 |
-| Suscripciones | StoreKit 2 (nativo) | iOS 17 |
+| Suscripciones | RevenueCat SDK (wraps StoreKit 2) | iOS 17 |
 | Biometria | LocalAuthentication (Face ID / Touch ID) | iOS 17 |
 | Onboarding | TipKit | iOS 17 |
 | Crash Reporting | Sentry | -- |
@@ -150,7 +150,7 @@ ios/
 │   │       ├── APIClientEnvironmentKey.swift  # EnvironmentKey para DI
 │   │       ├── AuthManager.swift          # Autenticacion y sesion
 │   │       ├── AppleSignInService.swift   # Sign in with Apple
-│   │       ├── SubscriptionManager.swift  # StoreKit 2
+│   │       ├── SubscriptionManager.swift  # RevenueCat SDK
 │   │       ├── KeychainHelper.swift       # Almacenamiento seguro
 │   │       ├── NetworkMonitor.swift       # NWPathMonitor
 │   │       └── Endpoints.swift            # Constantes de endpoints API
@@ -246,7 +246,7 @@ Todos los paquetes son locales (no remotos), definidos en `project.yml` y resuel
 |-------------|-------------|
 | `APIClient` | Actor HTTP: `get()`, `post()`, `put()`, `delete()`, `upload()` |
 | `AuthManager` | `@Observable`: login, register, signOut, refreshToken, biometrics |
-| `SubscriptionManager` | StoreKit 2: productos, transacciones, estado de suscripcion |
+| `SubscriptionManager` | RevenueCat SDK: offerings, compras, entitlements, login/logout |
 | `AppleSignInService` | Sign in with Apple |
 | `KeychainHelper` | Lectura/escritura segura en Keychain |
 | `NetworkMonitor` | `@Observable` con `isConnected` y `connectionType` |
