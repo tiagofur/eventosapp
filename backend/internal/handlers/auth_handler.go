@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/big"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/tiagofur/solennix-backend/internal/config"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
@@ -22,6 +24,12 @@ import (
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+
+// isUniqueViolation checks if a database error is a PostgreSQL unique constraint violation (23505).
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
 
 type AuthHandler struct {
 	userRepo     FullUserRepository
@@ -535,21 +543,26 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 	// Try to find user by email
 	user, err = h.userRepo.GetByEmail(r.Context(), email)
 	if err == nil && user != nil {
-		// User exists with this email - link Google account
-		if err := h.userRepo.LinkGoogleAccount(r.Context(), user.ID, googleUserID); err != nil {
-			slog.Error("Failed to link Google account", "error", err)
-			writeError(w, http.StatusInternalServerError, "Failed to link Google account")
+		// User exists with this email — check if Google is already linked
+		if user.GoogleUserID != nil && *user.GoogleUserID == googleUserID {
+			// Same Google account already linked (shouldn't reach here, but handle gracefully)
+			tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
+			if err != nil {
+				slog.Error("Failed to generate tokens", "error", err)
+				writeError(w, http.StatusInternalServerError, "Internal server error")
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]interface{}{
+				"user":   user,
+				"tokens": tokens,
+			})
 			return
 		}
-		tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
-		if err != nil {
-			slog.Error("Failed to generate tokens", "error", err)
-			writeError(w, http.StatusInternalServerError, "Internal server error")
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]interface{}{
-			"user":   user,
-			"tokens": tokens,
+		// Account exists but Google is NOT linked — do NOT auto-link (account takeover risk)
+		slog.Warn("Google sign-in blocked: email exists with different provider", "email", email)
+		writeJSON(w, http.StatusConflict, map[string]interface{}{
+			"error":   "email_exists_different_provider",
+			"message": "An account with this email already exists. Please sign in with your email and password first, then link your social account from settings.",
 		})
 		return
 	}
@@ -562,6 +575,36 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 		GoogleUserID: &googleUserID,
 	}
 	if err := h.userRepo.CreateWithOAuth(r.Context(), newUser); err != nil {
+		// Handle race condition: unique constraint violation means another request created the user
+		if isUniqueViolation(err) {
+			slog.Warn("Race condition in Google OAuth: user already created, retrying lookup", "email", email)
+			existingUser, lookupErr := h.userRepo.GetByEmail(r.Context(), email)
+			if lookupErr != nil || existingUser == nil {
+				slog.Error("Failed to find user after unique constraint violation", "email", email, "error", lookupErr)
+				writeError(w, http.StatusInternalServerError, "Failed to create account")
+				return
+			}
+			// Check if the existing user has this Google account linked
+			if existingUser.GoogleUserID != nil && *existingUser.GoogleUserID == googleUserID {
+				tokens, tokenErr := h.authService.GenerateTokenPair(existingUser.ID, existingUser.Email)
+				if tokenErr != nil {
+					slog.Error("Failed to generate tokens", "error", tokenErr)
+					writeError(w, http.StatusInternalServerError, "Internal server error")
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]interface{}{
+					"user":   existingUser,
+					"tokens": tokens,
+				})
+				return
+			}
+			// Existing user doesn't have Google linked — same conflict rule applies
+			writeJSON(w, http.StatusConflict, map[string]interface{}{
+				"error":   "email_exists_different_provider",
+				"message": "An account with this email already exists. Please sign in with your email and password first, then link your social account from settings.",
+			})
+			return
+		}
 		slog.Error("Failed to create user", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create account")
 		return
@@ -722,21 +765,26 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 	if email != "" {
 		user, err = h.userRepo.GetByEmail(r.Context(), email)
 		if err == nil && user != nil {
-			// User exists with this email - link Apple account
-			if err := h.userRepo.LinkAppleAccount(r.Context(), user.ID, appleUserID); err != nil {
-				slog.Error("Failed to link Apple account", "error", err)
-				writeError(w, http.StatusInternalServerError, "Failed to link Apple account")
+			// User exists with this email — check if Apple is already linked
+			if user.AppleUserID != nil && *user.AppleUserID == appleUserID {
+				// Same Apple account already linked (shouldn't reach here, but handle gracefully)
+				tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
+				if err != nil {
+					slog.Error("Failed to generate tokens", "error", err)
+					writeError(w, http.StatusInternalServerError, "Internal server error")
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]interface{}{
+					"user":   user,
+					"tokens": tokens,
+				})
 				return
 			}
-			tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
-			if err != nil {
-				slog.Error("Failed to generate tokens", "error", err)
-				writeError(w, http.StatusInternalServerError, "Internal server error")
-				return
-			}
-			writeJSON(w, http.StatusOK, map[string]interface{}{
-				"user":   user,
-				"tokens": tokens,
+			// Account exists but Apple is NOT linked — do NOT auto-link (account takeover risk)
+			slog.Warn("Apple sign-in blocked: email exists with different provider", "email", email)
+			writeJSON(w, http.StatusConflict, map[string]interface{}{
+				"error":   "email_exists_different_provider",
+				"message": "An account with this email already exists. Please sign in with your email and password first, then link your social account from settings.",
 			})
 			return
 		}
@@ -755,6 +803,36 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 		AppleUserID: &appleUserID,
 	}
 	if err := h.userRepo.CreateWithOAuth(r.Context(), newUser); err != nil {
+		// Handle race condition: unique constraint violation means another request created the user
+		if isUniqueViolation(err) {
+			slog.Warn("Race condition in Apple OAuth: user already created, retrying lookup", "email", email)
+			existingUser, lookupErr := h.userRepo.GetByEmail(r.Context(), email)
+			if lookupErr != nil || existingUser == nil {
+				slog.Error("Failed to find user after unique constraint violation", "email", email, "error", lookupErr)
+				writeError(w, http.StatusInternalServerError, "Failed to create account")
+				return
+			}
+			// Check if the existing user has this Apple account linked
+			if existingUser.AppleUserID != nil && *existingUser.AppleUserID == appleUserID {
+				tokens, tokenErr := h.authService.GenerateTokenPair(existingUser.ID, existingUser.Email)
+				if tokenErr != nil {
+					slog.Error("Failed to generate tokens", "error", tokenErr)
+					writeError(w, http.StatusInternalServerError, "Internal server error")
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]interface{}{
+					"user":   existingUser,
+					"tokens": tokens,
+				})
+				return
+			}
+			// Existing user doesn't have Apple linked — same conflict rule applies
+			writeJSON(w, http.StatusConflict, map[string]interface{}{
+				"error":   "email_exists_different_provider",
+				"message": "An account with this email already exists. Please sign in with your email and password first, then link your social account from settings.",
+			})
+			return
+		}
 		slog.Error("Failed to create user", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create account")
 		return
@@ -821,17 +899,32 @@ func fetchApplePublicKeys() ([]appleJWK, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get("https://appleid.apple.com/auth/keys")
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch Apple JWKS: %w", err)
+		// Fetch failed — fall back to stale cache if available
+		if len(appleJWKSCache) > 0 {
+			slog.Warn("Apple JWKS fetch failed, using stale cached keys", "error", err, "cached_at", appleJWKSCachedAt)
+			return appleJWKSCache, nil
+		}
+		return nil, fmt.Errorf("failed to fetch Apple JWKS and no cached keys available: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Apple JWKS endpoint returned status %d", resp.StatusCode)
+		// Non-200 response — fall back to stale cache if available
+		if len(appleJWKSCache) > 0 {
+			slog.Warn("Apple JWKS endpoint returned non-200, using stale cached keys", "status", resp.StatusCode, "cached_at", appleJWKSCachedAt)
+			return appleJWKSCache, nil
+		}
+		return nil, fmt.Errorf("Apple JWKS endpoint returned status %d and no cached keys available", resp.StatusCode)
 	}
 
 	var jwks appleJWKSResponse
 	if err := json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
-		return nil, fmt.Errorf("failed to decode Apple JWKS: %w", err)
+		// Decode failed — fall back to stale cache if available
+		if len(appleJWKSCache) > 0 {
+			slog.Warn("Failed to decode Apple JWKS response, using stale cached keys", "error", err, "cached_at", appleJWKSCachedAt)
+			return appleJWKSCache, nil
+		}
+		return nil, fmt.Errorf("failed to decode Apple JWKS and no cached keys available: %w", err)
 	}
 
 	appleJWKSCache = jwks.Keys
@@ -864,13 +957,10 @@ func jwkToRSAPublicKey(jwk appleJWK) (*rsa.PublicKey, error) {
 // signature against Apple's public keys and checking standard claims.
 // appleBundleID is used for audience verification; if empty, aud check is skipped (dev mode).
 func validateAppleIDToken(identityToken string, appleBundleID string) (*AppleIDTokenClaims, error) {
-	// Fetch Apple's public keys
+	// Fetch Apple's public keys (uses 24h cache, falls back to stale cache if fetch fails)
 	keys, err := fetchApplePublicKeys()
 	if err != nil {
-		// Fallback: if we can't fetch keys, log error but still try to decode claims
-		// This prevents outages if Apple's JWKS endpoint is temporarily down
-		slog.Error("Failed to fetch Apple JWKS, falling back to unverified decode", "error", err)
-		return validateAppleIDTokenFallback(identityToken, appleBundleID)
+		return nil, fmt.Errorf("failed to obtain Apple public keys for signature verification: %w", err)
 	}
 
 	// Parse the JWT header to find the kid
@@ -924,45 +1014,3 @@ func validateAppleIDToken(identityToken string, appleBundleID string) (*AppleIDT
 	}, nil
 }
 
-// validateAppleIDTokenFallback decodes Apple JWT claims without signature verification.
-// Used only when Apple's JWKS endpoint is unreachable.
-func validateAppleIDTokenFallback(identityToken string, appleBundleID string) (*AppleIDTokenClaims, error) {
-	parts := strings.Split(identityToken, ".")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("invalid token format")
-	}
-
-	decoded, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode payload: %w", err)
-	}
-
-	var claims struct {
-		Iss   string `json:"iss"`
-		Sub   string `json:"sub"`
-		Aud   string `json:"aud"`
-		Exp   int64  `json:"exp"`
-		Email string `json:"email"`
-	}
-
-	if err := json.Unmarshal(decoded, &claims); err != nil {
-		return nil, fmt.Errorf("failed to parse claims: %w", err)
-	}
-
-	if claims.Iss != "https://appleid.apple.com" {
-		return nil, fmt.Errorf("invalid token issuer: %s", claims.Iss)
-	}
-
-	if time.Now().Unix() > claims.Exp {
-		return nil, fmt.Errorf("token expired")
-	}
-
-	if appleBundleID != "" && claims.Aud != appleBundleID {
-		return nil, fmt.Errorf("invalid token audience: %s", claims.Aud)
-	}
-
-	return &AppleIDTokenClaims{
-		Subject: claims.Sub,
-		Email:   claims.Email,
-	}, nil
-}
