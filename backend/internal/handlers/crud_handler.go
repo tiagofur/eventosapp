@@ -103,7 +103,7 @@ func (h *CRUDHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if count >= 50 {
-			writeError(w, http.StatusForbidden, "Client limits for basic plan reached. Please upgrade to Pro.")
+			writePlanLimitError(w, "clients", count, 50)
 			return
 		}
 	}
@@ -296,8 +296,7 @@ func (h *CRUDHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if count >= 3 {
-			// Limit reached for basic plan
-			writeError(w, http.StatusForbidden, "Event limits for basic plan reached. Please upgrade to Pro.")
+			writePlanLimitError(w, "events", count, 3)
 			return
 		}
 	}
@@ -1022,7 +1021,7 @@ func (h *CRUDHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if productCount+inventoryCount >= 20 {
-			writeError(w, http.StatusForbidden, "Catalog limits for basic plan reached. Please upgrade to Pro.")
+			writePlanLimitError(w, "catalog", productCount+inventoryCount, 20)
 			return
 		}
 	}
@@ -1237,7 +1236,7 @@ func (h *CRUDHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Request
 			return
 		}
 		if productCount+inventoryCount >= 20 {
-			writeError(w, http.StatusForbidden, "Catalog limits for basic plan reached. Please upgrade to Pro.")
+			writePlanLimitError(w, "catalog", productCount+inventoryCount, 20)
 			return
 		}
 	}

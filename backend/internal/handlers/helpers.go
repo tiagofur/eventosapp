@@ -20,6 +20,20 @@ func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
 }
 
+// writePlanLimitError returns a structured 403 response for plan limit violations.
+// Clients can parse the "error" field to detect plan limits and show upgrade prompts.
+func writePlanLimitError(w http.ResponseWriter, limitType string, current, max int) {
+	writeJSON(w, http.StatusForbidden, map[string]interface{}{
+		"error":   "plan_limit_exceeded",
+		"message": "Has alcanzado el limite de tu plan. Actualiza a Pro para continuar.",
+		"limit": map[string]interface{}{
+			"type":    limitType,
+			"current": current,
+			"max":     max,
+		},
+	})
+}
+
 // Decode JSON body into struct with a 1MB size limit to prevent DoS
 func decodeJSON(r *http.Request, dst interface{}) error {
 	const maxBodySize = 1 << 20 // 1 MB
