@@ -180,7 +180,7 @@ public struct RegisterView: View {
                     get: { viewModel?.password ?? "" },
                     set: { viewModel?.password = $0 }
                 ),
-                placeholder: "Minimo 6 caracteres",
+                placeholder: "Minimo 8 caracteres",
                 leftIcon: "lock",
                 isSecure: true,
                 textContentType: .newPassword

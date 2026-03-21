@@ -6,6 +6,7 @@ import { z } from "zod";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { AppleSignInButton } from "../components/AppleSignInButton";
 import {
   Lock,
   Mail,
@@ -31,7 +32,10 @@ const registerSchema = z
     email: z.string().email("Email inválido"),
     password: z
       .string()
-      .min(6, "La contraseña debe tener al menos 6 caracteres"),
+      .min(8, "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+      .regex(/[A-Z]/, "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+      .regex(/[a-z]/, "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+      .regex(/[0-9]/, "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número"),
     confirmPassword: z.string(),
   })
   .refine((d) => d.password === d.confirmPassword, {
@@ -334,7 +338,7 @@ export const Register: React.FC = () => {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder="Mínimo 8 caracteres"
                     aria-required="true"
                     aria-invalid={errors.password ? "true" : "false"}
                     aria-describedby={
@@ -492,9 +496,10 @@ export const Register: React.FC = () => {
               <div className="flex-1 h-px bg-border" />
             </div>
 
-            {/* Google Sign-In */}
-            <div className="mt-4">
+            {/* Social Sign-In Buttons */}
+            <div className="mt-4 space-y-3">
               <GoogleSignInButton onError={(msg) => setError(msg)} />
+              <AppleSignInButton onError={(msg) => setError(msg)} />
             </div>
 
             {/* Trust badges */}

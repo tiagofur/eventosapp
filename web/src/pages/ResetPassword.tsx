@@ -7,7 +7,11 @@ import { Lock, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { api } from '../lib/api';
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  password: z.string()
+    .min(8, 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número')
+    .regex(/[A-Z]/, 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número')
+    .regex(/[a-z]/, 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número')
+    .regex(/[0-9]/, 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Las contraseñas no coinciden',
@@ -124,7 +128,7 @@ export function ResetPassword() {
                   {...register('password')}
                   type="password"
                   className="focus:ring-primary/20 focus:border-primary block w-full pl-10 sm:text-sm border-border bg-card text-text rounded-md py-2 border"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                   aria-required="true"
                   aria-invalid={errors.password ? "true" : "false"}
                   aria-describedby={errors.password ? "password-error" : undefined}

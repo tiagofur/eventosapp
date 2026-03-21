@@ -82,9 +82,11 @@ class AuthViewModel @Inject constructor(
     var registerEmail by mutableStateOf("")
     var registerPassword by mutableStateOf("")
     var registerConfirmPassword by mutableStateOf("")
+    private val passwordComplexityRegex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$")
+
     val isRegisterValid: Boolean get() = registerName.length >= 2 &&
             registerEmail.isValidEmail() &&
-            registerPassword.length >= 6 &&
+            passwordComplexityRegex.matches(registerPassword) &&
             registerPassword == registerConfirmPassword
 
     fun register() {
@@ -144,7 +146,7 @@ class AuthViewModel @Inject constructor(
     var resetSuccess by mutableStateOf(false)
 
     fun resetPassword() {
-        if (newPassword.length < 6 || newPassword != confirmNewPassword) return
+        if (!passwordComplexityRegex.matches(newPassword) || newPassword != confirmNewPassword) return
         viewModelScope.launch {
             isLoading = true
             errorMessage = null

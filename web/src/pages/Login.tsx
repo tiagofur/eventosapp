@@ -23,6 +23,7 @@ import {
 import { useTheme } from "../hooks/useTheme";
 import { Logo } from "../components/Logo";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { AppleSignInButton } from "../components/AppleSignInButton";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -354,9 +355,10 @@ export const Login: React.FC = () => {
               <div className="flex-1 h-px bg-border" />
             </div>
 
-            {/* Google Sign-In */}
-            <div className="mt-4">
+            {/* Social Sign-In Buttons */}
+            <div className="mt-4 space-y-3">
               <GoogleSignInButton onError={(msg) => setError(msg)} />
+              <AppleSignInButton onError={(msg) => setError(msg)} />
             </div>
 
             {/* Trust badges */}

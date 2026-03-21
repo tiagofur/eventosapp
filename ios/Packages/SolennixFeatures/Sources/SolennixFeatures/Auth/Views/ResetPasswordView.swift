@@ -50,7 +50,7 @@ public struct ResetPasswordView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(SolennixColors.primary)
 
-                Text("Ingresa tu nueva contrasena. Debe tener al menos 6 caracteres.")
+                Text("Ingresa tu nueva contrasena. Debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero.")
                     .font(.body)
                     .foregroundStyle(SolennixColors.textSecondary)
                     .multilineTextAlignment(.center)
@@ -68,7 +68,7 @@ public struct ResetPasswordView: View {
                     get: { viewModel?.password ?? "" },
                     set: { viewModel?.password = $0 }
                 ),
-                placeholder: "Minimo 6 caracteres",
+                placeholder: "Minimo 8 caracteres",
                 leftIcon: "lock",
                 isSecure: true,
                 textContentType: .newPassword

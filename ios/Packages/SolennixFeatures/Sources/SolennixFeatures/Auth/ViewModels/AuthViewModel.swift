@@ -44,7 +44,7 @@ public final class AuthViewModel {
     public var isRegisterValid: Bool {
         name.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2
         && !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        && password.count >= 6
+        && isPasswordComplex(password)
         && password == confirmPassword
     }
 
@@ -53,7 +53,7 @@ public final class AuthViewModel {
     }
 
     public var isResetValid: Bool {
-        password.count >= 6 && password == confirmPassword
+        isPasswordComplex(password) && password == confirmPassword
     }
 
     // MARK: - Sign In
@@ -98,8 +98,8 @@ public final class AuthViewModel {
             errorMessage = "El correo electronico es requerido"
             return
         }
-        guard password.count >= 6 else {
-            errorMessage = "La contrasena debe tener al menos 6 caracteres"
+        guard isPasswordComplex(password) else {
+            errorMessage = "La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero"
             return
         }
         guard password == confirmPassword else {
@@ -208,8 +208,8 @@ public final class AuthViewModel {
 
     @MainActor
     public func resetPassword(token: String) async {
-        guard password.count >= 6 else {
-            errorMessage = "La contrasena debe tener al menos 6 caracteres"
+        guard isPasswordComplex(password) else {
+            errorMessage = "La contrasena debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero"
             return
         }
         guard password == confirmPassword else {
@@ -235,6 +235,14 @@ public final class AuthViewModel {
     }
 
     // MARK: - Helpers
+
+    /// Checks password meets complexity requirements: 8+ chars, uppercase, lowercase, digit.
+    private func isPasswordComplex(_ value: String) -> Bool {
+        value.count >= 8
+        && value.range(of: "[A-Z]", options: .regularExpression) != nil
+        && value.range(of: "[a-z]", options: .regularExpression) != nil
+        && value.range(of: "[0-9]", options: .regularExpression) != nil
+    }
 
     public func clearError() {
         errorMessage = nil

@@ -105,7 +105,11 @@ fun ResetPasswordScreen(
                 text = "Restablecer",
                 onClick = { viewModel.resetPassword() },
                 isLoading = viewModel.isLoading,
-                enabled = viewModel.newPassword.isNotBlank() && viewModel.newPassword == viewModel.confirmNewPassword
+                enabled = viewModel.newPassword.length >= 8
+                    && viewModel.newPassword.any { it.isUpperCase() }
+                    && viewModel.newPassword.any { it.isLowerCase() }
+                    && viewModel.newPassword.any { it.isDigit() }
+                    && viewModel.newPassword == viewModel.confirmNewPassword
             )
 
             if (viewModel.errorMessage != null) {
