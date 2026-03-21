@@ -20,38 +20,23 @@ class ApiClient {
   private refreshPromise: Promise<boolean> | null = null;
 
   private getHeaders(): HeadersInit {
-    // MIGRATION NOTE: Auth tokens are now sent via httpOnly cookies (SECURE)
-    // localStorage token handling is maintained for backward compatibility only
-    // TODO: Remove localStorage logic after full migration (all users have cookies)
-    const token = localStorage.getItem('auth_token');
+    // Auth tokens are sent via httpOnly cookies automatically.
+    // No Authorization header needed — cookies are included via credentials: 'include'.
     return {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   }
 
   private async attemptRefresh(): Promise<boolean> {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) return false;
-
     try {
+      // Refresh token is sent automatically via httpOnly cookie
       const response = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
-      if (!response.ok) return false;
-
-      const tokens = await response.json();
-      if (tokens.access_token) {
-        localStorage.setItem('auth_token', tokens.access_token);
-      }
-      if (tokens.refresh_token) {
-        localStorage.setItem('refresh_token', tokens.refresh_token);
-      }
-      return true;
+      return response.ok;
     } catch {
       return false;
     }
@@ -99,14 +84,10 @@ class ApiClient {
       }
 
       // Refresh failed — logout
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('refresh_token');
       window.dispatchEvent(new Event('auth:logout'));
     }
 
     if (response.status === 401 && isRetry) {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('refresh_token');
       window.dispatchEvent(new Event('auth:logout'));
     }
 
@@ -140,13 +121,9 @@ class ApiClient {
   }
 
   postFormData<T>(endpoint: string, formData: FormData) {
-    const token = localStorage.getItem('auth_token');
     return this.request<T>(endpoint, {
       method: 'POST',
       body: formData,
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
     });
   }
 }

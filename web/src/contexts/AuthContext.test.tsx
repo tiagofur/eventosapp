@@ -40,22 +40,10 @@ const renderWithProvider = (ui: React.ReactNode) =>
   render(<AuthProvider>{ui}</AuthProvider>);
 
 const originalLocation = window.location;
-let storageState: Record<string, string> = {};
 
 describe('AuthProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    storageState = {};
-    localStorage.getItem = vi.fn((key: string) => storageState[key]);
-    localStorage.setItem = vi.fn((key: string, value: string) => {
-      storageState[key] = value;
-    });
-    localStorage.removeItem = vi.fn((key: string) => {
-      delete storageState[key];
-    });
-    localStorage.clear = vi.fn(() => {
-      storageState = {};
-    });
     capturedAuth = null;
     Object.defineProperty(window, 'location', {
       value: { href: '' },
@@ -70,7 +58,9 @@ describe('AuthProvider', () => {
     });
   });
 
-  it('resolves loading when no token exists', async () => {
+  it('resolves loading as unauthenticated when /auth/me fails', async () => {
+    (api.get as any).mockRejectedValue(new Error('Unauthorized'));
+
     renderWithProvider(<TestConsumer />);
 
     await waitFor(() => {
@@ -79,8 +69,7 @@ describe('AuthProvider', () => {
     expect(screen.getByText('user:none')).toBeInTheDocument();
   });
 
-  it('fetches user when token exists', async () => {
-    localStorage.setItem('auth_token', 'token');
+  it('fetches user via /auth/me when httpOnly cookie is valid', async () => {
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -95,8 +84,7 @@ describe('AuthProvider', () => {
     });
   });
 
-  it('clears token when auth check fails', async () => {
-    localStorage.setItem('auth_token', 'token');
+  it('sets user to null when auth check fails', async () => {
     (api.get as any).mockRejectedValue(new Error('boom'));
 
     renderWithProvider(<TestConsumer />);
@@ -104,11 +92,10 @@ describe('AuthProvider', () => {
     await waitFor(() => {
       expect(screen.getByText(/^user:/i)).toHaveTextContent('user:none');
     });
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
+    expect(logError).toHaveBeenCalledWith('Auth check failed', expect.any(Error));
   });
 
   it('clears auth on logout event', async () => {
-    localStorage.setItem('auth_token', 'token');
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -129,11 +116,9 @@ describe('AuthProvider', () => {
     await waitFor(() => {
       expect(screen.getByText(/^user:/i)).toHaveTextContent('user:none');
     });
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
   });
 
-  it('signOut clears token and redirects', async () => {
-    localStorage.setItem('auth_token', 'token');
+  it('signOut calls logout endpoint and redirects', async () => {
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -153,12 +138,10 @@ describe('AuthProvider', () => {
     });
 
     expect(api.post).toHaveBeenCalledWith('/auth/logout', {});
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
     expect(window.location.href).toBe('/login');
   });
 
-  it('signOut clears token and redirects even when logout API call fails', async () => {
-    localStorage.setItem('auth_token', 'token');
+  it('signOut redirects even when logout API call fails', async () => {
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -177,14 +160,12 @@ describe('AuthProvider', () => {
       await capturedAuth?.signOut();
     });
 
-    // Even on failure, it should still clean up
-    expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
+    // Even on failure, it should still redirect
     expect(window.location.href).toBe('/login');
     expect(logError).toHaveBeenCalledWith('Logout error', expect.any(Error));
   });
 
   it('updateProfile updates user on success', async () => {
-    localStorage.setItem('auth_token', 'token');
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -220,7 +201,6 @@ describe('AuthProvider', () => {
   });
 
   it('updateProfile logs and throws on error', async () => {
-    localStorage.setItem('auth_token', 'token');
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -242,7 +222,6 @@ describe('AuthProvider', () => {
   // --- Additional tests for uncovered functions ---
 
   it('checkAuth can be called manually to re-fetch user', async () => {
-    localStorage.setItem('auth_token', 'token');
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -278,8 +257,15 @@ describe('AuthProvider', () => {
     });
   });
 
-  it('checkAuth sets user to null when no token and stops loading', async () => {
-    // No token in storage
+  it('checkAuth sets user to null when /auth/me returns error', async () => {
+    // First call succeeds, second will fail
+    (api.get as any).mockResolvedValueOnce({
+      id: '1',
+      email: 'ana@example.com',
+      name: 'Ana',
+      plan: 'basic',
+    });
+
     renderWithProvider(
       <>
         <TestConsumer />
@@ -291,17 +277,17 @@ describe('AuthProvider', () => {
       expect(capturedAuth?.loading).toBe(false);
     });
 
-    // Call checkAuth again with no token
+    // Now make /auth/me fail (no valid cookie)
+    (api.get as any).mockRejectedValue(new Error('Unauthorized'));
+
     await act(async () => {
       await capturedAuth?.checkAuth();
     });
 
     expect(screen.getByText('user:none')).toBeInTheDocument();
-    expect(api.get).not.toHaveBeenCalled(); // no API call when no token
   });
 
   it('profile alias matches user', async () => {
-    localStorage.setItem('auth_token', 'token');
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',
@@ -320,6 +306,7 @@ describe('AuthProvider', () => {
 
   it('removes event listener on unmount', async () => {
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+    (api.get as any).mockRejectedValue(new Error('Unauthorized'));
 
     const { unmount } = renderWithProvider(<TestConsumer />);
 
@@ -335,7 +322,6 @@ describe('AuthProvider', () => {
   });
 
   it('signOut sets user to null in state', async () => {
-    localStorage.setItem('auth_token', 'token');
     (api.get as any).mockResolvedValue({
       id: '1',
       email: 'ana@example.com',

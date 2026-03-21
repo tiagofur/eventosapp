@@ -86,16 +86,12 @@ export const Register: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.post<{
-        tokens: { access_token: string; refresh_token: string };
-      }>("/auth/register", {
+      // Backend sets httpOnly cookies on successful register — no need to store tokens client-side
+      await api.post("/auth/register", {
         name: data.name,
         email: data.email,
         password: data.password,
       });
-      localStorage.setItem("auth_token", res.tokens.access_token);
-      if (res.tokens.refresh_token)
-        localStorage.setItem("refresh_token", res.tokens.refresh_token);
       await checkAuth();
       navigate("/dashboard");
     } catch (err: any) {

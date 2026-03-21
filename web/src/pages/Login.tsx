@@ -55,14 +55,8 @@ export const Login: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.post<{
-        tokens: { access_token: string; refresh_token: string };
-      }>("/auth/login", { email: data.email, password: data.password });
-      if (!res.tokens?.access_token)
-        throw new Error("Respuesta del servidor inválida");
-      localStorage.setItem("auth_token", res.tokens.access_token);
-      if (res.tokens.refresh_token)
-        localStorage.setItem("refresh_token", res.tokens.refresh_token);
+      // Backend sets httpOnly cookies on successful login — no need to store tokens client-side
+      await api.post("/auth/login", { email: data.email, password: data.password });
       await checkAuth();
       navigate("/dashboard");
     } catch (err: any) {

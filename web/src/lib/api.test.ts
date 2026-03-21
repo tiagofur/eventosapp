@@ -7,15 +7,13 @@ describe('api', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     globalThis.fetch = vi.fn();
-    window.localStorage.getItem = vi.fn().mockReturnValue('token');
-    window.localStorage.removeItem = vi.fn();
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
   });
 
-  it('adds auth header and query params', async () => {
+  it('sends request with credentials include and query params', async () => {
     (globalThis.fetch as any).mockResolvedValue({
       ok: true,
       status: 200,
@@ -28,11 +26,15 @@ describe('api', () => {
       'http://localhost:8080/api/clients?q=ana',
       expect.objectContaining({
         method: 'GET',
+        credentials: 'include',
         headers: expect.objectContaining({
-          Authorization: 'Bearer token',
+          'Content-Type': 'application/json',
         }),
       })
     );
+    // No Authorization header — auth is via httpOnly cookies
+    const callArgs = (globalThis.fetch as any).mock.calls[0];
+    expect(callArgs[1].headers).not.toHaveProperty('Authorization');
   });
 
   it('dispatches logout on 401', async () => {
@@ -44,7 +46,6 @@ describe('api', () => {
     });
 
     await expect(api.get('/secure')).rejects.toThrow('unauthorized');
-    expect(window.localStorage.removeItem).toHaveBeenCalledWith('auth_token');
     expect(dispatchSpy).toHaveBeenCalled();
   });
 
@@ -88,8 +89,7 @@ describe('api', () => {
     expect(result).toEqual({ id: '1', name: 'Updated' });
   });
 
-  it('omits Authorization header when no token', async () => {
-    (window.localStorage.getItem as any).mockReturnValue(null);
+  it('does not include Authorization header (cookies handle auth)', async () => {
     (globalThis.fetch as any).mockResolvedValue({
       ok: true,
       status: 200,

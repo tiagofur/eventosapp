@@ -52,19 +52,8 @@ export const GoogleSignInButton: React.FC<Props> = ({ onError }) => {
   ) => {
     setIsLoading(true);
     try {
-      const res = await api.post<{
-        tokens: { access_token: string; refresh_token: string };
-      }>("/auth/google", { id_token: response.credential });
-
-      if (!res.tokens?.access_token) {
-        throw new Error("Respuesta del servidor inválida");
-      }
-
-      localStorage.setItem("auth_token", res.tokens.access_token);
-      if (res.tokens.refresh_token) {
-        localStorage.setItem("refresh_token", res.tokens.refresh_token);
-      }
-
+      // Backend sets httpOnly cookies on successful Google auth — no need to store tokens client-side
+      await api.post("/auth/google", { id_token: response.credential });
       await checkAuth();
       navigate("/dashboard");
     } catch (err: any) {

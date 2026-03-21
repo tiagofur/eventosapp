@@ -30,8 +30,6 @@ vi.mock('../lib/api', () => ({
 describe('Register', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(Storage.prototype, 'setItem');
-    vi.spyOn(Storage.prototype, 'getItem');
   });
 
   it('renders registration form', () => {
@@ -63,7 +61,7 @@ describe('Register', () => {
   });
 
   it('submits registration and navigates', async () => {
-    (api.post as any).mockResolvedValue({ tokens: { access_token: 'token' } });
+    (api.post as any).mockResolvedValue({});
     render(
       <MemoryRouter>
         <Register />
@@ -93,7 +91,7 @@ describe('Register', () => {
         password: 'password',
       });
     });
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('auth_token', 'token');
+    // No localStorage assertions — tokens are handled via httpOnly cookies
     expect(mockCheckAuth).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
   });
@@ -222,7 +220,7 @@ describe('Register', () => {
     const submitBtn = screen.getByRole('button', { name: /creando cuenta/i });
     expect(submitBtn).toBeDisabled();
 
-    resolvePost!({ tokens: { access_token: 'token' } });
+    resolvePost!({});
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
