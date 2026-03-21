@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "../hooks/useTheme";
 import { Logo } from "../components/Logo";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -349,6 +350,20 @@ export const Login: React.FC = () => {
                 )}
               </button>
             </form>
+
+            {/* Social Sign-In Divider */}
+            <div className="mt-6 flex items-center gap-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-text-tertiary font-medium">
+                o continúa con
+              </span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Google Sign-In */}
+            <div className="mt-4">
+              <GoogleSignInButton onError={(msg) => setError(msg)} />
+            </div>
 
             {/* Trust badges */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-text-tertiary">

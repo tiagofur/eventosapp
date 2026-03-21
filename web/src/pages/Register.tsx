@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import {
   Lock,
   Mail,
@@ -485,6 +486,20 @@ export const Register: React.FC = () => {
                 )}
               </button>
             </form>
+
+            {/* Social Sign-In Divider */}
+            <div className="mt-6 flex items-center gap-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-text-tertiary font-medium">
+                o continúa con
+              </span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Google Sign-In */}
+            <div className="mt-4">
+              <GoogleSignInButton onError={(msg) => setError(msg)} />
+            </div>
 
             {/* Trust badges */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-text-tertiary">
