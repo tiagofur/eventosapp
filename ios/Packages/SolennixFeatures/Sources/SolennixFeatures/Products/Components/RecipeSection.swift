@@ -116,49 +116,60 @@ struct RecipeItemRow: View {
     let onRemove: () -> Void
 
     @State private var quantityText: String = ""
+    @State private var showPicker = false
+
+    private var selectedItem: InventoryItem? {
+        inventoryItems.first { $0.id == item.inventoryId }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Inventory selector
-            Text("Seleccionar")
-                .font(.caption)
-                .foregroundStyle(SolennixColors.textTertiary)
+            // Inventory selector button
+            Button {
+                showPicker = true
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "archivebox")
+                        .font(.body)
+                        .foregroundStyle(selectedItem != nil ? SolennixColors.primary : SolennixColors.textTertiary)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.xs) {
-                    ForEach(inventoryItems) { inv in
-                        Button {
-                            onSelectInventory(inv.id)
-                        } label: {
-                            Text(inv.ingredientName)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(selectedItem?.ingredientName ?? "Seleccionar item...")
+                            .font(.subheadline)
+                            .foregroundStyle(selectedItem != nil ? SolennixColors.text : SolennixColors.textTertiary)
+
+                        if let inv = selectedItem {
+                            Text("Stock: \(Int(inv.currentStock)) \(inv.unit)")
                                 .font(.caption)
-                                .lineLimit(1)
-                                .padding(.horizontal, Spacing.sm)
-                                .padding(.vertical, Spacing.xs)
-                                .background(
-                                    item.inventoryId == inv.id
-                                        ? SolennixColors.primary
-                                        : SolennixColors.surface
-                                )
-                                .foregroundStyle(
-                                    item.inventoryId == inv.id
-                                        ? .white
-                                        : SolennixColors.textSecondary
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: CornerRadius.md)
-                                        .stroke(
-                                            item.inventoryId == inv.id
-                                                ? SolennixColors.primary
-                                                : SolennixColors.border,
-                                            lineWidth: 1
-                                        )
-                                )
+                                .foregroundStyle(SolennixColors.textSecondary)
                         }
-                        .buttonStyle(.plain)
                     }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textTertiary)
                 }
+                .padding(Spacing.sm)
+                .background(SolennixColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.md)
+                        .stroke(SolennixColors.border, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showPicker) {
+                InventoryPickerSheet(
+                    inventoryItems: inventoryItems,
+                    selectedId: item.inventoryId,
+                    onSelect: { inventoryId in
+                        onSelectInventory(inventoryId)
+                        showPicker = false
+                    }
+                )
+                .presentationDetents([.medium, .large])
             }
 
             // Quantity and remove
@@ -200,6 +211,72 @@ struct RecipeItemRow: View {
         .padding(.vertical, Spacing.xs)
         .onAppear {
             quantityText = String(format: "%.0f", item.quantityRequired)
+        }
+    }
+}
+
+// MARK: - Inventory Picker Sheet
+
+private struct InventoryPickerSheet: View {
+
+    let inventoryItems: [InventoryItem]
+    let selectedId: String
+    let onSelect: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var searchText = ""
+
+    private var filteredItems: [InventoryItem] {
+        if searchText.isEmpty { return inventoryItems }
+        return inventoryItems.filter {
+            $0.ingredientName.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(filteredItems) { item in
+                Button {
+                    onSelect(item.id)
+                } label: {
+                    HStack(spacing: Spacing.sm) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.ingredientName)
+                                .font(.body)
+                                .foregroundStyle(SolennixColors.text)
+
+                            Text("Stock: \(Int(item.currentStock)) \(item.unit)")
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        if let cost = item.unitCost, cost > 0 {
+                            Text(cost.formatted(.currency(code: "MXN")))
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.textSecondary)
+                        }
+
+                        if item.id == selectedId {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(SolennixColors.success)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(SolennixColors.surfaceGrouped)
+            .searchable(text: $searchText, prompt: "Buscar item...")
+            .navigationTitle("Seleccionar Item")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancelar") { dismiss() }
+                }
+            }
         }
     }
 }
