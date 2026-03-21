@@ -305,7 +305,8 @@
 | Push notifications | P1 | Device tokens se registran pero no hay manejo de notificaciones entrantes |
 | ~~StoreKit 2 flujo de compra completo~~ | ✅ | Reemplazado por RevenueCat SDK — flujo completo implementado |
 | Feature gating enforcement | P0 | Limites de plan definidos pero no enforced en todas las vistas |
-| Apple Sign-In en UI | P1 | Backend listo, falta integracion completa en LoginView |
+| ~~Apple Sign-In en UI~~ | ✅ | Wired AppleSignInService a LoginView y RegisterView |
+| ~~Google Sign-In en UI~~ | ✅ | GoogleSignIn SDK integrado con GoogleSignInService |
 
 ---
 
@@ -381,12 +382,14 @@
 | Widgets (Glance) | P1 | No implementados |
 | Generacion de PDF | P1 | No implementado |
 | ~~Play Billing~~ | ✅ | Implementado via RevenueCat SDK |
+| ~~Google Sign-In mock~~ | ✅ | Reemplazado mock con Credential Manager real |
+| ~~RevenueCat sync en register/Google~~ | ✅ | Agregado logInWith despues de register y Google sign-in |
 | Push notifications (FCM) | P1 | No implementado |
 | Deep linking completo | P2 | Parcial |
 | Navigation Rail (tablets) | P2 | No implementado |
 | Live Activity equivalente (notificacion persistente) | P2 | No implementado |
 | Cotizacion rapida (Quick Quote) | P1 | No implementado |
-| Feature gating enforcement | P0 | Todo desbloqueado |
+| Feature gating enforcement | P0 | Todo desbloqueado (backend ya enforced) |
 | Offline mode (Room + sync) | P1 | No implementado |
 
 ---
@@ -453,8 +456,8 @@
 | Registro | ✅ | ✅ | ✅ | ✅ | |
 | Forgot password | ✅ | ✅ | ✅ | ✅ | |
 | Reset password | ✅ | ✅ | ✅ | ✅ | |
-| Google Sign-In | ⬜ | ⬜ | ⬜ | ✅ | Backend listo, sin UI en ningun cliente |
-| Apple Sign-In | ⬜ | ➖ | ⬜ | ✅ | Backend listo, sin UI |
+| Google Sign-In | ✅ | ✅ | ✅ | ✅ | iOS: GoogleSignIn SDK, Android: Credential Manager, Web: GSI |
+| Apple Sign-In | ✅ | ➖ | ➖ | ✅ | iOS: AppleSignInService wired a LoginView/RegisterView |
 | Biometric gate | ✅ | ✅ | ➖ | ➖ | Solo movil |
 | Refresh token | ✅ | ✅ | ✅ | ✅ | |
 
@@ -512,7 +515,7 @@
 | Ver estado de suscripcion | ✅ | ✅ | ✅ | ✅ | |
 | Flujo de compra | ✅ | ✅ | ✅ (Stripe) | ✅ | iOS y Android via RevenueCat SDK, Web via Stripe |
 | Portal de gestion | ⬜ | ⬜ | ✅ (Stripe) | ✅ | Solo web |
-| Feature gating | 🔄 | ⬜ | 🔄 | ✅ | PlanLimitsManager en iOS, no enforced consistentemente |
+| Feature gating | 🔄 | ⬜ | 🔄 | ✅ | Backend enforced (403 structured), iOS PlanLimitsManager, Web usePlanLimits |
 | Webhook Stripe | ➖ | ➖ | ➖ | ✅ | |
 | Webhook RevenueCat | ➖ | ➖ | ➖ | ✅ | |
 
@@ -596,7 +599,7 @@
 
 | Brecha | Plataformas Afectadas | Impacto | Esfuerzo Estimado | Prioridad |
 |--------|----------------------|---------|-------------------|-----------|
-| Feature gating no enforced | iOS, Android, Web | Usuarios free acceden a todo; sin revenue de suscripciones | 20-30h | P0 |
+| Feature gating no enforced | iOS, Android, Web | Backend enforced (403 structured), clientes necesitan manejar 403 con upgrade prompt | 10-15h | P0 |
 | ~~Play Billing no implementado~~ | ✅ | Implementado via RevenueCat SDK | 0h | ✅ |
 | Push notifications no implementadas | iOS, Android | Sin engagement ni recordatorios de eventos | 15-20h | P1 |
 | Generacion de PDF falta en Android | Android | Usuarios Android no pueden generar documentos | 20-25h | P1 |
@@ -604,7 +607,7 @@
 | Modo offline incompleto en movil | iOS, Android | Sin funcionalidad sin conexion | 20-30h | P1 |
 | ~~StoreKit 2 flujo incompleto~~ | ✅ | Reemplazado por RevenueCat SDK | 0h | ✅ |
 | Notificaciones email limitadas | Backend | Solo reset de contrasena; sin recordatorios | 10-15h | P1 |
-| Google/Apple Sign-In sin UI | iOS, Android, Web | Backend listo pero ningun cliente lo usa | 8-12h | P1 |
+| ~~Google/Apple Sign-In sin UI~~ | ✅ | Implementado en iOS (Apple+Google), Android (Google), Web (Google) | 0h | ✅ |
 | Cotizacion rapida falta en Android | Android | Feature disponible solo en iOS y web | 6-8h | P1 |
 | Fotos de evento falta en Android y Web | Android, Web | Solo iOS tiene galeria de fotos | 10-15h | P2 |
 | Panel admin solo en web | iOS, Android | Administracion solo desde navegador | ➖ | P3 (aceptable) |
