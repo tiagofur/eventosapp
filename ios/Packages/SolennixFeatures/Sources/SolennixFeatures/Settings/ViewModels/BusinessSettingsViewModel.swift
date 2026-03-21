@@ -11,12 +11,6 @@ private struct BusinessInfoBody: Encodable {
     let businessName: String
     let showBusinessNameInPdf: Bool
     let brandColor: String
-
-    enum CodingKeys: String, CodingKey {
-        case businessName = "business_name"
-        case showBusinessNameInPdf = "show_business_name_in_pdf"
-        case brandColor = "brand_color"
-    }
 }
 
 private struct ContractDefaultsBody: Encodable {
@@ -24,13 +18,6 @@ private struct ContractDefaultsBody: Encodable {
     let defaultCancellationDays: Double
     let defaultRefundPercent: Double
     let contractTemplate: String
-
-    enum CodingKeys: String, CodingKey {
-        case defaultDepositPercent = "default_deposit_percent"
-        case defaultCancellationDays = "default_cancellation_days"
-        case defaultRefundPercent = "default_refund_percent"
-        case contractTemplate = "contract_template"
-    }
 }
 
 // MARK: - Business Settings View Model

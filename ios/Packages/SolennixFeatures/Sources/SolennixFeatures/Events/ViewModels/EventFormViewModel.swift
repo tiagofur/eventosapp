@@ -71,48 +71,26 @@ public struct SelectedSupplyItem: Identifiable, Hashable {
     }
 }
 
-public struct EquipmentConflict: Identifiable, Hashable, Codable {
+public struct FormEquipmentConflict: Identifiable, Hashable, Codable {
     public let id: String
     public let equipmentName: String
     public let conflictDate: String
     public let eventName: String
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case equipmentName = "equipment_name"
-        case conflictDate = "conflict_date"
-        case eventName = "event_name"
-    }
 }
 
-public struct EquipmentSuggestion: Identifiable, Hashable, Codable {
+public struct FormEquipmentSuggestion: Identifiable, Hashable, Codable {
     public let id: String
     public let inventoryId: String
     public let name: String
     public let suggestedQty: Int
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case inventoryId = "inventory_id"
-        case name
-        case suggestedQty = "suggested_qty"
-    }
 }
 
-public struct SupplySuggestion: Identifiable, Hashable, Codable {
+public struct FormSupplySuggestion: Identifiable, Hashable, Codable {
     public let id: String
     public let inventoryId: String
     public let name: String
     public let suggestedQty: Double
     public let unitCost: Double
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case inventoryId = "inventory_id"
-        case name
-        case suggestedQty = "suggested_qty"
-        case unitCost = "unit_cost"
-    }
 }
 
 // MARK: - Event Form View Model
@@ -151,9 +129,9 @@ public final class EventFormViewModel {
     public var selectedEquipment: [SelectedEquipmentItem] = []
     public var supplyInventory: [InventoryItem] = []
     public var selectedSupplies: [SelectedSupplyItem] = []
-    public var equipmentConflicts: [EquipmentConflict] = []
-    public var equipmentSuggestions: [EquipmentSuggestion] = []
-    public var supplySuggestions: [SupplySuggestion] = []
+    public var equipmentConflicts: [FormEquipmentConflict] = []
+    public var equipmentSuggestions: [FormEquipmentSuggestion] = []
+    public var supplySuggestions: [FormSupplySuggestion] = []
 
     // MARK: - UI State
 
@@ -462,7 +440,7 @@ public final class EventFormViewModel {
         ]
 
         do {
-            let conflicts: [EquipmentConflict] = try await apiClient.post(
+            let conflicts: [FormEquipmentConflict] = try await apiClient.post(
                 Endpoint.equipmentConflicts,
                 body: AnyCodable(body)
             )
@@ -487,11 +465,11 @@ public final class EventFormViewModel {
         ]
 
         do {
-            async let fetchEquipSugg: [EquipmentSuggestion] = apiClient.post(
+            async let fetchEquipSugg: [FormEquipmentSuggestion] = apiClient.post(
                 Endpoint.equipmentSuggestions,
                 body: AnyCodable(body)
             )
-            async let fetchSupplySugg: [SupplySuggestion] = apiClient.post(
+            async let fetchSupplySugg: [FormSupplySuggestion] = apiClient.post(
                 Endpoint.supplySuggestions,
                 body: AnyCodable(body)
             )

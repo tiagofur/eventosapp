@@ -55,11 +55,6 @@ private struct ProductResult: Decodable {
     let name: String
     let category: String?
     let basePrice: Double?
-
-    enum CodingKeys: String, CodingKey {
-        case id, name, category
-        case basePrice = "base_price"
-    }
 }
 
 // MARK: - Search View Model

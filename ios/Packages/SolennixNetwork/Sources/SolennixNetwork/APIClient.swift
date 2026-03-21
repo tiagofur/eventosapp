@@ -7,11 +7,6 @@ import SolennixCore
 public struct UploadResponse: Codable, Sendable {
     public let url: String
     public let thumbnailUrl: String?
-
-    enum CodingKeys: String, CodingKey {
-        case url
-        case thumbnailUrl = "thumbnail_url"
-    }
 }
 
 // MARK: - API Client

@@ -12,15 +12,6 @@ private struct InventoryFormBody: Encodable {
     let minimumStock: Double
     let unit: String
     let unitCost: Double?
-
-    enum CodingKeys: String, CodingKey {
-        case ingredientName = "ingredient_name"
-        case type
-        case currentStock = "current_stock"
-        case minimumStock = "minimum_stock"
-        case unit
-        case unitCost = "unit_cost"
-    }
 }
 
 // MARK: - Inventory Form View Model

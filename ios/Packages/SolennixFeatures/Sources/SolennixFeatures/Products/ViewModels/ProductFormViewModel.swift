@@ -13,23 +13,11 @@ private struct ProductBody: Encodable {
     let basePrice: Double
     let isActive: Bool
     let imageUrl: String?
-
-    enum CodingKeys: String, CodingKey {
-        case name, category
-        case basePrice = "base_price"
-        case isActive = "is_active"
-        case imageUrl = "image_url"
-    }
 }
 
 private struct RecipeIngredientBody: Encodable {
     let inventoryId: String
     let quantityRequired: Double
-
-    enum CodingKeys: String, CodingKey {
-        case inventoryId = "inventory_id"
-        case quantityRequired = "quantity_required"
-    }
 }
 
 // MARK: - Recipe Item

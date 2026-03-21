@@ -327,12 +327,6 @@ public final class CalendarViewModel {
                     let startDate: String
                     let endDate: String
                     let reason: String?
-
-                    enum CodingKeys: String, CodingKey {
-                        case startDate = "start_date"
-                        case endDate = "end_date"
-                        case reason
-                    }
                 }
                 let body = BlockRequest(startDate: dateStr, endDate: dateStr, reason: reason)
                 let _: UnavailableDate = try await apiClient.post(Endpoint.unavailableDates, body: body)
