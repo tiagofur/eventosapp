@@ -109,6 +109,10 @@ public final class AuthManager {
     /// Set by the app layer after initialization.
     public weak var userTrackingDelegate: UserTrackingDelegate?
 
+    /// Tracks whether biometric authentication has already been passed in this app session.
+    /// Reset on sign-out or app relaunch (since `@Observable` state is re-created).
+    private var biometricPassed: Bool = false
+
     // MARK: - Init
 
     public init(keychain: KeychainHelper = .standard) {
@@ -123,6 +127,12 @@ public final class AuthManager {
         guard let accessToken = keychain.readString(for: KeychainHelper.Keys.accessToken),
               !accessToken.isEmpty else {
             authState = .unauthenticated
+            return
+        }
+
+        // Gate on biometric unlock if enabled and not yet passed this session
+        if isBiometricUnlockEnabled && canUseBiometrics() && !biometricPassed {
+            authState = .biometricLocked
             return
         }
 
@@ -310,6 +320,7 @@ public final class AuthManager {
 
         clearTokens()
         currentUser = nil
+        biometricPassed = false
         authState = .unauthenticated
         userTrackingDelegate?.clearUser()
     }
@@ -365,15 +376,39 @@ public final class AuthManager {
         return context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
     }
 
+    /// Whether the user has opted-in to biometric unlock for the app.
+    public var isBiometricUnlockEnabled: Bool {
+        keychain.readString(for: KeychainHelper.Keys.biometricUnlockEnabled) == "true"
+    }
+
+    /// Persist the user's biometric unlock preference.
+    public func setBiometricUnlockEnabled(_ enabled: Bool) {
+        if enabled {
+            keychain.saveString("true", for: KeychainHelper.Keys.biometricUnlockEnabled)
+        } else {
+            keychain.delete(for: KeychainHelper.Keys.biometricUnlockEnabled)
+        }
+    }
+
+    /// Mark biometric authentication as passed for this session.
+    /// Called after a successful biometric prompt so `checkAuth` proceeds to the API call.
+    public func markBiometricPassed() {
+        biometricPassed = true
+    }
+
     /// Prompt the user for biometric authentication.
     /// - Returns: `true` if authentication succeeded.
     public func authenticateWithBiometrics() async throws -> Bool {
         let context = LAContext()
         context.localizedReason = "Desbloquear Solennix"
-        return try await context.evaluatePolicy(
+        let success = try await context.evaluatePolicy(
             .deviceOwnerAuthenticationWithBiometrics,
             localizedReason: "Inicia sesion con Face ID o Touch ID"
         )
+        if success {
+            biometricPassed = true
+        }
+        return success
     }
 
     // MARK: - Token Helpers (Public for APIClient)

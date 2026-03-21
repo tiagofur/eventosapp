@@ -27,11 +27,16 @@ public final class AuthViewModel {
     // MARK: - Dependencies
 
     private let authManager: AuthManager
+    private let googleSignInService: any GoogleSignInServiceProtocol
 
     // MARK: - Init
 
-    public init(authManager: AuthManager) {
+    public init(
+        authManager: AuthManager,
+        googleSignInService: any GoogleSignInServiceProtocol = GoogleSignInService()
+    ) {
         self.authManager = authManager
+        self.googleSignInService = googleSignInService
     }
 
     // MARK: - Validation Helpers
@@ -173,6 +178,20 @@ public final class AuthViewModel {
         }
 
         isLoading = false
+    }
+
+    /// Trigger the full Google Sign-In flow: present the SDK sheet, then send the token to the backend.
+    @MainActor
+    public func triggerGoogleSignIn() async {
+        do {
+            let result = try await googleSignInService.signIn()
+            await signInWithGoogle(idToken: result.idToken, fullName: result.fullName)
+        } catch let error as GoogleSignInError {
+            if case .cancelled = error { return }
+            errorMessage = error.errorDescription
+        } catch {
+            errorMessage = "Error al iniciar sesion con Google"
+        }
     }
 
     // MARK: - Forgot Password

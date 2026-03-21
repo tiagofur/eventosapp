@@ -262,7 +262,7 @@ public struct RegisterView: View {
 
             // Google Sign In
             Button {
-                Task { await triggerGoogleSignIn() }
+                Task { await viewModel?.triggerGoogleSignIn() }
             } label: {
                 HStack(spacing: Spacing.sm) {
                     Text("G")
@@ -284,22 +284,6 @@ public struct RegisterView: View {
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
             }
             .disabled(viewModel?.isLoading ?? false)
-        }
-    }
-
-    // MARK: - Google Sign-In Helper
-
-    @MainActor
-    private func triggerGoogleSignIn() async {
-        do {
-            let service = GoogleSignInService()
-            let result = try await service.signIn()
-            await viewModel?.signInWithGoogle(idToken: result.idToken, fullName: result.fullName)
-        } catch let error as GoogleSignInError {
-            if case .cancelled = error { return }
-            viewModel?.errorMessage = error.errorDescription
-        } catch {
-            viewModel?.errorMessage = "Error al iniciar sesion con Google"
         }
     }
 

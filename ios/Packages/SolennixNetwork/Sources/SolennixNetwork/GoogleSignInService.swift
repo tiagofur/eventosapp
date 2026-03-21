@@ -35,6 +35,15 @@ public enum GoogleSignInError: LocalizedError {
     }
 }
 
+// MARK: - Google Sign In Service Protocol
+
+/// Abstraction for Google Sign-In, enabling dependency injection and testability.
+@MainActor
+public protocol GoogleSignInServiceProtocol: Sendable {
+    /// Perform Google Sign-In by presenting the sign-in sheet.
+    func signIn() async throws -> GoogleSignInResult
+}
+
 // MARK: - Google Sign In Service
 
 /// Handles the Google Sign-In flow using the GoogleSignIn SDK.
@@ -45,7 +54,7 @@ public enum GoogleSignInError: LocalizedError {
 /// let result = try await service.signIn()
 /// // Send result.idToken to your backend via AuthManager.signInWithGoogle
 /// ```
-public final class GoogleSignInService: Sendable {
+public final class GoogleSignInService: GoogleSignInServiceProtocol, Sendable {
 
     public init() {}
 

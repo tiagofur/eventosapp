@@ -15,6 +15,7 @@ public final class KeychainHelper: Sendable {
     public enum Keys {
         public static let accessToken = "com.solennix.app.accessToken"
         public static let refreshToken = "com.solennix.app.refreshToken"
+        public static let biometricUnlockEnabled = "com.solennix.app.biometricUnlockEnabled"
     }
 
     // MARK: - Init
