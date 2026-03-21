@@ -14,6 +14,7 @@ public enum Endpoint {
     public static let me = "/auth/me"
     public static let changePassword = "/auth/change-password"
     public static let appleAuth = "/auth/apple"
+    public static let googleAuth = "/auth/google"
 
     // MARK: - Clients
 

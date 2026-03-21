@@ -53,7 +53,7 @@ public struct RegisterView: View {
 
                 dividerWithText
 
-                appleSignInButton
+                socialSignInButtons
 
                 loginLink
             }
@@ -100,7 +100,7 @@ public struct RegisterView: View {
                     dividerWithText
                         .frame(maxWidth: 440)
 
-                    appleSignInButton
+                    socialSignInButtons
                         .frame(maxWidth: 440)
 
                     loginLink
@@ -237,17 +237,70 @@ public struct RegisterView: View {
         }
     }
 
-    // MARK: - Apple Sign In
+    // MARK: - Social Sign In Buttons
 
-    private var appleSignInButton: some View {
-        SignInWithAppleButton(.signUp) { request in
-            request.requestedScopes = [.fullName, .email]
-        } onCompletion: { _ in
-            // Apple Sign In handled via AppleSignInService in a real implementation
+    private var socialSignInButtons: some View {
+        VStack(spacing: Spacing.md) {
+            // Apple Sign In
+            Button {
+                Task { await viewModel?.signInWithApple() }
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "apple.logo")
+                        .font(.title3)
+                    Text("Continuar con Apple")
+                        .font(.body)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(colorScheme == .dark ? .black : .white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(colorScheme == .dark ? Color.white : Color.black)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+            }
+            .disabled(viewModel?.isLoading ?? false)
+
+            // Google Sign In
+            Button {
+                Task { await triggerGoogleSignIn() }
+            } label: {
+                HStack(spacing: Spacing.sm) {
+                    Text("G")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.red)
+                    Text("Continuar con Google")
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundStyle(SolennixColors.text)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(SolennixColors.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.md)
+                        .stroke(SolennixColors.separator, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+            }
+            .disabled(viewModel?.isLoading ?? false)
         }
-        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-        .frame(height: 50)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+    }
+
+    // MARK: - Google Sign-In Helper
+
+    @MainActor
+    private func triggerGoogleSignIn() async {
+        do {
+            let service = GoogleSignInService()
+            let result = try await service.signIn()
+            await viewModel?.signInWithGoogle(idToken: result.idToken, fullName: result.fullName)
+        } catch let error as GoogleSignInError {
+            if case .cancelled = error { return }
+            viewModel?.errorMessage = error.errorDescription
+        } catch {
+            viewModel?.errorMessage = "Error al iniciar sesion con Google"
+        }
     }
 
     // MARK: - Login Link

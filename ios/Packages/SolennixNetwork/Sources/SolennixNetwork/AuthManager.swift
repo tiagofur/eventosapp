@@ -213,6 +213,69 @@ public final class AuthManager {
         return response.user
     }
 
+    // MARK: - Sign In with Apple
+
+    /// Authenticate with an Apple identity token from Sign in with Apple.
+    @discardableResult
+    public func signInWithApple(
+        identityToken: String,
+        authorizationCode: String,
+        fullName: String?,
+        email: String?
+    ) async throws -> User {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let client = apiClient else {
+            throw APIError.unknown
+        }
+
+        var body: [String: String] = [
+            "identity_token": identityToken,
+            "authorization_code": authorizationCode,
+        ]
+        if let fullName, !fullName.isEmpty {
+            body["full_name"] = fullName
+        }
+        if let email, !email.isEmpty {
+            body["email"] = email
+        }
+
+        let response: AuthResponse = try await client.post(Endpoint.appleAuth, body: body)
+
+        storeTokens(access: response.accessToken, refresh: response.refreshToken)
+        currentUser = response.user
+        authState = .authenticated(response.user)
+        userTrackingDelegate?.setUser(id: response.user.id, email: response.user.email, name: response.user.name)
+        return response.user
+    }
+
+    // MARK: - Sign In with Google
+
+    /// Authenticate with a Google ID token.
+    @discardableResult
+    public func signInWithGoogle(idToken: String, fullName: String?) async throws -> User {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let client = apiClient else {
+            throw APIError.unknown
+        }
+
+        var body: [String: String] = ["id_token": idToken]
+        if let fullName, !fullName.isEmpty {
+            body["full_name"] = fullName
+        }
+
+        let response: AuthResponse = try await client.post(Endpoint.googleAuth, body: body)
+
+        storeTokens(access: response.accessToken, refresh: response.refreshToken)
+        currentUser = response.user
+        authState = .authenticated(response.user)
+        userTrackingDelegate?.setUser(id: response.user.id, email: response.user.email, name: response.user.name)
+        return response.user
+    }
+
     // MARK: - Sign Out
 
     /// Sign out the current user. Clears tokens regardless of network errors.

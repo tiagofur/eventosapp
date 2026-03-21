@@ -123,6 +123,58 @@ public final class AuthViewModel {
         isLoading = false
     }
 
+    // MARK: - Sign In with Apple
+
+    @MainActor
+    public func signInWithApple() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            let service = AppleSignInService()
+            let result = try await service.signIn()
+
+            // Build full name from PersonNameComponents
+            var fullName: String?
+            if let nameComponents = result.fullName {
+                let formatter = PersonNameComponentsFormatter()
+                let name = formatter.string(from: nameComponents)
+                if !name.isEmpty {
+                    fullName = name
+                }
+            }
+
+            _ = try await authManager.signInWithApple(
+                identityToken: result.identityToken,
+                authorizationCode: result.authorizationCode,
+                fullName: fullName,
+                email: result.email
+            )
+        } catch let error as AppleSignInError {
+            if case .cancelled = error { return }
+            errorMessage = mapError(error)
+        } catch {
+            errorMessage = mapError(error)
+        }
+    }
+
+    // MARK: - Sign In with Google
+
+    @MainActor
+    public func signInWithGoogle(idToken: String, fullName: String?) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            _ = try await authManager.signInWithGoogle(idToken: idToken, fullName: fullName)
+        } catch {
+            errorMessage = mapError(error)
+        }
+
+        isLoading = false
+    }
+
     // MARK: - Forgot Password
 
     @MainActor
