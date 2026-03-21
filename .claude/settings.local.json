@@ -237,7 +237,8 @@
       "Bash(2)",
       "Bash(xcodebuild build:*)",
       "Bash(rm -rf ~/Library/Developer/Xcode/DerivedData/*)",
-      "Bash(rm -rf ~/Library/Caches/org.swift.swiftpm/)"
+      "Bash(rm -rf ~/Library/Caches/org.swift.swiftpm/)",
+      "Bash(npx -p typescript tsc --noEmit)"
     ]
   }
 }
