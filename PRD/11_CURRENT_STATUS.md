@@ -9,7 +9,7 @@
 
 | Plataforma | Estado | Notas |
 |------------|--------|-------|
-| Backend (Go) | Funcional ✅ | API completa, 26 migraciones, auth multi-proveedor, Stripe, RevenueCat |
+| Backend (Go) | Funcional ✅ | API completa, 27 migraciones, auth multi-proveedor, Stripe, RevenueCat + sync bidireccional |
 | Web (React) | Funcional ✅ | Todas las paginas principales, panel admin, cotizacion rapida |
 | iOS (SwiftUI) | En desarrollo 🔄 | Features principales + widgets (4 tipos) + Live Activity + 7 generadores PDF |
 | Android (Jetpack Compose) | En desarrollo 🔄 | Features principales, arquitectura modular multi-feature |
@@ -303,7 +303,7 @@
 |------|-----------|-------|
 | Modo offline completo | P1 | SwiftData existe pero falta sincronizacion offline-first completa |
 | Push notifications | P1 | Device tokens se registran pero no hay manejo de notificaciones entrantes |
-| StoreKit 2 flujo de compra completo | P1 | PricingView existe pero falta completar el flujo de compra |
+| ~~StoreKit 2 flujo de compra completo~~ | ✅ | Reemplazado por RevenueCat SDK — flujo completo implementado |
 | Feature gating enforcement | P0 | Limites de plan definidos pero no enforced en todas las vistas |
 | Apple Sign-In en UI | P1 | Backend listo, falta integracion completa en LoginView |
 
@@ -510,7 +510,7 @@
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
 | Ver estado de suscripcion | ✅ | ✅ | ✅ | ✅ | |
-| Flujo de compra | 🔄 | ⬜ | ✅ (Stripe) | ✅ | iOS parcial (StoreKit 2), Android sin Play Billing |
+| Flujo de compra | ✅ | ✅ | ✅ (Stripe) | ✅ | iOS y Android via RevenueCat SDK, Web via Stripe |
 | Portal de gestion | ⬜ | ⬜ | ✅ (Stripe) | ✅ | Solo web |
 | Feature gating | 🔄 | ⬜ | 🔄 | ✅ | PlanLimitsManager en iOS, no enforced consistentemente |
 | Webhook Stripe | ➖ | ➖ | ➖ | ✅ | |
@@ -551,7 +551,7 @@
 | Base de datos | PostgreSQL | 15+ | pgx/v5 driver |
 | Migraciones | Custom (embed.FS) | 26 migraciones | Auto-apply on startup |
 | Pagos | Stripe | API actual | Checkout Sessions + Webhooks |
-| Suscripciones | RevenueCat | Webhooks | Para iOS/Android |
+| Suscripciones | RevenueCat SDK (iOS/Android) + Stripe (Web) | Webhooks bidireccionales | Cross-platform: compra en cualquier plataforma reconocida en todas |
 
 ### Web
 
@@ -597,12 +597,12 @@
 | Brecha | Plataformas Afectadas | Impacto | Esfuerzo Estimado | Prioridad |
 |--------|----------------------|---------|-------------------|-----------|
 | Feature gating no enforced | iOS, Android, Web | Usuarios free acceden a todo; sin revenue de suscripciones | 20-30h | P0 |
-| Play Billing no implementado | Android | Sin monetizacion en Google Play | 15-20h | P0 |
+| ~~Play Billing no implementado~~ | ✅ | Implementado via RevenueCat SDK | 0h | ✅ |
 | Push notifications no implementadas | iOS, Android | Sin engagement ni recordatorios de eventos | 15-20h | P1 |
 | Generacion de PDF falta en Android | Android | Usuarios Android no pueden generar documentos | 20-25h | P1 |
 | Widgets falta en Android | Android | Sin presencia en home screen de Android | 15-20h | P1 |
 | Modo offline incompleto en movil | iOS, Android | Sin funcionalidad sin conexion | 20-30h | P1 |
-| StoreKit 2 flujo incompleto | iOS | Compras in-app no funcionales | 8-12h | P1 |
+| ~~StoreKit 2 flujo incompleto~~ | ✅ | Reemplazado por RevenueCat SDK | 0h | ✅ |
 | Notificaciones email limitadas | Backend | Solo reset de contrasena; sin recordatorios | 10-15h | P1 |
 | Google/Apple Sign-In sin UI | iOS, Android, Web | Backend listo pero ningun cliente lo usa | 8-12h | P1 |
 | Cotizacion rapida falta en Android | Android | Feature disponible solo en iOS y web | 6-8h | P1 |
