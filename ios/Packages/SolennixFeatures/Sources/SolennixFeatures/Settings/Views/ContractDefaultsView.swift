@@ -8,6 +8,7 @@ import SolennixNetwork
 public struct ContractDefaultsView: View {
 
     @State private var viewModel: BusinessSettingsViewModel
+    @State private var showVariablePicker = false
     @Environment(\.dismiss) private var dismiss
 
     public init(apiClient: APIClient) {
@@ -29,6 +30,13 @@ public struct ContractDefaultsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 saveButton
             }
+        }
+        .sheet(isPresented: $showVariablePicker) {
+            ContractVariablePickerSheet { variable in
+                viewModel.contractTemplate += "[\(variable.label)]"
+                showVariablePicker = false
+            }
+            .presentationDetents([.medium, .large])
         }
         .task { await viewModel.loadUser() }
     }
@@ -102,12 +110,31 @@ public struct ContractDefaultsView: View {
 
             // Contract template section
             Section {
-                TextEditor(text: $viewModel.contractTemplate)
-                    .frame(minHeight: 200)
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Button {
+                        showVariablePicker = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                            Text("Insertar Variable")
+                        }
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(SolennixColors.primary)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .background(SolennixColors.primaryLight)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                    }
+                    .buttonStyle(.plain)
+
+                    TextEditor(text: $viewModel.contractTemplate)
+                        .frame(minHeight: 200)
+                }
             } header: {
                 Text("Plantilla del Contrato")
             } footer: {
-                Text("Puedes personalizar el texto adicional que aparecera en tus contratos. Usa {{nombre_cliente}}, {{fecha_evento}}, {{total}} para variables.")
+                Text("Las variables como [Nombre del cliente] se reemplazan automaticamente con los datos del evento al generar el contrato.")
             }
 
             // Preview section
@@ -173,6 +200,163 @@ public struct ContractDefaultsView: View {
             }
         }
         .disabled(viewModel.isSaving)
+    }
+}
+
+// MARK: - Contract Variable
+
+struct ContractVariable: Identifiable {
+    let id: String // token
+    let label: String
+    let category: String
+
+    static let all: [ContractVariable] = [
+        // Proveedor
+        ContractVariable(id: "provider_name", label: "Nombre del proveedor", category: "Proveedor"),
+        ContractVariable(id: "provider_business_name", label: "Nombre comercial del proveedor", category: "Proveedor"),
+        ContractVariable(id: "provider_email", label: "Email del proveedor", category: "Proveedor"),
+        // Evento
+        ContractVariable(id: "current_date", label: "Fecha actual", category: "Evento"),
+        ContractVariable(id: "event_date", label: "Fecha del evento", category: "Evento"),
+        ContractVariable(id: "event_start_time", label: "Hora de inicio", category: "Evento"),
+        ContractVariable(id: "event_end_time", label: "Hora de fin", category: "Evento"),
+        ContractVariable(id: "event_time_range", label: "Horario del evento", category: "Evento"),
+        ContractVariable(id: "event_service_type", label: "Tipo de servicio", category: "Evento"),
+        ContractVariable(id: "event_num_people", label: "Número de personas", category: "Evento"),
+        ContractVariable(id: "event_location", label: "Lugar del evento", category: "Evento"),
+        ContractVariable(id: "event_city", label: "Ciudad del evento", category: "Evento"),
+        ContractVariable(id: "event_total_amount", label: "Monto total del evento", category: "Evento"),
+        ContractVariable(id: "event_services_list", label: "Servicios del evento", category: "Evento"),
+        ContractVariable(id: "event_paid_amount", label: "Total pagado", category: "Evento"),
+        // Condiciones
+        ContractVariable(id: "event_deposit_percent", label: "Porcentaje de anticipo", category: "Condiciones"),
+        ContractVariable(id: "event_refund_percent", label: "Porcentaje de reembolso", category: "Condiciones"),
+        ContractVariable(id: "event_cancellation_days", label: "Días de cancelación", category: "Condiciones"),
+        // Cliente
+        ContractVariable(id: "client_name", label: "Nombre del cliente", category: "Cliente"),
+        ContractVariable(id: "client_phone", label: "Teléfono del cliente", category: "Cliente"),
+        ContractVariable(id: "client_email", label: "Email del cliente", category: "Cliente"),
+        ContractVariable(id: "client_address", label: "Dirección del cliente", category: "Cliente"),
+        ContractVariable(id: "client_city", label: "Ciudad del cliente", category: "Cliente"),
+        // Contrato
+        ContractVariable(id: "contract_city", label: "Ciudad del contrato", category: "Contrato"),
+    ]
+
+    static var grouped: [(String, [ContractVariable])] {
+        let categories = ["Proveedor", "Evento", "Condiciones", "Cliente", "Contrato"]
+        return categories.compactMap { category in
+            let items = all.filter { $0.category == category }
+            return items.isEmpty ? nil : (category, items)
+        }
+    }
+}
+
+// MARK: - Contract Variable Picker Sheet
+
+private struct ContractVariablePickerSheet: View {
+
+    let onSelect: (ContractVariable) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
+                    Text("Haz clic en una variable para insertarla en tu contrato")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                        .padding(.horizontal, Spacing.md)
+
+                    ForEach(ContractVariable.grouped, id: \.0) { category, variables in
+                        VStack(alignment: .leading, spacing: Spacing.sm) {
+                            Text(category)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(SolennixColors.textTertiary)
+                                .textCase(.uppercase)
+
+                            FlowLayout(spacing: Spacing.xs) {
+                                ForEach(variables) { variable in
+                                    Button {
+                                        onSelect(variable)
+                                    } label: {
+                                        Text(variable.label)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundStyle(SolennixColors.primary)
+                                            .padding(.horizontal, Spacing.sm)
+                                            .padding(.vertical, Spacing.xs)
+                                            .background(SolennixColors.primaryLight)
+                                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: CornerRadius.md)
+                                                    .stroke(SolennixColors.primary.opacity(0.3), lineWidth: 1)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, Spacing.md)
+                    }
+                }
+                .padding(.vertical, Spacing.md)
+            }
+            .background(SolennixColors.surfaceGrouped)
+            .navigationTitle("Insertar Variable")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cerrar") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Flow Layout
+
+private struct FlowLayout: Layout {
+
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = arrange(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(proposal: ProposedViewSize(width: bounds.width, height: bounds.height), subviews: subviews)
+        for (index, subview) in subviews.enumerated() {
+            guard index < result.positions.count else { break }
+            let position = result.positions[index]
+            subview.place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
+        }
+    }
+
+    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (positions: [CGPoint], size: CGSize) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var maxX: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+            maxX = max(maxX, x)
+        }
+
+        return (positions, CGSize(width: maxX, height: y + rowHeight))
     }
 }
 
