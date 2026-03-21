@@ -161,7 +161,9 @@ public struct ClientListView: View {
                 .listRowBackground(Color.clear)
             }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .popoverTip(SwipeActionTip(), arrowEdge: .top)
     }
 
@@ -231,7 +233,9 @@ public struct ClientListView: View {
             }
             .padding(.vertical, Spacing.xs)
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .redacted(reason: .placeholder)
     }
 

@@ -132,6 +132,8 @@ public struct InventoryListView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
     }
 
     // MARK: - Inventory Row
@@ -233,6 +235,8 @@ public struct InventoryListView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .redacted(reason: .placeholder)
     }
 

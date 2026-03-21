@@ -92,6 +92,8 @@ struct MoreMenuView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Más")
         .navigationBarTitleDisplayMode(.large)
     }

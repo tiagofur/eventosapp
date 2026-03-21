@@ -128,7 +128,9 @@ public struct ProductListView: View {
                 .tint(.blue)
             }
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
     }
 
     // MARK: - Product Row
@@ -234,7 +236,9 @@ public struct ProductListView: View {
             }
             .padding(.vertical, Spacing.xs)
         }
-        .listStyle(.plain)
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .redacted(reason: .placeholder)
     }
 
