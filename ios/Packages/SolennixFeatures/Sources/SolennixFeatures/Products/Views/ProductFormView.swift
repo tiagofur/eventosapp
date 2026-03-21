@@ -38,6 +38,14 @@ public struct ProductFormView: View {
         .onChange(of: viewModel.selectedPhoto) { _, _ in
             Task { await viewModel.handlePhotoSelection() }
         }
+        .alert("Error", isPresented: .init(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
     }
 
     // MARK: - Form Content

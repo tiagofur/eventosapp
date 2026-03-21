@@ -356,7 +356,7 @@ public final class ProductFormViewModel {
 
                 // Add recipe if any
                 if !validRecipeItems.isEmpty {
-                    let _: [ProductIngredient] = try await apiClient.post(
+                    let _: [ProductIngredient] = try await apiClient.put(
                         Endpoint.productIngredients(newProduct.id),
                         body: recipeData
                     )
