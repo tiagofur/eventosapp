@@ -30,6 +30,19 @@ import (
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
+// clientIP returns the real client IP address, checking X-Forwarded-For first
+// (for clients behind a reverse proxy), then falling back to r.RemoteAddr.
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// X-Forwarded-For can contain multiple IPs; the first is the original client
+		if i := strings.IndexByte(xff, ','); i > 0 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return strings.TrimSpace(xff)
+	}
+	return r.RemoteAddr
+}
+
 // dummyHash is a pre-computed bcrypt hash used to normalize timing on login attempts
 // with non-existent emails, preventing user enumeration via timing side-channels.
 var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("dummy-timing-normalization"), bcrypt.DefaultCost)
@@ -175,7 +188,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// Check if user already exists — return identical response to prevent email enumeration
 	existing, _ := h.userRepo.GetByEmail(r.Context(), req.Email)
 	if existing != nil {
-		slog.Info("Registration attempt with existing email", "email", req.Email)
+		slog.Warn("auth.event", "action", "register_duplicate", "email", req.Email, "ip", clientIP(r))
 		writeJSON(w, http.StatusCreated, map[string]interface{}{
 			"message": "Account created successfully. Please check your email to verify your account.",
 		})
@@ -223,6 +236,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   24 * 60 * 60, // 24 hours
 	})
 
+	slog.Info("auth.event", "action", "register", "user_id", user.ID, "email", user.Email, "ip", clientIP(r))
+
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"user":   user,
 		"tokens": tokens,
@@ -250,12 +265,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		// Perform dummy bcrypt comparison to normalize response timing,
 		// preventing user enumeration via timing side-channels.
 		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password))
+		slog.Warn("auth.event", "action", "login_failed", "email", req.Email, "reason", "user_not_found", "ip", clientIP(r))
 		writeError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
 
 	// Check password
 	if !h.authService.CheckPassword(req.Password, user.PasswordHash) {
+		slog.Warn("auth.event", "action", "login_failed", "email", req.Email, "reason", "invalid_password", "ip", clientIP(r))
 		writeError(w, http.StatusUnauthorized, "Invalid email or password")
 		return
 	}
@@ -278,6 +295,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   24 * 60 * 60, // 24 hours
 	})
+
+	slog.Info("auth.event", "action", "login_success", "user_id", user.ID, "email", user.Email, "method", "email", "ip", clientIP(r))
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"user":   user,
@@ -310,14 +329,16 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 
 	claims, err := h.authService.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "Invalid or expired refresh token")
+		slog.Warn("auth.event", "action", "token_refresh_failed", "reason", "invalid_refresh_token", "ip", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "Invalid or expired token")
 		return
 	}
 
 	// Verify user still exists (prevent deleted/suspended users from refreshing)
 	user, err := h.userRepo.GetByID(r.Context(), claims.UserID)
 	if err != nil || user == nil {
-		writeError(w, http.StatusUnauthorized, "User no longer exists")
+		slog.Warn("auth.event", "action", "token_refresh_failed", "reason", "user_not_found", "user_id", claims.UserID, "ip", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "Invalid or expired token")
 		return
 	}
 
@@ -339,6 +360,8 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   24 * 60 * 60, // 24 hours
 	})
 
+	slog.Info("auth.event", "action", "token_refresh", "user_id", claims.UserID, "ip", clientIP(r))
+
 	// Also return tokens in response for backward compatibility
 	writeJSON(w, http.StatusOK, tokens)
 }
@@ -359,10 +382,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	var logoutUserID *string
 	if token != "" {
 		// Parse token to get expiry for cleanup, then blacklist it
 		claims, err := h.authService.ValidateToken(token)
 		if err == nil {
+			uid := claims.UserID.String()
+			logoutUserID = &uid
 			expiry := time.Now().Add(24 * time.Hour) // Default: JWT expiry window
 			if claims.ExpiresAt != nil {
 				expiry = claims.ExpiresAt.Time
@@ -382,6 +408,12 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1, // Delete cookie
 	})
 
+	if logoutUserID != nil {
+		slog.Info("auth.event", "action", "logout", "user_id", *logoutUserID, "ip", clientIP(r))
+	} else {
+		slog.Info("auth.event", "action", "logout", "ip", clientIP(r))
+	}
+
 	writeJSON(w, http.StatusOK, map[string]string{
 		"message": "Logged out successfully",
 	})
@@ -394,6 +426,8 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
+
+	slog.Info("auth.event", "action", "password_reset_request", "email", req.Email, "ip", clientIP(r))
 
 	// Always respond success (don't reveal if email exists)
 	user, err := h.userRepo.GetByEmail(r.Context(), req.Email)
@@ -408,12 +442,22 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Send password reset email
-		if err := h.emailService.SendPasswordReset(user.Email, token, user.Name); err != nil {
-			slog.Error("Failed to send password reset email", "error", err, "email", user.Email)
-			// Still return success to user (security: don't reveal if email exists)
-		} else {
-			slog.Info("Password reset email sent", "email", user.Email)
+		// Send password reset email with retry (up to 3 attempts)
+		const maxRetries = 3
+		var sendErr error
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			sendErr = h.emailService.SendPasswordReset(user.Email, token, user.Name)
+			if sendErr == nil {
+				slog.Info("Password reset email sent", "email", user.Email, "attempt", attempt)
+				break
+			}
+			slog.Warn("Failed to send password reset email", "error", sendErr, "email", user.Email, "attempt", attempt)
+			if attempt < maxRetries {
+				time.Sleep(1 * time.Second)
+			}
+		}
+		if sendErr != nil {
+			slog.Error("All attempts to send password reset email failed", "error", sendErr, "email", user.Email, "attempts", maxRetries)
 		}
 	}
 
@@ -462,7 +506,8 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	// Get user from token claims
 	user, err := h.userRepo.GetByID(r.Context(), claims.UserID)
 	if err != nil || user == nil {
-		writeError(w, http.StatusNotFound, "User not found")
+		slog.Warn("auth.event", "action", "password_reset_failed", "reason", "user_not_found", "user_id", claims.UserID, "ip", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "Invalid or expired reset token")
 		return
 	}
 
@@ -484,7 +529,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	// Blacklist the token so it cannot be reused
 	blacklistResetToken(req.Token, time.Now().Add(1*time.Hour))
 
-	slog.Info("Password reset successful", "user_id", user.ID)
+	slog.Info("auth.event", "action", "password_reset", "user_id", user.ID, "ip", clientIP(r))
 
 	writeJSON(w, http.StatusOK, map[string]string{
 		"message": "Password reset successfully",
@@ -517,12 +562,14 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	// Get user to verify current password
 	user, err := h.userRepo.GetByID(r.Context(), userID)
 	if err != nil || user == nil {
-		writeError(w, http.StatusNotFound, "User not found")
+		slog.Warn("auth.event", "action", "change_password_failed", "reason", "user_not_found", "user_id", userID, "ip", clientIP(r))
+		writeError(w, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
 
 	// Verify current password
 	if !h.authService.CheckPassword(req.CurrentPassword, user.PasswordHash) {
+		slog.Warn("auth.event", "action", "change_password_failed", "reason", "invalid_current_password", "user_id", userID, "ip", clientIP(r))
 		writeError(w, http.StatusUnauthorized, "Current password is incorrect")
 		return
 	}
@@ -542,7 +589,7 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("Password changed successfully", "user_id", userID)
+	slog.Info("auth.event", "action", "password_changed", "user_id", userID, "ip", clientIP(r))
 	writeJSON(w, http.StatusOK, map[string]string{
 		"message": "Password changed successfully",
 	})
@@ -638,6 +685,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "Internal server error")
 			return
 		}
+		slog.Info("auth.event", "action", "google_login", "user_id", user.ID, "email", email, "ip", clientIP(r))
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"user":   user,
 			"tokens": tokens,
@@ -657,6 +705,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 				writeError(w, http.StatusInternalServerError, "Internal server error")
 				return
 			}
+			slog.Info("auth.event", "action", "google_login", "user_id", user.ID, "email", email, "ip", clientIP(r))
 			writeJSON(w, http.StatusOK, map[string]interface{}{
 				"user":   user,
 				"tokens": tokens,
@@ -664,7 +713,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// Account exists but Google is NOT linked — do NOT auto-link (account takeover risk)
-		slog.Warn("Google sign-in blocked: email exists with different provider", "email", email)
+		slog.Warn("auth.event", "action", "google_login_blocked", "email", email, "reason", "email_exists_different_provider", "ip", clientIP(r))
 		writeJSON(w, http.StatusConflict, map[string]interface{}{
 			"error":   "email_exists_different_provider",
 			"message": "An account with this email already exists. Please sign in with your email and password first, then link your social account from settings.",
@@ -721,6 +770,8 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
+
+	slog.Info("auth.event", "action", "google_register", "user_id", newUser.ID, "email", newUser.Email, "ip", clientIP(r))
 
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"user":   newUser,
@@ -983,6 +1034,7 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "Internal server error")
 			return
 		}
+		slog.Info("auth.event", "action", "apple_login", "user_id", user.ID, "email", user.Email, "ip", clientIP(r))
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"user":                  user,
 			"tokens":                tokens,
@@ -1004,6 +1056,7 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 					writeError(w, http.StatusInternalServerError, "Internal server error")
 					return
 				}
+				slog.Info("auth.event", "action", "apple_login", "user_id", user.ID, "email", email, "ip", clientIP(r))
 				writeJSON(w, http.StatusOK, map[string]interface{}{
 					"user":                  user,
 					"tokens":                tokens,
@@ -1012,7 +1065,7 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Account exists but Apple is NOT linked — do NOT auto-link (account takeover risk)
-			slog.Warn("Apple sign-in blocked: email exists with different provider", "email", email)
+			slog.Warn("auth.event", "action", "apple_login_blocked", "email", email, "reason", "email_exists_different_provider", "ip", clientIP(r))
 			writeJSON(w, http.StatusConflict, map[string]interface{}{
 				"error":   "email_exists_different_provider",
 				"message": "An account with this email already exists. Please sign in with your email and password first, then link your social account from settings.",
@@ -1076,6 +1129,8 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
+
+	slog.Info("auth.event", "action", "apple_register", "user_id", newUser.ID, "email", newUser.Email, "ip", clientIP(r))
 
 	writeJSON(w, http.StatusCreated, map[string]interface{}{
 		"user":                  newUser,
