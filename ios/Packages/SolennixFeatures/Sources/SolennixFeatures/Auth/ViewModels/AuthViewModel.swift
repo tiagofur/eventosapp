@@ -27,16 +27,16 @@ public final class AuthViewModel {
     // MARK: - Dependencies
 
     private let authManager: AuthManager
-    private let googleSignInService: any GoogleSignInServiceProtocol
+    private var _googleSignInService: (any GoogleSignInServiceProtocol)?
 
     // MARK: - Init
 
     public init(
         authManager: AuthManager,
-        googleSignInService: any GoogleSignInServiceProtocol = GoogleSignInService()
+        googleSignInService: (any GoogleSignInServiceProtocol)? = nil
     ) {
         self.authManager = authManager
-        self.googleSignInService = googleSignInService
+        self._googleSignInService = googleSignInService
     }
 
     // MARK: - Validation Helpers
@@ -184,7 +184,8 @@ public final class AuthViewModel {
     @MainActor
     public func triggerGoogleSignIn() async {
         do {
-            let result = try await googleSignInService.signIn()
+            let service = _googleSignInService ?? GoogleSignInService()
+            let result = try await service.signIn()
             await signInWithGoogle(idToken: result.idToken, fullName: result.fullName)
         } catch let error as GoogleSignInError {
             if case .cancelled = error { return }
