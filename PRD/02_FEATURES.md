@@ -413,7 +413,7 @@ Busqueda unificada que atraviesa clientes, productos e inventario.
 
 ---
 
-### 11. Cotizacion Rapida (Quick Quote) [iOS] [Web]
+### 11. Cotizacion Rapida (Quick Quote) [iOS] [Android] [Web]
 
 Flujo simplificado para generar una cotizacion sin crear un evento completo. Ideal para dar precios rapidos a clientes potenciales.
 
@@ -425,9 +425,9 @@ Flujo simplificado para generar una cotizacion sin crear un evento completo. Ide
 
 ---
 
-### 12. Widgets [iOS]
+### 12. Widgets [iOS] [Android]
 
-Widgets para la pantalla de inicio y pantalla de bloqueo del iPhone/iPad.
+Widgets para la pantalla de inicio del iPhone/iPad y Android.
 
 #### Widgets disponibles
 
@@ -438,9 +438,11 @@ Widgets para la pantalla de inicio y pantalla de bloqueo del iPhone/iPad.
 | Interactivo | `InteractiveWidget.swift` | Widget con acciones rapidas (crear evento, ver calendario) |
 | Lock Screen | `LockScreenWidget.swift` | Widget circular/rectangular para pantalla de bloqueo |
 
-**Implementacion:** WidgetKit con Timeline Provider. Soporte para interactividad (iOS 17+). Sincronizacion de datos via `WidgetDataSync`.
+**Implementacion iOS:** WidgetKit con Timeline Provider. Soporte para interactividad (iOS 17+). Sincronizacion de datos via `WidgetDataSync`.
 
-**[Android]**: No implementado. **[Web]**: No aplica.
+**Implementacion Android:** Glance (Jetpack Compose) con `QuickActionsWidget` — muestra eventos del dia y botones de accion rapida (nuevo evento, cotizacion rapida, calendario).
+
+**[Web]**: No aplica.
 
 **Tier:** FREE (eventos proximos) / PRO (KPIs, interactivo, lock screen)
 
@@ -637,8 +639,8 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 | Integracion calendario del sistema | Sincronizar eventos de Solennix con Apple Calendar / Google Calendar | Media |
 | Soundscapes / ambientacion | Sugerencias de musica y ambientacion para tipos de evento | Baja |
 | Templates de eventos reutilizables | Guardar configuraciones de evento como plantillas para reusar | Alta |
-| Cotizacion Rapida en Android | Implementar el flujo de Quick Quote que ya existe en iOS y Web | Media |
-| Widgets en Android | Implementar widgets de home screen equivalentes a iOS | Media |
+| ~~Cotizacion Rapida en Android~~ | ✅ Implementado: QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator | ✅ |
+| ~~Widgets en Android~~ | ✅ Implementado: QuickActionsWidget (Glance) con eventos del dia + acciones rapidas | ✅ |
 | Deep Linking en Android | URL schemes y navegacion profunda equivalente a iOS | Baja |
 | Live Activity equivalente Android | Notificacion persistente de evento activo | Baja |
 
@@ -691,6 +693,7 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 | Recetas con ingredientes | ✅ | ✅ | ✅ | ✅ | |
 | Imagen de producto | ✅ | ✅ | ✅ | ✅ | |
 | Busqueda | ✅ | ✅ | ✅ | ✅ | |
+| Grafico de demanda | ✅ | ✅ | ⬜ | ➖ | DemandForecastChart en detalle de producto |
 
 ### Inventario
 
@@ -764,10 +767,10 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
-| Widget eventos proximos | ✅ | ⬜ | ➖ | ➖ | WidgetKit |
-| Widget KPIs | ✅ | ⬜ | ➖ | ➖ | WidgetKit |
-| Widget interactivo | ✅ | ⬜ | ➖ | ➖ | WidgetKit iOS 17+ |
-| Widget Lock Screen | ✅ | ⬜ | ➖ | ➖ | WidgetKit |
+| Widget eventos proximos | ✅ | ✅ | ➖ | ➖ | WidgetKit / Glance |
+| Widget KPIs | ✅ | ⬜ | ➖ | ➖ | WidgetKit (iOS only) |
+| Widget interactivo | ✅ | ✅ | ➖ | ➖ | WidgetKit iOS 17+ / Glance QuickActionsWidget |
+| Widget Lock Screen | ✅ | ⬜ | ➖ | ➖ | WidgetKit (iOS only) |
 | Live Activity / Dynamic Island | ✅ | ⬜ | ➖ | ➖ | ActivityKit |
 
 ### Suscripciones
@@ -804,7 +807,7 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
-| Cotizacion Rapida | ✅ | ⬜ | ✅ | ➖ | Quick Quote sin crear evento completo |
+| Cotizacion Rapida | ✅ | ✅ | ✅ | ➖ | Quick Quote sin crear evento completo |
 | Onboarding | ✅ | ✅ | ⬜ | ➖ | Landing page sustituye en Web |
 | Deep Linking | ✅ | ⬜ | ➖ | ➖ | URL scheme solennix:// |
 | Push Notifications (registro) | ✅ | ✅ | ✅ | ✅ | Registro de tokens implementado |
