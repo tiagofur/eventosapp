@@ -31,4 +31,5 @@
     <!-- Widgets -->
     <string name="widget_upcoming_events">Próximos Eventos</string>
     <string name="widget_kpi_description">Resumen de KPIs</string>
+    <string name="widget_quick_actions_description">Acciones Rápidas</string>
 </resources>

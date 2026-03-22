@@ -27,19 +27,24 @@ import androidx.fragment.app.FragmentActivity
 
 /**
  * Extrae la ruta de navegacion inicial desde un deep link intent.
- * Soporta: solennix://client/{id}, solennix://event/{id}, solennix://product/{id}
+ * Soporta:
+ *   solennix://client/{id}, solennix://event/{id}, solennix://product/{id}
+ *   solennix://new-event, solennix://calendar, solennix://quick-quote
  */
 private fun parseDeepLinkRoute(intent: Intent?): String? {
     val uri = intent?.data ?: return null
     if (uri.scheme != "solennix") return null
 
     val host = uri.host ?: return null
-    val pathId = uri.pathSegments?.firstOrNull() ?: return null
+    val pathId = uri.pathSegments?.firstOrNull()
 
     return when (host) {
-        "client" -> "client_detail/$pathId"
-        "event" -> "event_detail/$pathId"
-        "product" -> "product_detail/$pathId"
+        "client" -> pathId?.let { "client_detail/$it" }
+        "event" -> pathId?.let { "event_detail/$it" }
+        "product" -> pathId?.let { "product_detail/$it" }
+        "new-event" -> "event_form?eventId="
+        "calendar" -> "calendar"
+        "quick-quote" -> "quick_quote?clientId="
         else -> null
     }
 }

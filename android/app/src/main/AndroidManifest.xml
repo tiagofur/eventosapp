@@ -43,6 +43,9 @@
                 <data android:scheme="solennix" android:host="client" />
                 <data android:scheme="solennix" android:host="event" />
                 <data android:scheme="solennix" android:host="product" />
+                <data android:scheme="solennix" android:host="new-event" />
+                <data android:scheme="solennix" android:host="calendar" />
+                <data android:scheme="solennix" android:host="quick-quote" />
             </intent-filter>
 
             <meta-data
@@ -83,6 +86,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/kpi_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="com.creapolis.solennix.widget.QuickActionsWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quick_actions_description">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_actions_widget_info" />
         </receiver>
 
         <!-- FileProvider for sharing PDFs -->
