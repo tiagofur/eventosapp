@@ -9,9 +9,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.data.plan.LimitCheckResult
+import com.creapolis.solennix.core.data.plan.PlanLimitsManager
 import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.model.Plan
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -22,10 +26,18 @@ import javax.inject.Inject
 class ProductFormViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val apiService: ApiService,
+    private val planLimitsManager: PlanLimitsManager,
+    private val authManager: AuthManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val productId: String? = savedStateHandle["productId"]
+
+    // Plan limit check
+    var limitCheckResult by mutableStateOf<LimitCheckResult?>(null)
+        private set
+    val isLimitReached: Boolean
+        get() = limitCheckResult is LimitCheckResult.LimitReached
 
     var name by mutableStateOf("")
     var category by mutableStateOf("")
@@ -46,6 +58,12 @@ class ProductFormViewModel @Inject constructor(
     init {
         if (productId != null) {
             loadProduct(productId)
+        } else {
+            // Only check plan limits when creating a new product
+            viewModelScope.launch {
+                val plan = authManager.currentUser.value?.plan ?: Plan.BASIC
+                limitCheckResult = planLimitsManager.canCreateProduct(plan)
+            }
         }
     }
 

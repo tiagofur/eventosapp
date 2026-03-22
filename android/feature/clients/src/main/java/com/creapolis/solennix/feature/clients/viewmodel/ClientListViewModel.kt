@@ -1,10 +1,17 @@
 package com.creapolis.solennix.feature.clients.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.data.plan.LimitCheckResult
+import com.creapolis.solennix.core.data.plan.PlanLimitsManager
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.model.Plan
 import com.creapolis.solennix.core.model.extensions.asMXN
+import com.creapolis.solennix.core.network.AuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -27,8 +34,22 @@ data class ClientListUiState(
 
 @HiltViewModel
 class ClientListViewModel @Inject constructor(
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
+    private val planLimitsManager: PlanLimitsManager,
+    private val authManager: AuthManager
 ) : ViewModel() {
+
+    // Plan limit check
+    var limitCheckResult by mutableStateOf<LimitCheckResult?>(null)
+        private set
+    val isLimitReached: Boolean
+        get() = limitCheckResult is LimitCheckResult.LimitReached
+    val nearLimitMessage: String?
+        get() = (limitCheckResult as? LimitCheckResult.NearLimit)?.let { result ->
+            "Te quedan ${result.remaining} clientes disponibles en tu plan actual."
+        }
+    val limitReachedMessage: String?
+        get() = (limitCheckResult as? LimitCheckResult.LimitReached)?.message
 
     private val _searchQuery = MutableStateFlow("")
     private val _isRefreshing = MutableStateFlow(false)
@@ -70,6 +91,14 @@ class ClientListViewModel @Inject constructor(
 
     init {
         refresh()
+        checkPlanLimits()
+    }
+
+    private fun checkPlanLimits() {
+        viewModelScope.launch {
+            val plan = authManager.currentUser.value?.plan ?: Plan.BASIC
+            limitCheckResult = planLimitsManager.canCreateClient(plan)
+        }
     }
 
     fun onSearchQueryChange(query: String) {

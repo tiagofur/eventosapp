@@ -1,9 +1,16 @@
 package com.creapolis.solennix.feature.products.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.data.plan.LimitCheckResult
+import com.creapolis.solennix.core.data.plan.PlanLimitsManager
 import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.model.Plan
 import com.creapolis.solennix.core.model.Product
+import com.creapolis.solennix.core.network.AuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -20,8 +27,22 @@ data class ProductListUiState(
 
 @HiltViewModel
 class ProductListViewModel @Inject constructor(
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val planLimitsManager: PlanLimitsManager,
+    private val authManager: AuthManager
 ) : ViewModel() {
+
+    // Plan limit check
+    var limitCheckResult by mutableStateOf<LimitCheckResult?>(null)
+        private set
+    val isLimitReached: Boolean
+        get() = limitCheckResult is LimitCheckResult.LimitReached
+    val nearLimitMessage: String?
+        get() = (limitCheckResult as? LimitCheckResult.NearLimit)?.let { result ->
+            "Te quedan ${result.remaining} productos disponibles en tu plan actual."
+        }
+    val limitReachedMessage: String?
+        get() = (limitCheckResult as? LimitCheckResult.LimitReached)?.message
 
     private val _searchQuery = MutableStateFlow("")
     private val _selectedCategory = MutableStateFlow<String?>(null)
@@ -58,6 +79,14 @@ class ProductListViewModel @Inject constructor(
 
     init {
         refresh()
+        checkPlanLimits()
+    }
+
+    private fun checkPlanLimits() {
+        viewModelScope.launch {
+            val plan = authManager.currentUser.value?.plan ?: Plan.BASIC
+            limitCheckResult = planLimitsManager.canCreateProduct(plan)
+        }
     }
 
     fun onSearchQueryChange(query: String) {

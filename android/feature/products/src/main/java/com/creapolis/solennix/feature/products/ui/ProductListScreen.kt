@@ -13,12 +13,18 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.creapolis.solennix.core.designsystem.component.UpgradeBanner
+import com.creapolis.solennix.core.designsystem.component.UpgradeBannerStyle
+import com.creapolis.solennix.core.designsystem.component.UpgradePlanDialog
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.model.extensions.asMXN
@@ -29,16 +35,36 @@ import com.creapolis.solennix.feature.products.viewmodel.ProductListViewModel
 fun ProductListScreen(
     viewModel: ProductListViewModel,
     onProductClick: (String) -> Unit,
-    onAddProductClick: () -> Unit
+    onAddProductClick: () -> Unit,
+    onUpgradeClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showLimitDialog by remember { mutableStateOf(false) }
+
+    // Show limit reached dialog
+    if (showLimitDialog && viewModel.limitReachedMessage != null) {
+        UpgradePlanDialog(
+            message = viewModel.limitReachedMessage!!,
+            onUpgradeClick = {
+                showLimitDialog = false
+                onUpgradeClick()
+            },
+            onDismiss = { showLimitDialog = false }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Productos") },
                 actions = {
-                    IconButton(onClick = onAddProductClick) {
+                    IconButton(onClick = {
+                        if (viewModel.isLimitReached) {
+                            showLimitDialog = true
+                        } else {
+                            onAddProductClick()
+                        }
+                    }) {
                         Icon(Icons.Default.Add, contentDescription = "Add Product")
                     }
                 }
@@ -53,6 +79,14 @@ fun ProductListScreen(
                 .padding(padding)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
+                // Near-limit warning banner
+                viewModel.nearLimitMessage?.let { message ->
+                    UpgradeBanner(
+                        message = message,
+                        style = UpgradeBannerStyle.WARNING,
+                        onUpgradeClick = onUpgradeClick
+                    )
+                }
                 OutlinedTextField(
                     value = uiState.searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },

@@ -7,12 +7,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.data.plan.LimitCheckResult
+import com.creapolis.solennix.core.data.plan.PlanLimitsManager
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.*
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -28,11 +31,19 @@ class EventFormViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val inventoryRepository: InventoryRepository,
     private val apiService: ApiService,
+    private val planLimitsManager: PlanLimitsManager,
+    private val authManager: AuthManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val eventId: String? = savedStateHandle.get<String>("eventId")?.takeIf { it.isNotBlank() }
     val isEditMode: Boolean = eventId != null
+
+    // Plan limit check
+    var limitCheckResult by mutableStateOf<LimitCheckResult?>(null)
+        private set
+    val isLimitReached: Boolean
+        get() = limitCheckResult is LimitCheckResult.LimitReached
 
     var isLoadingEvent by mutableStateOf(false)
 
@@ -276,6 +287,12 @@ class EventFormViewModel @Inject constructor(
         }
         if (eventId != null) {
             loadExistingEvent(eventId)
+        } else {
+            // Only check plan limits when creating a new event
+            viewModelScope.launch {
+                val plan = authManager.currentUser.value?.plan ?: Plan.BASIC
+                limitCheckResult = planLimitsManager.canCreateEvent(plan)
+            }
         }
         loadUnavailableDates()
     }

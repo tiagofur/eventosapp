@@ -9,9 +9,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.data.plan.LimitCheckResult
+import com.creapolis.solennix.core.data.plan.PlanLimitsManager
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.model.Plan
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -22,10 +26,18 @@ import javax.inject.Inject
 class ClientFormViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
     private val apiService: ApiService,
+    private val planLimitsManager: PlanLimitsManager,
+    private val authManager: AuthManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val clientId: String? = savedStateHandle["clientId"]
+
+    // Plan limit check
+    var limitCheckResult by mutableStateOf<LimitCheckResult?>(null)
+        private set
+    val isLimitReached: Boolean
+        get() = limitCheckResult is LimitCheckResult.LimitReached
 
     var name by mutableStateOf("")
     var email by mutableStateOf("")
@@ -77,6 +89,12 @@ class ClientFormViewModel @Inject constructor(
     init {
         if (clientId != null) {
             loadClient(clientId)
+        } else {
+            // Only check plan limits when creating a new client
+            viewModelScope.launch {
+                val plan = authManager.currentUser.value?.plan ?: Plan.BASIC
+                limitCheckResult = planLimitsManager.canCreateClient(plan)
+            }
         }
     }
 
