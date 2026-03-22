@@ -160,6 +160,14 @@ fun ProductDetailScreen(
                             color = SolennixTheme.colors.secondaryText
                         )
                     }
+
+                    // Demand Forecast Chart
+                    val demandData by viewModel.demandData.collectAsStateWithLifecycle()
+                    Spacer(modifier = Modifier.height(24.dp))
+                    DemandForecastChart(
+                        dataPoints = demandData,
+                        productName = product.name
+                    )
                 }
             }
         }
