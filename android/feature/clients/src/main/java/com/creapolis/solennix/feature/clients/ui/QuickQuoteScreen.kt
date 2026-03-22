@@ -169,7 +169,9 @@ fun QuickQuoteScreen(
                     ExtraItemCard(
                         extra = extra,
                         onDescriptionChanged = { desc -> viewModel.updateExtraDescription(extra.id, desc) },
+                        onCostChanged = { cost -> viewModel.updateExtraCost(extra.id, cost) },
                         onPriceChanged = { price -> viewModel.updateExtraPrice(extra.id, price) },
+                        onExcludeUtilityChanged = { value -> viewModel.updateExtraExcludeUtility(extra.id, value) },
                         onRemove = { viewModel.removeExtra(extra.id) }
                     )
                 }
@@ -275,7 +277,11 @@ fun QuickQuoteScreen(
                         )
                         Spacer(Modifier.height(12.dp))
 
-                        SummaryRow("Subtotal", uiState.subtotal.asMXN())
+                        SummaryRow("Subtotal Productos", uiState.subtotalProducts.asMXN())
+
+                        if (uiState.extrasTotal > 0) {
+                            SummaryRow("Subtotal Extras", uiState.extrasTotal.asMXN())
+                        }
 
                         if (uiState.discountAmount > 0) {
                             SummaryRow(
@@ -310,6 +316,72 @@ fun QuickQuoteScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = SolennixTheme.colors.primary
                             )
+                        }
+
+                        // Profitability section
+                        if (uiState.hasCosts) {
+                            Spacer(Modifier.height(16.dp))
+                            HorizontalDivider()
+                            Spacer(Modifier.height(12.dp))
+
+                            Text(
+                                text = "Rentabilidad",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = SolennixTheme.colors.primaryText
+                            )
+                            Spacer(Modifier.height(8.dp))
+
+                            SummaryRow("Costo productos", uiState.costProducts.asMXN())
+                            SummaryRow("Costo extras", uiState.costExtras.asMXN())
+                            SummaryRow("Total costos", uiState.totalCosts.asMXN())
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            val profitColor = if (uiState.netProfit >= 0) {
+                                SolennixTheme.colors.success
+                            } else {
+                                SolennixTheme.colors.error
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Ganancia neta",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = profitColor
+                                )
+                                Text(
+                                    text = uiState.netProfit.asMXN(),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = profitColor
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Margen %",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = profitColor
+                                )
+                                Text(
+                                    text = "%.1f%%".format(uiState.profitMargin),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = profitColor
+                                )
+                            }
                         }
                     }
                 }
@@ -483,7 +555,9 @@ private fun ProductItemCard(
 private fun ExtraItemCard(
     extra: QuoteExtra,
     onDescriptionChanged: (String) -> Unit,
+    onCostChanged: (String) -> Unit,
     onPriceChanged: (String) -> Unit,
+    onExcludeUtilityChanged: (Boolean) -> Unit,
     onRemove: () -> Unit
 ) {
     Card(
@@ -511,13 +585,46 @@ private fun ExtraItemCard(
                 }
             }
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = if (extra.price > 0) extra.price.toString() else "",
-                onValueChange = onPriceChanged,
-                label = { Text("Precio") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = if (extra.cost > 0) extra.cost.toString() else "",
+                    onValueChange = onCostChanged,
+                    label = { Text("Costo") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = if (extra.price > 0) extra.price.toString() else "",
+                    onValueChange = onPriceChanged,
+                    label = { Text("Precio") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                    enabled = !extra.excludeUtility
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Sin utilidad",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                Switch(
+                    checked = extra.excludeUtility,
+                    onCheckedChange = onExcludeUtilityChanged,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = SolennixTheme.colors.primary,
+                        checkedTrackColor = SolennixTheme.colors.primaryLight
+                    )
+                )
+            }
         }
     }
 }

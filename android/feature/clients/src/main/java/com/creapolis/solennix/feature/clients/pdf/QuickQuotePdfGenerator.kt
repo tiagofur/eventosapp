@@ -63,7 +63,8 @@ object QuickQuotePdfGenerator {
         items: List<QuoteItem>,
         extras: List<QuoteExtra>,
         numPeople: Int?,
-        subtotal: Double,
+        subtotalProducts: Double,
+        extrasTotal: Double,
         discountAmount: Double,
         discountType: DiscountType,
         discountValue: Double,
@@ -93,9 +94,9 @@ object QuickQuotePdfGenerator {
         if (client != null) {
             manager.drawSectionHeader("CLIENTE")
             manager.drawLabelValue("Nombre:", client.name)
-            client.email?.let { manager.drawLabelValue("Email:", it) }
+            client.email?.takeIf { it.isNotBlank() }?.let { manager.drawLabelValue("Email:", it) }
             manager.drawLabelValue("Telefono:", client.phone)
-            client.address?.let { manager.drawLabelValue("Direccion:", it) }
+            client.address?.takeIf { it.isNotBlank() }?.let { manager.drawLabelValue("Direccion:", it) }
             manager.moveDown(PARAGRAPH_SPACING)
         }
 
@@ -138,19 +139,23 @@ object QuickQuotePdfGenerator {
         if (extras.isNotEmpty()) {
             manager.drawSectionHeader("EXTRAS / ADICIONALES")
 
-            val colWidths = listOf(390f, 100f)
+            val extrasColWidths = listOf(220f, 70f, 100f, 100f)
             manager.drawTableHeader(
                 listOf(
-                    "Descripcion" to colWidths[0],
-                    "Precio" to colWidths[1]
+                    "Descripcion" to extrasColWidths[0],
+                    "Cant." to extrasColWidths[1],
+                    "Precio Unit." to extrasColWidths[2],
+                    "Total" to extrasColWidths[3]
                 )
             )
 
             extras.forEachIndexed { index, extra ->
                 manager.drawTableRow(
                     listOf(
-                        extra.description.take(50) to colWidths[0],
-                        currencyFormatter.format(extra.price) to colWidths[1]
+                        extra.description.take(35) to extrasColWidths[0],
+                        "1" to extrasColWidths[1],
+                        currencyFormatter.format(extra.price) to extrasColWidths[2],
+                        currencyFormatter.format(extra.price) to extrasColWidths[3]
                     ),
                     isAlternate = index % 2 == 1
                 )
@@ -160,7 +165,11 @@ object QuickQuotePdfGenerator {
 
         // Financial summary
         manager.drawSectionHeader("RESUMEN")
-        manager.drawSummaryRow("Subtotal:", currencyFormatter.format(subtotal))
+        manager.drawSummaryRow("Subtotal Productos:", currencyFormatter.format(subtotalProducts))
+
+        if (extrasTotal > 0) {
+            manager.drawSummaryRow("Subtotal Extras:", currencyFormatter.format(extrasTotal))
+        }
 
         if (discountAmount > 0) {
             val discountText = when (discountType) {
@@ -177,6 +186,17 @@ object QuickQuotePdfGenerator {
         manager.moveDown(8f)
         manager.drawLine()
         manager.drawSummaryRow("TOTAL:", currencyFormatter.format(total), isBold = true)
+
+        // Disclaimer
+        manager.moveDown(SECTION_SPACING)
+        manager.drawText(
+            "Esta cotizacion es informativa y no constituye un compromiso.",
+            captionPaint()
+        )
+        manager.drawText(
+            "Los precios pueden estar sujetos a cambios. Para confirmar, solicite un presupuesto formal.",
+            captionPaint()
+        )
 
         // Footer
         manager.drawFooter("Solennix - Cada detalle importa • www.solennix.com")

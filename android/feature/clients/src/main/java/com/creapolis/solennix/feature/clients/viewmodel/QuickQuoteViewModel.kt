@@ -8,8 +8,12 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.DiscountType
+import com.creapolis.solennix.core.model.InventoryType
 import com.creapolis.solennix.core.model.Product
+import com.creapolis.solennix.core.model.ProductIngredient
+import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.AuthManager
+import com.creapolis.solennix.core.network.Endpoints
 import com.creapolis.solennix.feature.clients.pdf.QuickQuotePdfGenerator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +39,9 @@ data class QuoteItem(
 data class QuoteExtra(
     val id: String = UUID.randomUUID().toString(),
     val description: String = "",
-    val price: Double = 0.0
+    val price: Double = 0.0,
+    val cost: Double = 0.0,
+    val excludeUtility: Boolean = false
 )
 
 data class QuickQuoteUiState(
@@ -48,20 +54,36 @@ data class QuickQuoteUiState(
     val taxRate: String = "16",
     val discount: String = "",
     val discountType: DiscountType = DiscountType.PERCENT,
+    val productUnitCosts: Map<String, Double> = emptyMap(),
     val isLoading: Boolean = false,
     val isGeneratingPdf: Boolean = false,
     val errorMessage: String? = null,
     val generatedPdfFile: File? = null
 ) {
+    val subtotalProducts: Double
+        get() = selectedItems.sumOf { it.subtotal }
+
+    val normalExtrasTotal: Double
+        get() = extras.filter { !it.excludeUtility }.sumOf { it.price }
+
+    val passThroughExtrasTotal: Double
+        get() = extras.filter { it.excludeUtility }.sumOf { it.price }
+
+    val extrasTotal: Double
+        get() = extras.sumOf { it.price }
+
     val subtotal: Double
-        get() = selectedItems.sumOf { it.subtotal } + extras.sumOf { it.price }
+        get() = subtotalProducts + extrasTotal
+
+    val discountableBase: Double
+        get() = subtotalProducts + normalExtrasTotal
 
     val discountAmount: Double
         get() {
             val discountValue = discount.toDoubleOrNull() ?: 0.0
             return when (discountType) {
-                DiscountType.PERCENT -> subtotal * discountValue / 100.0
-                DiscountType.FIXED -> discountValue
+                DiscountType.PERCENT -> discountableBase * discountValue / 100.0
+                DiscountType.FIXED -> discountValue.coerceAtMost(discountableBase)
             }
         }
 
@@ -69,17 +91,47 @@ data class QuickQuoteUiState(
         get() {
             if (!requiresInvoice) return 0.0
             val rate = taxRate.toDoubleOrNull() ?: 0.0
-            return (subtotal - discountAmount) * rate / 100.0
+            val discountedBase = discountableBase - discountAmount
+            return (discountedBase + passThroughExtrasTotal) * rate / 100.0
         }
 
     val total: Double
-        get() = subtotal - discountAmount + taxAmount
+        get() {
+            val discountedBase = discountableBase - discountAmount
+            return discountedBase + passThroughExtrasTotal + taxAmount
+        }
+
+    // Profitability
+    val costProducts: Double
+        get() = selectedItems.sumOf { (productUnitCosts[it.productId] ?: 0.0) * it.quantity }
+
+    val costExtras: Double
+        get() = extras.filter { !it.excludeUtility }.sumOf { it.cost }
+
+    val totalCosts: Double
+        get() = costProducts + costExtras
+
+    val revenue: Double
+        get() = total - taxAmount
+
+    val netProfit: Double
+        get() = revenue - totalCosts
+
+    val profitMargin: Double
+        get() {
+            val adjustedRevenue = revenue - passThroughExtrasTotal
+            return if (adjustedRevenue > 0) (netProfit / adjustedRevenue) * 100 else 0.0
+        }
+
+    val hasCosts: Boolean
+        get() = totalCosts > 0
 }
 
 @HiltViewModel
 class QuickQuoteViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val clientRepository: ClientRepository,
+    private val apiService: ApiService,
     private val authManager: AuthManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -155,6 +207,7 @@ class QuickQuoteViewModel @Inject constructor(
                 }
             )
         }
+        fetchProductCosts(product.id)
     }
 
     fun updateItemQuantity(itemId: String, quantity: String) {
@@ -214,6 +267,39 @@ class QuickQuoteViewModel @Inject constructor(
         }
     }
 
+    fun updateExtraCost(extraId: String, cost: String) {
+        val c = cost.toDoubleOrNull() ?: return
+        _uiState.update { state ->
+            state.copy(
+                extras = state.extras.map { extra ->
+                    if (extra.id == extraId) {
+                        if (extra.excludeUtility) {
+                            extra.copy(cost = c, price = c)
+                        } else {
+                            extra.copy(cost = c)
+                        }
+                    } else extra
+                }
+            )
+        }
+    }
+
+    fun updateExtraExcludeUtility(extraId: String, excludeUtility: Boolean) {
+        _uiState.update { state ->
+            state.copy(
+                extras = state.extras.map { extra ->
+                    if (extra.id == extraId) {
+                        if (excludeUtility) {
+                            extra.copy(excludeUtility = true, price = extra.cost)
+                        } else {
+                            extra.copy(excludeUtility = false)
+                        }
+                    } else extra
+                }
+            )
+        }
+    }
+
     fun updateRequiresInvoice(value: Boolean) {
         _uiState.update { it.copy(requiresInvoice = value) }
     }
@@ -228,6 +314,32 @@ class QuickQuoteViewModel @Inject constructor(
 
     fun updateDiscountType(type: DiscountType) {
         _uiState.update { it.copy(discountType = type) }
+    }
+
+    private fun fetchProductCosts(productId: String) {
+        if (_uiState.value.productUnitCosts.containsKey(productId)) return
+        viewModelScope.launch {
+            try {
+                val ingredients: List<ProductIngredient> = apiService.get(Endpoints.productIngredients(productId))
+                val cost = ingredients
+                    .filter { it.type == InventoryType.INGREDIENT || it.type == InventoryType.SUPPLY }
+                    .sumOf { (it.unitCost ?: 0.0) * it.quantityRequired }
+                _uiState.update { state ->
+                    state.copy(productUnitCosts = state.productUnitCosts + (productId to cost))
+                }
+            } catch (_: Exception) {
+                // Silently fail — costs are optional for profitability display
+            }
+        }
+    }
+
+    private fun fetchAllProductCosts() {
+        val state = _uiState.value
+        state.selectedItems
+            .map { it.productId }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .forEach { fetchProductCosts(it) }
     }
 
     fun clearPdfFile() {
@@ -257,7 +369,8 @@ class QuickQuoteViewModel @Inject constructor(
                     items = validItems,
                     extras = state.extras.filter { it.description.isNotBlank() },
                     numPeople = state.numPeople.toIntOrNull(),
-                    subtotal = state.subtotal,
+                    subtotalProducts = state.subtotalProducts,
+                    extrasTotal = state.extrasTotal,
                     discountAmount = state.discountAmount,
                     discountType = state.discountType,
                     discountValue = state.discount.toDoubleOrNull() ?: 0.0,
