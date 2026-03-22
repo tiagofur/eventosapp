@@ -9,6 +9,7 @@ sealed class Route {
     @Serializable data class EventChecklist(val id: String) : Route()
     @Serializable data class ClientDetail(val id: String) : Route()
     @Serializable data class ClientForm(val id: String? = null) : Route()
+    @Serializable data class QuickQuote(val clientId: String? = null) : Route()
     @Serializable data class ProductDetail(val id: String) : Route()
     @Serializable data class ProductForm(val id: String? = null) : Route()
     @Serializable data class InventoryDetail(val id: String) : Route()

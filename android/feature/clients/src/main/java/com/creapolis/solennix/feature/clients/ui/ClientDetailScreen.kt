@@ -28,7 +28,8 @@ fun ClientDetailScreen(
     viewModel: ClientDetailViewModel,
     onNavigateBack: () -> Unit,
     onEditClick: (String) -> Unit,
-    onEventClick: (String) -> Unit = {}
+    onEventClick: (String) -> Unit = {},
+    onQuickQuoteClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
@@ -218,6 +219,20 @@ fun ClientDetailScreen(
                         // Spacer to balance the row
                         Spacer(modifier = Modifier.weight(1f))
                     }
+                }
+
+                // --- Quick Quote Button ---
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { onQuickQuoteClick(client.id) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = SolennixTheme.colors.primary
+                    )
+                ) {
+                    Icon(Icons.Default.Description, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Cotizacion Rapida")
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

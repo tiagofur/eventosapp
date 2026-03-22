@@ -22,6 +22,7 @@ import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.feature.calendar.ui.CalendarScreen
 import com.creapolis.solennix.feature.clients.ui.ClientDetailScreen
 import com.creapolis.solennix.feature.clients.ui.ClientListScreen
+import com.creapolis.solennix.feature.clients.ui.QuickQuoteScreen
 import com.creapolis.solennix.feature.dashboard.ui.DashboardScreen
 import com.creapolis.solennix.feature.events.ui.EventChecklistScreen
 import com.creapolis.solennix.feature.events.ui.EventDetailScreen
@@ -273,7 +274,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     viewModel = hiltViewModel(),
                     onNavigateBack = { navController.popBackStack() },
                     onEditClick = { id -> navController.navigate("client_form?clientId=$id") },
-                    onEventClick = { id -> navController.navigate("event_detail/$id") }
+                    onEventClick = { id -> navController.navigate("event_detail/$id") },
+                    onQuickQuoteClick = { id -> navController.navigate("quick_quote?clientId=$id") }
                 )
             }
             
@@ -281,6 +283,13 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 val clientId = backStackEntry.arguments?.getString("clientId")
                 // Pass it to the ViewModel via SavedStateHandle, handled by Hilt
                 com.creapolis.solennix.feature.clients.ui.ClientFormScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("quick_quote?clientId={clientId}") {
+                QuickQuoteScreen(
                     viewModel = hiltViewModel(),
                     onNavigateBack = { navController.popBackStack() }
                 )
