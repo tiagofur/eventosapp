@@ -1,14 +1,19 @@
 package com.creapolis.solennix.feature.inventory.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingBasket
+import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material3.*
@@ -24,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.feature.inventory.viewmodel.InventoryListViewModel
+import com.creapolis.solennix.feature.inventory.viewmodel.InventorySortKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,6 +85,51 @@ fun InventoryListScreen(
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true
                 )
+
+                // Sort options
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.SortByAlpha,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    InventorySortKey.entries.forEach { key ->
+                        val label = when (key) {
+                            InventorySortKey.NAME -> "Nombre"
+                            InventorySortKey.CURRENT_STOCK -> "Stock"
+                            InventorySortKey.MINIMUM_STOCK -> "Mínimo"
+                            InventorySortKey.UNIT_COST -> "Costo"
+                        }
+                        val isSelected = uiState.sortKey == key
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.onSortChange(key) },
+                            label = { Text(label) },
+                            trailingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        if (uiState.sortAscending) Icons.Default.ArrowUpward
+                                        else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            } else null,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = SolennixTheme.colors.primaryLight,
+                                selectedLabelColor = SolennixTheme.colors.primary
+                            )
+                        )
+                    }
+                }
 
                 val hasItems = uiState.ingredientItems.isNotEmpty() ||
                     uiState.equipmentItems.isNotEmpty() ||

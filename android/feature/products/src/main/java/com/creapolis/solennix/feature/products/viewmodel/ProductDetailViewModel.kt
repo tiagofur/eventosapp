@@ -10,6 +10,8 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Product
+import com.creapolis.solennix.core.model.ProductIngredient
+import com.creapolis.solennix.core.model.InventoryType
 import com.creapolis.solennix.feature.products.ui.DemandDataPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -19,9 +21,31 @@ import javax.inject.Inject
 
 data class ProductDetailUiState(
     val product: Product? = null,
+    val ingredients: List<ProductIngredient> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
-)
+) {
+    val ingredientItems: List<ProductIngredient>
+        get() = ingredients.filter { it.type == InventoryType.INGREDIENT }
+
+    val supplyItems: List<ProductIngredient>
+        get() = ingredients.filter { it.type == InventoryType.SUPPLY }
+
+    val equipmentItems: List<ProductIngredient>
+        get() = ingredients.filter { it.type == InventoryType.EQUIPMENT }
+
+    val unitCost: Double
+        get() = ingredientItems.sumOf { it.quantityRequired * (it.unitCost ?: 0.0) }
+
+    val perEventCost: Double
+        get() = supplyItems.sumOf { it.quantityRequired * (it.unitCost ?: 0.0) }
+
+    val margin: Double
+        get() {
+            val price = product?.basePrice ?: 0.0
+            return if (price > 0) ((price - unitCost) / price) * 100 else 0.0
+        }
+}
 
 @HiltViewModel
 class ProductDetailViewModel @Inject constructor(
@@ -51,7 +75,16 @@ class ProductDetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val product = productRepository.getProduct(productId)
-                _uiState.value = ProductDetailUiState(product = product, isLoading = false)
+                val ingredients = try {
+                    productRepository.getProductIngredients(productId)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                _uiState.value = ProductDetailUiState(
+                    product = product,
+                    ingredients = ingredients,
+                    isLoading = false
+                )
             } catch (e: Exception) {
                 _uiState.value = ProductDetailUiState(errorMessage = e.message, isLoading = false)
             }
@@ -63,19 +96,16 @@ class ProductDetailViewModel @Inject constructor(
             try {
                 val today = LocalDate.now().toString()
 
-                // Collect upcoming events from local DB
                 val events = eventRepository.getEvents().first()
                 val upcomingEvents = events.filter { it.eventDate >= today && it.status == com.creapolis.solennix.core.model.EventStatus.CONFIRMED }
 
                 val demandPoints = mutableListOf<DemandDataPoint>()
 
                 for (event in upcomingEvents) {
-                    // Get products for this event
                     val eventProducts = eventRepository.getEventProducts(event.id).first()
                     val matchingProduct = eventProducts.find { it.productId == productId }
 
                     if (matchingProduct != null) {
-                        // Get client name
                         val client = clientRepository.getClient(event.clientId)
                         val clientName = client?.name ?: "Cliente"
 
@@ -85,16 +115,15 @@ class ProductDetailViewModel @Inject constructor(
                                 eventDate = event.eventDate,
                                 clientName = clientName,
                                 quantity = matchingProduct.quantity.toInt(),
-                                numPeople = event.numPeople
+                                numPeople = event.numPeople,
+                                unitPrice = matchingProduct.unitPrice
                             )
                         )
                     }
                 }
 
-                // Sort by date ascending
                 _demandData.value = demandPoints.sortedBy { it.eventDate }
             } catch (_: Exception) {
-                // Silently fail — demand data is supplementary
                 _demandData.value = emptyList()
             }
         }

@@ -23,6 +23,49 @@ final class ProductDetailViewModel {
         self.productId = productId
     }
 
+    // MARK: - Computed KPIs
+
+    var ingredientItems: [ProductIngredient] {
+        ingredients.filter { $0.type == .ingredient }
+    }
+
+    var supplyItems: [ProductIngredient] {
+        ingredients.filter { $0.type == .supply }
+    }
+
+    var equipmentItems: [ProductIngredient] {
+        ingredients.filter { $0.type == .equipment }
+    }
+
+    var unitCost: Double {
+        ingredientItems.reduce(0) { $0 + $1.quantityRequired * ($1.unitCost ?? 0) }
+    }
+
+    var perEventCost: Double {
+        supplyItems.reduce(0) { $0 + $1.quantityRequired * ($1.unitCost ?? 0) }
+    }
+
+    var margin: Double {
+        guard let price = product?.basePrice, price > 0 else { return 0 }
+        return ((price - unitCost) / price) * 100
+    }
+
+    var demand7Days: Int {
+        let today = Calendar.current.startOfDay(for: Date())
+        let in7Days = Calendar.current.date(byAdding: .day, value: 7, to: today) ?? today
+        return demandData.filter { $0.eventDate >= today && $0.eventDate <= in7Days }
+            .reduce(0) { $0 + $1.quantity }
+    }
+
+    var totalDemand: Int {
+        demandData.reduce(0) { $0 + $1.quantity }
+    }
+
+    var estimatedRevenue: Double {
+        guard let price = product?.basePrice else { return 0 }
+        return Double(totalDemand) * price
+    }
+
     @MainActor
     func loadData() async {
         isLoading = true
@@ -48,21 +91,31 @@ final class ProductDetailViewModel {
 
     @MainActor
     private func loadDemandData() async {
-        // Load upcoming events and filter by this product
         do {
             let events: [Event] = try await apiClient.get(Endpoint.upcomingEvents)
 
-            // For each event, check if it uses this product
             var demand: [DemandDataPoint] = []
             for event in events.prefix(10) {
                 let eventProducts: [EventProduct] = try await apiClient.get(Endpoint.eventProducts(event.id))
                 if let ep = eventProducts.first(where: { $0.productId == productId }) {
+                    // Fetch client name
+                    var clientName = "Cliente"
+                    if !event.clientId.isEmpty {
+                        do {
+                            let client: Client = try await apiClient.get(Endpoint.client(event.clientId))
+                            clientName = client.name
+                        } catch {
+                            // Silently fail
+                        }
+                    }
+
                     let point = DemandDataPoint(
                         id: event.id,
                         eventDate: ISO8601DateFormatter().date(from: event.eventDate) ?? Date(),
-                        clientName: "Cliente", // Would need to fetch client name
+                        clientName: clientName,
                         quantity: ep.quantity,
-                        numPeople: event.numPeople
+                        numPeople: event.numPeople,
+                        unitPrice: ep.unitPrice
                     )
                     demand.append(point)
                 }
@@ -170,18 +223,60 @@ public struct ProductDetailView: View {
                 // Header with image
                 headerSection(product)
 
-                // Info section
-                infoSection(product)
+                // KPI Cards
+                kpiSection(product)
 
-                // Recipe section
-                if !viewModel.ingredients.isEmpty {
-                    recipeSection
+                // Smart alert
+                smartAlertSection(product)
+
+                // General info
+                generalInfoSection(product)
+
+                // Composition tables
+                if !viewModel.ingredientItems.isEmpty {
+                    compositionSection(
+                        title: "Composicion / Insumos",
+                        icon: "square.stack.3d.up.fill",
+                        iconColor: SolennixColors.primary,
+                        items: viewModel.ingredientItems,
+                        showCost: true,
+                        totalLabel: "Costo Total por Unidad",
+                        totalValue: viewModel.unitCost
+                    )
+                }
+
+                if !viewModel.supplyItems.isEmpty {
+                    compositionSection(
+                        title: "Insumos por Evento",
+                        icon: "flame.fill",
+                        iconColor: .orange,
+                        items: viewModel.supplyItems,
+                        showCost: true,
+                        badge: "Costo fijo por evento",
+                        badgeColor: .orange,
+                        totalLabel: "Costo por Evento",
+                        totalValue: viewModel.perEventCost,
+                        totalColor: .orange
+                    )
+                }
+
+                if !viewModel.equipmentItems.isEmpty {
+                    compositionSection(
+                        title: "Equipo Necesario",
+                        icon: "wrench.and.screwdriver.fill",
+                        iconColor: .blue,
+                        items: viewModel.equipmentItems,
+                        showCost: false,
+                        badge: "Sin costo - Reutilizable",
+                        badgeColor: .blue
+                    )
                 }
 
                 // Demand forecast
                 DemandForecastChart(
                     dataPoints: viewModel.demandData,
-                    productName: product.name
+                    productName: product.name,
+                    basePrice: product.basePrice
                 )
             }
             .padding(Spacing.lg)
@@ -192,7 +287,6 @@ public struct ProductDetailView: View {
 
     private func headerSection(_ product: Product) -> some View {
         VStack(spacing: Spacing.md) {
-            // Product image
             if let imageUrl = product.imageUrl, !imageUrl.isEmpty,
                let url = APIClient.resolveURL(imageUrl) {
                 AsyncImage(url: url) { image in
@@ -208,20 +302,17 @@ public struct ProductDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
             }
 
-            // Status badges
             HStack(spacing: Spacing.sm) {
-                // Category badge
                 Text(product.category)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .textCase(.uppercase)
-                    .foregroundStyle(SolennixColors.textSecondary)
+                    .foregroundStyle(SolennixColors.primary)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
-                    .background(SolennixColors.surface)
+                    .background(SolennixColors.primary.opacity(0.1))
                     .clipShape(Capsule())
 
-                // Active/Inactive badge
                 if !product.isActive {
                     Text("Inactivo")
                         .font(.caption)
@@ -238,63 +329,199 @@ public struct ProductDetailView: View {
         }
     }
 
-    // MARK: - Info Section
+    // MARK: - KPI Section
 
-    private func infoSection(_ product: Product) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Información")
-                .font(.headline)
-                .foregroundStyle(SolennixColors.text)
+    private func kpiSection(_ product: Product) -> some View {
+        VStack(spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                kpiCard(
+                    icon: "dollarsign.circle.fill",
+                    iconColor: SolennixColors.primary,
+                    label: "Precio Base",
+                    value: product.basePrice.formatted(.currency(code: "MXN")),
+                    subtitle: "por unidad"
+                )
+                kpiCard(
+                    icon: "square.stack.3d.up.fill",
+                    iconColor: SolennixColors.textSecondary,
+                    label: "Costo / Unidad",
+                    value: viewModel.unitCost.formatted(.currency(code: "MXN")),
+                    subtitle: "en insumos"
+                )
+            }
+            HStack(spacing: Spacing.sm) {
+                let marginColor: Color = viewModel.margin >= 50 ? .green :
+                    (viewModel.margin >= 20 ? SolennixColors.text : .orange)
+                kpiCard(
+                    icon: "arrow.up.right",
+                    iconColor: marginColor,
+                    label: "Margen Est.",
+                    value: String(format: "%.1f%%", viewModel.margin),
+                    subtitle: "utilidad estimada",
+                    valueColor: marginColor
+                )
+                kpiCard(
+                    icon: "calendar",
+                    iconColor: SolennixColors.primary,
+                    label: "Prox. Eventos",
+                    value: "\(viewModel.demandData.count)",
+                    subtitle: "confirmados"
+                )
+            }
+        }
+    }
 
-            // Price
-            HStack {
-                Image(systemName: "dollarsign.circle.fill")
-                    .foregroundStyle(SolennixColors.primary)
-
-                Text("Precio Base")
+    private func kpiCard(
+        icon: String,
+        iconColor: Color,
+        label: String,
+        value: String,
+        subtitle: String,
+        valueColor: Color = SolennixColors.text
+    ) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .foregroundStyle(iconColor)
+                Text(label)
+                    .font(.caption2)
                     .foregroundStyle(SolennixColors.textSecondary)
+                    .textCase(.uppercase)
+            }
+            Text(value)
+                .font(.title2)
+                .fontWeight(.black)
+                .foregroundStyle(valueColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(SolennixColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+    }
 
-                Spacer()
+    // MARK: - Smart Alert Section
 
-                Text(product.basePrice.formatted(.currency(code: "MXN")))
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.text)
+    private func smartAlertSection(_ product: Product) -> some View {
+        let isHighDemand = viewModel.demand7Days > 0
+
+        return HStack(alignment: .top, spacing: Spacing.md) {
+            Image(systemName: isHighDemand ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                .foregroundStyle(isHighDemand ? SolennixColors.primary : .green)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(isHighDemand
+                     ? "\(viewModel.demand7Days) unidades en los proximos 7 dias"
+                     : viewModel.demandData.isEmpty ? "Sin eventos proximos" : "Sin demanda inmediata"
+                )
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(isHighDemand ? SolennixColors.primary : .green)
+
+                if isHighDemand {
+                    if viewModel.estimatedRevenue > 0 {
+                        Text("Alta demanda esta semana. Ingreso estimado total: \(viewModel.estimatedRevenue.formatted(.currency(code: "MXN")))")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    } else {
+                        Text("Alta demanda esta semana.")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    }
+                } else if !viewModel.demandData.isEmpty {
+                    Text("\(viewModel.totalDemand) unidades en \(viewModel.demandData.count) evento\(viewModel.demandData.count != 1 ? "s" : "") proximos.")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                } else {
+                    Text("No hay eventos confirmados que incluyan este producto.")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                }
             }
 
-            Divider()
+            Spacer()
+        }
+        .padding(Spacing.md)
+        .background(isHighDemand ? SolennixColors.primary.opacity(0.08) : SolennixColors.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.lg)
+                .stroke(isHighDemand ? SolennixColors.primary.opacity(0.2) : SolennixColors.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+    }
 
-            // Created date
-            HStack {
-                Image(systemName: "calendar")
-                    .foregroundStyle(SolennixColors.textTertiary)
+    // MARK: - General Info Section
 
-                Text("Creado")
-                    .foregroundStyle(SolennixColors.textSecondary)
+    private func generalInfoSection(_ product: Product) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text("INFORMACION GENERAL")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(SolennixColors.textSecondary)
 
-                Spacer()
-
-                if let date = ISO8601DateFormatter().date(from: product.createdAt) {
-                    Text(date.formatted(date: .abbreviated, time: .omitted))
-                        .foregroundStyle(SolennixColors.text)
+            // Category
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "tag.fill")
+                    .foregroundStyle(SolennixColors.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Categoria")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                    Text(product.category)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                 }
             }
 
             Divider()
 
-            // Updated date
-            HStack {
-                Image(systemName: "clock")
-                    .foregroundStyle(SolennixColors.textTertiary)
+            // Price
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "dollarsign.circle.fill")
+                    .foregroundStyle(SolennixColors.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Precio Base")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                    Text(product.basePrice.formatted(.currency(code: "MXN")))
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+            }
 
-                Text("Actualizado")
-                    .foregroundStyle(SolennixColors.textSecondary)
+            Divider()
 
-                Spacer()
+            // Composition summary
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "square.stack.3d.up.fill")
+                    .foregroundStyle(SolennixColors.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Composicion")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
 
-                if let date = ISO8601DateFormatter().date(from: product.updatedAt) {
-                    Text(date.formatted(date: .abbreviated, time: .omitted))
-                        .foregroundStyle(SolennixColors.text)
+                    let compositionText: String = {
+                        var parts: [String] = []
+                        parts.append("\(viewModel.ingredientItems.count) insumos")
+                        if !viewModel.supplyItems.isEmpty {
+                            parts.append("\(viewModel.supplyItems.count) insumo(s) por evento")
+                        }
+                        if !viewModel.equipmentItems.isEmpty {
+                            parts.append("\(viewModel.equipmentItems.count) equipo(s)")
+                        }
+                        return parts.joined(separator: ", ")
+                    }()
+
+                    Text(compositionText)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                 }
             }
         }
@@ -304,46 +531,112 @@ public struct ProductDetailView: View {
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 
-    // MARK: - Recipe Section
+    // MARK: - Composition Section
 
-    private var recipeSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
+    private func compositionSection(
+        title: String,
+        icon: String,
+        iconColor: Color,
+        items: [ProductIngredient],
+        showCost: Bool,
+        badge: String? = nil,
+        badgeColor: Color = SolennixColors.primary,
+        totalLabel: String? = nil,
+        totalValue: Double? = nil,
+        totalColor: Color = SolennixColors.text
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
             HStack {
-                Image(systemName: "list.bullet.clipboard.fill")
-                    .foregroundStyle(SolennixColors.primary)
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: icon)
+                        .foregroundStyle(iconColor)
+                    Text(title)
+                        .font(.headline)
+                        .foregroundStyle(SolennixColors.text)
+                }
 
-                Text("Receta")
-                    .font(.headline)
-                    .foregroundStyle(SolennixColors.text)
+                Spacer()
+
+                if let badge {
+                    Text(badge)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundStyle(badgeColor)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .background(badgeColor.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
             }
+            .padding(Spacing.md)
 
-            ForEach(viewModel.ingredients) { ingredient in
+            Divider()
+
+            // Table header
+            HStack {
+                Text("INSUMO")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.textSecondary)
+                Spacer()
+                Text("CANTIDAD")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.textSecondary)
+                if showCost {
+                    Text("COSTO EST.")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                        .frame(width: 80, alignment: .trailing)
+                }
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(SolennixColors.surface)
+
+            // Items
+            ForEach(items) { ingredient in
+                Divider().opacity(0.5)
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(ingredient.ingredientName ?? "Item")
-                            .font(.body)
-                            .foregroundStyle(SolennixColors.text)
-
-                        Text(ingredient.type?.rawValue.capitalized ?? "Ingrediente")
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.textTertiary)
-                    }
-
+                    Text(ingredient.ingredientName ?? "Insumo")
+                        .font(.subheadline)
+                        .foregroundStyle(SolennixColors.text)
                     Spacer()
-
                     Text("\(Int(ingredient.quantityRequired)) \(ingredient.unit ?? "und")")
                         .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(SolennixColors.primary)
+                        .fontWeight(.bold)
+                        .foregroundStyle(SolennixColors.text)
+                    if showCost {
+                        let cost = ingredient.quantityRequired * (ingredient.unitCost ?? 0)
+                        Text(cost > 0 ? cost.formatted(.currency(code: "MXN")) : "—")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(totalColor == .orange ? .orange : SolennixColors.text)
+                            .frame(width: 80, alignment: .trailing)
+                    }
                 }
-                .padding(.vertical, Spacing.xs)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+            }
 
-                if ingredient.id != viewModel.ingredients.last?.id {
-                    Divider()
+            // Total footer
+            if let totalLabel, let totalValue {
+                Divider()
+                HStack {
+                    Text(totalLabel)
+                        .font(.subheadline)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                    Spacer()
+                    Text(totalValue.formatted(.currency(code: "MXN")))
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundStyle(totalColor)
                 }
+                .padding(Spacing.md)
             }
         }
-        .padding(Spacing.md)
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)

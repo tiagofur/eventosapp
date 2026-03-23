@@ -4,6 +4,7 @@ import com.creapolis.solennix.core.database.dao.ProductDao
 import com.creapolis.solennix.core.database.entity.asEntity
 import com.creapolis.solennix.core.database.entity.asExternalModel
 import com.creapolis.solennix.core.model.Product
+import com.creapolis.solennix.core.model.ProductIngredient
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.Endpoints
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,8 @@ interface ProductRepository {
     suspend fun createProduct(product: Product): Product
     suspend fun updateProduct(product: Product): Product
     suspend fun deleteProduct(id: String)
+    suspend fun getProductIngredients(productId: String): List<ProductIngredient>
+    suspend fun updateProductIngredients(productId: String, ingredients: List<ProductIngredient>): List<ProductIngredient>
 }
 
 @Singleton
@@ -53,4 +56,13 @@ class OfflineFirstProductRepository @Inject constructor(
         apiService.delete(Endpoints.product(id))
         productDao.deleteProductById(id)
     }
+
+    override suspend fun getProductIngredients(productId: String): List<ProductIngredient> =
+        apiService.get(Endpoints.productIngredients(productId))
+
+    override suspend fun updateProductIngredients(
+        productId: String,
+        ingredients: List<ProductIngredient>
+    ): List<ProductIngredient> =
+        apiService.put(Endpoints.productIngredients(productId), ingredients)
 }

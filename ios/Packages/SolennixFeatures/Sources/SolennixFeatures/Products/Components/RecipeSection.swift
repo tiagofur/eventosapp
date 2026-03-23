@@ -15,6 +15,7 @@ public struct RecipeSection: View {
     let onRemove: (Int) -> Void
     let onSelectInventory: (Int, String) -> Void
     let onUpdateQuantity: (Int, Double) -> Void
+    let showCost: Bool
 
     public init(
         title: String,
@@ -24,7 +25,8 @@ public struct RecipeSection: View {
         onAdd: @escaping () -> Void,
         onRemove: @escaping (Int) -> Void,
         onSelectInventory: @escaping (Int, String) -> Void,
-        onUpdateQuantity: @escaping (Int, Double) -> Void
+        onUpdateQuantity: @escaping (Int, Double) -> Void,
+        showCost: Bool = false
     ) {
         self.title = title
         self.description = description
@@ -34,6 +36,7 @@ public struct RecipeSection: View {
         self.onRemove = onRemove
         self.onSelectInventory = onSelectInventory
         self.onUpdateQuantity = onUpdateQuantity
+        self.showCost = showCost
     }
 
     public var body: some View {
@@ -81,6 +84,7 @@ public struct RecipeSection: View {
                     RecipeItemRow(
                         item: item,
                         inventoryItems: inventoryItems,
+                        showCost: showCost,
                         onSelectInventory: { inventoryId in
                             onSelectInventory(index, inventoryId)
                         },
@@ -111,6 +115,7 @@ struct RecipeItemRow: View {
 
     let item: RecipeItem
     let inventoryItems: [InventoryItem]
+    let showCost: Bool
     let onSelectInventory: (String) -> Void
     let onUpdateQuantity: (Double) -> Void
     let onRemove: () -> Void
@@ -120,6 +125,11 @@ struct RecipeItemRow: View {
 
     private var selectedItem: InventoryItem? {
         inventoryItems.first { $0.id == item.inventoryId }
+    }
+
+    private var estimatedCost: Double? {
+        guard let inv = selectedItem, let cost = inv.unitCost, cost > 0 else { return nil }
+        return item.quantityRequired * cost
     }
 
     var body: some View {
@@ -139,9 +149,17 @@ struct RecipeItemRow: View {
                             .foregroundStyle(selectedItem != nil ? SolennixColors.text : SolennixColors.textTertiary)
 
                         if let inv = selectedItem {
-                            Text("Stock: \(Int(inv.currentStock)) \(inv.unit)")
-                                .font(.caption)
-                                .foregroundStyle(SolennixColors.textSecondary)
+                            HStack(spacing: Spacing.sm) {
+                                Text("Stock: \(Int(inv.currentStock)) \(inv.unit)")
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.textSecondary)
+
+                                if showCost, let cost = inv.unitCost, cost > 0 {
+                                    Text("· \(cost.formatted(.currency(code: "MXN")))/\(inv.unit)")
+                                        .font(.caption)
+                                        .foregroundStyle(SolennixColors.textSecondary)
+                                }
+                            }
                         }
                     }
 
@@ -164,6 +182,7 @@ struct RecipeItemRow: View {
                 InventoryPickerSheet(
                     inventoryItems: inventoryItems,
                     selectedId: item.inventoryId,
+                    showCost: showCost,
                     onSelect: { inventoryId in
                         onSelectInventory(inventoryId)
                         showPicker = false
@@ -172,7 +191,7 @@ struct RecipeItemRow: View {
                 .presentationDetents([.medium, .large])
             }
 
-            // Quantity and remove
+            // Quantity, cost, and remove
             HStack(spacing: Spacing.sm) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Cantidad")
@@ -195,6 +214,19 @@ struct RecipeItemRow: View {
                                 .font(.caption)
                                 .foregroundStyle(SolennixColors.textTertiary)
                         }
+                    }
+                }
+
+                if showCost, let cost = estimatedCost {
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Costo est.")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textTertiary)
+                        Text(cost.formatted(.currency(code: "MXN")))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(SolennixColors.text)
                     }
                 }
 
@@ -221,6 +253,7 @@ private struct InventoryPickerSheet: View {
 
     let inventoryItems: [InventoryItem]
     let selectedId: String
+    let showCost: Bool
     let onSelect: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -252,7 +285,7 @@ private struct InventoryPickerSheet: View {
 
                         Spacer()
 
-                        if let cost = item.unitCost, cost > 0 {
+                        if showCost, let cost = item.unitCost, cost > 0 {
                             Text(cost.formatted(.currency(code: "MXN")))
                                 .font(.caption)
                                 .foregroundStyle(SolennixColors.textSecondary)
@@ -292,14 +325,15 @@ private struct InventoryPickerSheet: View {
             RecipeItem(inventoryId: "2", quantityRequired: 1, inventoryName: "Azucar", unit: "kg", type: .ingredient)
         ],
         inventoryItems: [
-            InventoryItem(id: "1", userId: "", ingredientName: "Harina", currentStock: 10, minimumStock: 5, unit: "kg", unitCost: nil, lastUpdated: "", type: .ingredient),
-            InventoryItem(id: "2", userId: "", ingredientName: "Azucar", currentStock: 8, minimumStock: 3, unit: "kg", unitCost: nil, lastUpdated: "", type: .ingredient),
-            InventoryItem(id: "3", userId: "", ingredientName: "Sal", currentStock: 5, minimumStock: 2, unit: "kg", unitCost: nil, lastUpdated: "", type: .ingredient)
+            InventoryItem(id: "1", userId: "", ingredientName: "Harina", currentStock: 10, minimumStock: 5, unit: "kg", unitCost: 25.0, lastUpdated: "", type: .ingredient),
+            InventoryItem(id: "2", userId: "", ingredientName: "Azucar", currentStock: 8, minimumStock: 3, unit: "kg", unitCost: 30.0, lastUpdated: "", type: .ingredient),
+            InventoryItem(id: "3", userId: "", ingredientName: "Sal", currentStock: 5, minimumStock: 2, unit: "kg", unitCost: 15.0, lastUpdated: "", type: .ingredient)
         ],
         onAdd: {},
         onRemove: { _ in },
         onSelectInventory: { _, _ in },
-        onUpdateQuantity: { _, _ in }
+        onUpdateQuantity: { _, _ in },
+        showCost: true
     )
     .padding()
 }
