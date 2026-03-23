@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -29,14 +30,22 @@ fun SettingsScreen(
     onPricing: () -> Unit,
     onAbout: () -> Unit,
     onPrivacy: () -> Unit,
-    onTerms: () -> Unit
+    onTerms: () -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     val user by viewModel.currentUser.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Ajustes") })
+            TopAppBar(
+                title = { Text("Ajustes") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -36,6 +37,7 @@ import com.creapolis.solennix.feature.inventory.viewmodel.InventorySortKey
 @Composable
 fun InventoryListScreen(
     viewModel: InventoryListViewModel,
+    onNavigateBack: () -> Unit,
     onItemClick: (String) -> Unit,
     onAddItemClick: () -> Unit
 ) {
@@ -45,6 +47,11 @@ fun InventoryListScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Inventario") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
                 actions = {
                     // Low stock filter
                     FilterChip(

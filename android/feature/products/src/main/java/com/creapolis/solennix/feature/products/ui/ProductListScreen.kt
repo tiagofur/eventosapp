@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -39,6 +40,7 @@ import com.creapolis.solennix.feature.products.viewmodel.ProductSortKey
 @Composable
 fun ProductListScreen(
     viewModel: ProductListViewModel,
+    onNavigateBack: () -> Unit,
     onProductClick: (String) -> Unit,
     onAddProductClick: () -> Unit,
     onUpgradeClick: () -> Unit = {}
@@ -62,6 +64,11 @@ fun ProductListScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Productos") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
                 actions = {
                     IconButton(onClick = {
                         if (viewModel.isLimitReached) {

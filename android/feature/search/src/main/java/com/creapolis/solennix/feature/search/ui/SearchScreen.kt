@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,6 +26,7 @@ import com.creapolis.solennix.feature.search.viewmodel.SearchViewModel
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
+    onNavigateBack: () -> Unit,
     onClientClick: (String) -> Unit,
     onEventClick: (String) -> Unit,
     onProductClick: (String) -> Unit,
@@ -35,7 +37,12 @@ fun SearchScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Buscar") }
+                title = { Text("Buscar") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                }
             )
         }
     ) { padding ->
