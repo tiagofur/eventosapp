@@ -65,7 +65,7 @@ class ProductDetailViewModel @Inject constructor(
 
                 // Collect upcoming events from local DB
                 val events = eventRepository.getEvents().first()
-                val upcomingEvents = events.filter { it.eventDate >= today }
+                val upcomingEvents = events.filter { it.eventDate >= today && it.status == "confirmed" }
 
                 val demandPoints = mutableListOf<DemandDataPoint>()
 

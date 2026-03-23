@@ -155,7 +155,7 @@ func (r *EventRepo) GetByID(ctx context.Context, id, userID uuid.UUID) (*models.
 func (r *EventRepo) GetUpcoming(ctx context.Context, userID uuid.UUID, limit int) ([]models.Event, error) {
 	query := fmt.Sprintf(`SELECT %s, c.name as client_name, c.phone as client_phone
 		FROM events e LEFT JOIN clients c ON e.client_id = c.id
-		WHERE e.user_id = $1 AND e.event_date >= CURRENT_DATE
+		WHERE e.user_id = $1 AND e.event_date >= CURRENT_DATE AND e.status = 'confirmed'
 		ORDER BY e.event_date ASC LIMIT $2`, eventSelectFields)
 	rows, err := r.pool.Query(ctx, query, userID, limit)
 	if err != nil {
