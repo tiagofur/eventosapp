@@ -11,6 +11,7 @@ import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.InventoryItem
+import com.creapolis.solennix.core.model.InventoryType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

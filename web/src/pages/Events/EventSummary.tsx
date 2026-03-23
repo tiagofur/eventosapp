@@ -1105,6 +1105,90 @@ export const EventSummary: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Per-event supplies: purchase */}
+          {supplies.filter((s: any) => s.source === 'purchase').length > 0 && (
+            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border overflow-hidden">
+              <h2 className="text-lg font-bold text-text mb-1">Insumos por Evento — Compra Nueva</h2>
+              <p className="text-xs text-text-secondary mb-4">Estos insumos deben comprarse para el evento</p>
+              <table className="w-full text-sm" aria-label="Insumos por evento de compra nueva">
+                <thead>
+                  <tr className="text-left text-text-secondary border-b border-border">
+                    <th className="pb-3 pt-2">Insumo</th>
+                    <th className="pb-3 pt-2 text-right">Cantidad</th>
+                    <th className="pb-3 pt-2 text-right">Costo Unit.</th>
+                    <th className="pb-3 pt-2 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {supplies.filter((s: any) => s.source === 'purchase').map((s: any) => (
+                    <tr key={s.id} className="hover:bg-surface-alt/50 transition-colors">
+                      <td className="py-3 font-medium text-text">
+                        {s.supply_name || 'Insumo'}
+                        <div className="text-[10px] text-text-secondary uppercase tracking-tight">{s.unit || 'und'}</div>
+                      </td>
+                      <td className="py-3 text-right text-text font-bold">{s.quantity}</td>
+                      <td className="py-3 text-right text-text-secondary">
+                        ${(s.unit_cost || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 text-right text-text font-bold">
+                        ${((s.quantity || 0) * (s.unit_cost || 0)).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Per-event supplies: from stock */}
+          {supplies.filter((s: any) => s.source === 'stock').length > 0 && (
+            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border overflow-hidden">
+              <h2 className="text-lg font-bold text-text mb-1">Insumos por Evento — Del Stock</h2>
+              <p className="text-xs text-text-secondary mb-4">Estos insumos se toman del inventario existente</p>
+              <table className="w-full text-sm" aria-label="Insumos por evento del stock">
+                <thead>
+                  <tr className="text-left text-text-secondary border-b border-border">
+                    <th className="pb-3 pt-2">Insumo</th>
+                    <th className="pb-3 pt-2 text-right">Cantidad</th>
+                    <th className="pb-3 pt-2 text-right">En Stock</th>
+                    <th className="pb-3 pt-2 text-right">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {supplies.filter((s: any) => s.source === 'stock').map((s: any) => {
+                    const needsMore = s.quantity > (s.current_stock || 0);
+                    return (
+                      <tr key={s.id} className="hover:bg-surface-alt/50 transition-colors">
+                        <td className="py-3 font-medium text-text">
+                          {s.supply_name || 'Insumo'}
+                          <div className="text-[10px] text-text-secondary uppercase tracking-tight">{s.unit || 'und'}</div>
+                        </td>
+                        <td className="py-3 text-right text-text font-bold">{s.quantity}</td>
+                        <td className="py-3 text-right">
+                          <span className={clsx(
+                            "px-2 py-0.5 rounded-full text-xs font-semibold",
+                            needsMore
+                              ? "bg-error/10 text-error border border-error/20"
+                              : "bg-success/10 text-success border border-success/20"
+                          )}>
+                            {(s.current_stock || 0)}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          {needsMore ? (
+                            <span className="text-error text-xs font-bold">Insuficiente</span>
+                          ) : (
+                            <span className="text-success text-xs font-bold">OK</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

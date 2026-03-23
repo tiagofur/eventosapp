@@ -124,7 +124,12 @@ export const InventoryDetails: React.FC = () => {
         let eventDemand = 0;
         for (const ep of products) {
           const perUnit = productDemandMap[ep.productId] || 0;
-          eventDemand += perUnit * ep.quantity;
+          if (item.type === 'supply') {
+            // Per-event supplies: fixed quantity, not scaled by product qty
+            eventDemand += perUnit;
+          } else {
+            eventDemand += perUnit * ep.quantity;
+          }
         }
         if (eventDemand > 0) {
           const dateKey = event.event_date.slice(0, 10);
