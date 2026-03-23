@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,7 +57,9 @@ import java.util.*
 @Composable
 fun CalendarScreen(
     viewModel: CalendarViewModel,
-    onEventClick: (String) -> Unit
+    onEventClick: (String) -> Unit,
+    onBlockDatesRequested: Boolean = false,
+    onBlockDatesConsumed: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showBlockDialog by remember { mutableStateOf(false) }
@@ -65,23 +68,19 @@ fun CalendarScreen(
     var showManageUnavailableSheet by remember { mutableStateOf(false) }
     var showAddRangeDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(onBlockDatesRequested) {
+        if (onBlockDatesRequested) {
+            viewModel.loadAllUnavailableDates()
+            showManageUnavailableSheet = true
+            onBlockDatesConsumed()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Calendario") }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    viewModel.loadAllUnavailableDates()
-                    showManageUnavailableSheet = true
-                },
-                containerColor = SolennixTheme.colors.primary,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Block, contentDescription = "Gestionar Fechas No Disponibles")
-            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {

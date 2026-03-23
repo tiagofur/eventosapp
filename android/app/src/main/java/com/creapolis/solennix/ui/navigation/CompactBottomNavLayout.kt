@@ -1,7 +1,13 @@
 package com.creapolis.solennix.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
@@ -48,6 +54,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val isAtTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
+    var calendarBlockDatesRequested by remember { mutableStateOf(false) }
+    val calendarBlockDatesAction: () -> Unit = { calendarBlockDatesRequested = true }
 
     // Navegar al deep link despues de que el NavHost se haya inicializado
     LaunchedEffect(initialDeepLinkRoute) {
@@ -92,8 +100,9 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
         },
         floatingActionButton = {
-            // Only show FAB on top-level destinations
-            if (isAtTopLevel) {
+            // Simple FAB on top-level destinations (except More and Calendar)
+            val showSimpleFab = isAtTopLevel && currentRoute != TopLevelDestination.MORE.route && currentRoute != TopLevelDestination.CALENDAR.route
+            if (showSimpleFab) {
                 FloatingActionButton(
                     onClick = { navController.navigate("event_form?eventId=") },
                     containerColor = SolennixTheme.colors.primary,
@@ -104,8 +113,103 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     Icon(Icons.Filled.Add, "Nuevo Evento", tint = Color.White)
                 }
             }
+
+            // Expandable FAB for Calendar
+            if (currentRoute == TopLevelDestination.CALENDAR.route) {
+                var expanded by remember { mutableStateOf(false) }
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Sub-options (visible when expanded)
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                        exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // Block dates option
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = SolennixTheme.colors.card,
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Text(
+                                        "Bloquear Fechas",
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                }
+                                SmallFloatingActionButton(
+                                    onClick = {
+                                        expanded = false
+                                        calendarBlockDatesAction()
+                                    },
+                                    containerColor = SolennixTheme.colors.primary,
+                                    contentColor = Color.White
+                                ) {
+                                    Icon(Icons.Default.Block, contentDescription = "Bloquear Fechas")
+                                }
+                            }
+
+                            // New event option
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = SolennixTheme.colors.card,
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Text(
+                                        "Nuevo Evento",
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                }
+                                SmallFloatingActionButton(
+                                    onClick = {
+                                        expanded = false
+                                        navController.navigate("event_form?eventId=")
+                                    },
+                                    containerColor = SolennixTheme.colors.primary,
+                                    contentColor = Color.White
+                                ) {
+                                    Icon(Icons.Filled.Add, contentDescription = "Nuevo Evento")
+                                }
+                            }
+                        }
+                    }
+
+                    // Main FAB (toggle)
+                    FloatingActionButton(
+                        onClick = { expanded = !expanded },
+                        containerColor = SolennixTheme.colors.primary,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = SolennixElevation.fab
+                        )
+                    ) {
+                        Icon(
+                            if (expanded) Icons.Default.Close else Icons.Filled.Add,
+                            contentDescription = if (expanded) "Cerrar menú" else "Opciones",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
         },
-        floatingActionButtonPosition = FabPosition.Center
+        floatingActionButtonPosition = FabPosition.End
     ) { padding ->
         NavHost(
             navController = navController,
@@ -120,10 +224,13 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onUpgradeClick = { navController.navigate("pricing") }
                 )
             }
-            composable(TopLevelDestination.CALENDAR.route) { 
-                CalendarScreen(viewModel = hiltViewModel(), onEventClick = { id -> 
-                    navController.navigate("event_detail/$id")
-                })
+            composable(TopLevelDestination.CALENDAR.route) {
+                CalendarScreen(
+                    viewModel = hiltViewModel(),
+                    onEventClick = { id -> navController.navigate("event_detail/$id") },
+                    onBlockDatesRequested = calendarBlockDatesRequested,
+                    onBlockDatesConsumed = { calendarBlockDatesRequested = false }
+                )
             }
             composable(TopLevelDestination.CLIENTS.route) { 
                 ClientListScreen(
@@ -154,7 +261,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 ProductListScreen(
                     viewModel = hiltViewModel(),
                     onProductClick = { id -> navController.navigate("product_detail/$id") },
-                    onAddProductClick = { navController.navigate("product_form") }
+                    onAddProductClick = { navController.navigate("product_form") },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             
@@ -178,7 +286,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 InventoryListScreen(
                     viewModel = hiltViewModel(),
                     onItemClick = { id -> navController.navigate("inventory_detail/$id") },
-                    onAddItemClick = { navController.navigate("inventory_form") }
+                    onAddItemClick = { navController.navigate("inventory_form") },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             
@@ -208,7 +317,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onPricing = { navController.navigate("pricing") },
                     onAbout = { navController.navigate("about") },
                     onPrivacy = { navController.navigate("privacy") },
-                    onTerms = { navController.navigate("terms") }
+                    onTerms = { navController.navigate("terms") },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 
@@ -264,7 +374,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onClientClick = { id -> navController.navigate("client_detail/$id") },
                     onEventClick = { id -> navController.navigate("event_detail/$id") },
                     onProductClick = { id -> navController.navigate("product_detail/$id") },
-                    onInventoryClick = { id -> navController.navigate("inventory_detail/$id") }
+                    onInventoryClick = { id -> navController.navigate("inventory_detail/$id") },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 
@@ -322,6 +433,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreMenuScreen(
     onEventsClick: () -> Unit,
@@ -330,30 +442,55 @@ fun MoreMenuScreen(
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Menu Principal", style = MaterialTheme.typography.headlineSmall, color = SolennixTheme.colors.primaryText)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        MenuCard(title = "Eventos", icon = Icons.Default.Event, onClick = onEventsClick)
-        MenuCard(title = "Productos", icon = Icons.AutoMirrored.Filled.List, onClick = onProductsClick)
-        MenuCard(title = "Inventario", icon = Icons.Default.Build, onClick = onInventoryClick)
-        MenuCard(title = "Busqueda Global", icon = Icons.Default.Search, onClick = onSearchClick)
-        MenuCard(title = "Ajustes", icon = Icons.Default.Settings, onClick = onSettingsClick)
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Más") })
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            MenuCard(title = "Eventos", subtitle = "Gestiona tus celebraciones", icon = Icons.Default.Event, onClick = onEventsClick)
+            MenuCard(title = "Productos", subtitle = "Servicios y artículos que ofreces", icon = Icons.AutoMirrored.Filled.List, onClick = onProductsClick)
+            MenuCard(title = "Inventario", subtitle = "Control de equipos e insumos", icon = Icons.Default.Build, onClick = onInventoryClick)
+            MenuCard(title = "Búsqueda Global", subtitle = "Busca en toda la app", icon = Icons.Default.Search, onClick = onSearchClick)
+            MenuCard(title = "Ajustes", subtitle = "Cuenta, negocio y suscripción", icon = Icons.Default.Settings, onClick = onSettingsClick)
+        }
     }
 }
 
 @Composable
-fun MenuCard(title: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+fun MenuCard(
+    title: String,
+    subtitle: String = "",
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
     ) {
         Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = SolennixTheme.colors.primary)
+            Icon(icon, contentDescription = title, tint = SolennixTheme.colors.primary)
             Spacer(modifier = Modifier.width(16.dp))
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = SolennixTheme.colors.secondaryText)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                if (subtitle.isNotEmpty()) {
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Ir a $title", tint = SolennixTheme.colors.secondaryText)
         }
     }
 }
