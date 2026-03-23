@@ -752,6 +752,133 @@ func TestValidateRefreshToken_Success(t *testing.T) {
 	}
 }
 
+func TestValidateResetToken_RejectsAccessToken(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "reject-access-as-reset@test.dev"
+
+	pair, err := svc.GenerateTokenPair(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error = %v", err)
+	}
+
+	// ValidateResetToken must reject an access token
+	_, err = svc.ValidateResetToken(pair.AccessToken)
+	if err == nil {
+		t.Fatal("ValidateResetToken() should reject access tokens")
+	}
+	if !strings.Contains(err.Error(), "not a password reset token") {
+		t.Errorf("error should mention not a password reset token, got: %v", err)
+	}
+}
+
+func TestValidateResetToken_RejectsRefreshToken(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "reject-refresh-as-reset@test.dev"
+
+	pair, err := svc.GenerateTokenPair(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error = %v", err)
+	}
+
+	// ValidateResetToken must reject a refresh token
+	_, err = svc.ValidateResetToken(pair.RefreshToken)
+	if err == nil {
+		t.Fatal("ValidateResetToken() should reject refresh tokens")
+	}
+	if !strings.Contains(err.Error(), "not a password reset token") {
+		t.Errorf("error should mention not a password reset token, got: %v", err)
+	}
+}
+
+func TestGenerateResetToken_HasOneHourExpiry(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "reset-expiry@test.dev"
+
+	before := time.Now()
+	tokenStr, err := svc.GenerateResetToken(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateResetToken() error = %v", err)
+	}
+
+	claims, err := svc.ValidateResetToken(tokenStr)
+	if err != nil {
+		t.Fatalf("ValidateResetToken() error = %v", err)
+	}
+
+	// Verify expiry is approximately 1 hour from now
+	expiresAt := claims.ExpiresAt.Time
+	expectedExpiry := before.Add(1 * time.Hour)
+	if expiresAt.Before(expectedExpiry.Add(-2 * time.Second)) || expiresAt.After(expectedExpiry.Add(2*time.Second)) {
+		t.Errorf("reset token ExpiresAt = %v, expected near %v (1 hour from issuance)", expiresAt, expectedExpiry)
+	}
+
+	// Verify IssuedAt is reasonable
+	issuedAt := claims.IssuedAt.Time
+	if issuedAt.Before(before.Add(-time.Second)) || issuedAt.After(before.Add(2*time.Second)) {
+		t.Errorf("reset token IssuedAt = %v, expected near %v", issuedAt, before)
+	}
+}
+
+func TestGenerateTokenPair_ContainsExpectedClaims(t *testing.T) {
+	svc := NewAuthService("claims-secret", 2)
+	userID := uuid.New()
+	email := "claims-check@test.dev"
+
+	pair, err := svc.GenerateTokenPair(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error = %v", err)
+	}
+
+	// Parse access token and verify all expected claims
+	accessClaims, err := svc.ValidateToken(pair.AccessToken)
+	if err != nil {
+		t.Fatalf("ValidateToken() error = %v", err)
+	}
+
+	if accessClaims.UserID != userID {
+		t.Errorf("access UserID = %v, want %v", accessClaims.UserID, userID)
+	}
+	if accessClaims.Email != email {
+		t.Errorf("access Email = %q, want %q", accessClaims.Email, email)
+	}
+	if accessClaims.Subject != "access" {
+		t.Errorf("access Subject = %q, want %q", accessClaims.Subject, "access")
+	}
+	if accessClaims.Issuer != "solennix-backend" {
+		t.Errorf("access Issuer = %q, want %q", accessClaims.Issuer, "solennix-backend")
+	}
+	if accessClaims.ExpiresAt == nil {
+		t.Fatal("access ExpiresAt should not be nil")
+	}
+	if accessClaims.IssuedAt == nil {
+		t.Fatal("access IssuedAt should not be nil")
+	}
+
+	// Verify ExpiresAt on TokenPair matches the claim
+	if pair.ExpiresAt != accessClaims.ExpiresAt.Time.Unix() {
+		t.Errorf("TokenPair.ExpiresAt = %d, want %d", pair.ExpiresAt, accessClaims.ExpiresAt.Time.Unix())
+	}
+
+	// Parse refresh token and verify claims
+	refreshClaims, err := svc.ValidateRefreshToken(pair.RefreshToken)
+	if err != nil {
+		t.Fatalf("ValidateRefreshToken() error = %v", err)
+	}
+
+	if refreshClaims.UserID != userID {
+		t.Errorf("refresh UserID = %v, want %v", refreshClaims.UserID, userID)
+	}
+	if refreshClaims.Email != email {
+		t.Errorf("refresh Email = %q, want %q", refreshClaims.Email, email)
+	}
+	if refreshClaims.Subject != "refresh" {
+		t.Errorf("refresh Subject = %q, want %q", refreshClaims.Subject, "refresh")
+	}
+}
+
 func TestHashPassword_ProducesDifferentHashes(t *testing.T) {
 	svc := NewAuthService("test-secret", 1)
 

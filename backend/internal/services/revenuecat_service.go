@@ -15,6 +15,7 @@ import (
 // Used to sync Stripe (web) purchases to RevenueCat so mobile apps see the entitlement.
 type RevenueCatService struct {
 	apiKey     string
+	baseURL    string
 	httpClient *http.Client
 }
 
@@ -22,7 +23,8 @@ type RevenueCatService struct {
 // all methods become no-ops (graceful degradation when RC is not configured).
 func NewRevenueCatService(apiKey string) *RevenueCatService {
 	return &RevenueCatService{
-		apiKey: apiKey,
+		apiKey:  apiKey,
+		baseURL: "https://api.revenuecat.com/v1",
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -44,7 +46,7 @@ func (s *RevenueCatService) GrantPromotionalEntitlement(ctx context.Context, app
 		return nil
 	}
 
-	url := fmt.Sprintf("https://api.revenuecat.com/v1/subscribers/%s/entitlements/%s/promotional", appUserID, entitlementID)
+	url := fmt.Sprintf("%s/subscribers/%s/entitlements/%s/promotional", s.baseURL, appUserID, entitlementID)
 
 	body := map[string]string{
 		"duration": duration,
@@ -96,7 +98,7 @@ func (s *RevenueCatService) RevokePromotionalEntitlement(ctx context.Context, ap
 		return nil
 	}
 
-	url := fmt.Sprintf("https://api.revenuecat.com/v1/subscribers/%s/entitlements/%s/revoke_promotionals", appUserID, entitlementID)
+	url := fmt.Sprintf("%s/subscribers/%s/entitlements/%s/revoke_promotionals", s.baseURL, appUserID, entitlementID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 	if err != nil {
