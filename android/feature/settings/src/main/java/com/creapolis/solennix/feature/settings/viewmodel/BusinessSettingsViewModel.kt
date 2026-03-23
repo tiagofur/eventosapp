@@ -97,7 +97,7 @@ class BusinessSettingsViewModel @Inject constructor(
             isUploadingLogo = true
             errorMessage = null
             try {
-                val uploadedUrl: String = apiService.upload(
+                val response = apiService.upload(
                     Endpoints.UPLOAD_IMAGE,
                     bytes,
                     "logo.jpg",
@@ -105,10 +105,10 @@ class BusinessSettingsViewModel @Inject constructor(
                 )
 
                 // Update profile with new logo URL
-                val payload = mapOf("logo_url" to uploadedUrl)
+                val payload = mapOf("logo_url" to response.url)
                 val updatedUser: User = apiService.put(Endpoints.UPDATE_PROFILE, payload)
                 authManager.storeUser(updatedUser)
-                logoUrl = uploadedUrl
+                logoUrl = response.url
             } catch (e: Exception) {
                 errorMessage = "Error al subir el logo: ${e.message}"
             } finally {

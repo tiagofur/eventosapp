@@ -117,10 +117,12 @@ fun BusinessSettingsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Logo preview
-                        if (viewModel.logoUrl != null) {
+                        val resolvedLogoUrl = viewModel.logoUrl?.let { UrlResolver.resolve(it) }
+
+                        if (resolvedLogoUrl != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
-                                    .data(UrlResolver.resolve(viewModel.logoUrl))
+                                    .data(resolvedLogoUrl)
                                     .crossfade(true)
                                     .build(),
                                 contentDescription = "Logo del negocio",
@@ -268,35 +270,7 @@ fun BusinessSettingsScreen(
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
 
-                        // Preset colors row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            val presetColors = listOf(
-                                "#007AFF", "#FF3B30", "#34C759", "#FF9500",
-                                "#AF52DE", "#5856D6", "#FF2D55", "#00C7BE"
-                            )
-                            presetColors.forEach { color ->
-                                val isSelected = viewModel.brandColor.equals(color, ignoreCase = true)
-                                Surface(
-                                    onClick = { viewModel.brandColor = color },
-                                    modifier = Modifier.size(36.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = parseHexColor(color),
-                                    border = if (isSelected) {
-                                        androidx.compose.foundation.BorderStroke(
-                                            2.dp,
-                                            SolennixTheme.colors.primaryText
-                                        )
-                                    } else null
-                                ) {}
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Custom color row
+                        // Color selector row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically

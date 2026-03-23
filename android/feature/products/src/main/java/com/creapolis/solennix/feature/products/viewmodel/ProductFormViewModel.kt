@@ -135,13 +135,13 @@ class ProductFormViewModel @Inject constructor(
                 inputStream?.close()
 
                 if (bytes != null) {
-                    val uploadedUrl: String = apiService.upload(
+                    val response = apiService.upload(
                         Endpoints.UPLOAD_IMAGE,
                         bytes,
                         fileName,
                         mimeType
                     )
-                    imageUrl = uploadedUrl
+                    imageUrl = response.url
                 } else {
                     errorMessage = "No se pudo leer la imagen seleccionada"
                 }

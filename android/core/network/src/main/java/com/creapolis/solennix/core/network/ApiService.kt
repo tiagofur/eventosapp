@@ -4,8 +4,16 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
+
+@Serializable
+data class UploadResponse(
+    val url: String,
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null
+)
 
 @Singleton
 class ApiService @Inject constructor(
@@ -41,7 +49,7 @@ class ApiService @Inject constructor(
         fileBytes: ByteArray,
         fileName: String,
         mimeType: String
-    ): String = client.httpClient.post(endpoint) {
+    ): UploadResponse = client.httpClient.post(endpoint) {
         setBody(MultiPartFormDataContent(formData {
             append("file", fileBytes, Headers.build {
                 append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
