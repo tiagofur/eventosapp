@@ -30,8 +30,8 @@ class KtorClient @Inject constructor(
         }
         // Ktor's built-in Auth plugin handles:
         // 1. loadTokens: reads fresh tokens from EncryptedSharedPreferences
-        // 2. refreshTokens: on 401, calls AuthManager.refreshAndGetTokens()
-        //    which uses a Mutex for concurrent deduplication
+        // 2. refreshTokens: on 401, checks if tokens changed (e.g. after login)
+        //    before calling the backend refresh endpoint
         // 3. On refresh failure: clears tokens → state becomes Unauthenticated
         install(Auth) {
             bearer {
@@ -39,7 +39,15 @@ class KtorClient @Inject constructor(
                     authManager.getBearerTokens()
                 }
                 refreshTokens {
-                    authManager.refreshAndGetTokens()
+                    // Check if tokens changed since loadTokens cached them
+                    // (e.g., user just logged in). If so, use the new tokens
+                    // directly without hitting the refresh endpoint.
+                    val freshTokens = authManager.getBearerTokens()
+                    if (freshTokens != null && freshTokens.accessToken != oldTokens?.accessToken) {
+                        freshTokens
+                    } else {
+                        authManager.refreshAndGetTokens()
+                    }
                 }
                 // Send tokens on every request without waiting for a 401 first
                 sendWithoutRequest { true }
