@@ -26,6 +26,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { logError } from "@/lib/errorHandler";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { EventGeneralInfo } from "./components/EventGeneralInfo";
 import { EventProducts } from "./components/EventProducts";
 import { EventExtras } from "./components/EventExtras";
@@ -841,6 +842,7 @@ export const EventForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: id ? 'Editar Evento' : 'Nueva Cotización' }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button

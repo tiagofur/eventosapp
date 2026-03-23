@@ -20,6 +20,7 @@ import {
   Fuel,
 } from "lucide-react";
 import { logError } from "../../lib/errorHandler";
+import { Breadcrumb } from "../../components/Breadcrumb";
 import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SkeletonCard } from "../../components/Skeleton";
@@ -219,6 +220,8 @@ export const ProductDetails: React.FC = () => {
         onConfirm={handleDeleteProduct}
         onCancel={() => setConfirmDeleteOpen(false)}
       />
+
+      <Breadcrumb items={[{ label: 'Productos', href: '/products' }, { label: product.name }]} />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

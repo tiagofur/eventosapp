@@ -15,6 +15,7 @@ import {
   Users,
   Trash2,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { logError } from "@/lib/errorHandler";
@@ -143,6 +144,7 @@ export const ClientDetails: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: 'Clientes', href: '/clients' }, { label: client.name }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button

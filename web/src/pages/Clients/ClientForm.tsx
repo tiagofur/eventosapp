@@ -6,6 +6,7 @@ import { z } from "zod";
 import { clientService } from "../../services/clientService";
 import { useAuth } from "../../contexts/AuthContext";
 import { ArrowLeft, Save, Camera, X } from "lucide-react";
+import { Breadcrumb } from "../../components/Breadcrumb";
 import { logError } from "../../lib/errorHandler";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
@@ -38,6 +39,7 @@ export const ClientForm: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
@@ -170,6 +172,7 @@ export const ClientForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: 'Clientes', href: '/clients' }, { label: id ? (watch("name") || 'Editar Cliente') : 'Nuevo Cliente' }]} />
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <button

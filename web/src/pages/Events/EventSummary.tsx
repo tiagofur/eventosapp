@@ -39,6 +39,7 @@ import {
   generatePaymentReportPDF,
 } from "@/lib/pdfGenerator";
 import { logError } from "@/lib/errorHandler";
+import { Breadcrumb } from "@/components/Breadcrumb";
 import { getEventTotalCharged, getEventTaxAmount, getEventNetSales } from "@/lib/finance";
 import { Payments } from "./components/Payments";
 
@@ -350,6 +351,7 @@ export const EventSummary: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-8 py-8 transition-colors">
+      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: event?.service_type || 'Evento' }]} />
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 print:hidden mb-8">
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
           <button

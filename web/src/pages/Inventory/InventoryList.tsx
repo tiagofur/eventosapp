@@ -13,7 +13,10 @@ import {
   Wrench,
   ShoppingBasket,
   Fuel,
+  Eye,
+  PlusCircle,
 } from "lucide-react";
+import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
 import clsx from "clsx";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -327,38 +330,13 @@ export const InventoryList: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                   ${item.unit_cost?.toFixed(2) || "0.00"}
                 </td>
-                <td
-                  className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdjustingItem(item);
-                        setAdjustmentValue("");
-                      }}
-                      className="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors mr-1"
-                      title="Ajustar Stock"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                    <Link
-                      to={`/inventory/${item.id}/edit`}
-                      className="p-1.5 text-text-secondary hover:text-primary hover:bg-surface-alt rounded-lg transition-colors inline-block"
-                      aria-label={`Editar ${item.ingredient_name}`}
-                    >
-                      <Edit className="h-5 w-5" aria-hidden="true" />
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => requestDelete(item.id)}
-                      className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors inline-block"
-                      aria-label={`Eliminar ${item.ingredient_name}`}
-                    >
-                      <Trash2 className="h-5 w-5" aria-hidden="true" />
-                    </button>
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <RowActionMenu items={[
+                    { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/inventory/${item.id}`) },
+                    { label: 'Ajustar Stock', icon: PlusCircle, onClick: () => { setAdjustingItem(item); setAdjustmentValue(""); } },
+                    { label: 'Editar', icon: Edit, onClick: () => navigate(`/inventory/${item.id}/edit`) },
+                    { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(item.id), variant: 'destructive' as const },
+                  ]} />
                 </td>
               </tr>
             );

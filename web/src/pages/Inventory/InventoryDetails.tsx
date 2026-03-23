@@ -17,6 +17,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { logError } from "../../lib/errorHandler";
+import { Breadcrumb } from "../../components/Breadcrumb";
 import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SkeletonCard } from "../../components/Skeleton";
@@ -227,6 +228,8 @@ export const InventoryDetails: React.FC = () => {
         onConfirm={handleDeleteItem}
         onCancel={() => setConfirmDeleteOpen(false)}
       />
+
+      <Breadcrumb items={[{ label: 'Inventario', href: '/inventory' }, { label: item.ingredient_name }]} />
 
       {/* Header */}
       <div className="flex items-center justify-between">

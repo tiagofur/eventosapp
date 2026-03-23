@@ -6,6 +6,7 @@ import { z } from "zod";
 import { inventoryService } from "../../services/inventoryService";
 import { useAuth } from "../../contexts/AuthContext";
 import { ArrowLeft, Save } from "lucide-react";
+import { Breadcrumb } from "../../components/Breadcrumb";
 import { logError } from "../../lib/errorHandler";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
@@ -61,6 +62,7 @@ export const InventoryForm: React.FC = () => {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<InventoryFormData>({
     resolver: zodResolver(inventorySchema) as Resolver<InventoryFormData>,
@@ -184,6 +186,7 @@ export const InventoryForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: 'Inventario', href: '/inventory' }, { label: id ? (watch("ingredient_name") || 'Editar Ítem') : 'Nuevo Ítem' }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button

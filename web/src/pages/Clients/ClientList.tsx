@@ -11,7 +11,9 @@ import {
   Mail,
   Download,
   Users,
+  Eye,
 } from "lucide-react";
+import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { logError } from "../../lib/errorHandler";
@@ -347,27 +349,13 @@ export const ClientList: React.FC = () => {
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link
-                          to={`/clients/${client.id}/edit`}
-                          className="p-1.5 text-text-secondary hover:text-primary hover:bg-surface-alt rounded-lg transition-colors inline-block"
-                          onClick={(e) => e.stopPropagation()}
-                          aria-label={`Editar cliente ${client.name}`}
-                        >
-                          <Edit className="h-4 w-4" aria-hidden="true" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            requestDelete(client.id);
-                          }}
-                          className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors inline-block"
-                          aria-label={`Eliminar cliente ${client.name}`}
-                        >
-                          <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </div>
+                      <RowActionMenu items={[
+                        { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/clients/${client.id}`) },
+                        { label: 'Editar', icon: Edit, onClick: () => navigate(`/clients/${client.id}/edit`) },
+                        ...(client.phone ? [{ label: 'Llamar', icon: Phone, onClick: () => window.open(`tel:${client.phone}`) }] : []),
+                        ...(client.email ? [{ label: 'Email', icon: Mail, onClick: () => window.open(`mailto:${client.email}`) }] : []),
+                        { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(client.id), variant: 'destructive' as const },
+                      ]} />
                     </td>
                   </tr>
                 ))}

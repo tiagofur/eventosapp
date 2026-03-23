@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { InventoryItem } from "../../types/entities";
 import { logError } from "../../lib/errorHandler";
+import { Breadcrumb } from "../../components/Breadcrumb";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
 
@@ -66,6 +67,7 @@ export const ProductForm: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema) as Resolver<ProductFormData>,
@@ -365,6 +367,7 @@ export const ProductForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: 'Productos', href: '/products' }, { label: id ? (watch("name") || 'Editar Producto') : 'Nuevo Producto' }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button

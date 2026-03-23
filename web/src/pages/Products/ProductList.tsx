@@ -11,7 +11,9 @@ import {
   Download,
   UtensilsCrossed,
   X,
+  Eye,
 } from "lucide-react";
+import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { logError } from "../../lib/errorHandler";
@@ -338,26 +340,12 @@ export const ProductList: React.FC = () => {
                         {product.category}
                       </span>
                     </td>
-                    <td
-                      className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex justify-end space-x-2">
-                        <Link
-                          to={`/products/${product.id}/edit`}
-                          className="p-1.5 text-text-secondary hover:text-primary hover:bg-surface-alt rounded-lg transition-colors inline-block"
-                          aria-label={`Editar ${product.name}`}
-                        >
-                          <Edit className="h-5 w-5" aria-hidden="true" />
-                        </Link>
-                        <button
-                          onClick={() => requestDelete(product.id)}
-                          className="p-1.5 text-text-secondary hover:text-error hover:bg-error/10 rounded-lg transition-colors inline-block"
-                          aria-label={`Eliminar ${product.name}`}
-                        >
-                          <Trash2 className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <RowActionMenu items={[
+                        { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/products/${product.id}`) },
+                        { label: 'Editar', icon: Edit, onClick: () => navigate(`/products/${product.id}/edit`) },
+                        { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(product.id), variant: 'destructive' as const },
+                      ]} />
                     </td>
                   </tr>
                 ))}
