@@ -105,31 +105,35 @@ class InventoryDetailViewModel @Inject constructor(
                 val item = _uiState.value.item ?: return@launch
 
                 for (event in upcomingEvents) {
-                    val eventProducts = eventRepository.getEventProductsFromApi(event.id)
-                    var eventDemand = 0.0
+                    try {
+                        val eventProducts = eventRepository.getEventProductsFromApi(event.id)
+                        var eventDemand = 0.0
 
-                    for (ep in eventProducts) {
-                        try {
-                            val ingredients = productRepository.getProductIngredients(ep.productId)
-                            val matching = ingredients.find { it.inventoryId == itemId }
-                            if (matching != null) {
-                                eventDemand += matching.quantityRequired * ep.quantity
+                        for (ep in eventProducts) {
+                            try {
+                                val ingredients = productRepository.getProductIngredients(ep.productId)
+                                val matching = ingredients.find { it.inventoryId == itemId }
+                                if (matching != null) {
+                                    eventDemand += matching.quantityRequired * ep.quantity
+                                }
+                            } catch (_: Exception) {
+                                // Skip failed ingredient fetches
                             }
-                        } catch (_: Exception) {
-                            // Skip failed ingredient fetches
                         }
-                    }
 
-                    if (eventDemand > 0) {
-                        demandEntries.add(
-                            InventoryDemandEntry(
-                                eventId = event.id,
-                                eventDate = event.eventDate.take(10),
-                                eventName = event.serviceType ?: "Evento",
-                                quantity = eventDemand,
-                                unit = item.unit
+                        if (eventDemand > 0) {
+                            demandEntries.add(
+                                InventoryDemandEntry(
+                                    eventId = event.id,
+                                    eventDate = event.eventDate.take(10),
+                                    eventName = event.serviceType ?: "Evento",
+                                    quantity = eventDemand,
+                                    unit = item.unit
+                                )
                             )
-                        )
+                        }
+                    } catch (_: Exception) {
+                        continue
                     }
                 }
 

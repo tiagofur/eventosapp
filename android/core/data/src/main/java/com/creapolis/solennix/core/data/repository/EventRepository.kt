@@ -146,8 +146,10 @@ class OfflineFirstEventRepository @Inject constructor(
     override suspend fun getEventsFromApi(): List<Event> =
         apiService.get(Endpoints.EVENTS)
 
-    override suspend fun getEventProductsFromApi(eventId: String): List<EventProduct> =
-        apiService.get(Endpoints.eventProducts(eventId))
+    override suspend fun getEventProductsFromApi(eventId: String): List<EventProduct> {
+        val response: EventItemsResponse = apiService.get(Endpoints.eventItems(eventId))
+        return response.products
+    }
 
     override suspend fun getEquipmentConflicts(
         eventDate: String,
@@ -230,8 +232,8 @@ class OfflineFirstEventRepository @Inject constructor(
 
 @Serializable
 data class EventItemsResponse(
-    val products: List<EventProduct>,
-    val extras: List<EventExtra>
+    val products: List<EventProduct> = emptyList(),
+    val extras: List<EventExtra> = emptyList()
 )
 
 @Serializable

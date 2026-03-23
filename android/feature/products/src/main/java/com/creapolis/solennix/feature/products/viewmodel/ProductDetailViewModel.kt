@@ -102,23 +102,27 @@ class ProductDetailViewModel @Inject constructor(
                 val demandPoints = mutableListOf<DemandDataPoint>()
 
                 for (event in upcomingEvents) {
-                    val eventProducts = eventRepository.getEventProductsFromApi(event.id)
-                    val matchingProduct = eventProducts.find { it.productId == productId }
+                    try {
+                        val eventProducts = eventRepository.getEventProductsFromApi(event.id)
+                        val matchingProduct = eventProducts.find { it.productId == productId }
 
-                    if (matchingProduct != null) {
-                        val client = clientRepository.getClient(event.clientId)
-                        val clientName = client?.name ?: "Cliente"
+                        if (matchingProduct != null) {
+                            val client = clientRepository.getClient(event.clientId)
+                            val clientName = client?.name ?: "Cliente"
 
-                        demandPoints.add(
-                            DemandDataPoint(
-                                eventId = event.id,
-                                eventDate = event.eventDate,
-                                clientName = clientName,
-                                quantity = matchingProduct.quantity.toInt(),
-                                numPeople = event.numPeople,
-                                unitPrice = matchingProduct.unitPrice
+                            demandPoints.add(
+                                DemandDataPoint(
+                                    eventId = event.id,
+                                    eventDate = event.eventDate,
+                                    clientName = clientName,
+                                    quantity = matchingProduct.quantity.toInt(),
+                                    numPeople = event.numPeople,
+                                    unitPrice = matchingProduct.unitPrice
+                                )
                             )
-                        )
+                        }
+                    } catch (_: Exception) {
+                        continue
                     }
                 }
 
