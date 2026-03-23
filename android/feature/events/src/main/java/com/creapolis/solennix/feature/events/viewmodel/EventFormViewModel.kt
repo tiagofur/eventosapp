@@ -681,9 +681,7 @@ class EventFormViewModel @Inject constructor(
                     depositPercent = depositPercent.toDoubleOrNull(),
                     cancellationDays = cancellationDays.toDoubleOrNull(),
                     refundPercent = refundPercent.toDoubleOrNull(),
-                    notes = notes.ifBlank { null },
-                    createdAt = "",
-                    updatedAt = ""
+                    notes = notes.ifBlank { null }
                 )
 
                 val savedEvent = if (isEditMode) {
