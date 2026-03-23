@@ -2356,3 +2356,735 @@ func TestSubscriptionHandler_RevenueCatWebhook_StripeStore(t *testing.T) {
 	mockSubRepo.AssertExpectations(t)
 }
 
+// signStripePayload computes a valid Stripe webhook signature for testing.
+// It replicates the Stripe v1 signature scheme: HMAC-SHA256 of "{timestamp}.{payload}" using the webhook secret.
+func signStripePayload(t *testing.T, payload []byte, secret string) string {
+	t.Helper()
+	ts := strconv.FormatInt(time.Now().Unix(), 10)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(ts + "."))
+	mac.Write(payload)
+	sig := hex.EncodeToString(mac.Sum(nil))
+	return fmt.Sprintf("t=%s,v1=%s", ts, sig)
+}
+
+// buildStripeEvent builds a raw Stripe event JSON payload for a given event type and data object.
+// Includes the api_version field required by stripe-go's webhook.ConstructEvent.
+func buildStripeEvent(eventType string, dataRaw json.RawMessage) []byte {
+	evt := map[string]interface{}{
+		"id":          "evt_test_" + eventType,
+		"type":        eventType,
+		"api_version": "2025-02-24.acacia",
+		"data": map[string]interface{}{
+			"object": dataRaw,
+		},
+	}
+	b, _ := json.Marshal(evt)
+	return b
+}
+
+// ---------------------------------------------------------------------------
+// Stripe Webhook: customer.subscription.updated
+// ---------------------------------------------------------------------------
+
+func TestSubscriptionHandler_StripeWebhook_SubscriptionUpdated(t *testing.T) {
+	const webhookSecret = "whsec_test_sub_updated"
+
+	makePayload := func(subID, customerID string, status stripe.SubscriptionStatus, periodStart, periodEnd int64) []byte {
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":                   subID,
+			"object":               "subscription",
+			"status":               string(status),
+			"current_period_start": periodStart,
+			"current_period_end":   periodEnd,
+			"customer":             customerID,
+		})
+		return buildStripeEvent("customer.subscription.updated", dataObj)
+	}
+
+	t.Run("Active_UpdatesSubRepoToActive", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_active_123"
+		customerID := "cus_abc"
+		start := time.Now().Unix()
+		end := time.Now().Add(30 * 24 * time.Hour).Unix()
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusActive, start, end)
+
+		startTime := time.Unix(start, 0)
+		endTime := time.Unix(end, 0)
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "active", &startTime, &endTime).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("PastDue_UpdatesSubRepoToPastDue", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_pastdue_123"
+		customerID := "cus_def"
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusPastDue, 0, 0)
+
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "past_due", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("Canceled_UpdatesSubRepoToCanceled", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_canceled_123"
+		customerID := "cus_ghi"
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusCanceled, 0, 0)
+
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "canceled", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("Unpaid_DowngradesUserToBasic", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_unpaid_123"
+		customerID := "cus_jkl"
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusUnpaid, 0, 0)
+
+		// rcService is nil, so the else-if block with GetByStripeCustomerID won't execute
+		mockUserRepo.On("UpdatePlanByStripeCustomerID", mock.Anything, customerID, "basic").Return(nil)
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "canceled", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("Unpaid_UserDowngradeFails_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_unpaid_fail"
+		customerID := "cus_mno"
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusUnpaid, 0, 0)
+
+		mockUserRepo.On("UpdatePlanByStripeCustomerID", mock.Anything, customerID, "basic").Return(fmt.Errorf("db error"))
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "canceled", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("Active_NilSubRepo_NoErrors", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_nil_repo"
+		customerID := "cus_pqr"
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusActive, 0, 0)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("Active_SubRepoUpdateFails_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_active_fail"
+		customerID := "cus_stu"
+		start := time.Now().Unix()
+		end := time.Now().Add(30 * 24 * time.Hour).Unix()
+		payload := makePayload(subID, customerID, stripe.SubscriptionStatusActive, start, end)
+
+		startTime := time.Unix(start, 0)
+		endTime := time.Unix(end, 0)
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "active", &startTime, &endTime).Return(fmt.Errorf("db error"))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("InvalidJSON_ReturnsBadRequest", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		// Build a valid Stripe event but with data.object that can't unmarshal to stripe.Subscription
+		// The data.raw in the real event is the raw JSON of data.object
+		payload := buildStripeEvent("customer.subscription.updated", json.RawMessage(`"not_an_object"`))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Stripe Webhook: customer.subscription.deleted
+// ---------------------------------------------------------------------------
+
+func TestSubscriptionHandler_StripeWebhook_SubscriptionDeleted(t *testing.T) {
+	const webhookSecret = "whsec_test_sub_deleted"
+
+	makePayload := func(subID, customerID string) []byte {
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":       subID,
+			"object":   "subscription",
+			"status":   "canceled",
+			"customer": customerID,
+		})
+		return buildStripeEvent("customer.subscription.deleted", dataObj)
+	}
+
+	t.Run("Success_DowngradesUserToBasic", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_del_123"
+		customerID := "cus_del_abc"
+		payload := makePayload(subID, customerID)
+
+		mockUserRepo.On("UpdatePlanByStripeCustomerID", mock.Anything, customerID, "basic").Return(nil)
+		// No rcService so GetByStripeCustomerID won't be called from the else block
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "canceled", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("UserNotFoundByStripeCustomerID_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_del_404"
+		customerID := "cus_del_notfound"
+		payload := makePayload(subID, customerID)
+
+		// UpdatePlanByStripeCustomerID fails because user not found
+		mockUserRepo.On("UpdatePlanByStripeCustomerID", mock.Anything, customerID, "basic").Return(fmt.Errorf("user not found"))
+		// subRepo still gets called
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "canceled", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("NilSubRepo_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_del_nilrepo"
+		customerID := "cus_del_nilrepo"
+		payload := makePayload(subID, customerID)
+
+		mockUserRepo.On("UpdatePlanByStripeCustomerID", mock.Anything, customerID, "basic").Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("SubRepoUpdateFails_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		subID := "sub_del_repofail"
+		customerID := "cus_del_repofail"
+		payload := makePayload(subID, customerID)
+
+		mockUserRepo.On("UpdatePlanByStripeCustomerID", mock.Anything, customerID, "basic").Return(nil)
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subID, "canceled", (*time.Time)(nil), (*time.Time)(nil)).Return(fmt.Errorf("db error"))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("InvalidJSON_ReturnsBadRequest", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		payload := buildStripeEvent("customer.subscription.deleted", json.RawMessage(`"not_an_object"`))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Stripe Webhook: invoice.payment_failed
+// ---------------------------------------------------------------------------
+
+func TestSubscriptionHandler_StripeWebhook_InvoicePaymentFailed(t *testing.T) {
+	const webhookSecret = "whsec_test_invoice_failed"
+
+	makePayload := func(invoiceID, customerID, subscriptionID string) []byte {
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":           invoiceID,
+			"object":       "invoice",
+			"customer":     customerID,
+			"subscription": subscriptionID,
+		})
+		return buildStripeEvent("invoice.payment_failed", dataObj)
+	}
+
+	makePayloadNoSub := func(invoiceID, customerID string) []byte {
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":       invoiceID,
+			"object":   "invoice",
+			"customer": customerID,
+		})
+		return buildStripeEvent("invoice.payment_failed", dataObj)
+	}
+
+	t.Run("Success_UpdatesSubStatusToPastDue", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		invoiceID := "in_fail_123"
+		customerID := "cus_inv_abc"
+		subscriptionID := "sub_inv_123"
+		payload := makePayload(invoiceID, customerID, subscriptionID)
+
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subscriptionID, "past_due", (*time.Time)(nil), (*time.Time)(nil)).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("MissingSubscription_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		invoiceID := "in_fail_nosub"
+		customerID := "cus_inv_nosub"
+		payload := makePayloadNoSub(invoiceID, customerID)
+
+		// No subRepo calls expected since subscription is nil in the invoice
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		// No mock expectations needed — subRepo should not be called
+	})
+
+	t.Run("NilSubRepo_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		invoiceID := "in_fail_nilrepo"
+		customerID := "cus_inv_nilrepo"
+		subscriptionID := "sub_inv_nilrepo"
+		payload := makePayload(invoiceID, customerID, subscriptionID)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("SubRepoUpdateFails_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		invoiceID := "in_fail_repofail"
+		customerID := "cus_inv_repofail"
+		subscriptionID := "sub_inv_repofail"
+		payload := makePayload(invoiceID, customerID, subscriptionID)
+
+		mockSubRepo.On("UpdateStatusByProviderSubID", mock.Anything, subscriptionID, "past_due", (*time.Time)(nil), (*time.Time)(nil)).Return(fmt.Errorf("db error"))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("InvalidJSON_ReturnsBadRequest", func(t *testing.T) {
+		// Invalid data.object causes webhook.ConstructEvent to fail before our handler logic
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		payload := buildStripeEvent("invoice.payment_failed", json.RawMessage(`"not_an_object"`))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Stripe Webhook: checkout.session.completed (subscription flow)
+// ---------------------------------------------------------------------------
+
+func TestSubscriptionHandler_StripeWebhook_CheckoutSessionCompleted(t *testing.T) {
+	const webhookSecret = "whsec_test_checkout"
+
+	makeSubscriptionPayload := func(userID, customerID, subscriptionID string) []byte {
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":                  "cs_test_checkout",
+			"object":              "checkout.session",
+			"client_reference_id": userID,
+			"customer":            customerID,
+			"subscription":        subscriptionID,
+			"metadata":            map[string]string{},
+		})
+		return buildStripeEvent("checkout.session.completed", dataObj)
+	}
+
+	makeSubscriptionPayloadNoSub := func(userID, customerID string) []byte {
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":                  "cs_test_checkout_nosub",
+			"object":              "checkout.session",
+			"client_reference_id": userID,
+			"customer":            customerID,
+			"metadata":            map[string]string{},
+		})
+		return buildStripeEvent("checkout.session.completed", dataObj)
+	}
+
+	t.Run("FirstTimeSubscriber_UpgradesToPro", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		mockStripe := new(MockStripeService)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, mockStripe, nil, cfg)
+
+		userID := uuid.New()
+		customerID := "cus_checkout_new"
+		subscriptionID := "sub_checkout_new"
+		payload := makeSubscriptionPayload(userID.String(), customerID, subscriptionID)
+
+		mockUserRepo.On("UpdatePlanAndStripeID", mock.Anything, userID, "pro", &customerID).Return(nil)
+		mockStripe.On("GetSubscription", subscriptionID, (*stripe.SubscriptionParams)(nil)).Return(&stripe.Subscription{
+			ID:                 subscriptionID,
+			CurrentPeriodStart: time.Now().Unix(),
+			CurrentPeriodEnd:   time.Now().Add(30 * 24 * time.Hour).Unix(),
+			Items: &stripe.SubscriptionItemList{
+				Data: []*stripe.SubscriptionItem{
+					{Price: &stripe.Price{Recurring: &stripe.PriceRecurring{Interval: "month"}}},
+				},
+			},
+		}, nil)
+		mockSubRepo.On("Upsert", mock.Anything, mock.MatchedBy(func(s *models.Subscription) bool {
+			return s.UserID == userID && s.Plan == "pro" && s.Status == "active" && s.Provider == "stripe"
+		})).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		mockSubRepo.AssertExpectations(t)
+	})
+
+	t.Run("NoSubscriptionObject_UpgradesButNoUpsert", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockSubRepo := new(MockSubscriptionRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, mockSubRepo, nil, nil, new(MockStripeService), nil, cfg)
+
+		userID := uuid.New()
+		customerID := "cus_checkout_nosub"
+		payload := makeSubscriptionPayloadNoSub(userID.String(), customerID)
+
+		mockUserRepo.On("UpdatePlanAndStripeID", mock.Anything, userID, "pro", &customerID).Return(nil)
+		// No Upsert call because subscription is nil in the session
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+		// Verify Upsert was NOT called
+		mockSubRepo.AssertNotCalled(t, "Upsert", mock.Anything, mock.Anything)
+	})
+
+	t.Run("InvalidClientReferenceID_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		// Non-UUID client reference ID
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":                  "cs_test_invalid_ref",
+			"object":              "checkout.session",
+			"client_reference_id": "not-a-uuid",
+			"customer":            "cus_invalid",
+			"metadata":            map[string]string{},
+		})
+		payload := buildStripeEvent("checkout.session.completed", dataObj)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("EmptyClientReferenceID_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		// Empty client reference ID — not a subscription checkout, not event payment
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":                  "cs_test_empty_ref",
+			"object":              "checkout.session",
+			"client_reference_id": "",
+			"metadata":            map[string]string{},
+		})
+		payload := buildStripeEvent("checkout.session.completed", dataObj)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("UpdatePlanFails_StillReturns200", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		userID := uuid.New()
+		customerID := "cus_checkout_fail"
+		payload := makeSubscriptionPayloadNoSub(userID.String(), customerID)
+
+		mockUserRepo.On("UpdatePlanAndStripeID", mock.Anything, userID, "pro", &customerID).Return(fmt.Errorf("db error"))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("EventPaymentType_DelegatesToHandleEventPayment", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		mockEventRepo := new(MockEventRepoSmall)
+		mockPaymentRepo := new(MockPaymentRepoSmall)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, mockEventRepo, mockPaymentRepo, new(MockStripeService), nil, cfg)
+
+		eventID := uuid.New()
+		userID := uuid.New()
+		dataObj, _ := json.Marshal(map[string]interface{}{
+			"id":     "cs_test_event_payment",
+			"object": "checkout.session",
+			"metadata": map[string]string{
+				"type":     "event_payment",
+				"event_id": eventID.String(),
+				"user_id":  userID.String(),
+			},
+			"amount_total": 150000, // $1500.00 in cents
+		})
+		payload := buildStripeEvent("checkout.session.completed", dataObj)
+
+		mockEventRepo.On("GetByID", mock.Anything, eventID, userID).Return(&models.Event{
+			ID:     eventID,
+			UserID: userID,
+			Status: "quoted",
+		}, nil)
+		mockPaymentRepo.On("Create", mock.Anything, mock.MatchedBy(func(p *models.Payment) bool {
+			return p.EventID == eventID && p.UserID == userID && p.Amount == 1500.00 && p.PaymentMethod == "stripe"
+		})).Return(nil)
+		mockEventRepo.On("Update", mock.Anything, mock.MatchedBy(func(e *models.Event) bool {
+			return e.ID == eventID && e.Status == "confirmed"
+		})).Return(nil)
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockEventRepo.AssertExpectations(t)
+		mockPaymentRepo.AssertExpectations(t)
+	})
+
+	t.Run("InvalidJSON_ReturnsBadRequest", func(t *testing.T) {
+		mockUserRepo := new(MockUserRepo)
+		cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+		handler := NewSubscriptionHandler(mockUserRepo, nil, nil, nil, new(MockStripeService), nil, cfg)
+
+		payload := buildStripeEvent("checkout.session.completed", json.RawMessage(`"not_an_object"`))
+
+		req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+		req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+		w := httptest.NewRecorder()
+
+		handler.StripeWebhook(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// Stripe Webhook: unknown event type
+// ---------------------------------------------------------------------------
+
+func TestSubscriptionHandler_StripeWebhook_UnknownEventType(t *testing.T) {
+	const webhookSecret = "whsec_test_unknown"
+	cfg := &config.Config{StripeWebhookSecret: webhookSecret}
+	handler := NewSubscriptionHandler(new(MockUserRepo), nil, nil, nil, new(MockStripeService), nil, cfg)
+
+	dataObj, _ := json.Marshal(map[string]interface{}{"id": "obj_123"})
+	payload := buildStripeEvent("some.unknown.event.type", dataObj)
+
+	req := httptest.NewRequest("POST", "/api/subscriptions/webhook/stripe", bytes.NewReader(payload))
+	req.Header.Set("Stripe-Signature", signStripePayload(t, payload, webhookSecret))
+	w := httptest.NewRecorder()
+
+	handler.StripeWebhook(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
