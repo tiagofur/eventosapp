@@ -1,9 +1,13 @@
 import { Folder, Composition } from 'remotion';
 import { ClientTutorial } from './tutorials/ClientTutorial';
 import { InventoryTutorial } from './tutorials/InventoryTutorial';
+import { ProductTutorial } from './tutorials/ProductTutorial';
+import { EventTutorial } from './tutorials/EventTutorial';
 import {
   ClientTutorialSchema,
   InventoryTutorialSchema,
+  ProductTutorialSchema,
+  EventTutorialSchema,
   BrandIntroSchema,
   PainPointsSchema,
   BeforeAfterSchema,
@@ -14,7 +18,7 @@ import {
   TestimonialTemplateSchema,
   CountdownLaunchSchema,
 } from './schema';
-import { FPS, DURATION_FRAMES, SOCIAL_FPS, SOCIAL_FORMATS } from './constants';
+import { FPS, DURATION_FRAMES, EVENT_DURATION_FRAMES, SOCIAL_FPS, SOCIAL_FORMATS } from './constants';
 import { BrandIntro } from './social/BrandIntro';
 import { PainPoints } from './social/PainPoints';
 import { BeforeAfter } from './social/BeforeAfter';
@@ -62,6 +66,40 @@ export const RemotionRoot = () => {
             itemMinStock: '10',
             itemUnit: 'Bolsas',
             itemCost: '35.00',
+          }}
+        />
+        <Composition
+          id="ProductTutorial"
+          component={ProductTutorial}
+          schema={ProductTutorialSchema}
+          durationInFrames={DURATION_FRAMES}
+          fps={FPS}
+          width={1920}
+          height={1080}
+          defaultProps={{
+            productName: 'Pastel Fondant 3 Pisos',
+            productCategory: 'Pastelería',
+            productPrice: '2,500.00',
+          }}
+        />
+        <Composition
+          id="EventTutorial"
+          component={EventTutorial}
+          schema={EventTutorialSchema}
+          durationInFrames={EVENT_DURATION_FRAMES}
+          fps={FPS}
+          width={1920}
+          height={1080}
+          defaultProps={{
+            eventClient: 'Ana González',
+            eventDate: '28/03/2026',
+            eventStartTime: '18:00',
+            eventServiceType: 'Decoración y Banquete',
+            eventNumPeople: '100',
+            eventLocation: 'Salón Los Arcos, Monterrey',
+            eventProductName: 'Decoración Completa',
+            eventProductQty: '100',
+            eventProductPrice: '$2,500.00',
           }}
         />
       </Folder>

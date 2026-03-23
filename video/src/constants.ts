@@ -57,6 +57,17 @@ export const SCENE_FRAMES = {
   outro: 100,
 } as const;
 
+// Event tutorial needs longer duration for multi-step form
+export const EVENT_DURATION_FRAMES = 1300; // ~43 seconds
+export const EVENT_SCENE_FRAMES = {
+  intro: 130,
+  navigation: 140,
+  eventList: 120,
+  formFill: 720,   // multi-step: step 1 (general info) + step 2 (products)
+  save: 120,
+  outro: 100,
+} as const;
+
 export const TRANSITION_FRAMES = 10;
 
 // Navigation items matching the real app sidebar

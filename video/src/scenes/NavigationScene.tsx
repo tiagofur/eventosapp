@@ -36,7 +36,9 @@ export const NavigationScene: React.FC<NavigationSceneProps> = ({
   });
 
   const clickYMap: Record<string, number> = {
+    Cotización: 220,
     Clientes: 283,
+    Productos: 346,
     Inventario: 410,
   };
   const clickY = clickYMap[targetItem] || 283;

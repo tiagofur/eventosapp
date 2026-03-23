@@ -22,6 +22,28 @@ export const InventoryTutorialSchema = z.object({
 
 export type InventoryTutorialProps = z.infer<typeof InventoryTutorialSchema>;
 
+export const ProductTutorialSchema = z.object({
+  productName: z.string().default('Pastel Fondant 3 Pisos'),
+  productCategory: z.string().default('Pastelería'),
+  productPrice: z.string().default('2,500.00'),
+});
+
+export type ProductTutorialProps = z.infer<typeof ProductTutorialSchema>;
+
+export const EventTutorialSchema = z.object({
+  eventClient: z.string().default('Ana González'),
+  eventDate: z.string().default('28/03/2026'),
+  eventStartTime: z.string().default('18:00'),
+  eventServiceType: z.string().default('Decoración y Banquete'),
+  eventNumPeople: z.string().default('100'),
+  eventLocation: z.string().default('Salón Los Arcos, Monterrey'),
+  eventProductName: z.string().default('Decoración Completa'),
+  eventProductQty: z.string().default('100'),
+  eventProductPrice: z.string().default('$2,500.00'),
+});
+
+export type EventTutorialProps = z.infer<typeof EventTutorialSchema>;
+
 // ── Social Media Video Schemas ──
 
 export const BrandIntroSchema = z.object({

@@ -5,7 +5,12 @@
   "scripts": {
     "studio": "remotion studio",
     "render": "remotion render ClientTutorial out/client-tutorial.mp4",
-    "render:gif": "remotion render ClientTutorial out/client-tutorial.gif --image-format=png"
+    "render:gif": "remotion render ClientTutorial out/client-tutorial.gif --image-format=png",
+    "render:product": "remotion render ProductTutorial out/product-tutorial.mp4",
+    "render:product:gif": "remotion render ProductTutorial out/product-tutorial.gif --image-format=png",
+    "render:event": "remotion render EventTutorial out/event-tutorial.mp4",
+    "render:event:gif": "remotion render EventTutorial out/event-tutorial.gif --image-format=png",
+    "render:all": "npm run render && npm run render:product && npm run render:event"
   },
   "dependencies": {
     "remotion": "^4.0.0",
