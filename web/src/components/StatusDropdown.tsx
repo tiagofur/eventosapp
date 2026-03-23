@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
 import { eventService } from '../services/eventService';
 import { useToast } from '../hooks/useToast';
@@ -28,32 +29,60 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, openUp: false });
   const { addToast } = useToast();
 
   const cfg = STATUS_CONFIG[currentStatus] ?? STATUS_CONFIG.quoted;
+
+  const close = useCallback(() => setOpen(false), []);
+
+  // Calculate position when opening
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const menuHeight = 200;
+    const openUp = spaceBelow < menuHeight;
+    setPos({
+      top: openUp ? rect.top : rect.bottom + 4,
+      left: rect.left,
+      openUp,
+    });
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [open, close]);
 
   // Close on click outside
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
+        close();
       }
     };
     document.addEventListener('click', handleClickOutside, true);
     return () => document.removeEventListener('click', handleClickOutside, true);
-  }, [open]);
+  }, [open, close]);
 
   // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open]);
+  }, [open, close]);
 
   const handleSelect = async (newStatus: EventStatus) => {
     if (newStatus === currentStatus || loading) return;
@@ -76,34 +105,17 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
     }
   };
 
-  return (
-    <div className="relative inline-block" ref={containerRef}>
-      <button
-        type="button"
-        disabled={loading}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setOpen((prev) => !prev);
-        }}
-        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer hover:ring-2 hover:ring-current/20 disabled:opacity-60 ${cfg.classes}`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={`Estado: ${cfg.label}. Clic para cambiar.`}
-      >
-        {loading ? (
-          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
-        ) : null}
-        {cfg.label}
-        <ChevronDown
-          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {open && (
+  const dropdownContent = open
+    ? createPortal(
         <div
-          className="absolute left-0 top-full z-50 mt-1 min-w-[160px] bg-card border border-border rounded-xl shadow-lg py-1 animate-in fade-in duration-150"
+          ref={menuRef}
+          className="z-[100] min-w-[160px] bg-card border border-border rounded-xl shadow-lg py-1"
+          style={{
+            position: 'fixed',
+            ...(pos.openUp
+              ? { bottom: window.innerHeight - pos.top + 4, left: pos.left }
+              : { top: pos.top, left: pos.left }),
+          }}
           role="listbox"
           aria-label="Seleccionar estado"
           onClick={(e) => e.stopPropagation()}
@@ -135,8 +147,37 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
               </button>
             );
           })}
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <div className="relative inline-block">
+      <button
+        ref={buttonRef}
+        type="button"
+        disabled={loading}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setOpen((prev) => !prev);
+        }}
+        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer hover:ring-2 hover:ring-current/20 disabled:opacity-60 ${cfg.classes}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Estado: ${cfg.label}. Clic para cambiar.`}
+      >
+        {loading ? (
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+        ) : null}
+        {cfg.label}
+        <ChevronDown
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+      {dropdownContent}
     </div>
   );
 };

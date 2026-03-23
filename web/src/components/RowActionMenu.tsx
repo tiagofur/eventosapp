@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { MoreVertical } from "lucide-react";
 
@@ -16,14 +17,45 @@ interface RowActionMenuProps {
 
 export const RowActionMenu: React.FC<RowActionMenuProps> = ({ items }) => {
   const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0, openUp: false });
 
   const close = useCallback(() => setOpen(false), []);
 
+  // Calculate position when opening
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const updatePosition = () => {
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = 250;
+      const openUp = spaceBelow < menuHeight;
+      setPos({
+        top: openUp ? rect.top : rect.bottom + 4,
+        left: Math.max(8, rect.right - 180),
+        openUp,
+      });
+    };
+    updatePosition();
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open, close]);
+
+  // Close on click outside
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
         close();
       }
     };
@@ -35,25 +67,17 @@ export const RowActionMenu: React.FC<RowActionMenuProps> = ({ items }) => {
     (item) => item.variant === "destructive",
   );
 
-  return (
-    <div className="relative" ref={menuRef}>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((prev) => !prev);
-        }}
-        className="p-1.5 text-text-secondary hover:text-primary hover:bg-surface-alt rounded-lg transition-colors inline-block"
-        aria-label="Acciones"
-        aria-haspopup="true"
-        aria-expanded={open}
-      >
-        <MoreVertical className="h-4 w-4" aria-hidden="true" />
-      </button>
-
-      {open && (
+  const menuContent = open
+    ? createPortal(
         <div
-          className="absolute right-0 top-full z-50 mt-1 min-w-[180px] bg-card border border-border rounded-xl shadow-lg py-1 animate-in fade-in duration-150"
+          ref={menuRef}
+          className="z-[100] min-w-[180px] bg-card border border-border rounded-xl shadow-lg py-1"
+          style={{
+            position: "fixed",
+            ...(pos.openUp
+              ? { bottom: window.innerHeight - pos.top + 4, left: pos.left }
+              : { top: pos.top, left: pos.left }),
+          }}
           role="menu"
         >
           {items.map((item, idx) => {
@@ -104,8 +128,28 @@ export const RowActionMenu: React.FC<RowActionMenuProps> = ({ items }) => {
               </React.Fragment>
             );
           })}
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        className="p-1.5 text-text-secondary hover:text-primary hover:bg-surface-alt rounded-lg transition-colors inline-block"
+        aria-label="Acciones"
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        <MoreVertical className="h-4 w-4" aria-hidden="true" />
+      </button>
+      {menuContent}
     </div>
   );
 };
