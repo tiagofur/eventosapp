@@ -128,6 +128,21 @@ public struct ProductListView: View {
                 }
                 .tint(.blue)
             }
+            .contextMenu {
+                NavigationLink(value: Route.productForm(id: product.id)) {
+                    Label("Editar", systemImage: "pencil")
+                }
+                NavigationLink(value: Route.productDetail(id: product.id)) {
+                    Label("Ver Detalle", systemImage: "eye")
+                }
+                Divider()
+                Button(role: .destructive) {
+                    viewModel.deleteTarget = product
+                    viewModel.showDeleteConfirm = true
+                } label: {
+                    Label("Eliminar", systemImage: "trash")
+                }
+            }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)

@@ -169,6 +169,14 @@ public struct EventListView: View {
                             eventCard(event)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            NavigationLink(value: Route.eventForm(id: event.id)) {
+                                Label("Editar", systemImage: "pencil")
+                            }
+                            NavigationLink(value: Route.eventChecklist(id: event.id)) {
+                                Label("Checklist", systemImage: "checklist")
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, Spacing.md)

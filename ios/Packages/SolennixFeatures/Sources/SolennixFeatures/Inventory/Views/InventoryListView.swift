@@ -202,6 +202,26 @@ public struct InventoryListView: View {
             }
             .tint(.orange)
         }
+        .contextMenu {
+            NavigationLink(value: Route.inventoryForm(id: item.id)) {
+                Label("Editar", systemImage: "pencil")
+            }
+            Button {
+                viewModel.prepareAdjustment(for: item)
+            } label: {
+                Label("Ajustar Stock", systemImage: "plusminus")
+            }
+            NavigationLink(value: Route.inventoryDetail(id: item.id)) {
+                Label("Ver Detalle", systemImage: "eye")
+            }
+            Divider()
+            Button(role: .destructive) {
+                viewModel.deleteTarget = item
+                viewModel.showDeleteConfirm = true
+            } label: {
+                Label("Eliminar", systemImage: "trash")
+            }
+        }
     }
 
     // MARK: - Stock Indicator

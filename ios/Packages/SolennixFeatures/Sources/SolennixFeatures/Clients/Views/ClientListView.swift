@@ -144,6 +144,42 @@ public struct ClientListView: View {
                         .tint(.green)
                     }
                 }
+                .contextMenu {
+                    NavigationLink(value: Route.clientForm(id: client.id)) {
+                        Label("Editar", systemImage: "pencil")
+                    }
+                    if !client.phone.isEmpty {
+                        Button {
+                            if let url = URL(string: "tel:\(client.phone)") {
+                                openURL(url)
+                            }
+                            HapticsHelper.play(.success)
+                        } label: {
+                            Label("Llamar", systemImage: "phone")
+                        }
+                    }
+                    if let email = client.email, !email.isEmpty {
+                        Button {
+                            if let url = URL(string: "mailto:\(email)") {
+                                openURL(url)
+                            }
+                            HapticsHelper.play(.success)
+                        } label: {
+                            Label("Email", systemImage: "envelope")
+                        }
+                    }
+                    NavigationLink(value: Route.quickQuote) {
+                        Label("Cotización Rápida", systemImage: "doc.text")
+                    }
+                    Divider()
+                    Button(role: .destructive) {
+                        HapticsHelper.play(.warning)
+                        viewModel.deleteTarget = client
+                        viewModel.showDeleteConfirm = true
+                    } label: {
+                        Label("Eliminar", systemImage: "trash")
+                    }
+                }
                 .onAppear {
                     if client == viewModel.paginatedClients.last {
                         viewModel.loadMore()
