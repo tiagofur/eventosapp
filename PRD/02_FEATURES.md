@@ -690,19 +690,29 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 |---------|-----|---------|-----|---------|-------|
 | CRUD completo | ✅ | ✅ | ✅ | ✅ | |
 | Precio base y categoria | ✅ | ✅ | ✅ | ✅ | |
-| Recetas con ingredientes | ✅ | ✅ | ✅ | ✅ | |
+| Recetas con ingredientes | ✅ | ✅ | ✅ | ✅ | 3 tipos: insumos, equipo, insumos por evento |
 | Imagen de producto | ✅ | ✅ | ✅ | ✅ | |
-| Busqueda | ✅ | ✅ | ✅ | ✅ | |
-| Grafico de demanda | ✅ | ✅ | ⬜ | ➖ | DemandForecastChart en detalle de producto |
+| Busqueda y filtros | ✅ | ✅ | ✅ | ✅ | Por nombre, categoria, ordenamiento |
+| KPIs en detalle | ✅ | ✅ | ✅ | ➖ | Precio, costo/unidad, margen %, prox. eventos |
+| Alerta inteligente | ✅ | ✅ | ✅ | ➖ | Demanda 7 dias, ingreso estimado |
+| Tablas de composicion | ✅ | ✅ | ✅ | ➖ | Insumos, equipo, insumos por evento con costos |
+| Demanda por fecha | ✅ | ✅ | ✅ | ➖ | Urgencia, badges, revenue por evento |
 
 ### Inventario
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
 | CRUD completo | ✅ | ✅ | ✅ | ✅ | |
-| Tipos (equipo/insumo) | ✅ | ✅ | ✅ | ✅ | |
+| Tipos (equipo/insumo/consumible) | ✅ | ✅ | ✅ | ✅ | |
 | Stock tracking | ✅ | ✅ | ✅ | ✅ | current_stock + minimum_stock |
-| Costo unitario | ✅ | ✅ | ✅ | ✅ | |
+| Costo unitario en lista | ✅ | ✅ | ✅ | ✅ | |
+| Ajuste rapido de stock | ✅ | ✅ | ✅ | ✅ | Desde lista y detalle |
+| KPIs en detalle | ✅ | ✅ | ✅ | ➖ | Stock, minimo, costo, valor total |
+| Alerta 7 dias | ✅ | ✅ | ✅ | ➖ | Critico/warning/ok segun demanda |
+| Barras de salud de stock | ✅ | ✅ | ✅ | ➖ | Stock actual, minimo, demanda 7 dias |
+| Demanda por fecha | ✅ | ✅ | ✅ | ➖ | Con badges de urgencia (Hoy, Manana, en X dias) |
+| Ordenamiento multiple | ✅ | ✅ | ✅ | ➖ | Nombre, stock, minimo, costo |
+| Low stock: `<` estricto | ✅ | ✅ | ✅ | ➖ | Solo alerta si currentStock < minimumStock Y minimumStock > 0 |
 
 ### Calendario
 
