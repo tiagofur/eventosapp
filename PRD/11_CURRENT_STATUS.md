@@ -222,8 +222,8 @@
 - ✅ Formulario de producto (ProductFormView) — con gestion estructurada de ingredientes/equipo/insumos con costos estimados
 
 ### Inventario
-- ✅ Lista de inventario (InventoryListView)
-- ✅ Detalle de inventario (InventoryDetailView)
+- ✅ Lista de inventario (InventoryListView) — con busqueda, filtro stock bajo, ordenamiento
+- ✅ Detalle de inventario (InventoryDetailView) — KPI cards (costo, valor en stock), pronostico de demanda, alerta inteligente 7 dias, barras de salud de stock, ajuste rapido
 - ✅ Formulario de inventario (InventoryFormView)
 
 ### Calendario
@@ -343,8 +343,8 @@
 - ✅ Formulario de producto (ProductFormScreen) — con gestion estructurada de ingredientes/equipo/insumos con picker de inventario y costos estimados
 
 ### Inventario
-- ✅ Lista de inventario (InventoryListScreen)
-- ✅ Detalle de inventario (InventoryDetailScreen)
+- ✅ Lista de inventario (InventoryListScreen) — con busqueda, filtro stock bajo, ordenamiento (nombre/stock/minimo/costo)
+- ✅ Detalle de inventario (InventoryDetailScreen) — KPI cards (stock, minimo, costo, valor), pronostico de demanda, alerta inteligente 7 dias, barras de salud, ajuste rapido de stock
 - ✅ Formulario de inventario (InventoryFormScreen)
 
 ### Calendario
@@ -458,8 +458,15 @@
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
 | Lista de inventario | ✅ | ✅ | ✅ | ✅ | |
+| Ordenamiento de lista | ✅ | ✅ | ✅ | ✅ | Nombre, Stock, Minimo, Costo |
 | Detalle de inventario | ✅ | ✅ | ✅ | ✅ | |
+| KPI cards (stock, minimo, costo, valor) | ✅ | ✅ | ✅ | ✅ | |
+| Pronostico de demanda desde eventos | ✅ | ✅ | ✅ | ✅ | Calcula demanda por ingredientes de productos |
+| Alerta inteligente de stock 7 dias | ✅ | ✅ | ✅ | ✅ | Critico/advertencia/OK |
+| Barras de salud de stock | ✅ | ✅ | ✅ | ✅ | Stock actual vs minimo vs demanda |
+| Ajuste rapido de stock | ✅ | ✅ | ✅ | ✅ | Con botones -10/-1/+1/+10 |
 | Formulario de inventario | ✅ | ✅ | ✅ | ✅ | |
+| Exportar CSV | ⬜ | ⬜ | ✅ | ➖ | Solo web |
 
 ### Calendario
 
