@@ -76,6 +76,10 @@ dependencies {
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.navigation.compose)
 
+    // Coil image loading (network module for HTTP fetching)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.ktor)
+
     // RevenueCat
     implementation(libs.revenuecat)
 

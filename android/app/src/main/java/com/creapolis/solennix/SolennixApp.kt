@@ -1,12 +1,17 @@
 package com.creapolis.solennix
 
 import android.app.Application
+import coil3.ImageLoader
+import coil3.ImageLoader.Builder
+import coil3.SingletonImageLoader
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
-class SolennixApp : Application() {
+class SolennixApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
@@ -15,5 +20,14 @@ class SolennixApp : Application() {
         Purchases.configure(
             PurchasesConfiguration.Builder(this, "goog_YOUR_API_KEY").build()
         )
+    }
+
+    override fun newImageLoader(context: android.content.Context): ImageLoader {
+        return ImageLoader.Builder(context)
+            .components {
+                add(KtorNetworkFetcherFactory())
+            }
+            .crossfade(true)
+            .build()
     }
 }
