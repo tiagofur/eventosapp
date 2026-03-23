@@ -48,9 +48,7 @@ fun DashboardScreen(
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SolennixTheme.colors.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors()
             )
         },
     ) { padding ->

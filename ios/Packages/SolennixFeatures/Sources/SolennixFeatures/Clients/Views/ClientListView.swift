@@ -168,9 +168,6 @@ public struct ClientListView: View {
                             Label("Email", systemImage: "envelope")
                         }
                     }
-                    NavigationLink(value: Route.quickQuote) {
-                        Label("Cotización Rápida", systemImage: "doc.text")
-                    }
                     Divider()
                     Button(role: .destructive) {
                         HapticsHelper.play(.warning)
