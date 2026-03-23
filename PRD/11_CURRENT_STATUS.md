@@ -217,9 +217,9 @@
 - ✅ Cotizacion rapida (QuickQuoteView)
 
 ### Productos
-- ✅ Lista de productos (ProductListView)
-- ✅ Detalle de producto (ProductDetailView)
-- ✅ Formulario de producto (ProductFormView)
+- ✅ Lista de productos (ProductListView) — con busqueda, filtros por categoria, ordenamiento
+- ✅ Detalle de producto (ProductDetailView) — KPI cards (precio, costo/unidad, margen, eventos), alerta inteligente, tablas de composicion con costos, demanda por fecha con urgencia y revenue
+- ✅ Formulario de producto (ProductFormView) — con gestion estructurada de ingredientes/equipo/insumos con costos estimados
 
 ### Inventario
 - ✅ Lista de inventario (InventoryListView)
@@ -338,9 +338,9 @@
 - ✅ Cotizacion rapida (QuickQuoteScreen, QuickQuoteViewModel, QuickQuotePdfGenerator)
 
 ### Productos
-- ✅ Lista de productos (ProductListScreen)
-- ✅ Detalle de producto (ProductDetailScreen)
-- ✅ Formulario de producto (ProductFormScreen)
+- ✅ Lista de productos (ProductListScreen) — con busqueda, filtros por categoria, ordenamiento (nombre/precio/categoria)
+- ✅ Detalle de producto (ProductDetailScreen) — KPI cards (precio, costo/unidad, margen, eventos), alerta inteligente, tablas de composicion con costos, demanda por fecha con urgencia y revenue
+- ✅ Formulario de producto (ProductFormScreen) — con gestion estructurada de ingredientes/equipo/insumos con picker de inventario y costos estimados
 
 ### Inventario
 - ✅ Lista de inventario (InventoryListScreen)
@@ -442,9 +442,16 @@
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
 | Lista de productos | ✅ | ✅ | ✅ | ✅ | |
+| Ordenamiento de lista | ✅ | ✅ | ✅ | ✅ | Nombre, Precio, Categoria |
 | Detalle de producto | ✅ | ✅ | ✅ | ✅ | |
+| KPI cards (precio, costo, margen, eventos) | ✅ | ✅ | ✅ | ✅ | |
+| Tablas de composicion (insumos, equipo, suministros) | ✅ | ✅ | ✅ | ✅ | Con costos estimados |
+| Alerta inteligente de demanda | ✅ | ✅ | ✅ | ✅ | Demanda 7 dias + revenue estimado |
+| Demanda por fecha con urgencia | ✅ | ✅ | ✅ | ✅ | Badges Hoy/Manana, revenue por evento |
 | Formulario de producto | ✅ | ✅ | ✅ | ✅ | |
+| Gestion de ingredientes/equipo/insumos en form | ✅ | ✅ | ✅ | ✅ | Con picker de inventario y costos |
 | Ingredientes | ✅ | ✅ | ✅ | ✅ | |
+| Exportar CSV | ⬜ | ⬜ | ✅ | ➖ | Solo web |
 
 ### Inventario
 

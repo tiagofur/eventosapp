@@ -11,31 +11,52 @@ public struct DemandDataPoint: Identifiable {
     public let clientName: String
     public let quantity: Int
     public let numPeople: Int
+    public let unitPrice: Double
 
-    public init(id: String, eventDate: Date, clientName: String, quantity: Int, numPeople: Int) {
+    public init(id: String, eventDate: Date, clientName: String, quantity: Int, numPeople: Int, unitPrice: Double = 0) {
         self.id = id
         self.eventDate = eventDate
         self.clientName = clientName
         self.quantity = quantity
         self.numPeople = numPeople
+        self.unitPrice = unitPrice
+    }
+
+    public var revenue: Double {
+        Double(quantity) * unitPrice
     }
 }
 
 // MARK: - Demand Forecast Chart
 
-/// Displays upcoming events that use this product with a bar chart
 public struct DemandForecastChart: View {
 
     let dataPoints: [DemandDataPoint]
     let productName: String
+    let basePrice: Double
 
-    public init(dataPoints: [DemandDataPoint], productName: String) {
+    public init(dataPoints: [DemandDataPoint], productName: String, basePrice: Double = 0) {
         self.dataPoints = dataPoints
         self.productName = productName
+        self.basePrice = basePrice
     }
 
     private var hasData: Bool {
         !dataPoints.isEmpty
+    }
+
+    private var totalQuantity: Int {
+        dataPoints.reduce(0) { $0 + $1.quantity }
+    }
+
+    private var totalPeople: Int {
+        dataPoints.reduce(0) { $0 + $1.numPeople }
+    }
+
+    private var totalRevenue: Double {
+        dataPoints.reduce(0) { sum, dp in
+            sum + (dp.unitPrice > 0 ? dp.revenue : Double(dp.quantity) * basePrice)
+        }
     }
 
     public var body: some View {
@@ -44,10 +65,13 @@ public struct DemandForecastChart: View {
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .foregroundStyle(SolennixColors.primary)
-
-                Text("Demanda Proyectada")
+                Text("Demanda por Fecha")
                     .font(.headline)
                     .foregroundStyle(SolennixColors.text)
+                Spacer()
+                Text("Eventos confirmados")
+                    .font(.caption2)
+                    .foregroundStyle(SolennixColors.textSecondary)
             }
 
             if hasData {
@@ -61,7 +85,7 @@ public struct DemandForecastChart: View {
                     .cornerRadius(4)
                 }
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .day)) { value in
+                    AxisMarks(values: .stride(by: .day)) { _ in
                         AxisValueLabel(format: .dateTime.day().month(.abbreviated))
                     }
                 }
@@ -82,19 +106,56 @@ public struct DemandForecastChart: View {
                         .foregroundStyle(SolennixColors.textSecondary)
                 }
 
-                // Event list
                 Divider()
 
-                ForEach(dataPoints.prefix(5)) { point in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(point.clientName)
-                                .font(.subheadline)
-                                .foregroundStyle(SolennixColors.text)
+                // Event list with urgency badges
+                let today = Calendar.current.startOfDay(for: Date())
 
-                            Text(point.eventDate.formatted(date: .abbreviated, time: .omitted))
-                                .font(.caption)
-                                .foregroundStyle(SolennixColors.textTertiary)
+                ForEach(dataPoints.prefix(5)) { point in
+                    let diffDays = Calendar.current.dateComponents([.day], from: today, to: Calendar.current.startOfDay(for: point.eventDate)).day ?? 999
+                    let isUrgent = diffDays <= 3
+                    let isThisWeek = diffDays > 3 && diffDays <= 7
+                    let pointRevenue = point.unitPrice > 0 ? point.revenue : Double(point.quantity) * basePrice
+
+                    HStack {
+                        // Urgency dot
+                        Circle()
+                            .fill(isUrgent ? SolennixColors.primary : (isThisWeek ? .orange : SolennixColors.primary.opacity(0.4)))
+                            .frame(width: 8, height: 8)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 4) {
+                                Text(point.eventDate.formatted(.dateTime.day().month(.abbreviated)))
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(SolennixColors.text)
+
+                                if diffDays == 0 {
+                                    urgencyBadge("Hoy", color: SolennixColors.primary)
+                                } else if diffDays == 1 {
+                                    urgencyBadge("Manana", color: .orange)
+                                } else if diffDays > 1 && diffDays <= 7 {
+                                    Text("en \(diffDays) dias")
+                                        .font(.caption2)
+                                        .foregroundStyle(SolennixColors.textSecondary)
+                                }
+                            }
+
+                            HStack(spacing: Spacing.sm) {
+                                Text(point.clientName)
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.textSecondary)
+
+                                if point.numPeople > 0 {
+                                    HStack(spacing: 2) {
+                                        Image(systemName: "person.2.fill")
+                                            .font(.caption2)
+                                        Text("\(point.numPeople)")
+                                            .font(.caption2)
+                                    }
+                                    .foregroundStyle(SolennixColors.textTertiary)
+                                }
+                            }
                         }
 
                         Spacer()
@@ -102,12 +163,52 @@ public struct DemandForecastChart: View {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("\(point.quantity) uds")
                                 .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(SolennixColors.primary)
+                                .fontWeight(.bold)
+                                .foregroundStyle(SolennixColors.text)
 
-                            Text("\(point.numPeople) personas")
+                            if pointRevenue > 0 {
+                                Text(pointRevenue.formatted(.currency(code: "MXN")))
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, Spacing.xs)
+                    .padding(.horizontal, Spacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isUrgent ? SolennixColors.primary.opacity(0.05) :
+                                    (isThisWeek ? Color.orange.opacity(0.05) : SolennixColors.surface))
+                    )
+                }
+
+                // Total row
+                if totalQuantity > 0 {
+                    Divider()
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("TOTAL DEMANDA")
+                                .font(.caption2)
+                                .foregroundStyle(SolennixColors.textSecondary)
+                            Text("\(dataPoints.count) evento\(dataPoints.count != 1 ? "s" : "")")
                                 .font(.caption)
-                                .foregroundStyle(SolennixColors.textTertiary)
+                                .foregroundStyle(SolennixColors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(totalQuantity) unidades")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundStyle(SolennixColors.text)
+
+                            if totalRevenue > 0 {
+                                Text("\(totalRevenue.formatted(.currency(code: "MXN"))) est.")
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.textSecondary)
+                            }
                         }
                     }
                     .padding(.vertical, Spacing.xs)
@@ -138,12 +239,15 @@ public struct DemandForecastChart: View {
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 
-    private var totalQuantity: Int {
-        dataPoints.reduce(0) { $0 + $1.quantity }
-    }
-
-    private var totalPeople: Int {
-        dataPoints.reduce(0) { $0 + $1.numPeople }
+    private func urgencyBadge(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.caption2)
+            .fontWeight(.semibold)
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }
 
@@ -152,11 +256,12 @@ public struct DemandForecastChart: View {
 #Preview("Demand Forecast Chart") {
     DemandForecastChart(
         dataPoints: [
-            DemandDataPoint(id: "1", eventDate: Date().addingTimeInterval(86400 * 2), clientName: "Maria Garcia", quantity: 50, numPeople: 100),
-            DemandDataPoint(id: "2", eventDate: Date().addingTimeInterval(86400 * 5), clientName: "Juan Lopez", quantity: 30, numPeople: 60),
-            DemandDataPoint(id: "3", eventDate: Date().addingTimeInterval(86400 * 8), clientName: "Ana Martinez", quantity: 80, numPeople: 150)
+            DemandDataPoint(id: "1", eventDate: Date().addingTimeInterval(86400 * 2), clientName: "Maria Garcia", quantity: 50, numPeople: 100, unitPrice: 150),
+            DemandDataPoint(id: "2", eventDate: Date().addingTimeInterval(86400 * 5), clientName: "Juan Lopez", quantity: 30, numPeople: 60, unitPrice: 150),
+            DemandDataPoint(id: "3", eventDate: Date().addingTimeInterval(86400 * 8), clientName: "Ana Martinez", quantity: 80, numPeople: 150, unitPrice: 150)
         ],
-        productName: "Paquete Premium"
+        productName: "Paquete Premium",
+        basePrice: 150
     )
     .padding()
 }
@@ -164,7 +269,8 @@ public struct DemandForecastChart: View {
 #Preview("Empty Demand Chart") {
     DemandForecastChart(
         dataPoints: [],
-        productName: "Producto Sin Demanda"
+        productName: "Producto Sin Demanda",
+        basePrice: 100
     )
     .padding()
 }

@@ -70,7 +70,8 @@ public struct ProductFormView: View {
                     onSelectInventory: { viewModel.updateIngredient(at: $0, inventoryId: $1) },
                     onUpdateQuantity: { index, qty in
                         viewModel.ingredients[index].quantityRequired = qty
-                    }
+                    },
+                    showCost: true
                 )
 
                 RecipeSection(
@@ -83,7 +84,8 @@ public struct ProductFormView: View {
                     onSelectInventory: { viewModel.updateEquipment(at: $0, inventoryId: $1) },
                     onUpdateQuantity: { index, qty in
                         viewModel.equipment[index].quantityRequired = qty
-                    }
+                    },
+                    showCost: false
                 )
 
                 RecipeSection(
@@ -96,7 +98,8 @@ public struct ProductFormView: View {
                     onSelectInventory: { viewModel.updateSupply(at: $0, inventoryId: $1) },
                     onUpdateQuantity: { index, qty in
                         viewModel.supplies[index].quantityRequired = qty
-                    }
+                    },
+                    showCost: true
                 )
             }
             .padding(Spacing.lg)

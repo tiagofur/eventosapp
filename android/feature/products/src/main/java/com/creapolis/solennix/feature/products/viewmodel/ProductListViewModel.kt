@@ -16,13 +16,19 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class ProductSortKey {
+    NAME, PRICE, CATEGORY
+}
+
 data class ProductListUiState(
     val products: List<Product> = emptyList(),
     val allCategories: List<String> = emptyList(),
     val selectedCategory: String? = null,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val sortKey: ProductSortKey = ProductSortKey.NAME,
+    val sortAscending: Boolean = true
 )
 
 @HiltViewModel
@@ -47,13 +53,15 @@ class ProductListViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedCategory = MutableStateFlow<String?>(null)
     private val _isRefreshing = MutableStateFlow(false)
+    private val _sortKey = MutableStateFlow(ProductSortKey.NAME)
+    private val _sortAscending = MutableStateFlow(true)
 
     val uiState: StateFlow<ProductListUiState> = combine(
         productRepository.getProducts(),
         _searchQuery,
         _selectedCategory,
-        _isRefreshing
-    ) { products, query, category, refreshing ->
+        combine(_isRefreshing, _sortKey, _sortAscending) { r, k, a -> Triple(r, k, a) }
+    ) { products, query, category, (refreshing, sortKey, sortAscending) ->
         val allCategories = products.map { it.category }.distinct().sorted()
         var filtered = products
         if (query.isNotBlank()) {
@@ -64,12 +72,22 @@ class ProductListViewModel @Inject constructor(
         if (category != null) {
             filtered = filtered.filter { it.category == category }
         }
+        val sorted = when (sortKey) {
+            ProductSortKey.NAME -> if (sortAscending) filtered.sortedBy { it.name.lowercase() }
+                else filtered.sortedByDescending { it.name.lowercase() }
+            ProductSortKey.PRICE -> if (sortAscending) filtered.sortedBy { it.basePrice }
+                else filtered.sortedByDescending { it.basePrice }
+            ProductSortKey.CATEGORY -> if (sortAscending) filtered.sortedBy { it.category.lowercase() }
+                else filtered.sortedByDescending { it.category.lowercase() }
+        }
         ProductListUiState(
-            products = filtered,
+            products = sorted,
             allCategories = allCategories,
             selectedCategory = category,
             isRefreshing = refreshing,
-            searchQuery = query
+            searchQuery = query,
+            sortKey = sortKey,
+            sortAscending = sortAscending
         )
     }.stateIn(
         scope = viewModelScope,
@@ -95,6 +113,15 @@ class ProductListViewModel @Inject constructor(
 
     fun onCategoryFilterChange(category: String?) {
         _selectedCategory.value = category
+    }
+
+    fun onSortChange(key: ProductSortKey) {
+        if (_sortKey.value == key) {
+            _sortAscending.value = !_sortAscending.value
+        } else {
+            _sortKey.value = key
+            _sortAscending.value = true
+        }
     }
 
     fun refresh() {

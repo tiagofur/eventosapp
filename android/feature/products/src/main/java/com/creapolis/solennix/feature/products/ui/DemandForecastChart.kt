@@ -1,15 +1,19 @@
 package com.creapolis.solennix.feature.products.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -19,8 +23,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.model.extensions.asMXN
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 data class DemandDataPoint(
@@ -28,13 +34,17 @@ data class DemandDataPoint(
     val eventDate: String, // YYYY-MM-DD
     val clientName: String,
     val quantity: Int,
-    val numPeople: Int
-)
+    val numPeople: Int,
+    val unitPrice: Double = 0.0
+) {
+    val revenue: Double get() = quantity * unitPrice
+}
 
 @Composable
 fun DemandForecastChart(
     dataPoints: List<DemandDataPoint>,
     productName: String,
+    basePrice: Double = 0.0,
     modifier: Modifier = Modifier
 ) {
     val colors = SolennixTheme.colors
@@ -50,18 +60,29 @@ fun DemandForecastChart(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.BarChart,
-                    contentDescription = null,
-                    tint = colors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        tint = colors.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Demanda por Fecha",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.primaryText
+                    )
+                }
                 Text(
-                    text = "Demanda Proyectada",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = colors.primaryText
+                    text = "Eventos confirmados",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.secondaryText
                 )
             }
 
@@ -78,6 +99,9 @@ fun DemandForecastChart(
                 // Summary stats
                 val totalQuantity = dataPoints.sumOf { it.quantity }
                 val totalPeople = dataPoints.sumOf { it.numPeople }
+                val totalRevenue = dataPoints.sumOf { dp ->
+                    if (dp.unitPrice > 0) dp.revenue else dp.quantity * basePrice
+                }
 
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
@@ -95,9 +119,55 @@ fun DemandForecastChart(
 
                 HorizontalDivider(color = colors.divider)
 
-                // Event list (max 5)
+                // Event list with urgency badges
+                val today = LocalDate.now()
                 dataPoints.take(5).forEach { point ->
-                    DemandEventRow(point = point, colors = colors)
+                    DemandEventRow(
+                        point = point,
+                        basePrice = basePrice,
+                        today = today,
+                        colors = colors
+                    )
+                }
+
+                // Total row
+                if (totalQuantity > 0) {
+                    HorizontalDivider(color = colors.divider)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "TOTAL DEMANDA",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colors.secondaryText
+                            )
+                            Text(
+                                text = "${dataPoints.size} evento${if (dataPoints.size != 1) "s" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colors.secondaryText
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "$totalQuantity unidades",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.primaryText
+                            )
+                            if (totalRevenue > 0) {
+                                Text(
+                                    text = "${totalRevenue.asMXN()} est.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.secondaryText
+                                )
+                            }
+                        }
+                    }
                 }
             } else {
                 DemandEmptyState(colors = colors)
@@ -143,7 +213,6 @@ private fun DemandBarChart(
             val x = startX + barSpacing + index * (barWidth + barSpacing)
             val y = topPadding + chartHeight - barHeight
 
-            // Bar
             drawRoundRect(
                 color = barColor,
                 topLeft = Offset(x, y),
@@ -151,7 +220,6 @@ private fun DemandBarChart(
                 cornerRadius = CornerRadius(4f, 4f)
             )
 
-            // Value label above bar
             val valueText = "${point.quantity}"
             val valueLayout = textMeasurer.measure(valueText, valueStyle)
             drawText(
@@ -162,7 +230,6 @@ private fun DemandBarChart(
                 )
             )
 
-            // Date label below bar
             val dateLabel = try {
                 LocalDate.parse(point.eventDate).format(dateFormatter)
             } catch (_: Exception) {
@@ -183,48 +250,133 @@ private fun DemandBarChart(
 @Composable
 private fun DemandEventRow(
     point: DemandDataPoint,
+    basePrice: Double,
+    today: LocalDate,
     colors: com.creapolis.solennix.core.designsystem.theme.SolennixColorScheme
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es"))
-    val formattedDate = try {
-        LocalDate.parse(point.eventDate).format(dateFormatter)
+    val eventDate = try {
+        LocalDate.parse(point.eventDate)
     } catch (_: Exception) {
-        point.eventDate
+        null
+    }
+    val formattedDate = eventDate?.format(dateFormatter) ?: point.eventDate
+    val diffDays = eventDate?.let { ChronoUnit.DAYS.between(today, it).toInt() } ?: Int.MAX_VALUE
+    val isUrgent = diffDays <= 3
+    val isThisWeek = diffDays in 4..7
+
+    val bgColor = when {
+        isUrgent -> colors.primary.copy(alpha = 0.08f)
+        isThisWeek -> Color(0xFFFFF3E0) // warning light
+        else -> colors.surfaceGrouped
+    }
+    val dotColor = when {
+        isUrgent -> colors.primary
+        isThisWeek -> Color(0xFFFF9800) // warning
+        else -> colors.primary.copy(alpha = 0.4f)
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    val revenue = if (point.unitPrice > 0) point.revenue else point.quantity * basePrice
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = bgColor,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = point.clientName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.primaryText
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Urgency dot
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(dotColor)
             )
-            Text(
-                text = formattedDate,
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.tertiaryText
-            )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = "${point.quantity} uds",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = colors.primary
-            )
-            Text(
-                text = "${point.numPeople} personas",
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.tertiaryText
-            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = formattedDate,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.primaryText
+                    )
+                    // Urgency badge
+                    when (diffDays) {
+                        0 -> UrgencyBadge("Hoy", colors.primary)
+                        1 -> UrgencyBadge("Mañana", Color(0xFFFF9800))
+                        in 2..7 -> Text(
+                            text = "en $diffDays días",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.secondaryText
+                        )
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = point.clientName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.secondaryText
+                    )
+                    if (point.numPeople > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.People,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = colors.tertiaryText
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "${point.numPeople}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = colors.tertiaryText
+                            )
+                        }
+                    }
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "${point.quantity} uds",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.primaryText
+                )
+                if (revenue > 0) {
+                    Text(
+                        text = revenue.asMXN(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.secondaryText
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun UrgencyBadge(text: String, color: Color) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    )
 }
 
 @Composable

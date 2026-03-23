@@ -8,7 +8,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -30,6 +33,7 @@ import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.products.viewmodel.ProductListViewModel
+import com.creapolis.solennix.feature.products.viewmodel.ProductSortKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,6 +103,50 @@ fun ProductListScreen(
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true
                 )
+
+                // Sort options
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.SortByAlpha,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = SolennixTheme.colors.secondaryText
+                    )
+                    ProductSortKey.entries.forEach { key ->
+                        val label = when (key) {
+                            ProductSortKey.NAME -> "Nombre"
+                            ProductSortKey.PRICE -> "Precio"
+                            ProductSortKey.CATEGORY -> "Categoría"
+                        }
+                        val isSelected = uiState.sortKey == key
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.onSortChange(key) },
+                            label = { Text(label) },
+                            trailingIcon = if (isSelected) {
+                                {
+                                    Icon(
+                                        if (uiState.sortAscending) Icons.Default.ArrowUpward
+                                        else Icons.Default.ArrowDownward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            } else null,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = SolennixTheme.colors.primaryLight,
+                                selectedLabelColor = SolennixTheme.colors.primary
+                            )
+                        )
+                    }
+                }
 
                 // Category filter chips
                 if (uiState.allCategories.isNotEmpty()) {
