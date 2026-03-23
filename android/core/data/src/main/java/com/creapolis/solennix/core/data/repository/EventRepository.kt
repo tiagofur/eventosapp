@@ -17,6 +17,7 @@ import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.Endpoints
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -101,21 +102,21 @@ class OfflineFirstEventRepository @Inject constructor(
     }
 
     override suspend fun updateItems(eventId: String, products: List<EventProduct>, extras: List<EventExtra>) {
-        val payload = mapOf(
-            "products" to products.map { 
-                mapOf(
-                    "product_id" to it.productId,
-                    "quantity" to it.quantity,
-                    "unit_price" to it.unitPrice,
-                    "discount" to it.discount
+        val payload = UpdateItemsPayload(
+            products = products.map {
+                ProductItemPayload(
+                    productId = it.productId,
+                    quantity = it.quantity,
+                    unitPrice = it.unitPrice,
+                    discount = it.discount
                 )
             },
-            "extras" to extras.map { 
-                mapOf(
-                    "description" to it.description,
-                    "cost" to it.cost,
-                    "price" to it.price,
-                    "exclude_utility" to it.excludeUtility
+            extras = extras.map {
+                ExtraItemPayload(
+                    description = it.description,
+                    cost = it.cost,
+                    price = it.price,
+                    excludeUtility = it.excludeUtility
                 )
             }
         )
@@ -173,27 +174,31 @@ class OfflineFirstEventRepository @Inject constructor(
     }
 
     override suspend fun updateEventEquipment(eventId: String, equipment: List<EventEquipment>) {
-        val payload = equipment.map {
-            mapOf(
-                "inventory_id" to it.inventoryId,
-                "quantity" to it.quantity,
-                "notes" to it.notes
-            )
-        }
-        apiService.put<Any>(Endpoints.eventEquipment(eventId), mapOf("equipment" to payload))
+        val payload = EquipmentListPayload(
+            equipment = equipment.map {
+                EquipmentItemPayload(
+                    inventoryId = it.inventoryId,
+                    quantity = it.quantity,
+                    notes = it.notes
+                )
+            }
+        )
+        apiService.put<Any>(Endpoints.eventEquipment(eventId), payload)
     }
 
     override suspend fun updateEventSupplies(eventId: String, supplies: List<EventSupply>) {
-        val payload = supplies.map {
-            mapOf(
-                "inventory_id" to it.inventoryId,
-                "quantity" to it.quantity,
-                "unit_cost" to it.unitCost,
-                "source" to it.source.name.lowercase(),
-                "exclude_cost" to it.excludeCost
-            )
-        }
-        apiService.put<Any>(Endpoints.eventSupplies(eventId), mapOf("supplies" to payload))
+        val payload = SupplyListPayload(
+            supplies = supplies.map {
+                SupplyItemPayload(
+                    inventoryId = it.inventoryId,
+                    quantity = it.quantity,
+                    unitCost = it.unitCost,
+                    source = it.source.name.lowercase(),
+                    excludeCost = it.excludeCost
+                )
+            }
+        )
+        apiService.put<Any>(Endpoints.eventSupplies(eventId), payload)
     }
 
     override suspend fun getEventPhotos(eventId: String): List<EventPhoto> {
@@ -201,10 +206,10 @@ class OfflineFirstEventRepository @Inject constructor(
     }
 
     override suspend fun uploadEventPhoto(eventId: String, imageUrl: String, caption: String?): EventPhoto {
-        val payload = buildMap<String, Any?> {
-            put("url", imageUrl)
-            caption?.let { put("caption", it) }
-        }
+        val payload = PhotoPayload(
+            url = imageUrl,
+            caption = caption
+        )
         return apiService.post(Endpoints.eventPhotos(eventId), payload)
     }
 
@@ -217,4 +222,58 @@ class OfflineFirstEventRepository @Inject constructor(
 data class EventItemsResponse(
     val products: List<EventProduct>,
     val extras: List<EventExtra>
+)
+
+@Serializable
+data class UpdateItemsPayload(
+    val products: List<ProductItemPayload>,
+    val extras: List<ExtraItemPayload>
+)
+
+@Serializable
+data class ProductItemPayload(
+    @SerialName("product_id") val productId: String,
+    val quantity: Double,
+    @SerialName("unit_price") val unitPrice: Double,
+    val discount: Double
+)
+
+@Serializable
+data class ExtraItemPayload(
+    val description: String,
+    val cost: Double,
+    val price: Double,
+    @SerialName("exclude_utility") val excludeUtility: Boolean
+)
+
+@Serializable
+data class EquipmentListPayload(
+    val equipment: List<EquipmentItemPayload>
+)
+
+@Serializable
+data class EquipmentItemPayload(
+    @SerialName("inventory_id") val inventoryId: String,
+    val quantity: Int,
+    val notes: String? = null
+)
+
+@Serializable
+data class SupplyListPayload(
+    val supplies: List<SupplyItemPayload>
+)
+
+@Serializable
+data class SupplyItemPayload(
+    @SerialName("inventory_id") val inventoryId: String,
+    val quantity: Double,
+    @SerialName("unit_cost") val unitCost: Double,
+    val source: String,
+    @SerialName("exclude_cost") val excludeCost: Boolean
+)
+
+@Serializable
+data class PhotoPayload(
+    val url: String,
+    val caption: String? = null
 )
