@@ -33,3 +33,5 @@ Package.resolved
 # CocoaPods (si aplica)
 # Pods/
 .claude/settings.local.json
+video/node_modules/
+video/out/
