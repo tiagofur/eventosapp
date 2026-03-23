@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.designsystem.component.UpgradeBanner
 import com.creapolis.solennix.core.designsystem.component.UpgradeBannerStyle
 import com.creapolis.solennix.core.designsystem.component.UpgradePlanDialog
@@ -172,7 +173,7 @@ fun ProductListItem(
         ) {
             if (product.imageUrl != null) {
                 AsyncImage(
-                    model = product.imageUrl,
+                    model = UrlResolver.resolve(product.imageUrl),
                     contentDescription = product.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

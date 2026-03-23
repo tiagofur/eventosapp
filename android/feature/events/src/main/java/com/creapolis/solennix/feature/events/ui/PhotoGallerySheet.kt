@@ -33,6 +33,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.model.EventPhoto
 import java.io.File
 
@@ -259,7 +260,7 @@ fun PhotoThumbnail(
     ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
-                .data(photo.thumbnailUrl ?: photo.url)
+                .data(UrlResolver.resolve(photo.thumbnailUrl ?: photo.url))
                 .crossfade(true)
                 .build(),
             contentDescription = photo.caption,
@@ -288,7 +289,7 @@ fun PhotoViewerDialog(
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(photo.url)
+                    .data(UrlResolver.resolve(photo.url))
                     .crossfade(true)
                     .build(),
                 contentDescription = photo.caption,

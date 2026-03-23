@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.products.viewmodel.ProductDetailViewModel
 
@@ -104,7 +105,7 @@ fun ProductDetailScreen(
             ) {
                 if (product.imageUrl != null) {
                     AsyncImage(
-                        model = product.imageUrl,
+                        model = UrlResolver.resolve(product.imageUrl),
                         contentDescription = product.name,
                         modifier = Modifier
                             .fillMaxWidth()

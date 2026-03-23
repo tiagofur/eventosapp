@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
@@ -96,7 +97,7 @@ fun ClientFormScreen(
                     if (viewModel.photoUrl.isNotBlank()) {
                         AsyncImage(
                             model = ImageRequest.Builder(context)
-                                .data(viewModel.photoUrl)
+                                .data(UrlResolver.resolve(viewModel.photoUrl))
                                 .crossfade(true)
                                 .build(),
                             contentDescription = "Foto del cliente",

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.network.UrlResolver
 
 @Composable
 fun Avatar(
@@ -35,7 +36,7 @@ fun Avatar(
     ) {
         if (photoUrl != null) {
             AsyncImage(
-                model = photoUrl,
+                model = UrlResolver.resolve(photoUrl),
                 contentDescription = name,
                 modifier = Modifier.size(size),
                 contentScale = ContentScale.Crop

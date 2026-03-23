@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
@@ -112,7 +113,7 @@ fun ProductFormScreen(
                             if (viewModel.imageUrl.isNotBlank()) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
-                                        .data(viewModel.imageUrl)
+                                        .data(UrlResolver.resolve(viewModel.imageUrl))
                                         .crossfade(true)
                                         .build(),
                                     contentDescription = "Imagen del producto",

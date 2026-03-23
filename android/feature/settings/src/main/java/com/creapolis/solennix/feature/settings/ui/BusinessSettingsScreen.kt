@@ -4,8 +4,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,18 +17,28 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.feature.settings.viewmodel.BusinessSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,7 +120,7 @@ fun BusinessSettingsScreen(
                         if (viewModel.logoUrl != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
-                                    .data(viewModel.logoUrl)
+                                    .data(UrlResolver.resolve(viewModel.logoUrl))
                                     .crossfade(true)
                                     .build(),
                                 contentDescription = "Logo del negocio",
@@ -240,6 +252,8 @@ fun BusinessSettingsScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
+                var showColorPicker by remember { mutableStateOf(false) }
+
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
@@ -254,6 +268,7 @@ fun BusinessSettingsScreen(
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
 
+                        // Preset colors row
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -278,7 +293,56 @@ fun BusinessSettingsScreen(
                                 ) {}
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Custom color row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(parseHexColor(viewModel.brandColor))
+                                    .border(
+                                        1.dp,
+                                        SolennixTheme.colors.secondaryText.copy(alpha = 0.3f),
+                                        CircleShape
+                                    )
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = viewModel.brandColor.uppercase(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontFamily = FontFamily.Monospace,
+                                color = SolennixTheme.colors.secondaryText
+                            )
+
+                            Spacer(modifier = Modifier.weight(1f))
+
+                            TextButton(onClick = { showColorPicker = true }) {
+                                Text(
+                                    text = "Personalizar",
+                                    color = SolennixTheme.colors.primary
+                                )
+                            }
+                        }
                     }
+                }
+
+                if (showColorPicker) {
+                    ColorPickerDialog(
+                        initialColor = viewModel.brandColor,
+                        onDismiss = { showColorPicker = false },
+                        onConfirm = { hex ->
+                            viewModel.brandColor = hex
+                            showColorPicker = false
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -312,6 +376,206 @@ fun BusinessSettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ColorPickerDialog(
+    initialColor: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    val initialHsv = remember(initialColor) { hexToHsv(initialColor) }
+
+    var hue by remember { mutableFloatStateOf(initialHsv[0]) }
+    var saturation by remember { mutableFloatStateOf(initialHsv[1]) }
+    var value by remember { mutableFloatStateOf(initialHsv[2]) }
+    var hexInput by remember { mutableStateOf(initialColor.uppercase()) }
+
+    val currentColor = remember(hue, saturation, value) {
+        Color.hsv(hue, saturation, value)
+    }
+
+    LaunchedEffect(hue, saturation, value) {
+        hexInput = colorToHex(currentColor)
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = SolennixTheme.colors.card,
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = "Selector de color",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = SolennixTheme.colors.primaryText
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Color preview
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(currentColor)
+                        .border(
+                            1.dp,
+                            SolennixTheme.colors.secondaryText.copy(alpha = 0.3f),
+                            RoundedCornerShape(12.dp)
+                        )
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Hue slider
+                ColorSliderRow(
+                    label = "Tono",
+                    value = hue,
+                    onValueChange = { hue = it },
+                    valueRange = 0f..360f,
+                    gradientColors = (0..360 step 30).map { Color.hsv(it.toFloat(), 1f, 1f) }
+                )
+
+                // Saturation slider
+                ColorSliderRow(
+                    label = "Saturación",
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0f..1f,
+                    gradientColors = listOf(
+                        Color.hsv(hue, 0f, value),
+                        Color.hsv(hue, 1f, value)
+                    )
+                )
+
+                // Brightness slider
+                ColorSliderRow(
+                    label = "Brillo",
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 0f..1f,
+                    gradientColors = listOf(
+                        Color.hsv(hue, saturation, 0f),
+                        Color.hsv(hue, saturation, 1f)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Hex input
+                OutlinedTextField(
+                    value = hexInput,
+                    onValueChange = { newValue ->
+                        val sanitized = newValue.uppercase().filter { it in "0123456789ABCDEF#" }
+                        if (sanitized.length <= 7) {
+                            hexInput = sanitized
+                            if (sanitized.length == 7 && sanitized.startsWith("#")) {
+                                val hsv = hexToHsv(sanitized)
+                                hue = hsv[0]
+                                saturation = hsv[1]
+                                value = hsv[2]
+                            }
+                        }
+                    },
+                    label = { Text("Código HEX") },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        fontFamily = FontFamily.Monospace
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = SolennixTheme.colors.primary,
+                        focusedLabelColor = SolennixTheme.colors.primary,
+                        cursorColor = SolennixTheme.colors.primary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(
+                            text = "Cancelar",
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = { onConfirm(hexInput) }) {
+                        Text(
+                            text = "Aceptar",
+                            color = SolennixTheme.colors.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorSliderRow(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    gradientColors: List<Color>
+) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = SolennixTheme.colors.secondaryText
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Brush.horizontalGradient(gradientColors))
+        )
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            colors = SliderDefaults.colors(
+                thumbColor = SolennixTheme.colors.primary,
+                activeTrackColor = Color.Transparent,
+                inactiveTrackColor = Color.Transparent
+            )
+        )
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+}
+
+private fun hexToHsv(hex: String): FloatArray {
+    val sanitized = hex.removePrefix("#")
+    return try {
+        val androidColor = android.graphics.Color.parseColor("#$sanitized")
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(androidColor, hsv)
+        hsv
+    } catch (e: Exception) {
+        floatArrayOf(210f, 1f, 1f) // Default to blue
+    }
+}
+
+private fun colorToHex(color: Color): String {
+    val red = (color.red * 255).toInt().coerceIn(0, 255)
+    val green = (color.green * 255).toInt().coerceIn(0, 255)
+    val blue = (color.blue * 255).toInt().coerceIn(0, 255)
+    return "#%02X%02X%02X".format(red, green, blue)
 }
 
 private fun parseHexColor(hex: String): androidx.compose.ui.graphics.Color {
