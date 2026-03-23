@@ -1569,3 +1569,267 @@ func TestAuthHandler_RefreshToken_UserNotFound(t *testing.T) {
 	assert.Contains(t, rr.Body.String(), "Invalid or expired token")
 	mockRepo.AssertExpectations(t)
 }
+
+// ---------------------------------------------------------------------------
+// ChangePassword tests
+// ---------------------------------------------------------------------------
+
+func TestAuthHandler_ChangePassword(t *testing.T) {
+	authService := services.NewAuthService("test-secret-key-32bytes-minimum!!", 1)
+
+	// Helper: hash a password so we can build a user fixture with a real bcrypt hash.
+	hashPassword := func(t *testing.T, pw string) string {
+		t.Helper()
+		h, err := authService.HashPassword(pw)
+		assert.NoError(t, err)
+		return h
+	}
+
+	// Helper: build an authenticated request with userID in context.
+	authedReq := func(userID uuid.UUID, body string) *http.Request {
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/change-password", strings.NewReader(body))
+		ctx := context.WithValue(req.Context(), middleware.UserIDKey, userID)
+		return req.WithContext(ctx)
+	}
+
+	t.Run("Success_ValidPasswordChange", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		currentPw := "OldPass123"
+		user := &models.User{ID: userID, Email: "test@test.dev", PasswordHash: hashPassword(t, currentPw)}
+
+		mockRepo.On("GetByID", mock.Anything, userID).Return(user, nil)
+		mockRepo.On("UpdatePassword", mock.Anything, userID, mock.AnythingOfType("string")).Return(nil)
+
+		body := `{"current_password":"OldPass123","new_password":"NewPass1234"}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Password changed successfully")
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("InvalidJSON_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		body := `{"current_password":}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid request body")
+	})
+
+	t.Run("MissingCurrentPassword_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		body := `{"current_password":"","new_password":"NewPass1234"}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Current password and new password are required")
+	})
+
+	t.Run("MissingNewPassword_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		body := `{"current_password":"OldPass123","new_password":""}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Current password and new password are required")
+	})
+
+	t.Run("WeakNewPassword_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		// Password has no uppercase letter
+		body := `{"current_password":"OldPass123","new_password":"weakpass1"}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Password must be at least 8 characters")
+	})
+
+	t.Run("UserNotFound_Returns401", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		mockRepo.On("GetByID", mock.Anything, userID).Return(nil, fmt.Errorf("not found"))
+
+		body := `{"current_password":"OldPass123","new_password":"NewPass1234"}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid credentials")
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("WrongCurrentPassword_Returns401", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		user := &models.User{ID: userID, Email: "test@test.dev", PasswordHash: hashPassword(t, "RealPass123")}
+
+		mockRepo.On("GetByID", mock.Anything, userID).Return(user, nil)
+
+		body := `{"current_password":"WrongPass123","new_password":"NewPass1234"}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Current password is incorrect")
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("HashPasswordError_Returns500", func(t *testing.T) {
+		// bcrypt does not error on long passwords (truncates at 72 bytes), so
+		// triggering a real HashPassword failure in a unit test is not practical.
+		// The 500 path for password hashing failure is structurally identical to
+		// the UpdatePasswordError case below. Skipping to avoid a misleading test.
+		t.Skip("bcrypt does not error on long passwords (truncates at 72 bytes); covered by UpdatePasswordError test")
+	})
+
+	t.Run("UpdatePasswordError_Returns500", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService}
+
+		userID := uuid.New()
+		currentPw := "OldPass123"
+		user := &models.User{ID: userID, Email: "test@test.dev", PasswordHash: hashPassword(t, currentPw)}
+
+		mockRepo.On("GetByID", mock.Anything, userID).Return(user, nil)
+		mockRepo.On("UpdatePassword", mock.Anything, userID, mock.AnythingOfType("string")).Return(fmt.Errorf("db connection lost"))
+
+		body := `{"current_password":"OldPass123","new_password":"NewPass1234"}`
+		req := authedReq(userID, body)
+		rr := httptest.NewRecorder()
+		h.ChangePassword(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Failed to update password")
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+// ---------------------------------------------------------------------------
+// GoogleSignIn tests
+// ---------------------------------------------------------------------------
+
+func TestAuthHandler_GoogleSignIn(t *testing.T) {
+	authService := services.NewAuthService("test-secret-key-32bytes-minimum!!", 1)
+	cfg := &config.Config{
+		GoogleClientIDs: []string{"test-client-id.apps.googleusercontent.com"},
+	}
+
+	t.Run("InvalidJSON_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService, cfg: cfg}
+
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/google", strings.NewReader(`{"id_token":}`))
+		rr := httptest.NewRecorder()
+		h.GoogleSignIn(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid request body")
+	})
+
+	t.Run("MissingToken_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService, cfg: cfg}
+
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/google", strings.NewReader(`{"id_token":""}`))
+		rr := httptest.NewRecorder()
+		h.GoogleSignIn(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "id_token is required")
+	})
+
+	t.Run("InvalidGoogleToken_Returns401", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService, cfg: cfg}
+
+		// A random non-JWT string will fail validation
+		body := `{"id_token":"not-a-valid-jwt-token"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/google", strings.NewReader(body))
+		rr := httptest.NewRecorder()
+		h.GoogleSignIn(rr, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid Google ID token")
+	})
+}
+
+// ---------------------------------------------------------------------------
+// AppleSignIn tests
+// ---------------------------------------------------------------------------
+
+func TestAuthHandler_AppleSignIn(t *testing.T) {
+	authService := services.NewAuthService("test-secret-key-32bytes-minimum!!", 1)
+	cfg := &config.Config{
+		AppleBundleID: "com.solennix.app",
+	}
+
+	t.Run("InvalidJSON_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService, cfg: cfg}
+
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/apple", strings.NewReader(`{"identity_token":}`))
+		rr := httptest.NewRecorder()
+		h.AppleSignIn(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid request body")
+	})
+
+	t.Run("MissingToken_Returns400", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService, cfg: cfg}
+
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/apple", strings.NewReader(`{"identity_token":""}`))
+		rr := httptest.NewRecorder()
+		h.AppleSignIn(rr, req)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "identity_token is required")
+	})
+
+	t.Run("InvalidAppleToken_Returns401", func(t *testing.T) {
+		mockRepo := new(MockFullUserRepo)
+		h := &AuthHandler{userRepo: mockRepo, authService: authService, cfg: cfg}
+
+		// A random non-JWT string will fail validation
+		body := `{"identity_token":"not-a-valid-jwt-token"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/apple", strings.NewReader(body))
+		rr := httptest.NewRecorder()
+		h.AppleSignIn(rr, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Invalid Apple identity token")
+	})
+}
