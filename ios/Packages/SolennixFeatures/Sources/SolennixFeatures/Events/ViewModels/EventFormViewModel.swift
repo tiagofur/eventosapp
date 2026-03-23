@@ -537,10 +537,15 @@ public final class EventFormViewModel {
         }
 
         let event: Event
-        if isEdit, let editId {
-            event = try await apiClient.put(Endpoint.event(editId), body: AnyCodable(body))
-        } else {
-            event = try await apiClient.post(Endpoint.events, body: AnyCodable(body))
+        do {
+            if isEdit, let editId {
+                event = try await apiClient.put(Endpoint.event(editId), body: AnyCodable(body))
+            } else {
+                event = try await apiClient.post(Endpoint.events, body: AnyCodable(body))
+            }
+        } catch {
+            HapticsHelper.play(.error)
+            throw error
         }
 
         // Update items (products, extras, equipment, supplies)
@@ -575,6 +580,8 @@ public final class EventFormViewModel {
             Endpoint.eventItems(event.id),
             body: AnyCodable(itemsBody)
         )
+
+        HapticsHelper.play(.success)
     }
 
     // MARK: - Step Navigation

@@ -371,9 +371,11 @@ public final class ProductFormViewModel {
                 }
             }
 
+            HapticsHelper.play(.success)
             isSaving = false
             return true
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = mapError(error)
             isSaving = false
             return false

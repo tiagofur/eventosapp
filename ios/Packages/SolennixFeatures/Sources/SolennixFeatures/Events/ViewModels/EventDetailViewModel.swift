@@ -150,10 +150,12 @@ public final class EventDetailViewModel {
             let body: [String: String] = ["status": newStatus.rawValue]
             let updated: Event = try await apiClient.put(Endpoint.event(eventId), body: body)
             event = updated
+            HapticsHelper.play(.success)
 
             // Actualizar la Live Activity si está activa
             await updateLiveActivityStatus()
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = "Error al cambiar el estado"
         }
     }
@@ -181,6 +183,7 @@ public final class EventDetailViewModel {
             let payment: Payment = try await apiClient.post(Endpoint.payments, body: AnyCodable(body))
 
             payments.append(payment)
+            HapticsHelper.play(.success)
 
             // Auto-confirm if quoted and payment received
             if event?.status == .quoted {
@@ -193,6 +196,7 @@ public final class EventDetailViewModel {
             paymentNotes = ""
             showPaymentSheet = false
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = "Error al registrar el pago"
         }
 
@@ -210,10 +214,12 @@ public final class EventDetailViewModel {
         do {
             try await apiClient.delete(Endpoint.payment(id))
             payments.removeAll { $0.id == id }
+            HapticsHelper.play(.success)
 
             // Reload to sync status
             await loadData(eventId: eventId)
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = "Error al eliminar el pago"
         }
     }
@@ -224,8 +230,10 @@ public final class EventDetailViewModel {
     public func deleteEvent(eventId: String) async -> Bool {
         do {
             try await apiClient.delete(Endpoint.event(eventId))
+            HapticsHelper.play(.success)
             return true
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = "Error al eliminar el evento"
             return false
         }

@@ -100,7 +100,7 @@ public struct QuickClientSheet: View {
             .padding(.horizontal, Spacing.md)
             .padding(.bottom, Spacing.md)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") {
                         dismiss()
                     }

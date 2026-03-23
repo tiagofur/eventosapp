@@ -703,10 +703,10 @@ public struct InventoryDetailView: View {
             .navigationTitle("Ajustar Stock")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { showStockAdjustment = false }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Guardar") {
                         Task { await saveStockAdjustment() }
                     }

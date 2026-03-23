@@ -147,9 +147,11 @@ public final class InventoryFormViewModel {
                 let _: InventoryItem = try await apiClient.post(Endpoint.inventory, body: body)
             }
 
+            HapticsHelper.play(.success)
             isSaving = false
             return true
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = mapError(error)
             isSaving = false
             return false

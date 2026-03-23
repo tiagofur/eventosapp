@@ -387,12 +387,12 @@ public struct InventoryListView: View {
             .navigationTitle("Ajustar Stock")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") {
                         viewModel.showStockAdjustment = false
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Guardar") {
                         Task { await viewModel.saveStockAdjustment() }
                     }

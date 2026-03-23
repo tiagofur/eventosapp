@@ -36,6 +36,25 @@ public struct EventDetailView: View {
         }
         .navigationTitle("Detalle del Evento")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    NavigationLink(value: Route.eventForm(id: eventId)) {
+                        Label("Editar", systemImage: "pencil")
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        viewModel.showDeleteConfirm = true
+                    } label: {
+                        Label("Eliminar Evento", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
+        }
         .confirmationDialog(
             "Cambiar estado",
             isPresented: $viewModel.showStatusSheet
@@ -710,7 +729,7 @@ public struct EventDetailView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Action Buttons Row 3 (PDF, Edit, Delete)
+    // MARK: - Action Buttons Row 3 (PDF, Edit)
 
     private var actionButtonsRow3: some View {
         HStack(spacing: Spacing.sm) {
@@ -722,12 +741,6 @@ public struct EventDetailView: View {
 
             NavigationLink(value: Route.eventForm(id: eventId)) {
                 actionButton(icon: "pencil", label: "Editar", fg: SolennixColors.info)
-            }
-
-            Button {
-                viewModel.showDeleteConfirm = true
-            } label: {
-                actionButton(icon: "trash", label: "Eliminar", fg: SolennixColors.error)
             }
         }
     }

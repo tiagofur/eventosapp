@@ -150,9 +150,11 @@ public final class ClientFormViewModel {
 
         do {
             let client = try await save()
+            HapticsHelper.play(.success)
             isSaving = false
             return client
         } catch {
+            HapticsHelper.play(.error)
             errorMessage = mapError(error)
             isSaving = false
             return nil
