@@ -168,14 +168,12 @@ class AuthViewModel @Inject constructor(
 
     /** Sync RevenueCat user identity for cross-platform subscription recognition */
     private fun syncRevenueCat(userId: String) {
-        try {
-            Purchases.sharedInstance.logInWith(
-                appUserID = userId,
-                onError = { /* non-fatal */ },
-                onSuccess = { _, _ -> }
-            )
-        } catch (_: Exception) {
-            // RevenueCat may not be configured in debug builds
+        viewModelScope.launch {
+            try {
+                Purchases.sharedInstance.logIn(userId)
+            } catch (_: Exception) {
+                // RevenueCat may not be configured in debug builds
+            }
         }
     }
 
