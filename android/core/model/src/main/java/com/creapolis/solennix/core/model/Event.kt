@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Event(
-    val id: String,
-    @SerialName("user_id") val userId: String,
+    val id: String = "",
+    @SerialName("user_id") val userId: String = "",
     @SerialName("client_id") val clientId: String,
     @SerialName("event_date") val eventDate: String,
     @SerialName("start_time") val startTime: String? = null,
@@ -27,8 +27,8 @@ data class Event(
     @SerialName("refund_percent") val refundPercent: Double? = null,
     val notes: String? = null,
     val photos: String? = null, // JSON array of URLs
-    @SerialName("created_at") val createdAt: String,
-    @SerialName("updated_at") val updatedAt: String
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("updated_at") val updatedAt: String = ""
 )
 
 @Serializable
