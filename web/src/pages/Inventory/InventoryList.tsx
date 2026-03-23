@@ -295,7 +295,7 @@ export const InventoryList: React.FC = () => {
             return (
               <tr
                 key={item.id}
-                className="hover:bg-surface-alt/50 transition-colors cursor-pointer"
+                className="group hover:bg-surface-alt/50 transition-colors cursor-pointer"
                 onClick={() => navigate(`/inventory/${item.id}`)}
               >
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -331,12 +331,14 @@ export const InventoryList: React.FC = () => {
                   ${item.unit_cost?.toFixed(2) || "0.00"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <RowActionMenu items={[
-                    { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/inventory/${item.id}`) },
-                    { label: 'Ajustar Stock', icon: PlusCircle, onClick: () => { setAdjustingItem(item); setAdjustmentValue(""); } },
-                    { label: 'Editar', icon: Edit, onClick: () => navigate(`/inventory/${item.id}/edit`) },
-                    { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(item.id), variant: 'destructive' as const },
-                  ]} />
+                  <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                    <RowActionMenu items={[
+                      { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/inventory/${item.id}`) },
+                      { label: 'Ajustar Stock', icon: PlusCircle, onClick: () => { setAdjustingItem(item); setAdjustmentValue(""); } },
+                      { label: 'Editar', icon: Edit, onClick: () => navigate(`/inventory/${item.id}/edit`) },
+                      { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(item.id), variant: 'destructive' as const },
+                    ]} />
+                  </div>
                 </td>
               </tr>
             );

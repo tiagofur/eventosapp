@@ -21,6 +21,7 @@ import { es } from "date-fns/locale";
 import { logError } from "@/lib/errorHandler";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { StatusDropdown, EventStatus } from "@/components/StatusDropdown";
 
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   quoted: {
@@ -413,8 +414,18 @@ export const ClientDetails: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                         {event.num_people} pax
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={event.status} />
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <StatusDropdown
+                          eventId={event.id}
+                          currentStatus={event.status as EventStatus}
+                          onStatusChange={(newStatus) => {
+                            setEvents((prev) =>
+                              prev.map((ev) =>
+                                ev.id === event.id ? { ...ev, status: newStatus } : ev,
+                              ),
+                            );
+                          }}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">
                         $

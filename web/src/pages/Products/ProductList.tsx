@@ -292,7 +292,7 @@ export const ProductList: React.FC = () => {
                 {paginatedProducts.map((product) => (
                   <tr
                     key={product.id}
-                    className="hover:bg-surface-alt/50 transition-colors cursor-pointer"
+                    className="group hover:bg-surface-alt/50 transition-colors cursor-pointer"
                     onClick={() => navigate(`/products/${product.id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -341,11 +341,13 @@ export const ProductList: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <RowActionMenu items={[
-                        { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/products/${product.id}`) },
-                        { label: 'Editar', icon: Edit, onClick: () => navigate(`/products/${product.id}/edit`) },
-                        { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(product.id), variant: 'destructive' as const },
-                      ]} />
+                      <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <RowActionMenu items={[
+                          { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/products/${product.id}`) },
+                          { label: 'Editar', icon: Edit, onClick: () => navigate(`/products/${product.id}/edit`) },
+                          { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(product.id), variant: 'destructive' as const },
+                        ]} />
+                      </div>
                     </td>
                   </tr>
                 ))}

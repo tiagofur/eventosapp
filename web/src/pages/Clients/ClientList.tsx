@@ -275,7 +275,7 @@ export const ClientList: React.FC = () => {
                 {paginatedClients.map((client) => (
                   <tr
                     key={client.id}
-                    className="hover:bg-surface-alt/50 cursor-pointer transition-colors"
+                    className="group hover:bg-surface-alt/50 cursor-pointer transition-colors"
                     onClick={() => navigate(`/clients/${client.id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -349,13 +349,15 @@ export const ClientList: React.FC = () => {
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <RowActionMenu items={[
-                        { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/clients/${client.id}`) },
-                        { label: 'Editar', icon: Edit, onClick: () => navigate(`/clients/${client.id}/edit`) },
-                        ...(client.phone ? [{ label: 'Llamar', icon: Phone, onClick: () => window.open(`tel:${client.phone}`) }] : []),
-                        ...(client.email ? [{ label: 'Email', icon: Mail, onClick: () => window.open(`mailto:${client.email}`) }] : []),
-                        { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(client.id), variant: 'destructive' as const },
-                      ]} />
+                      <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <RowActionMenu items={[
+                          { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/clients/${client.id}`) },
+                          { label: 'Editar', icon: Edit, onClick: () => navigate(`/clients/${client.id}/edit`) },
+                          ...(client.phone ? [{ label: 'Llamar', icon: Phone, onClick: () => window.open(`tel:${client.phone}`) }] : []),
+                          ...(client.email ? [{ label: 'Email', icon: Mail, onClick: () => window.open(`mailto:${client.email}`) }] : []),
+                          { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(client.id), variant: 'destructive' as const },
+                        ]} />
+                      </div>
                     </td>
                   </tr>
                 ))}

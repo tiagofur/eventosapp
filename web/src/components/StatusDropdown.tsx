@@ -1,0 +1,142 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Check, Loader2 } from 'lucide-react';
+import { eventService } from '../services/eventService';
+import { useToast } from '../hooks/useToast';
+import { logError } from '../lib/errorHandler';
+
+export type EventStatus = 'quoted' | 'confirmed' | 'completed' | 'cancelled';
+
+const STATUS_CONFIG: Record<EventStatus, { label: string; classes: string }> = {
+  quoted: { label: 'Cotizado', classes: 'bg-status-quoted/10 text-status-quoted' },
+  confirmed: { label: 'Confirmado', classes: 'bg-status-confirmed/10 text-status-confirmed' },
+  completed: { label: 'Completado', classes: 'bg-status-completed/10 text-status-completed' },
+  cancelled: { label: 'Cancelado', classes: 'bg-status-cancelled/10 text-status-cancelled' },
+};
+
+const STATUS_ORDER: EventStatus[] = ['quoted', 'confirmed', 'completed', 'cancelled'];
+
+interface StatusDropdownProps {
+  eventId: string;
+  currentStatus: EventStatus;
+  onStatusChange?: (newStatus: EventStatus) => void;
+}
+
+export const StatusDropdown: React.FC<StatusDropdownProps> = ({
+  eventId,
+  currentStatus,
+  onStatusChange,
+}) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { addToast } = useToast();
+
+  const cfg = STATUS_CONFIG[currentStatus] ?? STATUS_CONFIG.quoted;
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside, true);
+    return () => document.removeEventListener('click', handleClickOutside, true);
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
+
+  const handleSelect = async (newStatus: EventStatus) => {
+    if (newStatus === currentStatus || loading) return;
+
+    setLoading(true);
+    setOpen(false);
+
+    try {
+      await eventService.update(eventId, { status: newStatus });
+      onStatusChange?.(newStatus);
+      addToast(
+        `Estado actualizado a "${STATUS_CONFIG[newStatus].label}"`,
+        'success',
+      );
+    } catch (err) {
+      logError('Error updating event status', err);
+      addToast('Error al actualizar el estado del evento.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative inline-block" ref={containerRef}>
+      <button
+        type="button"
+        disabled={loading}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setOpen((prev) => !prev);
+        }}
+        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer hover:ring-2 hover:ring-current/20 disabled:opacity-60 ${cfg.classes}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Estado: ${cfg.label}. Clic para cambiar.`}
+      >
+        {loading ? (
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+        ) : null}
+        {cfg.label}
+        <ChevronDown
+          className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute left-0 top-full z-50 mt-1 min-w-[160px] bg-card border border-border rounded-xl shadow-lg py-1 animate-in fade-in duration-150"
+          role="listbox"
+          aria-label="Seleccionar estado"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {STATUS_ORDER.map((status) => {
+            const opt = STATUS_CONFIG[status];
+            const isSelected = status === currentStatus;
+            return (
+              <button
+                key={status}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelect(status);
+                }}
+                className={`w-full px-3 py-2 text-sm flex items-center gap-2 transition-colors hover:bg-surface-alt ${isSelected ? 'font-semibold' : ''}`}
+              >
+                <span
+                  className={`inline-block w-2 h-2 rounded-full ${opt.classes.split(' ')[1] ? `bg-current ${opt.classes.split(' ').pop()}` : ''}`}
+                  style={{ opacity: 1 }}
+                  aria-hidden="true"
+                />
+                <span className={opt.classes.split(' ').pop() || ''}>{opt.label}</span>
+                {isSelected && (
+                  <Check className="h-3.5 w-3.5 ml-auto text-text-secondary" aria-hidden="true" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};

@@ -26,6 +26,7 @@ import {
   getEventTaxAmount,
   getEventTotalCharged,
 } from "../lib/finance";
+import { StatusDropdown, EventStatus } from "../components/StatusDropdown";
 import { PendingEventsModal } from "../components/PendingEventsModal";
 import { OnboardingChecklist } from "../components/OnboardingChecklist";
 import { UpgradeBanner } from "../components/UpgradeBanner";
@@ -579,8 +580,18 @@ export const Dashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">
                         {event.clients?.name ?? "—"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={event.status} />
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <StatusDropdown
+                          eventId={event.id}
+                          currentStatus={event.status as EventStatus}
+                          onStatusChange={(newStatus) => {
+                            setUpcomingEvents((prev) =>
+                              prev.map((ev) =>
+                                ev.id === event.id ? { ...ev, status: newStatus } : ev,
+                              ),
+                            );
+                          }}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
                         {event.service_type} · {event.num_people} pax

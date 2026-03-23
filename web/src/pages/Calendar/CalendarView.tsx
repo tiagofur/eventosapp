@@ -39,6 +39,7 @@ import { Pagination } from "../../components/Pagination";
 import Empty from "../../components/Empty";
 import clsx from "clsx";
 import { Event } from "../../types/entities";
+import { StatusDropdown, EventStatus } from "../../components/StatusDropdown";
 
 type EventWithClient = Event & {
   client?: { name: string; phone: string };
@@ -828,26 +829,18 @@ export const CalendarView: React.FC = () => {
                             {event.location || "Sin locación"}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              event.status === "confirmed"
-                                ? "bg-status-confirmed/10 text-status-confirmed"
-                                : event.status === "completed"
-                                  ? "bg-status-completed/10 text-status-completed"
-                                  : event.status === "cancelled"
-                                    ? "bg-status-cancelled/10 text-status-cancelled"
-                                    : "bg-status-quoted/10 text-status-quoted"
-                            }`}
-                          >
-                            {event.status === "confirmed"
-                              ? "Confirmado"
-                              : event.status === "completed"
-                                ? "Completado"
-                                : event.status === "cancelled"
-                                  ? "Cancelado"
-                                  : "Cotizado"}
-                          </span>
+                        <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <StatusDropdown
+                            eventId={event.id}
+                            currentStatus={event.status as EventStatus}
+                            onStatusChange={(newStatus) => {
+                              setEvents((prev) =>
+                                prev.map((ev) =>
+                                  ev.id === event.id ? { ...ev, status: newStatus } : ev,
+                                ),
+                              );
+                            }}
+                          />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">
                           $
