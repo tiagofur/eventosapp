@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Users, 
-  Package, 
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  Package,
   Boxes,
-  Settings, 
-  LogOut, 
-  Menu, 
+  Settings,
+  LogOut,
+  Menu,
   X,
   Search,
   Moon,
   Sun,
   Calculator,
   Zap,
-  Shield
+  Shield,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
@@ -23,23 +25,35 @@ import { logError } from '@/lib/errorHandler';
 import clsx from 'clsx';
 import { ToastContainer } from './ToastContainer';
 import { Logo } from './Logo';
+import { CommandPalette } from './CommandPalette';
 
 export const Layout: React.FC = () => {
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
-  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true');
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   const firstName = user?.name ? user.name.split(' ')[0] : "Usuario";
   const avatarInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U';
 
+  // Persist sidebar collapsed state
   useEffect(() => {
-    if (location.pathname !== '/search') return;
-    const params = new URLSearchParams(location.search);
-    setSearchValue(params.get('q') || '');
-  }, [location.pathname, location.search]);
+    localStorage.setItem('sidebar-collapsed', String(isCollapsed));
+  }, [isCollapsed]);
+
+  // Global Ctrl+K / Cmd+K handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -69,14 +83,6 @@ export const Layout: React.FC = () => {
     }
   };
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const trimmed = searchValue.trim();
-    if (!trimmed) return;
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
-    setIsSidebarOpen(false);
-  };
-
   return (
     <div className="h-screen bg-bg flex transition-colors relative overflow-hidden">
       {/* Mobile Sidebar Overlay */}
@@ -98,14 +104,22 @@ export const Layout: React.FC = () => {
       {/* Sidebar */}
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 lg:z-auto w-64 bg-bg lg:bg-transparent transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          "fixed inset-y-0 left-0 z-50 lg:z-auto bg-bg lg:bg-transparent transform transition-all duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          // Mobile: always w-64
+          "w-64",
+          // Desktop: collapsible
+          isCollapsed ? "lg:w-16" : "lg:w-64",
           isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
         aria-label="Menú de navegación principal"
       >
         <div className="flex flex-col h-full lg:px-4 lg:py-4">
-          <div className="flex items-center justify-between h-16 px-6 lg:px-4 mb-4 lg:mb-2 border-b border-border lg:border-transparent">
-            <Logo size={28} />
+          {/* Logo / Header */}
+          <div className={clsx(
+            "flex items-center justify-between h-16 px-6 mb-4 border-b border-border lg:border-transparent",
+            isCollapsed ? "lg:px-0 lg:justify-center" : "lg:px-4 lg:mb-2"
+          )}>
+            <Logo size={28} showText={!isCollapsed} />
             <button
               type="button"
               className="lg:hidden"
@@ -116,8 +130,9 @@ export const Layout: React.FC = () => {
             </button>
           </div>
 
+          {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-2">
-            <nav className="px-3 lg:px-2 space-y-1" aria-label="Navegación principal">
+            <nav className={clsx("space-y-1", isCollapsed ? "lg:px-1 px-3" : "px-3 lg:px-2")} aria-label="Navegación principal">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -126,34 +141,57 @@ export const Layout: React.FC = () => {
                     key={item.name}
                     to={item.href}
                     className={clsx(
-                      "flex items-center px-4 py-3 text-sm font-semibold rounded-2xl transition-all duration-200",
+                      "flex items-center text-sm font-semibold rounded-2xl transition-all duration-200",
+                      isCollapsed ? "lg:justify-center lg:p-3 px-4 py-3" : "px-4 py-3",
                       isActive
                         ? "bg-primary text-white shadow-md shadow-primary/20"
                         : "text-text-secondary hover:bg-surface-alt hover:text-text"
                     )}
                     onClick={() => setIsSidebarOpen(false)}
+                    title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                    {item.name}
+                    <Icon className={clsx("h-5 w-5", isCollapsed ? "lg:mr-0 mr-3" : "mr-3")} aria-hidden="true" />
+                    <span className={clsx(isCollapsed && "lg:hidden")}>{item.name}</span>
                   </Link>
                 );
               })}
             </nav>
           </div>
 
-          <div className="p-4 lg:p-2 border-t border-border lg:border-transparent">
+          {/* Collapse Toggle (desktop only) */}
+          <div className="hidden lg:block px-2 pb-2">
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={clsx(
+                "flex items-center w-full py-2 text-text-secondary hover:text-text hover:bg-surface-alt rounded-xl transition-colors",
+                isCollapsed ? "justify-center px-2" : "px-4"
+              )}
+              aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+            >
+              {isCollapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+              {!isCollapsed && <span className="ml-2 text-sm">Colapsar</span>}
+            </button>
+          </div>
+
+          {/* Bottom Section: User Profile + Actions */}
+          <div className={clsx("border-t border-border lg:border-transparent", isCollapsed ? "lg:p-1 p-4" : "p-4 lg:p-2")}>
             {/* User Profile Mini */}
-            <div className="flex items-center mb-4 px-3 py-2 bg-surface-alt/50 rounded-2xl border border-border pl-2">
-              <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold shadow-sm" aria-hidden="true">
+            <div className={clsx(
+              "flex items-center mb-4 bg-surface-alt/50 rounded-2xl border border-border",
+              isCollapsed ? "lg:justify-center lg:px-0 lg:py-2 px-3 py-2 pl-2" : "px-3 py-2 pl-2"
+            )}>
+              <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold shadow-sm shrink-0" aria-hidden="true">
                 {avatarInitial}
               </div>
-              <div className="ml-3 flex-1 min-w-0">
+              <div className={clsx("ml-3 flex-1 min-w-0", isCollapsed && "lg:hidden")}>
                 <p className="text-sm font-bold text-text truncate">{firstName}</p>
                 <p className="text-xs text-text-secondary truncate">{user?.email || ''}</p>
               </div>
             </div>
 
-            <div className="flex gap-2 mb-2">
+            {/* Theme + Logout buttons */}
+            <div className={clsx("mb-2", isCollapsed ? "lg:flex lg:flex-col lg:gap-2 flex gap-2" : "flex gap-2")}>
               <button
                 type="button"
                 onClick={toggleTheme}
@@ -199,22 +237,22 @@ export const Layout: React.FC = () => {
 
         {/* The Panel Container */}
         <div className="flex-1 overflow-hidden flex flex-col bg-surface-grouped lg:rounded-[3rem] lg:border border-border lg:shadow-xl relative z-10">
-          
+
           {/* Topbar inside panel */}
           <div className="shrink-0 px-6 lg:px-10 py-4 lg:py-6 flex items-center justify-between gap-4">
-             <form onSubmit={handleSearchSubmit} className="flex-1 max-w-2xl" role="search">
+            <div className="flex-1 max-w-2xl" role="search">
               <div className="relative group">
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" aria-hidden="true" />
-                <input
-                  type="search"
-                  value={searchValue}
-                  onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder="Buscar clientes, eventos, productos..."
-                  className="w-full rounded-2xl border-0 bg-surface-alt py-3.5 pl-12 pr-4 text-sm text-text placeholder-text-tertiary focus:ring-2 focus:ring-primary focus:bg-surface transition-all shadow-inner"
-                  aria-label="Búsqueda global"
-                />
+                <button
+                  type="button"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  className="w-full rounded-2xl border-0 bg-surface-alt py-3.5 pl-12 pr-4 text-sm text-text-tertiary text-left focus:ring-2 focus:ring-primary focus:bg-surface transition-all shadow-inner cursor-pointer"
+                  aria-label="Abrir búsqueda"
+                >
+                  Buscar o presiona ⌘K...
+                </button>
               </div>
-            </form>
+            </div>
           </div>
 
           {/* Scrollable Page Content */}
@@ -223,8 +261,9 @@ export const Layout: React.FC = () => {
           </main>
         </div>
       </div>
+
       <ToastContainer />
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} />
     </div>
   );
 };
-
