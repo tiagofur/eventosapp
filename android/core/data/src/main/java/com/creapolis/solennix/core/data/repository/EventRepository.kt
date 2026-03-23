@@ -146,10 +146,12 @@ class OfflineFirstEventRepository @Inject constructor(
     override suspend fun getEventsFromApi(): List<Event> =
         apiService.get(Endpoints.EVENTS)
 
-    override suspend fun getEventProductsFromApi(eventId: String): List<EventProduct> {
-        val response: EventItemsResponse = apiService.get(Endpoints.eventItems(eventId))
-        return response.products
-    }
+    override suspend fun getEventProductsFromApi(eventId: String): List<EventProduct> =
+        try {
+            apiService.get(Endpoints.eventProducts(eventId))
+        } catch (_: Exception) {
+            emptyList()
+        }
 
     override suspend fun getEquipmentConflicts(
         eventDate: String,
