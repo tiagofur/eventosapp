@@ -1,6 +1,7 @@
 package com.creapolis.solennix.core.designsystem.component
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -8,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
@@ -27,8 +30,7 @@ fun KPICard(
 ) {
     Card(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .width(155.dp)
             .semantics(mergeDescendants = true) {
                 contentDescription = "$title: $value" + (subtitle?.let { ". $it" } ?: "")
             },
@@ -40,50 +42,55 @@ fun KPICard(
         ),
         shape = MaterialTheme.shapes.large
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
                 color = iconColor.copy(alpha = 0.1f),
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.size(48.dp)
+                shape = CircleShape,
+                modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column {
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.5).sp
+                ),
+                color = SolennixTheme.colors.primaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                color = SolennixTheme.colors.secondaryText,
+                maxLines = 1,
+                textAlign = TextAlign.Center
+            )
+            if (subtitle != null) {
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = SolennixTheme.colors.secondaryText
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SolennixTheme.colors.tertiaryText,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center
                 )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = SolennixTheme.colors.primaryText
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = SolennixTheme.colors.tertiaryText
-                    )
-                }
             }
         }
     }

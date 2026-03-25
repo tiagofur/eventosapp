@@ -50,6 +50,7 @@ data class DashboardUiState(
     val vatCollected: Double = 0.0,
     val vatOutstanding: Double = 0.0,
     val pendingQuotes: Int = 0,
+    val lowStockCount: Int = 0,
     val isBasicPlan: Boolean = true,
     val pendingEvents: List<PendingEvent> = emptyList(),
     val statusDistribution: List<StatusCount> = emptyList()
@@ -165,6 +166,7 @@ class DashboardViewModel @Inject constructor(
         DashboardUiState(
             upcomingEvents = data.upcoming,
             lowStockItems = data.lowStock,
+            lowStockCount = data.lowStock.size,
             isLoading = false,
             isRefreshing = isRefreshing,
             revenueThisMonth = eventsThisMonthList.sumOf { it.totalAmount },

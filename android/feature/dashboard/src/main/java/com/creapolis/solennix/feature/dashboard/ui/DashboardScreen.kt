@@ -2,9 +2,11 @@ package com.creapolis.solennix.feature.dashboard.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -79,86 +81,72 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Row 1: Net Sales + Cash Collected
+                // KPI Cards — horizontal scroll (matching iOS layout)
                 item {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        Spacer(modifier = Modifier.width(4.dp))
                         KPICard(
                             title = "Ventas del Mes",
                             value = uiState.revenueThisMonth.asMXN(),
                             icon = Icons.Default.AttachMoney,
-                            iconColor = SolennixTheme.colors.kpiGreen,
-                            modifier = Modifier.weight(1f)
+                            iconColor = SolennixTheme.colors.kpiGreen
                         )
                         KPICard(
                             title = "Cobrado",
                             value = uiState.cashCollected.asMXN(),
                             icon = Icons.Default.Payments,
-                            iconColor = SolennixTheme.colors.kpiBlue,
-                            subtitle = "Este mes",
-                            modifier = Modifier.weight(1f)
+                            iconColor = SolennixTheme.colors.kpiOrange,
+                            subtitle = "Este mes"
                         )
-                    }
-                }
-
-                // Row 2: VAT Collected + VAT Outstanding
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
                         KPICard(
                             title = "IVA Cobrado",
                             value = uiState.vatCollected.asMXN(),
                             icon = Icons.Default.Receipt,
-                            iconColor = SolennixTheme.colors.kpiGreen,
-                            subtitle = "Este mes",
-                            modifier = Modifier.weight(1f)
+                            iconColor = SolennixTheme.colors.kpiBlue,
+                            subtitle = "Este mes"
                         )
                         KPICard(
                             title = "IVA Pendiente",
                             value = uiState.vatOutstanding.asMXN(),
                             icon = Icons.Default.ReceiptLong,
-                            iconColor = SolennixTheme.colors.kpiOrange,
-                            subtitle = "Por cobrar",
-                            modifier = Modifier.weight(1f)
+                            iconColor = SolennixTheme.colors.kpiBlue,
+                            subtitle = "Por cobrar"
                         )
-                    }
-                }
-
-                // Row 3: Events This Month + Clients
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
                         KPICard(
                             title = "Eventos del Mes",
                             value = uiState.eventsThisMonth.toString(),
                             icon = Icons.Default.CalendarMonth,
-                            iconColor = SolennixTheme.colors.kpiOrange,
-                            modifier = Modifier.weight(1f)
+                            iconColor = SolennixTheme.colors.kpiOrange
+                        )
+                        KPICard(
+                            title = "Stock Bajo",
+                            value = uiState.lowStockCount.toString(),
+                            icon = Icons.Default.Inventory2,
+                            iconColor = if (uiState.lowStockCount > 0)
+                                SolennixTheme.colors.kpiOrange
+                            else
+                                SolennixTheme.colors.kpiGreen
                         )
                         KPICard(
                             title = "Clientes",
                             value = uiState.totalClients.toString(),
                             icon = Icons.Default.People,
                             iconColor = SolennixTheme.colors.kpiBlue,
-                            subtitle = "Total",
-                            modifier = Modifier.weight(1f)
+                            subtitle = "Total"
                         )
+                        KPICard(
+                            title = "Cotizaciones",
+                            value = uiState.pendingQuotes.toString(),
+                            icon = Icons.Default.RequestQuote,
+                            iconColor = SolennixTheme.colors.kpiOrange
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
-                }
-
-                item {
-                    KPICard(
-                        title = "Cotizaciones Pendientes",
-                        value = uiState.pendingQuotes.toString(),
-                        icon = Icons.Default.RequestQuote,
-                        iconColor = SolennixTheme.colors.kpiRed
-                    )
                 }
 
                 // Upgrade Banner for basic plan users
