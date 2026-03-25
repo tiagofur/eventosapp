@@ -3,12 +3,32 @@ import SolennixCore
 import SolennixDesign
 import SolennixNetwork
 
+// MARK: - Appearance Theme Enum
+
+public enum AppearanceTheme: String, CaseIterable, Identifiable {
+    case system = "system"
+    case light = "light"
+    case dark = "dark"
+    
+    public var id: String { self.rawValue }
+    
+    public var displayName: String {
+        switch self {
+        case .system: return "Predeterminado del Sistema"
+        case .light: return "Claro"
+        case .dark: return "Oscuro"
+        }
+    }
+}
+
 // MARK: - Settings View
 
 public struct SettingsView: View {
 
     @State private var viewModel: SettingsViewModel
     @State private var showLogoutConfirm: Bool = false
+    
+    @AppStorage("appearance") private var appearance: String = "system"
 
     public init(apiClient: APIClient, authManager: AuthManager) {
         _viewModel = State(initialValue: SettingsViewModel(apiClient: apiClient, authManager: authManager))
@@ -19,6 +39,15 @@ public struct SettingsView: View {
             // User profile header
             if let user = viewModel.user {
                 userHeaderSection(user)
+            }
+            
+            // Appearance section
+            Section("Apariencia") {
+                Picker(selection: $appearance, label: Label("Tema", systemImage: "paintbrush")) {
+                    ForEach(AppearanceTheme.allCases) { theme in
+                        Text(theme.displayName).tag(theme.rawValue)
+                    }
+                }
             }
 
             // Account section

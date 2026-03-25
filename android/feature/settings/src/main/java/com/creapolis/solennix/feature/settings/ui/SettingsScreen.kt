@@ -3,20 +3,24 @@ package com.creapolis.solennix.feature.settings.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.Avatar
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.model.ThemeConfig
 import com.creapolis.solennix.feature.settings.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +38,21 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     val user by viewModel.currentUser.collectAsStateWithLifecycle()
+    val themeConfig by viewModel.themeConfig.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
+
+    var showThemeDialog by remember { mutableStateOf(false) }
+
+    if (showThemeDialog) {
+        ThemeSelectionDialog(
+            currentConfig = themeConfig,
+            onConfigSelected = { config ->
+                viewModel.updateTheme(config)
+                showThemeDialog = false
+            },
+            onDismiss = { showThemeDialog = false }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -77,6 +95,21 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+
+            SettingsSection(title = "Apariencia") {
+                val themeLabel = when (themeConfig) {
+                    ThemeConfig.SYSTEM_DEFAULT -> "Predeterminado del Sistema"
+                    ThemeConfig.LIGHT -> "Claro"
+                    ThemeConfig.DARK -> "Oscuro"
+                }
+
+                SettingsItemValue(
+                    icon = Icons.Default.Palette,
+                    label = "Tema",
+                    value = themeLabel,
+                    onClick = { showThemeDialog = true }
+                )
             }
 
             SettingsSection(title = "Cuenta") {
@@ -142,4 +175,72 @@ fun SettingsItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: S
         modifier = Modifier.clickable(onClick = onClick)
     )
     HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+}
+
+@Composable
+fun SettingsItemValue(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(label) },
+        supportingContent = { Text(value, color = SolennixTheme.colors.secondaryText) },
+        leadingContent = { Icon(icon, contentDescription = null, tint = SolennixTheme.colors.secondaryText) },
+        modifier = Modifier.clickable(onClick = onClick)
+    )
+    HorizontalDivider(modifier = Modifier.padding(start = 56.dp), color = SolennixTheme.colors.divider.copy(alpha = 0.5f))
+}
+
+@Composable
+fun ThemeSelectionDialog(
+    currentConfig: ThemeConfig,
+    onConfigSelected: (ThemeConfig) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = "Elegir tema")
+        },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                val themeOptions = listOf(
+                    ThemeConfig.SYSTEM_DEFAULT to "Predeterminado del Sistema",
+                    ThemeConfig.LIGHT to "Claro",
+                    ThemeConfig.DARK to "Oscuro"
+                )
+
+                themeOptions.forEach { (config, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = (config == currentConfig),
+                                onClick = { onConfigSelected(config) },
+                                role = Role.RadioButton
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (config == currentConfig),
+                            onClick = null // onClick is handled by Row modifier
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

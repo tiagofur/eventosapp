@@ -38,6 +38,9 @@ dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:network"))
     implementation(project(":core:database"))
+    
+    // DataStore
+    implementation(libs.datastore.preferences)
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)

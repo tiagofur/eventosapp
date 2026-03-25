@@ -33,4 +33,9 @@ interface DataModule {
     fun bindsPaymentRepository(
         repository: OfflineFirstPaymentRepository
     ): PaymentRepository
+
+    @Binds
+    fun bindsSettingsRepository(
+        repository: SettingsRepositoryImpl
+    ): SettingsRepository
 }
