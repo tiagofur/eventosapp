@@ -43,6 +43,7 @@ public struct PricingView: View {
             }
             .padding(Spacing.lg)
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Planes y Precios")
         .navigationBarTitleDisplayMode(.inline)
         .task {

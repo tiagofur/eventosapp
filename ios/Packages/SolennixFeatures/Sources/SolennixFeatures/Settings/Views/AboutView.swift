@@ -24,6 +24,7 @@ public struct AboutView: View {
             }
             .padding(Spacing.lg)
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Acerca de")
         .navigationBarTitleDisplayMode(.inline)
     }

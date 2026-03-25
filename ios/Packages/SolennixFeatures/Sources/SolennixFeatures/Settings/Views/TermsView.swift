@@ -127,6 +127,7 @@ public struct TermsView: View {
             }
             .padding(Spacing.lg)
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Terminos de Servicio")
         .navigationBarTitleDisplayMode(.inline)
     }

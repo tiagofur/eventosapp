@@ -130,6 +130,8 @@ public struct BusinessSettingsView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
     }
 
     // MARK: - Logo Placeholder

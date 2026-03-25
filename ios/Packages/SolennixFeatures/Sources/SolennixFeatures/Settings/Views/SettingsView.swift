@@ -85,6 +85,8 @@ public struct SettingsView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Ajustes")
         .confirmationDialog(
             "Cerrar Sesion",

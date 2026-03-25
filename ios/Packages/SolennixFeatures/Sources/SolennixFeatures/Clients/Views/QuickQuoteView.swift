@@ -143,6 +143,8 @@ public struct QuickQuoteView: View {
                             }
                             .disabled(viewModel.selectedProducts.isEmpty)
                         }
+                    .scrollContentBackground(.hidden)
+                    .background(SolennixColors.surfaceGrouped)
                     }
                 }
             }

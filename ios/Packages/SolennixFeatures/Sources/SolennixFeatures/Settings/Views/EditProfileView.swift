@@ -80,6 +80,8 @@ public struct EditProfileView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
     }
 
     // MARK: - Save Button

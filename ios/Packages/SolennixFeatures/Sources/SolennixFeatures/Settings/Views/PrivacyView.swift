@@ -101,6 +101,7 @@ public struct PrivacyView: View {
             }
             .padding(Spacing.lg)
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Privacidad")
         .navigationBarTitleDisplayMode(.inline)
     }

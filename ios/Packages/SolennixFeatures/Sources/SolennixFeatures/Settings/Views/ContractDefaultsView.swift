@@ -171,6 +171,8 @@ public struct ContractDefaultsView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
     }
 
     // MARK: - Preview Row

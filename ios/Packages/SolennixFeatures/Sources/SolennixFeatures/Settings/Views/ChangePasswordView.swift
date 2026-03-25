@@ -64,6 +64,8 @@ public struct ChangePasswordView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Cambiar Contrasena")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
