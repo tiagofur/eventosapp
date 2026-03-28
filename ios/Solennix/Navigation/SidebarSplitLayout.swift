@@ -74,28 +74,30 @@ struct SidebarSplitLayout: View {
             // Main sections
             Section("Principal") {
                 ForEach(SidebarSection.mainSections, id: \.self) { section in
-                    Label(section.title, systemImage: section.iconName)
-                        .tag(section)
+                    sidebarLabel(for: section)
                 }
             }
 
             // Utility sections
             Section("Herramientas") {
                 ForEach(SidebarSection.utilitySections, id: \.self) { section in
-                    Label(section.title, systemImage: section.iconName)
-                        .tag(section)
+                    sidebarLabel(for: section)
                 }
             }
 
             // Settings at the bottom
             Section {
-                Label(SidebarSection.settings.title, systemImage: SidebarSection.settings.iconName)
-                    .tag(SidebarSection.settings)
+                sidebarLabel(for: .settings)
             }
         }
         .listStyle(.sidebar)
         .tint(SolennixColors.primary)
-        .symbolRenderingMode(.hierarchical)
+    }
+
+    private func sidebarLabel(for section: SidebarSection) -> some View {
+        Label(section.title, systemImage: section.iconName)
+            .foregroundStyle(selectedSection == section ? SolennixColors.primary : SolennixColors.text)
+            .tag(section)
     }
 
     // MARK: - Section List Views
