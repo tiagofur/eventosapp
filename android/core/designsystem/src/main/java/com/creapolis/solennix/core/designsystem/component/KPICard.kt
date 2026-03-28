@@ -30,7 +30,7 @@ fun KPICard(
 ) {
     Card(
         modifier = modifier
-            .width(155.dp)
+            .defaultMinSize(minWidth = 155.dp)
             .semantics(mergeDescendants = true) {
                 contentDescription = "$title: $value" + (subtitle?.let { ". $it" } ?: "")
             },

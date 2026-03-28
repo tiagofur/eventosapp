@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.*
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
@@ -81,71 +82,65 @@ fun DashboardScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // KPI Cards — horizontal scroll (matching iOS layout)
+                // KPI Cards
                 item {
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        KPICard(
-                            title = "Ventas del Mes",
-                            value = uiState.revenueThisMonth.asMXN(),
-                            icon = Icons.Default.AttachMoney,
-                            iconColor = SolennixTheme.colors.kpiGreen
+                    val isWide = LocalIsWideScreen.current
+                    if (isWide) {
+                        // Tablet: grid layout (4 columns like web)
+                        val kpiItems = listOf(
+                            Triple("Ventas del Mes", uiState.revenueThisMonth.asMXN(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, null as String?)),
+                            Triple("Cobrado", uiState.cashCollected.asMXN(), Triple(Icons.Default.Payments, SolennixTheme.colors.kpiOrange, "Este mes")),
+                            Triple("IVA Cobrado", uiState.vatCollected.asMXN(), Triple(Icons.Default.Receipt, SolennixTheme.colors.kpiBlue, "Este mes")),
+                            Triple("IVA Pendiente", uiState.vatOutstanding.asMXN(), Triple(Icons.Default.ReceiptLong, SolennixTheme.colors.kpiBlue, "Por cobrar")),
+                            Triple("Eventos del Mes", uiState.eventsThisMonth.toString(), Triple(Icons.Default.CalendarMonth, SolennixTheme.colors.kpiOrange, null)),
+                            Triple("Stock Bajo", uiState.lowStockCount.toString(), Triple(Icons.Default.Inventory2, if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen, null)),
+                            Triple("Clientes", uiState.totalClients.toString(), Triple(Icons.Default.People, SolennixTheme.colors.kpiBlue, "Total")),
+                            Triple("Cotizaciones", uiState.pendingQuotes.toString(), Triple(Icons.Default.RequestQuote, SolennixTheme.colors.kpiOrange, null))
                         )
-                        KPICard(
-                            title = "Cobrado",
-                            value = uiState.cashCollected.asMXN(),
-                            icon = Icons.Default.Payments,
-                            iconColor = SolennixTheme.colors.kpiOrange,
-                            subtitle = "Este mes"
-                        )
-                        KPICard(
-                            title = "IVA Cobrado",
-                            value = uiState.vatCollected.asMXN(),
-                            icon = Icons.Default.Receipt,
-                            iconColor = SolennixTheme.colors.kpiBlue,
-                            subtitle = "Este mes"
-                        )
-                        KPICard(
-                            title = "IVA Pendiente",
-                            value = uiState.vatOutstanding.asMXN(),
-                            icon = Icons.Default.ReceiptLong,
-                            iconColor = SolennixTheme.colors.kpiBlue,
-                            subtitle = "Por cobrar"
-                        )
-                        KPICard(
-                            title = "Eventos del Mes",
-                            value = uiState.eventsThisMonth.toString(),
-                            icon = Icons.Default.CalendarMonth,
-                            iconColor = SolennixTheme.colors.kpiOrange
-                        )
-                        KPICard(
-                            title = "Stock Bajo",
-                            value = uiState.lowStockCount.toString(),
-                            icon = Icons.Default.Inventory2,
-                            iconColor = if (uiState.lowStockCount > 0)
-                                SolennixTheme.colors.kpiOrange
-                            else
-                                SolennixTheme.colors.kpiGreen
-                        )
-                        KPICard(
-                            title = "Clientes",
-                            value = uiState.totalClients.toString(),
-                            icon = Icons.Default.People,
-                            iconColor = SolennixTheme.colors.kpiBlue,
-                            subtitle = "Total"
-                        )
-                        KPICard(
-                            title = "Cotizaciones",
-                            value = uiState.pendingQuotes.toString(),
-                            icon = Icons.Default.RequestQuote,
-                            iconColor = SolennixTheme.colors.kpiOrange
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            kpiItems.chunked(4).forEach { rowItems ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    rowItems.forEach { (title, value, iconInfo) ->
+                                        val (icon, color, subtitle) = iconInfo
+                                        KPICard(
+                                            title = title,
+                                            value = value,
+                                            icon = icon,
+                                            iconColor = color,
+                                            subtitle = subtitle,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    // Fill empty slots if row is not full
+                                    repeat(4 - rowItems.size) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+                        }
+                    } else {
+                        // Phone: horizontal scroll
+                        Row(
+                            modifier = Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            KPICard(title = "Ventas del Mes", value = uiState.revenueThisMonth.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen)
+                            KPICard(title = "Cobrado", value = uiState.cashCollected.asMXN(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = "Este mes")
+                            KPICard(title = "IVA Cobrado", value = uiState.vatCollected.asMXN(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Este mes")
+                            KPICard(title = "IVA Pendiente", value = uiState.vatOutstanding.asMXN(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Por cobrar")
+                            KPICard(title = "Eventos del Mes", value = uiState.eventsThisMonth.toString(), icon = Icons.Default.CalendarMonth, iconColor = SolennixTheme.colors.kpiOrange)
+                            KPICard(title = "Stock Bajo", value = uiState.lowStockCount.toString(), icon = Icons.Default.Inventory2, iconColor = if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen)
+                            KPICard(title = "Clientes", value = uiState.totalClients.toString(), icon = Icons.Default.People, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Total")
+                            KPICard(title = "Cotizaciones", value = uiState.pendingQuotes.toString(), icon = Icons.Default.RequestQuote, iconColor = SolennixTheme.colors.kpiOrange)
+                            Spacer(modifier = Modifier.width(4.dp))
+                        }
                     }
                 }
 
@@ -160,74 +155,115 @@ fun DashboardScreen(
                     }
                 }
 
-                // Gap 3: Event Status Distribution
-                if (uiState.statusDistribution.isNotEmpty()) {
+                // On tablet: show status + pending events side by side
+                if (LocalIsWideScreen.current && (uiState.statusDistribution.isNotEmpty() || uiState.pendingEvents.isNotEmpty())) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Estado de Eventos",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SolennixTheme.colors.primaryText
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        EventStatusDistributionCard(
-                            statusCounts = uiState.statusDistribution
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Left column: Status Distribution
+                            Column(modifier = Modifier.weight(1f)) {
+                                if (uiState.statusDistribution.isNotEmpty()) {
+                                    Text(
+                                        text = "Estado de Eventos",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    EventStatusDistributionCard(statusCounts = uiState.statusDistribution)
+                                }
+                            }
+                            // Right column: Pending Events
+                            Column(modifier = Modifier.weight(1f)) {
+                                if (uiState.pendingEvents.isNotEmpty()) {
+                                    Text(
+                                        text = "Eventos Pendientes",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    uiState.pendingEvents.forEach { pendingEvent ->
+                                        PendingEventItem(
+                                            pendingEvent = pendingEvent,
+                                            onClick = { onEventClick(pendingEvent.event.id) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Phone: single column
+                    if (uiState.statusDistribution.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = "Estado de Eventos", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            EventStatusDistributionCard(statusCounts = uiState.statusDistribution)
+                        }
+                    }
+                    if (uiState.pendingEvents.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = "Eventos Pendientes", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        items(uiState.pendingEvents) { pendingEvent ->
+                            PendingEventItem(pendingEvent = pendingEvent, onClick = { onEventClick(pendingEvent.event.id) })
+                        }
                     }
                 }
 
-                // Gap 2: Pending Events Section
-                if (uiState.pendingEvents.isNotEmpty()) {
+                // On tablet: upcoming events and inventory alerts side by side
+                if (LocalIsWideScreen.current && (uiState.upcomingEvents.isNotEmpty() || uiState.lowStockItems.isNotEmpty())) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Eventos Pendientes",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SolennixTheme.colors.primaryText
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                if (uiState.upcomingEvents.isNotEmpty()) {
+                                    Text(text = "Proximos Eventos", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    uiState.upcomingEvents.forEach { event ->
+                                        EventListItem(event = event, onClick = { onEventClick(event.id) })
+                                    }
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                if (uiState.lowStockItems.isNotEmpty()) {
+                                    Text(text = "Alertas de Inventario", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    uiState.lowStockItems.forEach { item ->
+                                        InventoryAlertItem(item = item, onClick = { onInventoryClick(item.id) })
+                                    }
+                                }
+                            }
+                        }
                     }
-
-                    items(uiState.pendingEvents) { pendingEvent ->
-                        PendingEventItem(
-                            pendingEvent = pendingEvent,
-                            onClick = { onEventClick(pendingEvent.event.id) }
-                        )
+                } else {
+                    if (uiState.upcomingEvents.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = "Proximos Eventos", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        items(uiState.upcomingEvents) { event ->
+                            EventListItem(event = event, onClick = { onEventClick(event.id) })
+                        }
                     }
-                }
-
-                if (uiState.upcomingEvents.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Proximos Eventos",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SolennixTheme.colors.primaryText
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    items(uiState.upcomingEvents) { event ->
-                        EventListItem(event = event, onClick = { onEventClick(event.id) })
-                    }
-                }
-
-                if (uiState.lowStockItems.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Alertas de Inventario",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SolennixTheme.colors.primaryText
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    items(uiState.lowStockItems) { item ->
-                        InventoryAlertItem(
-                            item = item,
-                            onClick = { onInventoryClick(item.id) }
-                        )
+                    if (uiState.lowStockItems.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = "Alertas de Inventario", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        items(uiState.lowStockItems) { item ->
+                            InventoryAlertItem(item = item, onClick = { onInventoryClick(item.id) })
+                        }
                     }
                 }
 

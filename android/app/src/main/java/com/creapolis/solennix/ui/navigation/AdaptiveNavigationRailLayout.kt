@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -72,6 +73,7 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
     val sectionRoutes = SidebarSection.entries.map { it.route }.toSet()
     val isAtSectionLevel = currentRoute in sectionRoutes
 
+    CompositionLocalProvider(LocalIsWideScreen provides true) {
     Row(Modifier.fillMaxSize()) {
         NavigationRail(
             containerColor = SolennixTheme.colors.card,
@@ -429,4 +431,5 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
             }
         }
     }
+    } // CompositionLocalProvider
 }

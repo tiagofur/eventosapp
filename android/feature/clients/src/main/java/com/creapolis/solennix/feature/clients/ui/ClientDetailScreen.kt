@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.Avatar
 import com.creapolis.solennix.core.designsystem.component.KPICard
 import com.creapolis.solennix.core.designsystem.component.StatusBadge
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.extensions.asMXN
@@ -82,141 +83,157 @@ fun ClientDetailScreen(
                     .padding(16.dp)
             ) {
                 // --- Header: Avatar + Name ---
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Avatar(name = client.name, photoUrl = client.photoUrl, size = 100.dp)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = client.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = SolennixTheme.colors.primaryText
-                    )
+                val isWide = LocalIsWideScreen.current
+                if (isWide) {
+                    // Tablet: avatar inline with name
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Avatar(name = client.name, photoUrl = client.photoUrl, size = 80.dp)
+                        Spacer(modifier = Modifier.width(20.dp))
+                        Text(
+                            text = client.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = SolennixTheme.colors.primaryText
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Avatar(name = client.name, photoUrl = client.photoUrl, size = 100.dp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(text = client.name, style = MaterialTheme.typography.headlineMedium, color = SolennixTheme.colors.primaryText)
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- Contact Info Card ---
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            text = "Informacion de Contacto",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SolennixTheme.colors.primaryText
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        InfoRow(icon = Icons.Default.Phone, label = "Telefono", value = client.phone)
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-
-                        InfoRow(
-                            icon = Icons.Default.Email,
-                            label = "Email",
-                            value = client.email ?: "No proporcionado"
-                        )
-
-                        val addr = client.address
-                        if (!addr.isNullOrBlank()) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                            InfoRow(
-                                icon = Icons.Default.LocationOn,
-                                label = "Direccion",
-                                value = addr
-                            )
+                // --- Contact Info + Stats: side by side on tablet ---
+                if (isWide) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Left: Contact Info Card
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text(text = "Informacion de Contacto", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                InfoRow(icon = Icons.Default.Phone, label = "Telefono", value = client.phone)
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                                InfoRow(icon = Icons.Default.Email, label = "Email", value = client.email ?: "No proporcionado")
+                                val addr = client.address
+                                if (!addr.isNullOrBlank()) {
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                                    InfoRow(icon = Icons.Default.LocationOn, label = "Direccion", value = addr)
+                                }
+                                val cCity = client.city
+                                if (!cCity.isNullOrBlank()) {
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                                    InfoRow(icon = Icons.Default.LocationCity, label = "Ciudad", value = cCity)
+                                }
+                            }
                         }
 
-                        val cCity = client.city
-                        if (!cCity.isNullOrBlank()) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-                            InfoRow(
-                                icon = Icons.Default.LocationCity,
-                                label = "Ciudad",
-                                value = cCity
-                            )
+                        // Right: Stats + Notes
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Estadisticas", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            if (uiState.isEventsLoading) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
+                            } else {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    KPICard(title = "Total Eventos", value = uiState.totalEvents.toString(), icon = Icons.Default.Event, iconColor = SolennixTheme.colors.kpiBlue, modifier = Modifier.weight(1f))
+                                    KPICard(title = "Total Gastado", value = uiState.totalSpent.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, modifier = Modifier.weight(1f))
+                                    KPICard(title = "Promedio", value = uiState.averagePerEvent.asMXN(), icon = Icons.Default.TrendingUp, iconColor = SolennixTheme.colors.kpiOrange, modifier = Modifier.weight(1f))
+                                }
+                            }
+                            val cNotes = client.notes
+                            if (!cNotes.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                                    shape = MaterialTheme.shapes.large
+                                ) {
+                                    Column(modifier = Modifier.padding(20.dp)) {
+                                        Text(text = "Notas", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(text = cNotes, style = MaterialTheme.typography.bodyMedium, color = SolennixTheme.colors.secondaryText)
+                                    }
+                                }
+                            }
                         }
                     }
-                }
-
-                // --- Notes Card ---
-                val cNotes = client.notes
-                if (!cNotes.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                } else {
+                    // Phone: single column
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
                         shape = MaterialTheme.shapes.large
                     ) {
                         Column(modifier = Modifier.padding(20.dp)) {
-                            Text(
-                                text = "Notas",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = SolennixTheme.colors.primaryText
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = cNotes,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = SolennixTheme.colors.secondaryText
-                            )
+                            Text(text = "Informacion de Contacto", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            InfoRow(icon = Icons.Default.Phone, label = "Telefono", value = client.phone)
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                            InfoRow(icon = Icons.Default.Email, label = "Email", value = client.email ?: "No proporcionado")
+                            val addr = client.address
+                            if (!addr.isNullOrBlank()) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                                InfoRow(icon = Icons.Default.LocationOn, label = "Direccion", value = addr)
+                            }
+                            val cCity = client.city
+                            if (!cCity.isNullOrBlank()) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+                                InfoRow(icon = Icons.Default.LocationCity, label = "Ciudad", value = cCity)
+                            }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // --- Stats Row (3 KPI cards) ---
-                Text(
-                    text = "Estadisticas",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = SolennixTheme.colors.primaryText
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                if (uiState.isEventsLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    val cNotes = client.notes
+                    if (!cNotes.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text(text = "Notas", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(text = cNotes, style = MaterialTheme.typography.bodyMedium, color = SolennixTheme.colors.secondaryText)
+                            }
+                        }
                     }
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        KPICard(
-                            title = "Total Eventos",
-                            value = uiState.totalEvents.toString(),
-                            icon = Icons.Default.Event,
-                            iconColor = SolennixTheme.colors.kpiBlue,
-                            modifier = Modifier.weight(1f)
-                        )
-                        KPICard(
-                            title = "Total Gastado",
-                            value = uiState.totalSpent.asMXN(),
-                            icon = Icons.Default.AttachMoney,
-                            iconColor = SolennixTheme.colors.kpiGreen,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        KPICard(
-                            title = "Promedio por Evento",
-                            value = uiState.averagePerEvent.asMXN(),
-                            icon = Icons.Default.TrendingUp,
-                            iconColor = SolennixTheme.colors.kpiOrange,
-                            modifier = Modifier.weight(1f)
-                        )
-                        // Spacer to balance the row
-                        Spacer(modifier = Modifier.weight(1f))
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(text = "Estadisticas", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    if (uiState.isEventsLoading) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        }
+                    } else {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            KPICard(title = "Total Eventos", value = uiState.totalEvents.toString(), icon = Icons.Default.Event, iconColor = SolennixTheme.colors.kpiBlue, modifier = Modifier.weight(1f))
+                            KPICard(title = "Total Gastado", value = uiState.totalSpent.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, modifier = Modifier.weight(1f))
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            KPICard(title = "Promedio por Evento", value = uiState.averagePerEvent.asMXN(), icon = Icons.Default.TrendingUp, iconColor = SolennixTheme.colors.kpiOrange, modifier = Modifier.weight(1f))
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
 

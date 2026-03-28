@@ -30,6 +30,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.InventoryType
@@ -185,54 +186,126 @@ fun ProductFormScreen(
                 }
 
                 // Basic info fields
-                SolennixTextField(
-                    value = viewModel.name,
-                    onValueChange = { viewModel.name = it },
-                    label = "Nombre *",
-                    leadingIcon = Icons.Default.ShoppingCart
-                )
+                val isWideScreen = LocalIsWideScreen.current
 
-                SolennixTextField(
-                    value = viewModel.category,
-                    onValueChange = { viewModel.category = it },
-                    label = "Categoría *",
-                    leadingIcon = Icons.Default.Category
-                )
+                if (isWideScreen) {
+                    // Tablet: 2-column layout for related fields
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(
+                                value = viewModel.name,
+                                onValueChange = { viewModel.name = it },
+                                label = "Nombre *",
+                                leadingIcon = Icons.Default.ShoppingCart
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(
+                                value = viewModel.category,
+                                onValueChange = { viewModel.category = it },
+                                label = "Categoría *",
+                                leadingIcon = Icons.Default.Category
+                            )
+                        }
+                    }
 
-                SolennixTextField(
-                    value = viewModel.basePrice,
-                    onValueChange = { viewModel.basePrice = it },
-                    label = "Precio Base *",
-                    leadingIcon = Icons.Default.AttachMoney,
-                    keyboardType = KeyboardType.Decimal
-                )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(
+                                value = viewModel.basePrice,
+                                onValueChange = { viewModel.basePrice = it },
+                                label = "Precio Base *",
+                                leadingIcon = Icons.Default.AttachMoney,
+                                keyboardType = KeyboardType.Decimal
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            // Active toggle alongside price on tablet
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Producto activo",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                    Text(
+                                        text = "Visible en cotizaciones",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = SolennixTheme.colors.secondaryText
+                                    )
+                                }
+                                Switch(
+                                    checked = viewModel.isActive,
+                                    onCheckedChange = { viewModel.isActive = it },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = SolennixTheme.colors.primary,
+                                        checkedTrackColor = SolennixTheme.colors.primaryLight
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Phone: single-column layout
+                    SolennixTextField(
+                        value = viewModel.name,
+                        onValueChange = { viewModel.name = it },
+                        label = "Nombre *",
+                        leadingIcon = Icons.Default.ShoppingCart
+                    )
 
-                // Active toggle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Producto activo",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = SolennixTheme.colors.primaryText
-                        )
-                        Text(
-                            text = "Visible en cotizaciones",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SolennixTheme.colors.secondaryText
+                    SolennixTextField(
+                        value = viewModel.category,
+                        onValueChange = { viewModel.category = it },
+                        label = "Categoría *",
+                        leadingIcon = Icons.Default.Category
+                    )
+
+                    SolennixTextField(
+                        value = viewModel.basePrice,
+                        onValueChange = { viewModel.basePrice = it },
+                        label = "Precio Base *",
+                        leadingIcon = Icons.Default.AttachMoney,
+                        keyboardType = KeyboardType.Decimal
+                    )
+
+                    // Active toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Producto activo",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = SolennixTheme.colors.primaryText
+                            )
+                            Text(
+                                text = "Visible en cotizaciones",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SolennixTheme.colors.secondaryText
+                            )
+                        }
+                        Switch(
+                            checked = viewModel.isActive,
+                            onCheckedChange = { viewModel.isActive = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = SolennixTheme.colors.primary,
+                                checkedTrackColor = SolennixTheme.colors.primaryLight
+                            )
                         )
                     }
-                    Switch(
-                        checked = viewModel.isActive,
-                        onCheckedChange = { viewModel.isActive = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = SolennixTheme.colors.primary,
-                            checkedTrackColor = SolennixTheme.colors.primaryLight
-                        )
-                    )
                 }
 
                 // Recipe sections
