@@ -23,21 +23,40 @@ import com.creapolis.solennix.feature.auth.viewmodel.AuthViewModel
 @Composable
 fun ForgotPasswordScreen(
     viewModel: AuthViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    isWideScreen: Boolean = false
+) {
+    AdaptiveAuthLayout(isWideScreen = isWideScreen) {
+        ForgotPasswordFormContent(
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack,
+            isWideScreen = isWideScreen
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ForgotPasswordFormContent(
+    viewModel: AuthViewModel,
+    onNavigateBack: () -> Unit,
+    isWideScreen: Boolean
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Recuperar Contrasena") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SolennixTheme.colors.background
+            if (!isWideScreen) {
+                TopAppBar(
+                    title = { Text("Recuperar Contrasena") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = SolennixTheme.colors.background
+                    )
                 )
-            )
+            }
         },
         containerColor = SolennixTheme.colors.background
     ) { padding ->
@@ -45,10 +64,28 @@ fun ForgotPasswordScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(24.dp),
+                .padding(horizontal = if (isWideScreen) 40.dp else 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            if (isWideScreen) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Recuperar Contraseña",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = SolennixTheme.colors.primaryText
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
             if (viewModel.forgotSuccess) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,

@@ -35,15 +35,33 @@ fun LoginScreen(
     viewModel: AuthViewModel,
     onNavigateToRegister: () -> Unit,
     onNavigateToForgot: () -> Unit,
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    isWideScreen: Boolean = false
 ) {
     LaunchedEffect(Unit) {
         viewModel.loginSuccess.collect { onLoginSuccess() }
     }
 
+    AdaptiveAuthLayout(isWideScreen = isWideScreen) {
+        LoginFormContent(
+            viewModel = viewModel,
+            onNavigateToRegister = onNavigateToRegister,
+            onNavigateToForgot = onNavigateToForgot,
+            isWideScreen = isWideScreen
+        )
+    }
+}
+
+@Composable
+private fun LoginFormContent(
+    viewModel: AuthViewModel,
+    onNavigateToRegister: () -> Unit,
+    onNavigateToForgot: () -> Unit,
+    isWideScreen: Boolean
+) {
     val scrollState = rememberScrollState()
-    
-    // Animation for logo
+
+    // Animation for logo (only on phone)
     val infiniteTransition = rememberInfiniteTransition(label = "logo")
     val logoScale by infiniteTransition.animateFloat(
         initialValue = 0.95f,
@@ -60,33 +78,50 @@ fun LoginScreen(
             .fillMaxSize()
             .background(SolennixTheme.colors.background)
             .verticalScroll(scrollState)
-            .padding(24.dp),
+            .padding(horizontal = if (isWideScreen) 40.dp else 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(60.dp))
+        if (!isWideScreen) {
+            Spacer(modifier = Modifier.height(60.dp))
 
-        // Logo Section
-        Box(contentAlignment = Alignment.Center) {
-            // Tulip cup icon placeholder or actual resource if available
+            // Logo Section (phone only — tablet has branding panel)
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = "SOLENNIX",
+                    style = SolennixTitle,
+                    color = SolennixTheme.colors.primary,
+                    modifier = Modifier
+                        .scale(logoScale)
+                        .alpha(0.9f)
+                )
+            }
+
             Text(
-                text = "SOLENNIX",
-                style = SolennixTitle,
-                color = SolennixTheme.colors.primary,
-                modifier = Modifier
-                    .scale(logoScale)
-                    .alpha(0.9f)
+                text = "CADA DETALLE IMPORTA",
+                style = TaglineStyle,
+                color = SolennixTheme.colors.secondaryText,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp)
             )
-        }
-        
-        Text(
-            text = "CADA DETALLE IMPORTA",
-            style = TaglineStyle,
-            color = SolennixTheme.colors.secondaryText,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp)
-        )
 
-        Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(64.dp))
+        } else {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "Iniciar Sesión",
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                color = SolennixTheme.colors.primaryText
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Ingresa tus credenciales para continuar",
+                style = MaterialTheme.typography.bodyMedium,
+                color = SolennixTheme.colors.secondaryText
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
 
         // Form Section
         SolennixTextField(

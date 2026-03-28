@@ -22,7 +22,8 @@ import com.creapolis.solennix.feature.auth.viewmodel.AuthViewModel
 fun ResetPasswordScreen(
     token: String?,
     viewModel: AuthViewModel,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    isWideScreen: Boolean = false
 ) {
     LaunchedEffect(token) {
         if (token != null) {
@@ -30,10 +31,25 @@ fun ResetPasswordScreen(
         }
     }
 
+    AdaptiveAuthLayout(isWideScreen = isWideScreen) {
+        ResetPasswordFormContent(
+            viewModel = viewModel,
+            onNavigateToLogin = onNavigateToLogin,
+            isWideScreen = isWideScreen
+        )
+    }
+}
+
+@Composable
+private fun ResetPasswordFormContent(
+    viewModel: AuthViewModel,
+    onNavigateToLogin: () -> Unit,
+    isWideScreen: Boolean
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = if (isWideScreen) 40.dp else 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -80,24 +96,52 @@ fun ResetPasswordScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            SolennixTextField(
-                value = viewModel.newPassword,
-                onValueChange = { viewModel.newPassword = it },
-                label = "Nueva Contrasena",
-                leadingIcon = Icons.Default.Lock,
-                isPassword = true
-            )
+            // On wide screens, show passwords side by side
+            if (isWideScreen) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        SolennixTextField(
+                            value = viewModel.newPassword,
+                            onValueChange = { viewModel.newPassword = it },
+                            label = "Nueva Contrasena",
+                            leadingIcon = Icons.Default.Lock,
+                            isPassword = true
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        SolennixTextField(
+                            value = viewModel.confirmNewPassword,
+                            onValueChange = { viewModel.confirmNewPassword = it },
+                            label = "Confirmar Nueva Contrasena",
+                            leadingIcon = Icons.Default.Lock,
+                            isPassword = true,
+                            imeAction = ImeAction.Done
+                        )
+                    }
+                }
+            } else {
+                SolennixTextField(
+                    value = viewModel.newPassword,
+                    onValueChange = { viewModel.newPassword = it },
+                    label = "Nueva Contrasena",
+                    leadingIcon = Icons.Default.Lock,
+                    isPassword = true
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            SolennixTextField(
-                value = viewModel.confirmNewPassword,
-                onValueChange = { viewModel.confirmNewPassword = it },
-                label = "Confirmar Nueva Contrasena",
-                leadingIcon = Icons.Default.Lock,
-                isPassword = true,
-                imeAction = ImeAction.Done
-            )
+                SolennixTextField(
+                    value = viewModel.confirmNewPassword,
+                    onValueChange = { viewModel.confirmNewPassword = it },
+                    label = "Confirmar Nueva Contrasena",
+                    leadingIcon = Icons.Default.Lock,
+                    isPassword = true,
+                    imeAction = ImeAction.Done
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 

@@ -28,27 +28,46 @@ import androidx.compose.ui.graphics.vector.ImageVector
 fun RegisterScreen(
     viewModel: AuthViewModel,
     onNavigateBack: () -> Unit,
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    isWideScreen: Boolean = false
 ) {
     LaunchedEffect(Unit) {
         viewModel.loginSuccess.collect { onLoginSuccess() }
     }
 
+    AdaptiveAuthLayout(isWideScreen = isWideScreen) {
+        RegisterFormContent(
+            viewModel = viewModel,
+            onNavigateBack = onNavigateBack,
+            isWideScreen = isWideScreen
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RegisterFormContent(
+    viewModel: AuthViewModel,
+    onNavigateBack: () -> Unit,
+    isWideScreen: Boolean
+) {
     val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Crear Cuenta", style = MaterialTheme.typography.titleLarge) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SolennixTheme.colors.background
+            if (!isWideScreen) {
+                TopAppBar(
+                    title = { Text("Crear Cuenta", style = MaterialTheme.typography.titleLarge) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = SolennixTheme.colors.background
+                    )
                 )
-            )
+            }
         },
         containerColor = SolennixTheme.colors.background
     ) { padding ->
@@ -57,9 +76,27 @@ fun RegisterScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(scrollState)
-                .padding(24.dp),
+                .padding(horizontal = if (isWideScreen) 40.dp else 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (isWideScreen) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Crear Cuenta",
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = SolennixTheme.colors.primaryText
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Text(
                 text = "Unete a Solennix y gestiona tus eventos como un profesional.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -69,45 +106,100 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            SolennixTextField(
-                value = viewModel.registerName,
-                onValueChange = { viewModel.registerName = it },
-                label = "Nombre Completo",
-                placeholder = "Juan Perez",
-                leadingIcon = Icons.Default.Person
-            )
+            // On wide screens, show name + email side by side
+            if (isWideScreen) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        SolennixTextField(
+                            value = viewModel.registerName,
+                            onValueChange = { viewModel.registerName = it },
+                            label = "Nombre Completo",
+                            placeholder = "Juan Perez",
+                            leadingIcon = Icons.Default.Person
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        SolennixTextField(
+                            value = viewModel.registerEmail,
+                            onValueChange = { viewModel.registerEmail = it },
+                            label = "Correo Electronico",
+                            placeholder = "ejemplo@correo.com",
+                            leadingIcon = Icons.Default.Email,
+                            keyboardType = KeyboardType.Email
+                        )
+                    }
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            SolennixTextField(
-                value = viewModel.registerEmail,
-                onValueChange = { viewModel.registerEmail = it },
-                label = "Correo Electronico",
-                placeholder = "ejemplo@correo.com",
-                leadingIcon = Icons.Default.Email,
-                keyboardType = KeyboardType.Email
-            )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(modifier = Modifier.weight(1f)) {
+                        SolennixTextField(
+                            value = viewModel.registerPassword,
+                            onValueChange = { viewModel.registerPassword = it },
+                            label = "Contrasena",
+                            leadingIcon = Icons.Default.Lock,
+                            isPassword = true
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        SolennixTextField(
+                            value = viewModel.registerConfirmPassword,
+                            onValueChange = { viewModel.registerConfirmPassword = it },
+                            label = "Confirmar Contrasena",
+                            leadingIcon = Icons.Default.Lock,
+                            isPassword = true,
+                            imeAction = ImeAction.Done
+                        )
+                    }
+                }
+            } else {
+                SolennixTextField(
+                    value = viewModel.registerName,
+                    onValueChange = { viewModel.registerName = it },
+                    label = "Nombre Completo",
+                    placeholder = "Juan Perez",
+                    leadingIcon = Icons.Default.Person
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            SolennixTextField(
-                value = viewModel.registerPassword,
-                onValueChange = { viewModel.registerPassword = it },
-                label = "Contrasena",
-                leadingIcon = Icons.Default.Lock,
-                isPassword = true
-            )
+                SolennixTextField(
+                    value = viewModel.registerEmail,
+                    onValueChange = { viewModel.registerEmail = it },
+                    label = "Correo Electronico",
+                    placeholder = "ejemplo@correo.com",
+                    leadingIcon = Icons.Default.Email,
+                    keyboardType = KeyboardType.Email
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            SolennixTextField(
-                value = viewModel.registerConfirmPassword,
-                onValueChange = { viewModel.registerConfirmPassword = it },
-                label = "Confirmar Contrasena",
-                leadingIcon = Icons.Default.Lock,
-                isPassword = true,
-                imeAction = ImeAction.Done
-            )
+                SolennixTextField(
+                    value = viewModel.registerPassword,
+                    onValueChange = { viewModel.registerPassword = it },
+                    label = "Contrasena",
+                    leadingIcon = Icons.Default.Lock,
+                    isPassword = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SolennixTextField(
+                    value = viewModel.registerConfirmPassword,
+                    onValueChange = { viewModel.registerConfirmPassword = it },
+                    label = "Confirmar Contrasena",
+                    leadingIcon = Icons.Default.Lock,
+                    isPassword = true,
+                    imeAction = ImeAction.Done
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -149,13 +241,13 @@ fun RegisterScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             HorizontalDivider()
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             GoogleSignInButton(
                 onSuccess = { idToken, fullName ->
                     viewModel.loginWithGoogle(idToken, fullName)
