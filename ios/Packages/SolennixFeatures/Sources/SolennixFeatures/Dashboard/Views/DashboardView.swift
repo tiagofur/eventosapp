@@ -13,7 +13,6 @@ public struct DashboardView: View {
     @Environment(\.apiClient) private var apiClient
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: DashboardViewModel?
-    @State private var showSearch = false
     @State private var showQuickQuote = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -97,11 +96,6 @@ public struct DashboardView: View {
                 await planLimitsManager.checkLimits()
             }
         }
-        .sheet(isPresented: $showSearch) {
-            NavigationStack {
-                SearchView()
-            }
-        }
         .sheet(isPresented: $showQuickQuote) {
             QuickQuoteView(apiClient: apiClient)
                 .presentationDetents([.large])
@@ -171,9 +165,7 @@ public struct DashboardView: View {
                         .shadowSm()
                 }
 
-                Button {
-                    showSearch = true
-                } label: {
+                NavigationLink(value: Route.search) {
                     Image(systemName: "magnifyingglass")
                         .font(.title3)
                         .fontWeight(.medium)
@@ -236,10 +228,7 @@ public struct DashboardView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Button {
-                        HapticsHelper.play(.light)
-                        showSearch = true
-                    } label: {
+                    NavigationLink(value: Route.search) {
                         quickActionButton(icon: "magnifyingglass", label: "Buscar", color: SolennixColors.kpiOrange)
                     }
                     .buttonStyle(.plain)
