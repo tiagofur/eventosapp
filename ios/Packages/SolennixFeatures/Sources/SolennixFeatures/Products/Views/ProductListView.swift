@@ -151,6 +151,7 @@ public struct ProductListView: View {
                 }
             }
             .padding(.horizontal, Spacing.md)
+            .padding(.top, Spacing.sm)
             .padding(.bottom, Spacing.xxl)
         }
         .background(SolennixColors.surfaceGrouped)
