@@ -86,7 +86,7 @@ public struct DashboardView: View {
         .refreshable {
             await viewModel?.refresh()
         }
-        .background(SolennixColors.background.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
         .onAppear {
             if viewModel == nil, let client = authManager.apiClient {
                 viewModel = DashboardViewModel(apiClient: client)
