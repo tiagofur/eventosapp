@@ -311,7 +311,7 @@ fun ChecklistSectionHeader(
             Text(title, style = MaterialTheme.typography.titleMedium, color = color)
             Spacer(modifier = Modifier.width(8.dp))
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
                 color = color.copy(alpha = 0.1f)
             ) {
                 Text(

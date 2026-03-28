@@ -194,7 +194,8 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
                     .clickable { showClientPicker = true },
-                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface)
+                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surface),
+                shape = MaterialTheme.shapes.medium
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Person, contentDescription = null, tint = SolennixTheme.colors.primary)
@@ -228,7 +229,8 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.info.copy(alpha = 0.08f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.info.copy(alpha = 0.3f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.info.copy(alpha = 0.3f)),
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
@@ -887,7 +889,8 @@ fun ProductSelectionItem(
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-        border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight)
+        border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -960,7 +963,8 @@ fun StepExtras(viewModel: EventFormViewModel) {
         if (showAddExtra) {
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surfaceAlt)
+                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surfaceAlt),
+                shape = MaterialTheme.shapes.medium
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Nuevo Extra", style = MaterialTheme.typography.titleSmall)
@@ -1069,7 +1073,8 @@ private fun ExtraCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1123,7 +1128,8 @@ fun StepEquipment(viewModel: EventFormViewModel) {
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.warning.copy(alpha = 0.1f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.warning)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.warning),
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1252,7 +1258,8 @@ private fun EquipmentSuggestionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surfaceAlt)
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.surfaceAlt),
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Lightbulb, null, tint = SolennixTheme.colors.primary)
@@ -1275,7 +1282,8 @@ fun EquipmentSelectionItem(
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-        border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight)
+        border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight),
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Construction, null, tint = SolennixTheme.colors.primary, modifier = Modifier.size(24.dp))
@@ -1500,7 +1508,8 @@ private fun SupplySuggestionCard(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = if (hasEnoughStock) SolennixTheme.colors.surfaceAlt else SolennixTheme.colors.warning.copy(alpha = 0.1f)
-        )
+        ),
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -1539,7 +1548,8 @@ fun SupplySelectionItem(
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-        border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight)
+        border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1612,7 +1622,8 @@ fun StepSummary(viewModel: EventFormViewModel, isEditMode: Boolean = false) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = MaterialTheme.shapes.medium
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(viewModel.serviceType.ifBlank { "Nuevo Evento" }, style = MaterialTheme.typography.titleLarge)
@@ -1891,7 +1902,7 @@ fun StepSummary(viewModel: EventFormViewModel, isEditMode: Boolean = false) {
             Spacer(modifier = Modifier.height(32.dp))
             Surface(
                 color = SolennixTheme.colors.info.copy(alpha = 0.1f),
-                shape = MaterialTheme.shapes.small,
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -107,7 +107,8 @@ fun QuickQuoteScreen(
                     val client = uiState.client!!
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -137,7 +138,8 @@ fun QuickQuoteScreen(
                     // Ad-hoc client info (collapsible, optional)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -324,7 +326,8 @@ fun QuickQuoteScreen(
                         // Invoice toggle
                         Card(
                             modifier = Modifier.weight(1f),
-                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                            shape = MaterialTheme.shapes.medium
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(
@@ -363,7 +366,8 @@ fun QuickQuoteScreen(
                         // Discount section
                         Card(
                             modifier = Modifier.weight(1f),
-                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                            shape = MaterialTheme.shapes.medium
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
@@ -412,7 +416,8 @@ fun QuickQuoteScreen(
                     // Invoice toggle
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(
@@ -451,7 +456,8 @@ fun QuickQuoteScreen(
                     // Discount section
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
@@ -501,7 +507,7 @@ fun QuickQuoteScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-                    shape = MaterialTheme.shapes.large
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
@@ -811,7 +817,8 @@ private fun ProductItemCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -921,7 +928,8 @@ private fun ExtraItemCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(

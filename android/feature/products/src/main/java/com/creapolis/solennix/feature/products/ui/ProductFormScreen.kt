@@ -334,7 +334,7 @@ private fun RecipeSectionCard(
     val colors = SolennixTheme.colors
 
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = colors.card),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -430,7 +430,7 @@ private fun RecipeItemRow(
         // Inventory selector
         Surface(
             onClick = { showPicker = true },
-            shape = RoundedCornerShape(8.dp),
+            shape = MaterialTheme.shapes.medium,
             color = colors.surfaceGrouped,
             border = androidx.compose.foundation.BorderStroke(1.dp, colors.divider),
             modifier = Modifier.fillMaxWidth()
@@ -588,7 +588,7 @@ private fun InventoryPickerBottomSheet(
                 itemsIndexed(filtered) { _, item ->
                     Surface(
                         onClick = { onSelect(item.id) },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = MaterialTheme.shapes.medium,
                         color = if (item.id == selectedId) colors.primary.copy(alpha = 0.08f)
                         else colors.card
                     ) {
