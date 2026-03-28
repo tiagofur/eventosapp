@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.designsystem.component.StatusBadge
 import com.creapolis.solennix.core.model.Event
@@ -62,6 +63,7 @@ fun CalendarScreen(
     onBlockDatesConsumed: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isWideScreen = LocalIsWideScreen.current
     var showBlockDialog by remember { mutableStateOf(false) }
     var showUnblockDialog by remember { mutableStateOf(false) }
     var longPressedDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -101,6 +103,7 @@ fun CalendarScreen(
                 CalendarViewMode.CALENDAR -> {
                     CalendarViewContent(
                         uiState = uiState,
+                        isWideScreen = isWideScreen,
                         onPreviousMonth = { viewModel.onMonthChange(uiState.currentMonth.minusMonths(1)) },
                         onNextMonth = { viewModel.onMonthChange(uiState.currentMonth.plusMonths(1)) },
                         onGoToToday = { viewModel.goToToday() },
@@ -119,6 +122,7 @@ fun CalendarScreen(
                 CalendarViewMode.LIST -> {
                     ListViewContent(
                         uiState = uiState,
+                        isWideScreen = isWideScreen,
                         searchQuery = uiState.searchQuery,
                         onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
                         onEventClick = onEventClick
@@ -277,6 +281,7 @@ fun StatusFilterRow(
 @Composable
 fun CalendarViewContent(
     uiState: CalendarUiState,
+    isWideScreen: Boolean = false,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onGoToToday: () -> Unit = {},
@@ -286,64 +291,140 @@ fun CalendarViewContent(
 ) {
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
 
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        item {
-            CalendarHeader(
-                currentMonth = uiState.currentMonth,
-                onPreviousMonth = onPreviousMonth,
-                onNextMonth = onNextMonth,
-                onGoToToday = onGoToToday
-            )
-        }
+    if (isWideScreen) {
+        // Tablet: side-by-side layout — calendar grid (60%) | events panel (40%)
+        Row(modifier = Modifier.fillMaxSize()) {
+            // Left panel: Calendar header + grid
+            Column(
+                modifier = Modifier
+                    .weight(0.6f)
+                    .fillMaxHeight()
+            ) {
+                CalendarHeader(
+                    currentMonth = uiState.currentMonth,
+                    onPreviousMonth = onPreviousMonth,
+                    onNextMonth = onNextMonth,
+                    onGoToToday = onGoToToday
+                )
+                CalendarGrid(
+                    currentMonth = uiState.currentMonth,
+                    selectedDate = uiState.selectedDate,
+                    onDateSelected = onDateSelected,
+                    onDateLongPress = onDateLongPress,
+                    events = uiState.events,
+                    unavailableDates = uiState.unavailableDates,
+                    selectedStatus = uiState.selectedStatus,
+                    isWideScreen = true
+                )
+            }
 
-        item {
-            CalendarGrid(
-                currentMonth = uiState.currentMonth,
-                selectedDate = uiState.selectedDate,
-                onDateSelected = onDateSelected,
-                onDateLongPress = onDateLongPress,
-                events = uiState.events,
-                unavailableDates = uiState.unavailableDates,
-                selectedStatus = uiState.selectedStatus
-            )
-        }
+            // Right panel: Selected day's events
+            Column(
+                modifier = Modifier
+                    .weight(0.4f)
+                    .fillMaxHeight()
+            ) {
+                Text(
+                    text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SolennixTheme.colors.primaryText
+                )
 
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
-                modifier = Modifier.padding(horizontal = 16.dp),
-                style = MaterialTheme.typography.titleMedium,
-                color = SolennixTheme.colors.primaryText
-            )
-        }
-
-        if (uiState.eventsForSelectedDate.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Outlined.CalendarMonth,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = SolennixTheme.colors.secondaryText
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = "No hay eventos programados",
-                            color = SolennixTheme.colors.secondaryText
-                        )
+                if (uiState.eventsForSelectedDate.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Outlined.CalendarMonth,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = SolennixTheme.colors.secondaryText
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "No hay eventos programados",
+                                color = SolennixTheme.colors.secondaryText
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(uiState.eventsForSelectedDate) { event ->
+                            CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
+                        }
                     }
                 }
             }
-        } else {
-            items(uiState.eventsForSelectedDate) { event ->
-                CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
+        }
+    } else {
+        // Phone: original single-column LazyColumn layout
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            item {
+                CalendarHeader(
+                    currentMonth = uiState.currentMonth,
+                    onPreviousMonth = onPreviousMonth,
+                    onNextMonth = onNextMonth,
+                    onGoToToday = onGoToToday
+                )
+            }
+
+            item {
+                CalendarGrid(
+                    currentMonth = uiState.currentMonth,
+                    selectedDate = uiState.selectedDate,
+                    onDateSelected = onDateSelected,
+                    onDateLongPress = onDateLongPress,
+                    events = uiState.events,
+                    unavailableDates = uiState.unavailableDates,
+                    selectedStatus = uiState.selectedStatus
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SolennixTheme.colors.primaryText
+                )
+            }
+
+            if (uiState.eventsForSelectedDate.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Outlined.CalendarMonth,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = SolennixTheme.colors.secondaryText
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "No hay eventos programados",
+                                color = SolennixTheme.colors.secondaryText
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(uiState.eventsForSelectedDate) { event ->
+                    CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
+                }
             }
         }
     }
@@ -352,6 +433,7 @@ fun CalendarViewContent(
 @Composable
 fun ListViewContent(
     uiState: CalendarUiState,
+    isWideScreen: Boolean = false,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onEventClick: (String) -> Unit
@@ -362,7 +444,7 @@ fun ListViewContent(
             value = searchQuery,
             onValueChange = onSearchQueryChange,
             modifier = Modifier
-                .fillMaxWidth()
+                .then(if (isWideScreen) Modifier.widthIn(max = 600.dp) else Modifier.fillMaxWidth())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             placeholder = { Text("Buscar por cliente o servicio...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
@@ -417,6 +499,19 @@ fun ListViewContent(
                             color = SolennixTheme.colors.secondaryText
                         )
                     }
+                }
+            }
+        } else if (isWideScreen) {
+            // Tablet: 2-column grid of event cards
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(uiState.filteredEvents) { event ->
+                    ListEventItem(event = event, onClick = { onEventClick(event.id) })
                 }
             }
         } else {
@@ -489,7 +584,8 @@ fun CalendarGrid(
     onDateLongPress: (LocalDate) -> Unit = {},
     events: List<Event>,
     unavailableDates: List<UnavailableDate> = emptyList(),
-    selectedStatus: EventStatus? = null
+    selectedStatus: EventStatus? = null,
+    isWideScreen: Boolean = false
 ) {
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 // Sunday = 0
@@ -524,7 +620,7 @@ fun CalendarGrid(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.height(280.dp)
+            modifier = Modifier.height(if (isWideScreen) 400.dp else 280.dp)
         ) {
             items(allDays) { day ->
                 if (day != null) {
