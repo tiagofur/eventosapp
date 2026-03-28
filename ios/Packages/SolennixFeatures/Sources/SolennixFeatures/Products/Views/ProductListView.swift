@@ -101,6 +101,7 @@ public struct ProductListView: View {
                         viewModel.toggleCategory(category)
                     }
                     .padding(.vertical, Spacing.sm)
+                    .padding(.bottom, Spacing.md)
                 }
 
                 // Product list
