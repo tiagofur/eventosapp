@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
 import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.designsystem.component.StatusBadge
@@ -292,13 +294,12 @@ fun CalendarViewContent(
     val dateFormatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
 
     if (isWideScreen) {
-        // Tablet: side-by-side layout — calendar grid (60%) | events panel (40%)
-        Row(modifier = Modifier.fillMaxSize()) {
-            // Left panel: Calendar header + grid
+        // Tablet: vertical stack with constrained width and scroll
+        AdaptiveCenteredContent(maxWidth = 900.dp) {
             Column(
                 modifier = Modifier
-                    .weight(0.6f)
-                    .fillMaxHeight()
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
                 CalendarHeader(
                     currentMonth = uiState.currentMonth,
@@ -316,17 +317,13 @@ fun CalendarViewContent(
                     selectedStatus = uiState.selectedStatus,
                     isWideScreen = true
                 )
-            }
 
-            // Right panel: Selected day's events
-            Column(
-                modifier = Modifier
-                    .weight(0.4f)
-                    .fillMaxHeight()
-            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Selected day's events
                 Text(
                     text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.titleMedium,
                     color = SolennixTheme.colors.primaryText
                 )
@@ -335,7 +332,7 @@ fun CalendarViewContent(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f),
+                            .padding(vertical = 32.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -353,15 +350,12 @@ fun CalendarViewContent(
                         }
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(uiState.eventsForSelectedDate) { event ->
-                            CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
-                        }
+                    uiState.eventsForSelectedDate.forEach { event ->
+                        CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     } else {
@@ -620,7 +614,7 @@ fun CalendarGrid(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.height(if (isWideScreen) 400.dp else 280.dp)
+            modifier = Modifier.height(if (isWideScreen) 340.dp else 280.dp)
         ) {
             items(allDays) { day ->
                 if (day != null) {
