@@ -79,23 +79,27 @@ fun EditProfileScreen(
                     tonalElevation = 1.dp
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        AdaptiveFormRow {
-                            SolennixTextField(
-                                value = viewModel.name,
-                                onValueChange = { viewModel.name = it },
-                                label = "Nombre *",
-                                leadingIcon = Icons.Default.Person,
-                                errorMessage = viewModel.nameError
-                            )
-                            SolennixTextField(
-                                value = viewModel.email,
-                                onValueChange = { viewModel.email = it },
-                                label = "Correo Electrónico *",
-                                leadingIcon = Icons.Default.Email,
-                                keyboardType = KeyboardType.Email,
-                                errorMessage = viewModel.emailError
-                            )
-                        }
+                        AdaptiveFormRow(
+                            left = {
+                                SolennixTextField(
+                                    value = viewModel.name,
+                                    onValueChange = { viewModel.name = it },
+                                    label = "Nombre *",
+                                    leadingIcon = Icons.Default.Person,
+                                    errorMessage = viewModel.nameError
+                                )
+                            },
+                            right = {
+                                SolennixTextField(
+                                    value = viewModel.email,
+                                    onValueChange = { viewModel.email = it },
+                                    label = "Correo Electrónico *",
+                                    leadingIcon = Icons.Default.Email,
+                                    keyboardType = KeyboardType.Email,
+                                    errorMessage = viewModel.emailError
+                                )
+                            }
+                        )
                     }
                 }
 

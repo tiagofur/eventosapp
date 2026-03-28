@@ -196,7 +196,8 @@ fun BusinessSettingsScreen(
                 // Business Name & Brand Color — side-by-side on tablet
                 var showColorPicker by remember { mutableStateOf(false) }
 
-                AdaptiveFormRow {
+                AdaptiveFormRow(
+                    left = {
                     // Business Name Section
                     Column {
                         Text(
@@ -252,7 +253,8 @@ fun BusinessSettingsScreen(
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
-
+                    },
+                    right = {
                     // Brand Color Section
                     Column {
                         Text(
@@ -322,7 +324,8 @@ fun BusinessSettingsScreen(
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
-                }
+                    }
+                )
 
                 if (showColorPicker) {
                     ColorPickerDialog(
