@@ -5,6 +5,10 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.extensions.asMXN
@@ -42,6 +47,7 @@ fun InventoryListScreen(
     onAddItemClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isWideScreen = LocalIsWideScreen.current
 
     Scaffold(
         topBar = {
@@ -156,7 +162,51 @@ fun InventoryListScreen(
                             color = SolennixTheme.colors.secondaryText
                         )
                     }
+                } else if (isWideScreen) {
+                    // Tablet: grid layout with adaptive columns
+                    val allSections = buildList {
+                        if (uiState.ingredientItems.isNotEmpty()) {
+                            add(Triple("Consumibles", Icons.Default.ShoppingBasket, uiState.ingredientItems))
+                        }
+                        if (uiState.supplyItems.isNotEmpty()) {
+                            add(Triple("Insumos por Evento", Icons.Default.Kitchen, uiState.supplyItems))
+                        }
+                        if (uiState.equipmentItems.isNotEmpty()) {
+                            add(Triple("Equipos", Icons.Outlined.Build, uiState.equipmentItems))
+                        }
+                    }
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 300.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        allSections.forEach { (title, icon, sectionItems) ->
+                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                InventorySectionHeader(
+                                    title = title,
+                                    icon = icon,
+                                    itemCount = sectionItems.size
+                                )
+                            }
+                            items(
+                                items = sectionItems,
+                                key = { it.id }
+                            ) { item ->
+                                InventoryGridCard(
+                                    item = item,
+                                    onClick = { onItemClick(item.id) }
+                                )
+                            }
+                        }
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
                 } else {
+                    // Phone: single-column list
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -325,6 +375,108 @@ private fun InventoryListItem(
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InventorySectionHeader(
+    title: String,
+    icon: ImageVector,
+    itemCount: Int
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = SolennixTheme.colors.primary
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = SolennixTheme.colors.primaryText
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Surface(
+            shape = MaterialTheme.shapes.extraSmall,
+            color = SolennixTheme.colors.primary.copy(alpha = 0.1f)
+        ) {
+            Text(
+                text = "$itemCount",
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = SolennixTheme.colors.primary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun InventoryGridCard(
+    item: InventoryItem,
+    onClick: () -> Unit
+) {
+    val isLowStock = item.minimumStock > 0 && item.currentStock < item.minimumStock
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = SolennixTheme.colors.card,
+        tonalElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = item.ingredientName,
+                style = MaterialTheme.typography.titleMedium,
+                color = SolennixTheme.colors.primaryText
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Stock: ${item.currentStock} ${item.unit}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isLowStock) SolennixTheme.colors.error else SolennixTheme.colors.secondaryText
+                )
+                if (item.unitCost != null && item.unitCost!! > 0) {
+                    Text(
+                        text = item.unitCost!!.asMXN(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            }
+            if (isLowStock) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = SolennixTheme.colors.error.copy(alpha = 0.1f),
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
+                    Text(
+                        text = "STOCK BAJO",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = SolennixTheme.colors.error,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
