@@ -1,0 +1,205 @@
+import SwiftUI
+import SolennixCore
+import SolennixDesign
+
+// MARK: - Onboarding Step Model
+
+struct OnboardingStep: Identifiable {
+    let id: String
+    let title: String
+    let description: String
+    let icon: String
+    let isCompleted: Bool
+    let destination: Route?
+}
+
+// MARK: - Onboarding Checklist View
+
+struct OnboardingChecklistView: View {
+
+    let hasClients: Bool
+    let hasProducts: Bool
+    let hasEvents: Bool
+    let onDismiss: () -> Void
+
+    private var steps: [OnboardingStep] {
+        [
+            OnboardingStep(
+                id: "create_client",
+                title: "Crea tu primer cliente",
+                description: "Registra los datos de tu primer cliente",
+                icon: "person.badge.plus",
+                isCompleted: hasClients,
+                destination: Route.clientForm()
+            ),
+            OnboardingStep(
+                id: "create_product",
+                title: "Agrega un producto o servicio",
+                description: "Define lo que ofreces a tus clientes",
+                icon: "tag",
+                isCompleted: hasProducts,
+                destination: Route.productForm()
+            ),
+            OnboardingStep(
+                id: "create_event",
+                title: "Crea tu primer evento",
+                description: "Cotiza y organiza tu primer evento",
+                icon: "calendar.badge.plus",
+                isCompleted: hasEvents,
+                destination: Route.eventForm()
+            ),
+        ]
+    }
+
+    private var completedCount: Int {
+        steps.filter(\.isCompleted).count
+    }
+
+    private var progress: Double {
+        steps.isEmpty ? 0 : Double(completedCount) / Double(steps.count)
+    }
+
+    private var allCompleted: Bool {
+        completedCount == steps.count
+    }
+
+    var body: some View {
+        if !allCompleted {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                // Header
+                HStack {
+                    Image(systemName: "paperplane.fill")
+                        .font(.title3)
+                        .foregroundStyle(SolennixColors.primary)
+
+                    Text("Primeros pasos")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(SolennixColors.text)
+
+                    Spacer()
+
+                    Button {
+                        onDismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(SolennixColors.textTertiary)
+                            .padding(Spacing.sm)
+                    }
+                }
+
+                // Progress bar
+                HStack(spacing: Spacing.sm) {
+                    ProgressView(value: progress)
+                        .tint(SolennixColors.primary)
+                        .animation(.easeInOut, value: progress)
+
+                    Text("\(completedCount)/\(steps.count)")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                }
+
+                // Steps
+                VStack(spacing: Spacing.sm) {
+                    ForEach(steps) { step in
+                        OnboardingStepRow(step: step)
+                    }
+                }
+            }
+            .padding(Spacing.md)
+            .background(SolennixColors.card)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+            .shadowSm()
+            .padding(.horizontal, Spacing.md)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+// MARK: - Onboarding Step Row
+
+private struct OnboardingStepRow: View {
+
+    let step: OnboardingStep
+
+    var body: some View {
+        Group {
+            if step.isCompleted {
+                completedRow
+            } else if let destination = step.destination {
+                NavigationLink(value: destination) {
+                    rowContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                rowContent
+            }
+        }
+    }
+
+    private var completedRow: some View {
+        HStack(spacing: Spacing.sm) {
+            // Completed checkmark
+            ZStack {
+                Circle()
+                    .fill(SolennixColors.success)
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(step.title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(SolennixColors.success)
+
+                Text(step.description)
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(Spacing.sm)
+        .background(SolennixColors.success.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+    }
+
+    private var rowContent: some View {
+        HStack(spacing: Spacing.sm) {
+            // Step icon
+            ZStack {
+                Circle()
+                    .fill(SolennixColors.primaryLight)
+                    .frame(width: 32, height: 32)
+
+                Image(systemName: step.icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(SolennixColors.primary)
+            }
+
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                Text(step.title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(SolennixColors.text)
+
+                Text(step.description)
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(SolennixColors.textTertiary)
+        }
+        .padding(Spacing.sm)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+    }
+}

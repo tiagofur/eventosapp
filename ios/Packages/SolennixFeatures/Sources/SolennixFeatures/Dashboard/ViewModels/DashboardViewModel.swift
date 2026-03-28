@@ -18,6 +18,8 @@ public final class DashboardViewModel {
     public var vatCollectedThisMonth: Double = 0
     public var vatOutstandingThisMonth: Double = 0
     public var lowStockCount: Int = 0
+    public var totalProducts: Int = 0
+    public var totalEvents: Int = 0
     public var isLoading: Bool = false
     public var errorMessage: String?
 
@@ -93,7 +95,9 @@ public final class DashboardViewModel {
                 Endpoint.upcomingEvents,
                 params: ["limit": "5"]
             )
+            async let allEventsResult: [Event] = apiClient.get(Endpoint.events)
             async let inventoryResult: [InventoryItem] = apiClient.get(Endpoint.inventory)
+            async let productsResult: [Product] = apiClient.get(Endpoint.products)
             async let paymentsResult: [Payment] = apiClient.get(
                 Endpoint.payments,
                 params: ["start_date": startStr, "end_date": endStr]
@@ -102,7 +106,9 @@ public final class DashboardViewModel {
             let clients = try await clientsResult
             let monthEvents = try await monthEventsResult
             let upcoming = try await upcomingResult
+            let allEvents = try await allEventsResult
             let inventory = try await inventoryResult
+            let products = try await productsResult
             let payments = try await paymentsResult
 
             // Build client map
@@ -122,6 +128,10 @@ public final class DashboardViewModel {
             // Low stock items = inventory where current_stock < minimum_stock AND minimum_stock > 0
             lowStockItems = inventory.filter { $0.minimumStock > 0 && $0.currentStock < $0.minimumStock }
             lowStockCount = lowStockItems.count
+
+            // Counts for onboarding checklist
+            totalProducts = products.count
+            totalEvents = allEvents.count
 
             // Cash collected = sum of payment amounts in current month
             cashCollectedThisMonth = payments.reduce(0) { $0 + $1.amount }

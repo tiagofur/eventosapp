@@ -5,11 +5,11 @@ import SolennixNetwork
 
 public struct PendingEventsModalView: View {
     @State private var viewModel: PendingEventsViewModel
-    
+
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: PendingEventsViewModel(apiClient: apiClient))
     }
-    
+
     public var body: some View {
         Group {
             if viewModel.isPresented && !viewModel.pendingEvents.isEmpty {
@@ -28,7 +28,7 @@ public struct PendingEventsModalView: View {
             await viewModel.loadPendingEvents()
         }
     }
-    
+
     private var modalContent: some View {
         VStack(spacing: 0) {
             // Header
@@ -37,25 +37,25 @@ public struct PendingEventsModalView: View {
                     Circle()
                         .fill(SolennixColors.primaryLight)
                         .frame(width: 40, height: 40)
-                    
+
                     Image(systemName: "exclamationmark.circle")
                         .font(.system(size: 20))
                         .foregroundStyle(SolennixColors.primary)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Eventos Pendientes de Cierre")
                         .font(.title3)
                         .fontWeight(.bold)
                         .foregroundStyle(SolennixColors.text)
-                    
-                    Text("Tienes \(viewModel.pendingEvents.count) evento(s) confirmados en una fecha pasada. Marca si ya fueron completados o cancelados.")
+
+                    Text("Tienes \(viewModel.pendingEvents.count) evento(s) que requieren tu atencion.")
                         .font(.caption)
                         .foregroundStyle(SolennixColors.textSecondary)
                 }
-                
+
                 Spacer()
-                
+
                 Button {
                     withAnimation {
                         viewModel.isPresented = false
@@ -68,21 +68,21 @@ public struct PendingEventsModalView: View {
                 }
             }
             .padding(Spacing.lg)
-            
+
             // List
             ScrollView {
                 VStack(spacing: Spacing.sm) {
-                    ForEach(viewModel.pendingEvents) { event in
-                        eventRow(event)
+                    ForEach(viewModel.pendingEvents) { pendingEvent in
+                        eventRow(pendingEvent)
                     }
                 }
                 .padding(.horizontal, Spacing.lg)
                 .padding(.bottom, Spacing.lg)
             }
             .frame(maxHeight: 300)
-            
+
             Divider()
-            
+
             // Footer Action
             Button {
                 withAnimation {
@@ -101,28 +101,42 @@ public struct PendingEventsModalView: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.xl))
         .shadowLg()
     }
-    
-    private func eventRow(_ event: Event) -> some View {
+
+    private func eventRow(_ pendingEvent: PendingEventWithReason) -> some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.serviceType)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(SolennixColors.text)
-                
-                Text(event.eventDate) // Could format this properly
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pendingEvent.event.serviceType)
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundStyle(SolennixColors.text)
+
+                    Text(pendingEvent.event.eventDate)
+                        .font(.caption2)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                }
+
+                Spacer()
+
+                // Reason badge
+                Text(pendingEvent.reason)
                     .font(.caption2)
-                    .foregroundStyle(SolennixColors.textSecondary)
+                    .fontWeight(.bold)
+                    .foregroundStyle(SolennixColors.warning)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.xs)
+                    .background(SolennixColors.warning.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
             }
-            
+
             HStack(spacing: Spacing.sm) {
                 Button {
                     Task {
-                        await viewModel.updateEventStatus(eventId: event.id, newStatus: .completed)
+                        await viewModel.updateEventStatus(eventId: pendingEvent.event.id, newStatus: .completed)
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        if viewModel.updatingEventId == event.id {
+                        if viewModel.updatingEventId == pendingEvent.event.id {
                             ProgressView()
                                 .controlSize(.small)
                                 .tint(.white)
@@ -140,10 +154,10 @@ public struct PendingEventsModalView: View {
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
                 }
                 .disabled(viewModel.updatingEventId != nil)
-                
+
                 Button {
                     Task {
-                        await viewModel.updateEventStatus(eventId: event.id, newStatus: .cancelled)
+                        await viewModel.updateEventStatus(eventId: pendingEvent.event.id, newStatus: .cancelled)
                     }
                 } label: {
                     HStack(spacing: 4) {
@@ -170,4 +184,3 @@ public struct PendingEventsModalView: View {
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
     }
 }
-

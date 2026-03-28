@@ -15,6 +15,7 @@ public struct DashboardView: View {
     @State private var viewModel: DashboardViewModel?
     @State private var showSearch = false
     @State private var showQuickQuote = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private var isIPad: Bool { sizeClass == .regular }
 
@@ -28,6 +29,20 @@ public struct DashboardView: View {
 
                 // Plan Limits Banner
                 planLimitsBanner
+
+                // Onboarding Checklist
+                if let vm = viewModel, !hasCompletedOnboarding {
+                    OnboardingChecklistView(
+                        hasClients: vm.totalClients > 0,
+                        hasProducts: vm.totalProducts > 0,
+                        hasEvents: vm.totalEvents > 0,
+                        onDismiss: {
+                            withAnimation {
+                                hasCompletedOnboarding = true
+                            }
+                        }
+                    )
+                }
 
                 // Quick Actions
                 quickActionsSection
