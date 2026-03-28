@@ -9,6 +9,7 @@ public struct PrivacyView: View {
 
     public var body: some View {
         ScrollView {
+            AdaptiveCenteredContent(maxWidth: 680) {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 // Last updated
                 Text("Ultima actualizacion: Enero 2025")
@@ -100,6 +101,7 @@ public struct PrivacyView: View {
                 )
             }
             .padding(Spacing.lg)
+            }
         }
         .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Privacidad")

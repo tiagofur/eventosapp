@@ -9,6 +9,7 @@ public struct EditProfileView: View {
 
     @State private var viewModel: SettingsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(apiClient: APIClient, authManager: AuthManager) {
         _viewModel = State(initialValue: SettingsViewModel(apiClient: apiClient, authManager: authManager))
@@ -38,31 +39,33 @@ public struct EditProfileView: View {
     private var formContent: some View {
         Form {
             Section {
-                // Name field
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    TextField("Nombre", text: $viewModel.editName)
-                        .textContentType(.name)
-                        .autocorrectionDisabled()
+                AdaptiveFormRow {
+                    // Name field
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        TextField("Nombre", text: $viewModel.editName)
+                            .textContentType(.name)
+                            .autocorrectionDisabled()
 
-                    if let error = viewModel.nameError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.error)
+                        if let error = viewModel.nameError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.error)
+                        }
                     }
-                }
+                } right: {
+                    // Email field
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        TextField("Correo electronico", text: $viewModel.editEmail)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                            .autocorrectionDisabled()
 
-                // Email field
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    TextField("Correo electronico", text: $viewModel.editEmail)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
-
-                    if let error = viewModel.emailError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.error)
+                        if let error = viewModel.emailError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.error)
+                        }
                     }
                 }
             } header: {

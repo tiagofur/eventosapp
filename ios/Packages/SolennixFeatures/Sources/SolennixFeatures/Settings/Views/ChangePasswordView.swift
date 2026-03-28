@@ -9,63 +9,66 @@ public struct ChangePasswordView: View {
 
     @State private var viewModel: SettingsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(apiClient: APIClient, authManager: AuthManager) {
         _viewModel = State(initialValue: SettingsViewModel(apiClient: apiClient, authManager: authManager))
     }
 
     public var body: some View {
-        Form {
-            Section {
-                SecureField("Contrasena actual", text: $viewModel.currentPassword)
-                    .textContentType(.password)
-            } header: {
-                Text("Contrasena Actual")
-            }
-
-            Section {
-                SecureField("Nueva contrasena", text: $viewModel.newPassword)
-                    .textContentType(.newPassword)
-
-                SecureField("Confirmar contrasena", text: $viewModel.confirmPassword)
-                    .textContentType(.newPassword)
-            } header: {
-                Text("Nueva Contrasena")
-            } footer: {
-                Text("La contrasena debe tener al menos 8 caracteres.")
-            }
-
-            // Error message
-            if let error = viewModel.passwordError {
+        AdaptiveCenteredContent(maxWidth: 500) {
+            Form {
                 Section {
-                    Text(error)
-                        .font(.subheadline)
-                        .foregroundStyle(SolennixColors.error)
+                    SecureField("Contrasena actual", text: $viewModel.currentPassword)
+                        .textContentType(.password)
+                } header: {
+                    Text("Contrasena Actual")
                 }
-            }
 
-            if let error = viewModel.errorMessage {
                 Section {
-                    Text(error)
-                        .font(.subheadline)
-                        .foregroundStyle(SolennixColors.error)
+                    SecureField("Nueva contrasena", text: $viewModel.newPassword)
+                        .textContentType(.newPassword)
+
+                    SecureField("Confirmar contrasena", text: $viewModel.confirmPassword)
+                        .textContentType(.newPassword)
+                } header: {
+                    Text("Nueva Contrasena")
+                } footer: {
+                    Text("La contrasena debe tener al menos 8 caracteres.")
                 }
-            }
 
-            // Success message
-            if viewModel.passwordSuccess {
-                Section {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(SolennixColors.success)
-                        Text("Contrasena actualizada correctamente")
-                            .foregroundStyle(SolennixColors.success)
+                // Error message
+                if let error = viewModel.passwordError {
+                    Section {
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.error)
+                    }
+                }
+
+                if let error = viewModel.errorMessage {
+                    Section {
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.error)
+                    }
+                }
+
+                // Success message
+                if viewModel.passwordSuccess {
+                    Section {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(SolennixColors.success)
+                            Text("Contrasena actualizada correctamente")
+                                .foregroundStyle(SolennixColors.success)
+                        }
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(SolennixColors.surfaceGrouped)
         }
-        .scrollContentBackground(.hidden)
-        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Cambiar Contrasena")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

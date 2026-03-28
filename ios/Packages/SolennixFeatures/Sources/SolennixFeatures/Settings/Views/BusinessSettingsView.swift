@@ -10,6 +10,7 @@ public struct BusinessSettingsView: View {
 
     @State private var viewModel: BusinessSettingsViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: BusinessSettingsViewModel(apiClient: apiClient))
@@ -101,24 +102,26 @@ public struct BusinessSettingsView: View {
                 Text("Tu logo aparecera en los contratos y cotizaciones que generes.")
             }
 
-            // Business name section
+            // Business name + Brand color section (2-col on iPad)
             Section {
-                TextField("Nombre del negocio", text: $viewModel.businessName)
-
-                Toggle("Mostrar en PDFs", isOn: $viewModel.showBusinessNameInPdf)
+                AdaptiveFormRow {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        TextField("Nombre del negocio", text: $viewModel.businessName)
+                        Toggle("Mostrar en PDFs", isOn: $viewModel.showBusinessNameInPdf)
+                        Text("Si activas esta opcion, tu nombre comercial aparecera en los documentos en lugar de tu nombre personal.")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textTertiary)
+                    }
+                } right: {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        ColorPicker("Color de marca", selection: $viewModel.brandColor)
+                        Text("Este color se usara como acento en los documentos PDF que generes.")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textTertiary)
+                    }
+                }
             } header: {
-                Text("Nombre del Negocio")
-            } footer: {
-                Text("Si activas esta opcion, tu nombre comercial aparecera en los documentos en lugar de tu nombre personal.")
-            }
-
-            // Brand color section
-            Section {
-                ColorPicker("Color de marca", selection: $viewModel.brandColor)
-            } header: {
-                Text("Identidad Visual")
-            } footer: {
-                Text("Este color se usara como acento en los documentos PDF que generes.")
+                Text("Negocio e Identidad Visual")
             }
 
             // Error message

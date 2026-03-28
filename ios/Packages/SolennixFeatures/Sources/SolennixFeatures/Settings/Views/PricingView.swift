@@ -13,6 +13,7 @@ public struct PricingView: View {
     @State private var showError: Bool = false
     @State private var purchaseErrorMessage: String = ""
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(apiClient: APIClient, authManager: AuthManager) {
         _viewModel = State(initialValue: SettingsViewModel(apiClient: apiClient, authManager: authManager))
@@ -105,7 +106,11 @@ public struct PricingView: View {
     // MARK: - Plan Cards Section
 
     private var planCardsSection: some View {
-        VStack(spacing: Spacing.md) {
+        let layout = sizeClass == .regular
+            ? AnyLayout(HStackLayout(alignment: .top, spacing: Spacing.md))
+            : AnyLayout(VStackLayout(spacing: Spacing.md))
+
+        return layout {
             // Basic plan
             planCard(
                 plan: .basic,

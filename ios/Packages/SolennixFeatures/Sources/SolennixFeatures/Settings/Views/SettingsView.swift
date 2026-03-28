@@ -27,8 +27,9 @@ public struct SettingsView: View {
 
     @State private var viewModel: SettingsViewModel
     @State private var showLogoutConfirm: Bool = false
-    
+
     @AppStorage("appearance") private var appearance: String = "system"
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(apiClient: APIClient, authManager: AuthManager) {
         _viewModel = State(initialValue: SettingsViewModel(apiClient: apiClient, authManager: authManager))
@@ -40,54 +41,42 @@ public struct SettingsView: View {
             if let user = viewModel.user {
                 userHeaderSection(user)
             }
-            
-            // Appearance section
-            Section("Apariencia") {
-                Picker(selection: $appearance, label: Label("Tema", systemImage: "paintbrush")) {
-                    ForEach(AppearanceTheme.allCases) { theme in
-                        Text(theme.displayName).tag(theme.rawValue)
+
+            if sizeClass == .regular {
+                // iPad: 2-column layout
+                Section {
+                    HStack(alignment: .top, spacing: Spacing.lg) {
+                        // Left column: Appearance + Account
+                        VStack(spacing: 0) {
+                            appearanceContent
+                            accountContent
+                        }
+                        .frame(maxWidth: .infinity)
+
+                        // Right column: Business + Legal
+                        VStack(spacing: 0) {
+                            businessContent
+                            legalContent
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                 }
-            }
-
-            // Account section
-            Section("Cuenta") {
-                NavigationLink(value: Route.editProfile) {
-                    Label("Editar Perfil", systemImage: "person.circle")
+            } else {
+                // iPhone: original single-column layout
+                Section("Apariencia") {
+                    appearanceContent
                 }
 
-                NavigationLink(value: Route.changePassword) {
-                    Label("Cambiar Contrasena", systemImage: "lock.rotation")
-                }
-            }
-
-            // Business section
-            Section("Negocio") {
-                NavigationLink(value: Route.businessSettings) {
-                    Label("Ajustes del Negocio", systemImage: "building.2")
+                Section("Cuenta") {
+                    accountContent
                 }
 
-                NavigationLink(value: Route.contractDefaults) {
-                    Label("Valores del Contrato", systemImage: "doc.text")
+                Section("Negocio") {
+                    businessContent
                 }
 
-                NavigationLink(value: Route.pricing) {
-                    planRow
-                }
-            }
-
-            // Legal section
-            Section("Legal") {
-                NavigationLink(value: Route.about) {
-                    Label("Acerca de", systemImage: "info.circle")
-                }
-
-                NavigationLink(value: Route.privacy) {
-                    Label("Politica de Privacidad", systemImage: "hand.raised")
-                }
-
-                NavigationLink(value: Route.terms) {
-                    Label("Terminos de Servicio", systemImage: "doc.plaintext")
+                Section("Legal") {
+                    legalContent
                 }
             }
 
@@ -130,6 +119,58 @@ public struct SettingsView: View {
         }
         .refreshable { await viewModel.loadUser() }
         .task { await viewModel.loadUser() }
+    }
+
+    // MARK: - Section Content Views
+
+    @ViewBuilder
+    private var appearanceContent: some View {
+        Picker(selection: $appearance, label: Label("Tema", systemImage: "paintbrush")) {
+            ForEach(AppearanceTheme.allCases) { theme in
+                Text(theme.displayName).tag(theme.rawValue)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var accountContent: some View {
+        NavigationLink(value: Route.editProfile) {
+            Label("Editar Perfil", systemImage: "person.circle")
+        }
+
+        NavigationLink(value: Route.changePassword) {
+            Label("Cambiar Contrasena", systemImage: "lock.rotation")
+        }
+    }
+
+    @ViewBuilder
+    private var businessContent: some View {
+        NavigationLink(value: Route.businessSettings) {
+            Label("Ajustes del Negocio", systemImage: "building.2")
+        }
+
+        NavigationLink(value: Route.contractDefaults) {
+            Label("Valores del Contrato", systemImage: "doc.text")
+        }
+
+        NavigationLink(value: Route.pricing) {
+            planRow
+        }
+    }
+
+    @ViewBuilder
+    private var legalContent: some View {
+        NavigationLink(value: Route.about) {
+            Label("Acerca de", systemImage: "info.circle")
+        }
+
+        NavigationLink(value: Route.privacy) {
+            Label("Politica de Privacidad", systemImage: "hand.raised")
+        }
+
+        NavigationLink(value: Route.terms) {
+            Label("Terminos de Servicio", systemImage: "doc.plaintext")
+        }
     }
 
     // MARK: - User Header Section

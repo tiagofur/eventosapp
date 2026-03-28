@@ -11,6 +11,7 @@ public struct ContractDefaultsView: View {
     @State private var showVariablePicker = false
     @State private var templateCoordinator: ContractTemplateTextView.Coordinator?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: BusinessSettingsViewModel(apiClient: apiClient))
@@ -45,6 +46,7 @@ public struct ContractDefaultsView: View {
     // MARK: - Form Content
 
     private var formContent: some View {
+        AdaptiveCenteredContent(maxWidth: 680) {
         Form {
             // Deposit section
             Section {
@@ -173,6 +175,7 @@ public struct ContractDefaultsView: View {
         }
         .scrollContentBackground(.hidden)
         .background(SolennixColors.surfaceGrouped)
+        }
     }
 
     // MARK: - Preview Row

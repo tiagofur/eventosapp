@@ -9,20 +9,22 @@ public struct AboutView: View {
 
     public var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.xl) {
-                // App icon and name
-                appHeaderSection
+            AdaptiveCenteredContent(maxWidth: 600) {
+                VStack(spacing: Spacing.xl) {
+                    // App icon and name
+                    appHeaderSection
 
-                // App info
-                appInfoSection
+                    // App info
+                    appInfoSection
 
-                // Social links
-                socialLinksSection
+                    // Social links
+                    socialLinksSection
 
-                // Credits
-                creditsSection
+                    // Credits
+                    creditsSection
+                }
+                .padding(Spacing.lg)
             }
-            .padding(Spacing.lg)
         }
         .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Acerca de")
