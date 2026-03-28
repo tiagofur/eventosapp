@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.Avatar
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.ThemeConfig
 import com.creapolis.solennix.feature.settings.viewmodel.SettingsViewModel
@@ -97,36 +98,63 @@ fun SettingsScreen(
                 }
             }
 
-            SettingsSection(title = "Apariencia") {
-                val themeLabel = when (themeConfig) {
-                    ThemeConfig.SYSTEM_DEFAULT -> "Predeterminado del Sistema"
-                    ThemeConfig.LIGHT -> "Claro"
-                    ThemeConfig.DARK -> "Oscuro"
+            val isWide = LocalIsWideScreen.current
+            if (isWide) {
+                // Tablet: 2-column settings sections
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        SettingsSection(title = "Apariencia") {
+                            val themeLabel = when (themeConfig) {
+                                ThemeConfig.SYSTEM_DEFAULT -> "Predeterminado del Sistema"
+                                ThemeConfig.LIGHT -> "Claro"
+                                ThemeConfig.DARK -> "Oscuro"
+                            }
+                            SettingsItemValue(icon = Icons.Default.Palette, label = "Tema", value = themeLabel, onClick = { showThemeDialog = true })
+                        }
+                        SettingsSection(title = "Cuenta") {
+                            SettingsItem(icon = Icons.Default.Person, label = "Editar Perfil", onClick = onEditProfile)
+                            SettingsItem(icon = Icons.Default.Lock, label = "Cambiar Contraseña", onClick = onChangePassword)
+                            SettingsItem(icon = Icons.Default.Business, label = "Ajustes del Negocio", onClick = onBusinessSettings)
+                            SettingsItem(icon = Icons.Default.Receipt, label = "Valores del Contrato", onClick = onContractDefaults)
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        SettingsSection(title = "Suscripción") {
+                            SettingsItem(icon = Icons.Default.Star, label = "Gestionar Plan", onClick = onPricing)
+                        }
+                        SettingsSection(title = "Información") {
+                            SettingsItem(icon = Icons.Default.Info, label = "Acerca de", onClick = onAbout)
+                            SettingsItem(icon = Icons.Default.Shield, label = "Política de Privacidad", onClick = onPrivacy)
+                            SettingsItem(icon = Icons.Default.Description, label = "Términos y Condiciones", onClick = onTerms)
+                        }
+                    }
                 }
-
-                SettingsItemValue(
-                    icon = Icons.Default.Palette,
-                    label = "Tema",
-                    value = themeLabel,
-                    onClick = { showThemeDialog = true }
-                )
-            }
-
-            SettingsSection(title = "Cuenta") {
-                SettingsItem(icon = Icons.Default.Person, label = "Editar Perfil", onClick = onEditProfile)
-                SettingsItem(icon = Icons.Default.Lock, label = "Cambiar Contraseña", onClick = onChangePassword)
-                SettingsItem(icon = Icons.Default.Business, label = "Ajustes del Negocio", onClick = onBusinessSettings)
-                SettingsItem(icon = Icons.Default.Receipt, label = "Valores del Contrato", onClick = onContractDefaults)
-            }
-
-            SettingsSection(title = "Suscripción") {
-                SettingsItem(icon = Icons.Default.Star, label = "Gestionar Plan", onClick = onPricing)
-            }
-
-            SettingsSection(title = "Información") {
-                SettingsItem(icon = Icons.Default.Info, label = "Acerca de", onClick = onAbout)
-                SettingsItem(icon = Icons.Default.Shield, label = "Política de Privacidad", onClick = onPrivacy)
-                SettingsItem(icon = Icons.Default.Description, label = "Términos y Condiciones", onClick = onTerms)
+            } else {
+                SettingsSection(title = "Apariencia") {
+                    val themeLabel = when (themeConfig) {
+                        ThemeConfig.SYSTEM_DEFAULT -> "Predeterminado del Sistema"
+                        ThemeConfig.LIGHT -> "Claro"
+                        ThemeConfig.DARK -> "Oscuro"
+                    }
+                    SettingsItemValue(icon = Icons.Default.Palette, label = "Tema", value = themeLabel, onClick = { showThemeDialog = true })
+                }
+                SettingsSection(title = "Cuenta") {
+                    SettingsItem(icon = Icons.Default.Person, label = "Editar Perfil", onClick = onEditProfile)
+                    SettingsItem(icon = Icons.Default.Lock, label = "Cambiar Contraseña", onClick = onChangePassword)
+                    SettingsItem(icon = Icons.Default.Business, label = "Ajustes del Negocio", onClick = onBusinessSettings)
+                    SettingsItem(icon = Icons.Default.Receipt, label = "Valores del Contrato", onClick = onContractDefaults)
+                }
+                SettingsSection(title = "Suscripción") {
+                    SettingsItem(icon = Icons.Default.Star, label = "Gestionar Plan", onClick = onPricing)
+                }
+                SettingsSection(title = "Información") {
+                    SettingsItem(icon = Icons.Default.Info, label = "Acerca de", onClick = onAbout)
+                    SettingsItem(icon = Icons.Default.Shield, label = "Política de Privacidad", onClick = onPrivacy)
+                    SettingsItem(icon = Icons.Default.Description, label = "Términos y Condiciones", onClick = onTerms)
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

@@ -34,6 +34,7 @@ import coil3.request.crossfade
 import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.feature.clients.viewmodel.ClientFormViewModel
 
@@ -152,58 +153,43 @@ fun ClientFormScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Form fields
-                SolennixTextField(
-                    value = viewModel.name,
-                    onValueChange = { viewModel.name = it },
-                    label = "Nombre *",
-                    leadingIcon = Icons.Default.Person,
-                    errorMessage = viewModel.nameError
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SolennixTextField(
-                    value = viewModel.phone,
-                    onValueChange = { viewModel.phone = it },
-                    label = "Telefono *",
-                    leadingIcon = Icons.Default.Phone,
-                    keyboardType = KeyboardType.Phone,
-                    errorMessage = viewModel.phoneError
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SolennixTextField(
-                    value = viewModel.email,
-                    onValueChange = { viewModel.email = it },
-                    label = "Correo Electronico",
-                    leadingIcon = Icons.Default.Email,
-                    keyboardType = KeyboardType.Email,
-                    errorMessage = viewModel.emailError
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SolennixTextField(
-                    value = viewModel.address,
-                    onValueChange = { viewModel.address = it },
-                    label = "Direccion",
-                    leadingIcon = Icons.Default.LocationOn
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SolennixTextField(
-                    value = viewModel.city,
-                    onValueChange = { viewModel.city = it },
-                    label = "Ciudad",
-                    leadingIcon = Icons.Default.LocationCity
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SolennixTextField(
-                    value = viewModel.notes,
-                    onValueChange = { viewModel.notes = it },
-                    label = "Notas",
-                    leadingIcon = Icons.Default.Notes
-                )
+                // Form fields — 2-column on tablet, single column on phone
+                val isWide = LocalIsWideScreen.current
+                if (isWide) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(value = viewModel.name, onValueChange = { viewModel.name = it }, label = "Nombre *", leadingIcon = Icons.Default.Person, errorMessage = viewModel.nameError)
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(value = viewModel.phone, onValueChange = { viewModel.phone = it }, label = "Telefono *", leadingIcon = Icons.Default.Phone, keyboardType = KeyboardType.Phone, errorMessage = viewModel.phoneError)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, label = "Correo Electronico", leadingIcon = Icons.Default.Email, keyboardType = KeyboardType.Email, errorMessage = viewModel.emailError)
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            SolennixTextField(value = viewModel.city, onValueChange = { viewModel.city = it }, label = "Ciudad", leadingIcon = Icons.Default.LocationCity)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.address, onValueChange = { viewModel.address = it }, label = "Direccion", leadingIcon = Icons.Default.LocationOn)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.notes, onValueChange = { viewModel.notes = it }, label = "Notas", leadingIcon = Icons.Default.Notes)
+                } else {
+                    SolennixTextField(value = viewModel.name, onValueChange = { viewModel.name = it }, label = "Nombre *", leadingIcon = Icons.Default.Person, errorMessage = viewModel.nameError)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.phone, onValueChange = { viewModel.phone = it }, label = "Telefono *", leadingIcon = Icons.Default.Phone, keyboardType = KeyboardType.Phone, errorMessage = viewModel.phoneError)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.email, onValueChange = { viewModel.email = it }, label = "Correo Electronico", leadingIcon = Icons.Default.Email, keyboardType = KeyboardType.Email, errorMessage = viewModel.emailError)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.address, onValueChange = { viewModel.address = it }, label = "Direccion", leadingIcon = Icons.Default.LocationOn)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.city, onValueChange = { viewModel.city = it }, label = "Ciudad", leadingIcon = Icons.Default.LocationCity)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SolennixTextField(value = viewModel.notes, onValueChange = { viewModel.notes = it }, label = "Notas", leadingIcon = Icons.Default.Notes)
+                }
                 Spacer(modifier = Modifier.height(32.dp))
 
                 if (viewModel.errorMessage != null) {
