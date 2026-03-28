@@ -37,18 +37,20 @@ struct SidebarSplitLayout: View {
                 }
         } detail: {
             NavigationStack(path: $contentPath) {
-                if let section = selectedSection {
-                    sectionListView(for: section)
-                } else {
-                    ContentUnavailableView(
-                        "Selecciona una seccion",
-                        systemImage: "sidebar.left",
-                        description: Text("Elige una seccion del menu lateral.")
-                    )
+                Group {
+                    if let section = selectedSection {
+                        sectionListView(for: section)
+                    } else {
+                        ContentUnavailableView(
+                            "Selecciona una seccion",
+                            systemImage: "sidebar.left",
+                            description: Text("Elige una seccion del menu lateral.")
+                        )
+                    }
                 }
-            }
-            .navigationDestination(for: Route.self) { route in
-                RouteDestination(route: route)
+                .navigationDestination(for: Route.self) { route in
+                    RouteDestination(route: route)
+                }
             }
         }
         .onChange(of: selectedSection) { _, _ in
