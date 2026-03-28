@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.EmptyState
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.viewmodel.ChecklistItem
@@ -72,103 +74,50 @@ fun EventChecklistScreen(
                     message = "No hay elementos en el checklist para este evento."
                 )
             } else {
+                val isWideScreen = LocalIsWideScreen.current
+
                 // Progress header
                 ChecklistProgressHeader(uiState = uiState)
 
-                // Checklist content
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Equipment section
-                    if (uiState.equipmentItems.isNotEmpty()) {
-                        item {
-                            ChecklistSectionHeader(
-                                title = "Equipamiento",
-                                icon = Icons.Default.Construction,
-                                color = SolennixTheme.colors.primary,
-                                itemCount = uiState.equipmentItems.size,
-                                checkedCount = uiState.equipmentItems.count { uiState.checkedIds.contains(it.id) },
-                                onCheckAll = { viewModel.checkAllInSection(ChecklistSection.EQUIPMENT) },
-                                onUncheckAll = { viewModel.uncheckAllInSection(ChecklistSection.EQUIPMENT) }
-                            )
+                if (isWideScreen) {
+                    // Tablet: 2-column layout with sections side by side
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Left column: Equipment + Stock
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            checklistEquipmentSection(uiState, viewModel)
+                            checklistStockSection(uiState, viewModel)
+                            item { Spacer(modifier = Modifier.height(32.dp)) }
                         }
-                        items(uiState.equipmentItems, key = { it.id }) { item ->
-                            ChecklistItemCard(
-                                item = item,
-                                isChecked = uiState.checkedIds.contains(item.id),
-                                onToggle = { viewModel.toggleItem(item.id) }
-                            )
+
+                        // Right column: Purchase
+                        LazyColumn(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            checklistPurchaseSection(uiState, viewModel)
+                            item { Spacer(modifier = Modifier.height(32.dp)) }
                         }
                     }
-
-                    // Stock section
-                    if (uiState.stockItems.isNotEmpty()) {
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            ChecklistSectionHeader(
-                                title = "De Inventario",
-                                icon = Icons.Default.Inventory,
-                                color = SolennixTheme.colors.success,
-                                itemCount = uiState.stockItems.size,
-                                checkedCount = uiState.stockItems.count { uiState.checkedIds.contains(it.id) },
-                                onCheckAll = { viewModel.checkAllInSection(ChecklistSection.STOCK) },
-                                onUncheckAll = { viewModel.uncheckAllInSection(ChecklistSection.STOCK) }
-                            )
-                        }
-                        items(uiState.stockItems, key = { it.id }) { item ->
-                            ChecklistItemCard(
-                                item = item,
-                                isChecked = uiState.checkedIds.contains(item.id),
-                                onToggle = { viewModel.toggleItem(item.id) }
-                            )
-                        }
+                } else {
+                    // Phone: single column
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        checklistEquipmentSection(uiState, viewModel)
+                        checklistStockSection(uiState, viewModel)
+                        checklistPurchaseSection(uiState, viewModel)
+                        item { Spacer(modifier = Modifier.height(32.dp)) }
                     }
-
-                    // Purchase section
-                    if (uiState.purchaseItems.isNotEmpty()) {
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            ChecklistSectionHeader(
-                                title = "Por Comprar",
-                                icon = Icons.Default.ShoppingCart,
-                                color = SolennixTheme.colors.warning,
-                                itemCount = uiState.purchaseItems.size,
-                                checkedCount = uiState.purchaseItems.count { uiState.checkedIds.contains(it.id) },
-                                onCheckAll = { viewModel.checkAllInSection(ChecklistSection.PURCHASE) },
-                                onUncheckAll = { viewModel.uncheckAllInSection(ChecklistSection.PURCHASE) }
-                            )
-                        }
-                        items(uiState.purchaseItems, key = { it.id }) { item ->
-                            ChecklistItemCard(
-                                item = item,
-                                isChecked = uiState.checkedIds.contains(item.id),
-                                onToggle = { viewModel.toggleItem(item.id) },
-                                showCost = true
-                            )
-                        }
-
-                        // Total cost for purchases
-                        item {
-                            val totalCost = uiState.purchaseItems.sumOf { it.quantity * it.unitCost }
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.warning.copy(alpha = 0.1f))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("Total Estimado de Compras", style = MaterialTheme.typography.titleSmall)
-                                    Text(totalCost.asMXN(), style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.warning)
-                                }
-                            }
-                        }
-                    }
-
-                    item { Spacer(modifier = Modifier.height(32.dp)) }
                 }
             }
         }
@@ -193,6 +142,104 @@ fun EventChecklistScreen(
                 }
             }
         )
+    }
+}
+
+private fun LazyListScope.checklistEquipmentSection(
+    uiState: EventChecklistUiState,
+    viewModel: EventChecklistViewModel
+) {
+    if (uiState.equipmentItems.isNotEmpty()) {
+        item {
+            ChecklistSectionHeader(
+                title = "Equipamiento",
+                icon = Icons.Default.Construction,
+                color = SolennixTheme.colors.primary,
+                itemCount = uiState.equipmentItems.size,
+                checkedCount = uiState.equipmentItems.count { uiState.checkedIds.contains(it.id) },
+                onCheckAll = { viewModel.checkAllInSection(ChecklistSection.EQUIPMENT) },
+                onUncheckAll = { viewModel.uncheckAllInSection(ChecklistSection.EQUIPMENT) }
+            )
+        }
+        items(uiState.equipmentItems, key = { it.id }) { item ->
+            ChecklistItemCard(
+                item = item,
+                isChecked = uiState.checkedIds.contains(item.id),
+                onToggle = { viewModel.toggleItem(item.id) }
+            )
+        }
+    }
+}
+
+private fun LazyListScope.checklistStockSection(
+    uiState: EventChecklistUiState,
+    viewModel: EventChecklistViewModel
+) {
+    if (uiState.stockItems.isNotEmpty()) {
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            ChecklistSectionHeader(
+                title = "De Inventario",
+                icon = Icons.Default.Inventory,
+                color = SolennixTheme.colors.success,
+                itemCount = uiState.stockItems.size,
+                checkedCount = uiState.stockItems.count { uiState.checkedIds.contains(it.id) },
+                onCheckAll = { viewModel.checkAllInSection(ChecklistSection.STOCK) },
+                onUncheckAll = { viewModel.uncheckAllInSection(ChecklistSection.STOCK) }
+            )
+        }
+        items(uiState.stockItems, key = { it.id }) { item ->
+            ChecklistItemCard(
+                item = item,
+                isChecked = uiState.checkedIds.contains(item.id),
+                onToggle = { viewModel.toggleItem(item.id) }
+            )
+        }
+    }
+}
+
+private fun LazyListScope.checklistPurchaseSection(
+    uiState: EventChecklistUiState,
+    viewModel: EventChecklistViewModel
+) {
+    if (uiState.purchaseItems.isNotEmpty()) {
+        item {
+            ChecklistSectionHeader(
+                title = "Por Comprar",
+                icon = Icons.Default.ShoppingCart,
+                color = SolennixTheme.colors.warning,
+                itemCount = uiState.purchaseItems.size,
+                checkedCount = uiState.purchaseItems.count { uiState.checkedIds.contains(it.id) },
+                onCheckAll = { viewModel.checkAllInSection(ChecklistSection.PURCHASE) },
+                onUncheckAll = { viewModel.uncheckAllInSection(ChecklistSection.PURCHASE) }
+            )
+        }
+        items(uiState.purchaseItems, key = { it.id }) { item ->
+            ChecklistItemCard(
+                item = item,
+                isChecked = uiState.checkedIds.contains(item.id),
+                onToggle = { viewModel.toggleItem(item.id) },
+                showCost = true
+            )
+        }
+
+        // Total cost for purchases
+        item {
+            val totalCost = uiState.purchaseItems.sumOf { it.quantity * it.unitCost }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.warning.copy(alpha = 0.1f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Total Estimado de Compras", style = MaterialTheme.typography.titleSmall)
+                    Text(totalCost.asMXN(), style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.warning)
+                }
+            }
+        }
     }
 }
 
