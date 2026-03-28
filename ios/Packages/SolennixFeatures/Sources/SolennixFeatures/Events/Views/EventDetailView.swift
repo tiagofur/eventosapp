@@ -35,6 +35,7 @@ public struct EventDetailView: View {
                 )
             }
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Detalle del Evento")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

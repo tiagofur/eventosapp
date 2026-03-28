@@ -195,5 +195,5 @@ private struct DayCellView: View {
         onLongPressDate: { _ in }
     )
     .padding()
-    .background(SolennixColors.background)
+    .background(SolennixColors.surfaceGrouped)
 }

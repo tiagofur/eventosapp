@@ -26,7 +26,7 @@ public struct ResetPasswordView: View {
                 iPhoneLayout
             }
         }
-        .background(SolennixColors.background.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
         .navigationTitle("Nueva Contrasena")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

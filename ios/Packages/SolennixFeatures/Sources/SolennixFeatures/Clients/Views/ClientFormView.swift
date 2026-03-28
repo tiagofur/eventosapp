@@ -26,6 +26,8 @@ public struct ClientFormView: View {
             addressSection
             notesSection
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle(clientId != nil ? "Editar Cliente" : "Nuevo Cliente")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

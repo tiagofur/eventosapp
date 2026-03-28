@@ -74,6 +74,7 @@ public struct InventoryDetailView: View {
                 )
             }
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle(item?.ingredientName ?? "Item")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

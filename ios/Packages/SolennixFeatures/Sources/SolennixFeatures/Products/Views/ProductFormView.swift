@@ -24,6 +24,8 @@ public struct ProductFormView: View {
                 formContent
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle(viewModel.isEditing ? "Editar Producto" : "Nuevo Producto")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

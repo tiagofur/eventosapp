@@ -40,6 +40,7 @@ public struct ClientDetailView: View {
                 )
             }
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle(client?.name ?? "Cliente")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog(

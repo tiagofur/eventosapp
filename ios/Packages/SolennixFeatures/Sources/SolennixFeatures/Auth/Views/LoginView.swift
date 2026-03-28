@@ -23,7 +23,7 @@ public struct LoginView: View {
                 iPhoneLayout
             }
         }
-        .background(SolennixColors.background.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
         .onAppear {
             if viewModel == nil {
                 viewModel = AuthViewModel(authManager: authManager)

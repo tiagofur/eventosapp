@@ -22,7 +22,7 @@ public struct ForgotPasswordView: View {
                 iPhoneLayout
             }
         }
-        .background(SolennixColors.background.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
         .navigationTitle("Recuperar Contrasena")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

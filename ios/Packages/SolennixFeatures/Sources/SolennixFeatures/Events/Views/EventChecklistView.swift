@@ -32,6 +32,7 @@ public struct EventChecklistView: View {
                 scrollContent
             }
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Checklist de Carga")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadChecklist(eventId: eventId) }

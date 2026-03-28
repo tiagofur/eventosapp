@@ -24,7 +24,7 @@ public struct RegisterView: View {
                 iPhoneLayout
             }
         }
-        .background(SolennixColors.background.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
         .navigationTitle("Crear Cuenta")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

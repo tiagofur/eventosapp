@@ -23,6 +23,8 @@ public struct InventoryFormView: View {
                 formContent
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle(viewModel.isEditing ? "Editar Item" : "Nuevo Item")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

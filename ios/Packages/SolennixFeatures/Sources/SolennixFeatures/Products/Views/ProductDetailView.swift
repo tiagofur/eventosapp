@@ -178,6 +178,7 @@ public struct ProductDetailView: View {
                 )
             }
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle(viewModel.product?.name ?? "Producto")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

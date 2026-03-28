@@ -96,7 +96,7 @@ public struct BiometricGateView: View {
             .padding(.bottom, Spacing.xxl)
         }
         .padding(.horizontal, Spacing.xl)
-        .background(SolennixColors.background.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
     }
 
     // MARK: - Biometric Type Detection
