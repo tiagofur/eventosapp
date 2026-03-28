@@ -95,6 +95,7 @@ struct SidebarSplitLayout: View {
         }
         .listStyle(.sidebar)
         .tint(SolennixColors.primary)
+        .symbolRenderingMode(.hierarchical)
     }
 
     // MARK: - Section List Views
