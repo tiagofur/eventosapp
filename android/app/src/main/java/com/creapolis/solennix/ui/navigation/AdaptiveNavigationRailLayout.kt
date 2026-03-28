@@ -102,19 +102,14 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
                 NavigationRailItem(
                     selected = selectedSection == section,
                     onClick = {
-                        if (section == SidebarSection.QUOTE) {
-                            // QUOTE navigates to create new event (like web's /events/new)
-                            // Don't save/restore state — always open fresh form
-                            navController.navigate(section.route) {
-                                launchSingleTop = true
+                        selectedSection = section
+                        navController.navigate(section.route) {
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
                             }
-                        } else {
-                            selectedSection = section
-                            navController.navigate(section.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
+                            launchSingleTop = true
+                            // Don't restore state for QUOTE — always open fresh form
+                            if (section != SidebarSection.QUOTE) {
                                 restoreState = true
                             }
                         }
