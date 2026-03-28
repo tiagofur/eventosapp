@@ -90,7 +90,12 @@ fun MainNavHost(deepLinkIntent: Intent? = null) {
             )
         }
         AuthManager.AuthState.BiometricLocked -> {
-            BiometricGateScreen(authManager = authViewModel.authManager)
+            val isWideScreen = windowSizeClass != null &&
+                windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
+            BiometricGateScreen(
+                authManager = authViewModel.authManager,
+                isWideScreen = isWideScreen
+            )
         }
         AuthManager.AuthState.Authenticated -> {
             if (windowSizeClass != null && windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact) {

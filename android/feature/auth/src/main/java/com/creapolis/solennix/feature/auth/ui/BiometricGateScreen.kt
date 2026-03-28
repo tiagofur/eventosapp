@@ -1,6 +1,7 @@
 package com.creapolis.solennix.feature.auth.ui
 
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
@@ -23,7 +24,8 @@ import java.util.concurrent.Executors
 
 @Composable
 fun BiometricGateScreen(
-    authManager: AuthManager
+    authManager: AuthManager,
+    isWideScreen: Boolean = false
 ) {
     val context = LocalContext.current
     val executor = Executors.newSingleThreadExecutor()
@@ -60,37 +62,47 @@ fun BiometricGateScreen(
         biometricPrompt.authenticate(promptInfo)
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(SolennixTheme.colors.background),
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.Fingerprint,
-            contentDescription = null,
-            modifier = Modifier.size(100.dp),
-            tint = SolennixTheme.colors.primary
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Acceso Protegido",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = SolennixTheme.colors.primaryText
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Confirma tu identidad para continuar utilizando la aplicacion.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = SolennixTheme.colors.secondaryText,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(48.dp))
-        PremiumButton(
-            text = "Intentar de nuevo",
-            onClick = { biometricPrompt.authenticate(promptInfo) }
-        )
+        Column(
+            modifier = Modifier
+                .then(
+                    if (isWideScreen) Modifier.widthIn(max = 500.dp) else Modifier.fillMaxWidth()
+                )
+                .padding(horizontal = if (isWideScreen) 40.dp else 24.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Fingerprint,
+                contentDescription = null,
+                modifier = Modifier.size(if (isWideScreen) 120.dp else 100.dp),
+                tint = SolennixTheme.colors.primary
+            )
+            Spacer(modifier = Modifier.height(if (isWideScreen) 32.dp else 24.dp))
+            Text(
+                text = "Acceso Protegido",
+                style = if (isWideScreen) MaterialTheme.typography.headlineMedium
+                else MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = SolennixTheme.colors.primaryText
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Confirma tu identidad para continuar utilizando la aplicacion.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = SolennixTheme.colors.secondaryText,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(48.dp))
+            PremiumButton(
+                text = "Intentar de nuevo",
+                onClick = { biometricPrompt.authenticate(promptInfo) }
+            )
+        }
     }
 }
