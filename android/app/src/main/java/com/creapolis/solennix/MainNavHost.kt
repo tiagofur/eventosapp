@@ -94,7 +94,7 @@ fun MainNavHost(deepLinkIntent: Intent? = null) {
         }
         AuthManager.AuthState.Authenticated -> {
             if (windowSizeClass != null && windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact) {
-                AdaptiveNavigationRailLayout()
+                AdaptiveNavigationRailLayout(initialDeepLinkRoute = deepLinkRoute)
             } else {
                 CompactBottomNavLayout(initialDeepLinkRoute = deepLinkRoute)
             }

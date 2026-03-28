@@ -509,9 +509,3 @@ fun MenuCard(
     }
 }
 
-@Composable
-fun PlaceholderScreen(text: String) {
-    Surface(modifier = Modifier.padding(16.dp)) {
-        Text(text = text, style = MaterialTheme.typography.headlineMedium)
-    }
-}

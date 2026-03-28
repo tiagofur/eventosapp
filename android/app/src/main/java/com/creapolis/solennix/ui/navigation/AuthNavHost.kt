@@ -1,6 +1,11 @@
 package com.creapolis.solennix.ui.navigation
 
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -14,10 +19,17 @@ import com.creapolis.solennix.feature.auth.ui.RegisterScreen
 import com.creapolis.solennix.feature.auth.ui.ResetPasswordScreen
 import com.creapolis.solennix.feature.auth.viewmodel.AuthViewModel
 
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun AuthNavHost(onAuthenticated: () -> Unit = {}) {
     val navController = rememberNavController()
     val viewModel: AuthViewModel = hiltViewModel()
+
+    val context = LocalContext.current
+    val activity = context as? FragmentActivity
+    val windowSizeClass = activity?.let { calculateWindowSizeClass(it) }
+    val isWideScreen = windowSizeClass != null &&
+        windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login") {
@@ -25,20 +37,23 @@ fun AuthNavHost(onAuthenticated: () -> Unit = {}) {
                 viewModel = viewModel,
                 onNavigateToRegister = { navController.navigate("register") },
                 onNavigateToForgot = { navController.navigate("forgot") },
-                onLoginSuccess = onAuthenticated
+                onLoginSuccess = onAuthenticated,
+                isWideScreen = isWideScreen
             )
         }
         composable("register") {
             RegisterScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onLoginSuccess = onAuthenticated
+                onLoginSuccess = onAuthenticated,
+                isWideScreen = isWideScreen
             )
         }
         composable("forgot") {
             ForgotPasswordScreen(
                 viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                isWideScreen = isWideScreen
             )
         }
         composable(
@@ -57,7 +72,8 @@ fun AuthNavHost(onAuthenticated: () -> Unit = {}) {
             ResetPasswordScreen(
                 token = token,
                 viewModel = viewModel,
-                onNavigateToLogin = { navController.navigate("login") }
+                onNavigateToLogin = { navController.navigate("login") },
+                isWideScreen = isWideScreen
             )
         }
     }
