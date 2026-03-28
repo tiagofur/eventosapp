@@ -69,7 +69,7 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
     }
 
     // Determine if we are at a section-level route (for FAB visibility)
-    val sectionRoutes = SidebarSection.entries.map { it.route }.toSet() + setOf("events")
+    val sectionRoutes = SidebarSection.entries.map { it.route }.toSet()
     val isAtSectionLevel = currentRoute in sectionRoutes
 
     Row(Modifier.fillMaxSize()) {
@@ -111,10 +111,12 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
         // Content area with NavHost
         Scaffold(
             floatingActionButton = {
-                // Simple FAB on section-level routes (except calendar and search)
+                // Simple FAB on section-level routes (except calendar, search, quick_quote, and settings)
                 val showSimpleFab = isAtSectionLevel
                     && currentRoute != "calendar"
                     && currentRoute != "search"
+                    && currentRoute != "quick_quote"
+                    && currentRoute != "settings"
 
                 if (showSimpleFab) {
                     FloatingActionButton(
