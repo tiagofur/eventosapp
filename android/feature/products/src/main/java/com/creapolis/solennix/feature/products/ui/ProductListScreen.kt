@@ -293,7 +293,7 @@ fun ProductListItem(
     ) {
         Card(
             modifier = Modifier.size(60.dp),
-            shape = MaterialTheme.shapes.small
+            shape = MaterialTheme.shapes.medium
         ) {
             if (product.imageUrl != null) {
                 AsyncImage(

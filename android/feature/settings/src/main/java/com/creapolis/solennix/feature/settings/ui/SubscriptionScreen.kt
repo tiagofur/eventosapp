@@ -80,7 +80,8 @@ fun SubscriptionScreen(
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = SolennixTheme.colors.error.copy(alpha = 0.1f)
-                            )
+                            ),
+                            shape = MaterialTheme.shapes.medium
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
@@ -239,7 +240,7 @@ fun CurrentPlanCard(
         colors = CardDefaults.cardColors(
             containerColor = SolennixTheme.colors.primaryLight
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
@@ -305,12 +306,12 @@ fun PlanCard(
             .fillMaxWidth()
             .then(
                 if (borderColor != Color.Transparent)
-                    Modifier.border(2.dp, borderColor, RoundedCornerShape(16.dp))
+                    Modifier.border(2.dp, borderColor, MaterialTheme.shapes.medium)
                 else Modifier
             )
             .clickable(enabled = !isCurrentPlan, onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-        shape = RoundedCornerShape(16.dp)
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -438,7 +439,8 @@ fun FaqItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { expanded = !expanded },
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card)
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

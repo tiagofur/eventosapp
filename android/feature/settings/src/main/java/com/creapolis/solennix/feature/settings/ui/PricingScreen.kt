@@ -240,7 +240,7 @@ private fun PlanCard(
                 )
                 if (isCurrentPlan) {
                     Surface(
-                        shape = MaterialTheme.shapes.small,
+                        shape = MaterialTheme.shapes.medium,
                         color = SolennixTheme.colors.primary.copy(alpha = 0.1f)
                     ) {
                         Text(
@@ -293,7 +293,7 @@ private fun FAQItem(question: String, answer: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.small,
+        shape = MaterialTheme.shapes.medium,
         color = SolennixTheme.colors.card,
         tonalElevation = 1.dp
     ) {

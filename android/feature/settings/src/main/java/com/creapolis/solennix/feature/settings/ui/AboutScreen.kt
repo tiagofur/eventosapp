@@ -55,7 +55,7 @@ fun AboutScreen(
             // App Icon placeholder
             Surface(
                 modifier = Modifier.size(100.dp),
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.medium,
                 color = SolennixTheme.colors.primary.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {

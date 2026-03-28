@@ -190,6 +190,7 @@ fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) 
         )
         Surface(
             modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
             color = SolennixTheme.colors.card
         ) {
             Column(content = content)

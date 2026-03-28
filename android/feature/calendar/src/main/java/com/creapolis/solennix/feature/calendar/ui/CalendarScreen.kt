@@ -1082,7 +1082,7 @@ fun ManageUnavailableDatesSheet(
                             colors = CardDefaults.cardColors(
                                 containerColor = SolennixTheme.colors.error.copy(alpha = 0.08f)
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = MaterialTheme.shapes.medium
                         ) {
                             Row(
                                 modifier = Modifier
@@ -1194,7 +1194,7 @@ fun AddDateRangeDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showStartPicker = true },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Row(
                         modifier = Modifier
@@ -1227,7 +1227,7 @@ fun AddDateRangeDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showEndPicker = true },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Row(
                         modifier = Modifier

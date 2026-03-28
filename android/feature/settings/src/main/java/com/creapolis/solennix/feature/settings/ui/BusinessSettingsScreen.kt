@@ -386,7 +386,7 @@ private fun ColorPickerDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = MaterialTheme.shapes.large,
+            shape = MaterialTheme.shapes.medium,
             color = SolennixTheme.colors.card,
             tonalElevation = 6.dp
         ) {

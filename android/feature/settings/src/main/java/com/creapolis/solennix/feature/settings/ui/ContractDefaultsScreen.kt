@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -399,7 +398,7 @@ fun ContractDefaultsScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = MaterialTheme.shapes.medium,
                             color = SolennixTheme.colors.surfaceGrouped
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -488,7 +487,7 @@ private fun ContractTemplatePreviewDialog(
                 } else {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = MaterialTheme.shapes.medium,
                         color = SolennixTheme.colors.surfaceGrouped
                     ) {
                         Text(
