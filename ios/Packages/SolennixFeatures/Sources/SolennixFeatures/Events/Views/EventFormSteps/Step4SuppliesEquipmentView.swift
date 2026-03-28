@@ -16,14 +16,10 @@ struct Step4SuppliesEquipmentView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.lg) {
+            AdaptiveDetailLayout {
                 // Supplies section
                 suppliesSection
-
-                Divider()
-                    .foregroundStyle(SolennixColors.border)
-                    .padding(.vertical, Spacing.xs)
-
+            } right: {
                 // Equipment section
                 equipmentSection
             }

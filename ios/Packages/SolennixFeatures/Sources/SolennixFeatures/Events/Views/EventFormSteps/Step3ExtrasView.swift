@@ -8,6 +8,7 @@ import SolennixNetwork
 struct Step3ExtrasView: View {
 
     @Bindable var viewModel: EventFormViewModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         ScrollView {
@@ -55,8 +56,14 @@ struct Step3ExtrasView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.xxxl)
                 } else {
-                    ForEach(Array(viewModel.extras.enumerated()), id: \.element.id) { index, _ in
-                        extraRow(index: index)
+                    let columns: [GridItem] = sizeClass == .regular
+                        ? [GridItem(.flexible(), spacing: Spacing.md), GridItem(.flexible(), spacing: Spacing.md)]
+                        : [GridItem(.flexible())]
+
+                    LazyVGrid(columns: columns, spacing: Spacing.md) {
+                        ForEach(Array(viewModel.extras.enumerated()), id: \.element.id) { index, _ in
+                            extraRow(index: index)
+                        }
                     }
                 }
 

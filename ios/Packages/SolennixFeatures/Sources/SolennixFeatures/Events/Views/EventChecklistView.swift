@@ -10,6 +10,7 @@ public struct EventChecklistView: View {
     let eventId: String
 
     @State private var viewModel: EventChecklistViewModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(eventId: String, apiClient: APIClient) {
         self.eventId = eventId
@@ -43,28 +44,66 @@ public struct EventChecklistView: View {
             VStack(spacing: Spacing.lg) {
                 headerCard
 
-                if !viewModel.equipmentItems.isEmpty {
-                    checklistSection(
-                        title: "EQUIPO",
-                        icon: "wrench.and.screwdriver",
-                        items: viewModel.equipmentItems
-                    )
-                }
+                if sizeClass == .regular {
+                    // iPad: checklist sections side-by-side
+                    HStack(alignment: .top, spacing: Spacing.lg) {
+                        // Left column: Equipment
+                        VStack(spacing: Spacing.lg) {
+                            if !viewModel.equipmentItems.isEmpty {
+                                checklistSection(
+                                    title: "EQUIPO",
+                                    icon: "wrench.and.screwdriver",
+                                    items: viewModel.equipmentItems
+                                )
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
 
-                if !viewModel.stockItems.isEmpty {
-                    checklistSection(
-                        title: "INSUMOS DE ALMACEN",
-                        icon: "archivebox",
-                        items: viewModel.stockItems
-                    )
-                }
+                        // Right column: Supplies
+                        VStack(spacing: Spacing.lg) {
+                            if !viewModel.stockItems.isEmpty {
+                                checklistSection(
+                                    title: "INSUMOS DE ALMACEN",
+                                    icon: "archivebox",
+                                    items: viewModel.stockItems
+                                )
+                            }
 
-                if !viewModel.purchaseItems.isEmpty {
-                    checklistSection(
-                        title: "INSUMOS A COMPRAR",
-                        icon: "cart",
-                        items: viewModel.purchaseItems
-                    )
+                            if !viewModel.purchaseItems.isEmpty {
+                                checklistSection(
+                                    title: "INSUMOS A COMPRAR",
+                                    icon: "cart",
+                                    items: viewModel.purchaseItems
+                                )
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                } else {
+                    // iPhone: stacked sections
+                    if !viewModel.equipmentItems.isEmpty {
+                        checklistSection(
+                            title: "EQUIPO",
+                            icon: "wrench.and.screwdriver",
+                            items: viewModel.equipmentItems
+                        )
+                    }
+
+                    if !viewModel.stockItems.isEmpty {
+                        checklistSection(
+                            title: "INSUMOS DE ALMACEN",
+                            icon: "archivebox",
+                            items: viewModel.stockItems
+                        )
+                    }
+
+                    if !viewModel.purchaseItems.isEmpty {
+                        checklistSection(
+                            title: "INSUMOS A COMPRAR",
+                            icon: "cart",
+                            items: viewModel.purchaseItems
+                        )
+                    }
                 }
             }
             .padding(.horizontal, Spacing.md)

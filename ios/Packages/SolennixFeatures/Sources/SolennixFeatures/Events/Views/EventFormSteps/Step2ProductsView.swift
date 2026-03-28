@@ -8,6 +8,7 @@ import SolennixNetwork
 struct Step2ProductsView: View {
 
     @Bindable var viewModel: EventFormViewModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     @State private var showProductPicker = false
     @State private var productSearch = ""
@@ -58,8 +59,14 @@ struct Step2ProductsView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.xxxl)
                 } else {
-                    ForEach(Array(viewModel.selectedProducts.enumerated()), id: \.element.id) { index, item in
-                        productRow(item: item, index: index)
+                    let columns: [GridItem] = sizeClass == .regular
+                        ? [GridItem(.flexible(), spacing: Spacing.md), GridItem(.flexible(), spacing: Spacing.md)]
+                        : [GridItem(.flexible())]
+
+                    LazyVGrid(columns: columns, spacing: Spacing.md) {
+                        ForEach(Array(viewModel.selectedProducts.enumerated()), id: \.element.id) { index, item in
+                            productRow(item: item, index: index)
+                        }
                     }
                 }
 

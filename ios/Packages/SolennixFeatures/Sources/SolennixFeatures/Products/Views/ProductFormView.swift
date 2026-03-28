@@ -167,86 +167,92 @@ public struct ProductFormView: View {
                 .font(.headline)
                 .foregroundStyle(SolennixColors.text)
 
-            // Name
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Nombre")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
-
-                TextField("Ej: Paquete Premium", text: $viewModel.name)
-                    .textFieldStyle(.roundedBorder)
-
-                if let error = viewModel.nameError {
-                    Text(error)
+            // Name + Category
+            AdaptiveFormRow {
+                // Name
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Nombre")
                         .font(.caption)
-                        .foregroundStyle(SolennixColors.error)
-                }
-            }
-
-            // Category
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Categoria")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
-
-                Button {
-                    viewModel.showCategoryPicker = true
-                } label: {
-                    HStack {
-                        Text(viewModel.category.isEmpty ? "Seleccionar categoria..." : viewModel.category)
-                            .foregroundStyle(viewModel.category.isEmpty ? SolennixColors.textTertiary : SolennixColors.text)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.down")
-                            .foregroundStyle(SolennixColors.textTertiary)
-                    }
-                    .padding(Spacing.md)
-                    .background(SolennixColors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.md)
-                            .stroke(viewModel.categoryError != nil ? SolennixColors.error : SolennixColors.border, lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                if let error = viewModel.categoryError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.error)
-                }
-            }
-
-            // Base Price
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Precio Base")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
-
-                HStack {
-                    Text("$")
                         .foregroundStyle(SolennixColors.textSecondary)
 
-                    TextField("0.00", value: $viewModel.basePrice, format: .number)
-                        .keyboardType(.decimalPad)
+                    TextField("Ej: Paquete Premium", text: $viewModel.name)
                         .textFieldStyle(.roundedBorder)
+
+                    if let error = viewModel.nameError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.error)
+                    }
                 }
-            }
-
-            // Active toggle
-            Toggle(isOn: $viewModel.isActive) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Producto Activo")
-                        .font(.body)
-                        .foregroundStyle(SolennixColors.text)
-
-                    Text("Visible en cotizaciones")
+            } right: {
+                // Category
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Categoria")
                         .font(.caption)
-                        .foregroundStyle(SolennixColors.textTertiary)
+                        .foregroundStyle(SolennixColors.textSecondary)
+
+                    Button {
+                        viewModel.showCategoryPicker = true
+                    } label: {
+                        HStack {
+                            Text(viewModel.category.isEmpty ? "Seleccionar categoria..." : viewModel.category)
+                                .foregroundStyle(viewModel.category.isEmpty ? SolennixColors.textTertiary : SolennixColors.text)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.down")
+                                .foregroundStyle(SolennixColors.textTertiary)
+                        }
+                        .padding(Spacing.md)
+                        .background(SolennixColors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: CornerRadius.md)
+                                .stroke(viewModel.categoryError != nil ? SolennixColors.error : SolennixColors.border, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    if let error = viewModel.categoryError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.error)
+                    }
                 }
             }
-            .tint(SolennixColors.primary)
+
+            // Price + Active
+            AdaptiveFormRow {
+                // Base Price
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Precio Base")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+
+                    HStack {
+                        Text("$")
+                            .foregroundStyle(SolennixColors.textSecondary)
+
+                        TextField("0.00", value: $viewModel.basePrice, format: .number)
+                            .keyboardType(.decimalPad)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                }
+            } right: {
+                // Active toggle
+                Toggle(isOn: $viewModel.isActive) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Producto Activo")
+                            .font(.body)
+                            .foregroundStyle(SolennixColors.text)
+
+                        Text("Visible en cotizaciones")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textTertiary)
+                    }
+                }
+                .tint(SolennixColors.primary)
+            }
         }
         .padding(Spacing.md)
         .background(SolennixColors.card)

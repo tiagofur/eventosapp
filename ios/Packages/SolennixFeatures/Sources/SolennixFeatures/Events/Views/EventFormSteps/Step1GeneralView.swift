@@ -16,46 +16,50 @@ struct Step1GeneralView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.lg) {
-                // Client picker
-                clientPickerSection
+                // Client picker + Event date
+                AdaptiveFormRow {
+                    clientPickerSection
+                } right: {
+                    dateSection
+                }
 
-                // Event date
-                dateSection
+                // Times + Service type
+                AdaptiveFormRow {
+                    timeSection
+                } right: {
+                    SolennixTextField(
+                        label: "Tipo de Servicio",
+                        text: $viewModel.serviceType,
+                        placeholder: "Ej: Banquete, Coffee Break",
+                        leftIcon: "briefcase",
+                        errorMessage: !viewModel.serviceType.isEmpty && viewModel.serviceType.count < 2
+                            ? "Minimo 2 caracteres" : nil
+                    )
+                }
 
-                // Times
-                timeSection
+                // Number of people + Status
+                AdaptiveFormRow {
+                    peopleSection
+                } right: {
+                    statusSection
+                }
 
-                // Service type
-                SolennixTextField(
-                    label: "Tipo de Servicio",
-                    text: $viewModel.serviceType,
-                    placeholder: "Ej: Banquete, Coffee Break",
-                    leftIcon: "briefcase",
-                    errorMessage: !viewModel.serviceType.isEmpty && viewModel.serviceType.count < 2
-                        ? "Minimo 2 caracteres" : nil
-                )
-
-                // Number of people
-                peopleSection
-
-                // Status picker
-                statusSection
-
-                // Location
-                SolennixTextField(
-                    label: "Lugar",
-                    text: $viewModel.location,
-                    placeholder: "Lugar del evento (opcional)",
-                    leftIcon: "mappin.and.ellipse"
-                )
-
-                // City
-                SolennixTextField(
-                    label: "Ciudad",
-                    text: $viewModel.city,
-                    placeholder: "Ciudad (opcional)",
-                    leftIcon: "building.2"
-                )
+                // Location + City
+                AdaptiveFormRow {
+                    SolennixTextField(
+                        label: "Lugar",
+                        text: $viewModel.location,
+                        placeholder: "Lugar del evento (opcional)",
+                        leftIcon: "mappin.and.ellipse"
+                    )
+                } right: {
+                    SolennixTextField(
+                        label: "Ciudad",
+                        text: $viewModel.city,
+                        placeholder: "Ciudad (opcional)",
+                        leftIcon: "building.2"
+                    )
+                }
             }
             .padding(Spacing.md)
         }

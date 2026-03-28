@@ -39,49 +39,53 @@ public struct InventoryFormView: View {
         Form {
             // Basic info
             Section("Informacion") {
-                // Name
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    TextField("Nombre", text: $viewModel.ingredientName)
+                AdaptiveFormRow {
+                    // Name
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        TextField("Nombre", text: $viewModel.ingredientName)
 
-                    if let error = viewModel.nameError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.error)
+                        if let error = viewModel.nameError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.error)
+                        }
                     }
-                }
-
-                // Type
-                Picker("Tipo", selection: $viewModel.type) {
-                    Text("Ingrediente").tag(InventoryType.ingredient)
-                    Text("Equipo").tag(InventoryType.equipment)
-                    Text("Insumo").tag(InventoryType.supply)
+                } right: {
+                    // Type
+                    Picker("Tipo", selection: $viewModel.type) {
+                        Text("Ingrediente").tag(InventoryType.ingredient)
+                        Text("Equipo").tag(InventoryType.equipment)
+                        Text("Insumo").tag(InventoryType.supply)
+                    }
                 }
             }
 
             // Stock
             Section("Stock") {
-                HStack {
-                    Text("Stock actual")
-                    Spacer()
-                    TextField("0", value: $viewModel.currentStock, format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 80)
+                AdaptiveFormRow {
+                    HStack {
+                        Text("Stock actual")
+                        Spacer()
+                        TextField("0", value: $viewModel.currentStock, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                    }
+                } right: {
+                    HStack {
+                        Text("Stock minimo")
+                        Spacer()
+                        TextField("0", value: $viewModel.minimumStock, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                    }
                 }
 
                 if let error = viewModel.stockError {
                     Text(error)
                         .font(.caption)
                         .foregroundStyle(SolennixColors.error)
-                }
-
-                HStack {
-                    Text("Stock minimo")
-                    Spacer()
-                    TextField("0", value: $viewModel.minimumStock, format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 80)
                 }
             }
 

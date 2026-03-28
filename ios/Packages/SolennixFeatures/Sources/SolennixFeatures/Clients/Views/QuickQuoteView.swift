@@ -7,6 +7,7 @@ import SolennixNetwork
 public struct QuickQuoteView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.apiClient) private var apiClient
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: QuickQuoteViewModel
     var onConvertToEvent: (() -> Void)?
 
@@ -25,11 +26,14 @@ public struct QuickQuoteView: View {
                     Form {
                         Section {
                             DisclosureGroup("Datos del cliente (opcional, para el PDF)", isExpanded: $viewModel.showClientInfo) {
-                                TextField("Nombre del cliente", text: $viewModel.clientName)
-                                    .textContentType(.name)
-                                TextField("Teléfono", text: $viewModel.clientPhone)
-                                    .keyboardType(.phonePad)
-                                    .textContentType(.telephoneNumber)
+                                AdaptiveFormRow {
+                                    TextField("Nombre del cliente", text: $viewModel.clientName)
+                                        .textContentType(.name)
+                                } right: {
+                                    TextField("Teléfono", text: $viewModel.clientPhone)
+                                        .keyboardType(.phonePad)
+                                        .textContentType(.telephoneNumber)
+                                }
                                 TextField("Email", text: $viewModel.clientEmail)
                                     .keyboardType(.emailAddress)
                                     .textContentType(.emailAddress)
@@ -47,37 +51,55 @@ public struct QuickQuoteView: View {
                         }
                         
                         Section("Productos") {
-                            ForEach($viewModel.selectedProducts) { $product in
-                                productRow(for: $product)
+                            if sizeClass == .regular {
+                                LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.md), GridItem(.flexible(), spacing: Spacing.md)], spacing: Spacing.md) {
+                                    ForEach($viewModel.selectedProducts) { $product in
+                                        productRow(for: $product)
+                                    }
+                                }
+                            } else {
+                                ForEach($viewModel.selectedProducts) { $product in
+                                    productRow(for: $product)
+                                }
+                                .onDelete(perform: viewModel.removeProduct)
                             }
-                            .onDelete(perform: viewModel.removeProduct)
-                            
+
                             Button(action: viewModel.addProduct) {
                                 Label("Agregar Producto", systemImage: "plus")
                             }
                             .disabled(viewModel.availableProducts.isEmpty)
                         }
-                        
+
                         Section("Extras") {
-                            ForEach($viewModel.extras) { $extra in
-                                extraRow(for: $extra)
+                            if sizeClass == .regular {
+                                LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.md), GridItem(.flexible(), spacing: Spacing.md)], spacing: Spacing.md) {
+                                    ForEach($viewModel.extras) { $extra in
+                                        extraRow(for: $extra)
+                                    }
+                                }
+                            } else {
+                                ForEach($viewModel.extras) { $extra in
+                                    extraRow(for: $extra)
+                                }
+                                .onDelete(perform: viewModel.removeExtra)
                             }
-                            .onDelete(perform: viewModel.removeExtra)
-                            
+
                             Button(action: viewModel.addExtra) {
                                 Label("Agregar Extra", systemImage: "plus")
                             }
                         }
                         
                         Section("Descuento y Facturación") {
-                            Toggle("Requiere Factura (IVA)", isOn: $viewModel.requiresInvoice)
-                            
-                            Picker("Tipo de Descuento", selection: $viewModel.discountType) {
-                                Text("Porcentaje (%)").tag(DiscountType.percent)
-                                Text("Monto Fijo ($)").tag(DiscountType.fixed)
+                            AdaptiveFormRow {
+                                Toggle("Requiere Factura (IVA)", isOn: $viewModel.requiresInvoice)
+                            } right: {
+                                Picker("Tipo de Descuento", selection: $viewModel.discountType) {
+                                    Text("Porcentaje (%)").tag(DiscountType.percent)
+                                    Text("Monto Fijo ($)").tag(DiscountType.fixed)
+                                }
+                                .pickerStyle(.segmented)
                             }
-                            .pickerStyle(.segmented)
-                            
+
                             HStack {
                                 Text("Descuento")
                                 Spacer()

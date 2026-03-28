@@ -121,39 +121,50 @@ public struct ClientFormView: View {
 
     private var infoSection: some View {
         Section("Informacion") {
-            SolennixTextField(
-                label: "Nombre",
-                text: $viewModel.name,
-                placeholder: "Nombre del cliente",
-                leftIcon: "person",
-                errorMessage: !viewModel.name.isEmpty && !viewModel.isNameValid
-                    ? "Minimo 2 caracteres" : nil,
-                textContentType: .name,
-                autocapitalization: .words
-            )
+            AdaptiveFormRow {
+                SolennixTextField(
+                    label: "Nombre",
+                    text: $viewModel.name,
+                    placeholder: "Nombre del cliente",
+                    leftIcon: "person",
+                    errorMessage: !viewModel.name.isEmpty && !viewModel.isNameValid
+                        ? "Minimo 2 caracteres" : nil,
+                    textContentType: .name,
+                    autocapitalization: .words
+                )
+            } right: {
+                SolennixTextField(
+                    label: "Telefono",
+                    text: $viewModel.phone,
+                    placeholder: "10 digitos",
+                    leftIcon: "phone",
+                    errorMessage: !viewModel.phone.isEmpty && !viewModel.isPhoneValid
+                        ? "Minimo 10 digitos" : nil,
+                    textContentType: .telephoneNumber,
+                    keyboardType: .phonePad
+                )
+            }
             .listRowInsets(EdgeInsets(top: Spacing.sm, leading: Spacing.md, bottom: Spacing.sm, trailing: Spacing.md))
 
-            SolennixTextField(
-                label: "Telefono",
-                text: $viewModel.phone,
-                placeholder: "10 digitos",
-                leftIcon: "phone",
-                errorMessage: !viewModel.phone.isEmpty && !viewModel.isPhoneValid
-                    ? "Minimo 10 digitos" : nil,
-                textContentType: .telephoneNumber,
-                keyboardType: .phonePad
-            )
-            .listRowInsets(EdgeInsets(top: Spacing.sm, leading: Spacing.md, bottom: Spacing.sm, trailing: Spacing.md))
-
-            SolennixTextField(
-                label: "Email",
-                text: $viewModel.email,
-                placeholder: "correo@ejemplo.com",
-                leftIcon: "envelope",
-                textContentType: .emailAddress,
-                keyboardType: .emailAddress,
-                autocapitalization: .never
-            )
+            AdaptiveFormRow {
+                SolennixTextField(
+                    label: "Email",
+                    text: $viewModel.email,
+                    placeholder: "correo@ejemplo.com",
+                    leftIcon: "envelope",
+                    textContentType: .emailAddress,
+                    keyboardType: .emailAddress,
+                    autocapitalization: .never
+                )
+            } right: {
+                SolennixTextField(
+                    label: "Ciudad",
+                    text: $viewModel.city,
+                    placeholder: "Ciudad",
+                    leftIcon: "building.2",
+                    textContentType: .addressCity
+                )
+            }
             .listRowInsets(EdgeInsets(top: Spacing.sm, leading: Spacing.md, bottom: Spacing.sm, trailing: Spacing.md))
         }
     }
@@ -168,15 +179,6 @@ public struct ClientFormView: View {
                 placeholder: "Calle y numero",
                 leftIcon: "mappin.and.ellipse",
                 textContentType: .fullStreetAddress
-            )
-            .listRowInsets(EdgeInsets(top: Spacing.sm, leading: Spacing.md, bottom: Spacing.sm, trailing: Spacing.md))
-
-            SolennixTextField(
-                label: "Ciudad",
-                text: $viewModel.city,
-                placeholder: "Ciudad",
-                leftIcon: "building.2",
-                textContentType: .addressCity
             )
             .listRowInsets(EdgeInsets(top: Spacing.sm, leading: Spacing.md, bottom: Spacing.sm, trailing: Spacing.md))
         }

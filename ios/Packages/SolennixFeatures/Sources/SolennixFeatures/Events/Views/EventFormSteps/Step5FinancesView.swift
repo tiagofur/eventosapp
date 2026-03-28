@@ -12,17 +12,19 @@ struct Step5FinancesView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.lg) {
-                // Discount section
-                discountSection
+                // Discount + IVA
+                AdaptiveFormRow {
+                    discountSection
+                } right: {
+                    taxSection
+                }
 
-                // IVA section
-                taxSection
-
-                // Deposit section
-                depositSection
-
-                // Cancellation section
-                cancellationSection
+                // Deposit + Cancellation
+                AdaptiveFormRow {
+                    depositSection
+                } right: {
+                    cancellationSection
+                }
 
                 // Notes
                 notesSection
