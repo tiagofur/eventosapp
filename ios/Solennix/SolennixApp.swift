@@ -122,6 +122,19 @@ struct SolennixApp: App {
                     await subscriptionManager.loadOfferings()
                     await subscriptionManager.checkEntitlementStatus()
                 }
+                .onChange(of: authManager.authState) { _, newState in
+                    // Sync RevenueCat when user signs in (fresh login/register/social auth).
+                    // The .task above handles session restore at app launch; this covers
+                    // transitions that happen AFTER launch — matching Android parity.
+                    if case .authenticated(let user) = newState {
+                        Task {
+                            await subscriptionManager.login(userID: user.id)
+                            if user.plan != .basic {
+                                subscriptionManager.setBackendPremiumStatus(true)
+                            }
+                        }
+                    }
+                }
                 .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
                     // Manejar resultado de búsqueda de Core Spotlight
                     guard let action = DeepLinkHandler.handleSpotlight(userActivity) else { return }

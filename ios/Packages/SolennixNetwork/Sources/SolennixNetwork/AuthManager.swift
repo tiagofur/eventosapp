@@ -6,7 +6,7 @@ import SolennixCore
 // MARK: - Auth State
 
 /// Represents the current authentication state of the app.
-public enum AuthState: Sendable {
+public enum AuthState: Sendable, Equatable {
     case unknown
     case authenticated(User)
     case unauthenticated
