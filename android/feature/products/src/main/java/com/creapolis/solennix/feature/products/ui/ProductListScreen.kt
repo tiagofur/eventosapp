@@ -5,6 +5,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -30,6 +33,7 @@ import com.creapolis.solennix.core.network.UrlResolver
 import com.creapolis.solennix.core.designsystem.component.UpgradeBanner
 import com.creapolis.solennix.core.designsystem.component.UpgradeBannerStyle
 import com.creapolis.solennix.core.designsystem.component.UpgradePlanDialog
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.model.extensions.asMXN
@@ -46,6 +50,7 @@ fun ProductListScreen(
     onUpgradeClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isWideScreen = LocalIsWideScreen.current
     var showLimitDialog by remember { mutableStateOf(false) }
 
     // Show limit reached dialog
@@ -191,6 +196,21 @@ fun ProductListScreen(
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
+                } else if (isWideScreen) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 300.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.products) { product ->
+                            ProductGridItem(
+                                product = product,
+                                onClick = { onProductClick(product.id) }
+                            )
+                        }
+                    }
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(uiState.products) { product ->
@@ -205,6 +225,64 @@ fun ProductListScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProductGridItem(
+    product: Product,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (product.imageUrl != null) {
+                    AsyncImage(
+                        model = UrlResolver.resolve(product.imageUrl),
+                        contentDescription = product.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = product.name.take(1).uppercase(),
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            }
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = product.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SolennixTheme.colors.primaryText,
+                    maxLines = 1
+                )
+                Text(
+                    text = product.category,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SolennixTheme.colors.secondaryText
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = product.basePrice.asMXN(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SolennixTheme.colors.primary,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
             }
         }
     }
