@@ -6,7 +6,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,7 +19,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
@@ -25,10 +34,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.creapolis.solennix.R
 import com.creapolis.solennix.core.designsystem.component.QuickActionsFAB
 import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.designsystem.theme.SolennixTitle
+import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.feature.calendar.ui.CalendarScreen
 import com.creapolis.solennix.feature.clients.ui.ClientDetailScreen
 import com.creapolis.solennix.feature.clients.ui.ClientFormScreen
@@ -57,7 +68,10 @@ import com.creapolis.solennix.feature.settings.ui.SettingsScreen
 import com.creapolis.solennix.feature.settings.ui.TermsScreen
 
 @Composable
-fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
+fun AdaptiveNavigationRailLayout(
+    initialDeepLinkRoute: String? = null,
+    currentUser: User? = null
+) {
     var selectedSection by remember { mutableStateOf(SidebarSection.DASHBOARD) }
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -92,12 +106,26 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
         NavigationRail(
             containerColor = SolennixTheme.colors.card,
             header = {
-                Text(
-                    text = "S",
-                    style = SolennixTitle,
-                    color = SolennixTheme.colors.primary,
-                    modifier = Modifier.padding(vertical = 16.dp)
-                )
+                // Branding header: logo + app name
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_solennix_logo),
+                        contentDescription = "Solennix",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Solennix",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = SolennixTheme.colors.primaryText
+                    )
+                }
             }
         ) {
             SidebarSection.entries.forEach { section ->
@@ -120,6 +148,24 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
                         unselectedIconColor = SolennixTheme.colors.secondaryText,
                         indicatorColor = SolennixTheme.colors.primaryLight
                     )
+                )
+            }
+
+            // Push user footer to bottom
+            Spacer(Modifier.weight(1f))
+
+            // User footer
+            if (currentUser != null) {
+                NavigationRailUserFooter(
+                    user = currentUser,
+                    onSettingsClick = {
+                        selectedSection = SidebarSection.SETTINGS
+                        navController.navigate(SidebarSection.SETTINGS.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
             }
         }
@@ -510,6 +556,44 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
         }
     }
     } // CompositionLocalProvider
+}
+
+@Composable
+private fun NavigationRailUserFooter(user: User, onSettingsClick: () -> Unit) {
+    val goldStart = Color(0xFFC4A265)
+    val goldEnd = Color(0xFFB8965A)
+    val initial = user.name.firstOrNull()?.uppercaseChar()?.toString() ?: "S"
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(bottom = 12.dp, top = 4.dp)
+            .clickable { onSettingsClick() }
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Brush.linearGradient(listOf(goldStart, goldEnd)))
+        ) {
+            Text(
+                text = initial,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = user.name.split(" ").firstOrNull() ?: user.name,
+            style = MaterialTheme.typography.labelSmall,
+            color = SolennixTheme.colors.primaryText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 72.dp)
+        )
+    }
 }
 
 private fun buildSearchRoute(query: String? = null): String {

@@ -17,6 +17,7 @@ import com.creapolis.solennix.feature.dashboard.ui.hasSeenOnboarding
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.feature.auth.ui.BiometricGateScreen
 import com.creapolis.solennix.feature.auth.viewmodel.AuthViewModel
@@ -98,8 +99,12 @@ fun MainNavHost(deepLinkIntent: Intent? = null) {
             )
         }
         AuthManager.AuthState.Authenticated -> {
+            val currentUser by authViewModel.authManager.currentUser.collectAsStateWithLifecycle()
             if (windowSizeClass != null && windowSizeClass.widthSizeClass != WindowWidthSizeClass.Compact) {
-                AdaptiveNavigationRailLayout(initialDeepLinkRoute = deepLinkRoute)
+                AdaptiveNavigationRailLayout(
+                    initialDeepLinkRoute = deepLinkRoute,
+                    currentUser = currentUser
+                )
             } else {
                 CompactBottomNavLayout(initialDeepLinkRoute = deepLinkRoute)
             }
