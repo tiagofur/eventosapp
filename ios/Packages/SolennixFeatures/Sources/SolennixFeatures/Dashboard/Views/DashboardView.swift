@@ -13,7 +13,6 @@ public struct DashboardView: View {
     @Environment(\.apiClient) private var apiClient
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: DashboardViewModel?
-    @State private var showQuickQuote = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private var isIPad: Bool { sizeClass == .regular }
@@ -46,6 +45,11 @@ public struct DashboardView: View {
                 // Quick Actions
                 quickActionsSection
 
+                // Low Stock Alerts
+                if let vm = viewModel, !vm.lowStockItems.isEmpty {
+                    lowStockSection(items: vm.lowStockItems)
+                }
+
                 // KPI Cards
                 kpiCardsSection
 
@@ -66,11 +70,6 @@ public struct DashboardView: View {
                     }
                     .padding(.horizontal, Spacing.md)
 
-                    // Low Stock Alerts
-                    if let vm = viewModel, !vm.lowStockItems.isEmpty {
-                        lowStockSection(items: vm.lowStockItems)
-                    }
-
                     // Upcoming Events - full width
                     upcomingEventsSection
                         .padding(.horizontal, Spacing.md)
@@ -87,11 +86,6 @@ public struct DashboardView: View {
                         vatOutstanding: viewModel?.vatOutstandingThisMonth ?? 0
                     )
                     .padding(.horizontal, Spacing.md)
-
-                    // Low Stock Alerts
-                    if let vm = viewModel, !vm.lowStockItems.isEmpty {
-                        lowStockSection(items: vm.lowStockItems)
-                    }
 
                     // Upcoming Events
                     upcomingEventsSection
@@ -112,10 +106,6 @@ public struct DashboardView: View {
                 await viewModel?.loadDashboard() 
                 await planLimitsManager.checkLimits()
             }
-        }
-        .sheet(isPresented: $showQuickQuote) {
-            QuickQuoteView(apiClient: apiClient)
-                .presentationDetents([.large])
         }
         .overlay {
             if viewModel?.isLoading == true && viewModel?.eventsThisMonth.isEmpty == true {
@@ -165,34 +155,6 @@ public struct DashboardView: View {
                     .font(.subheadline)
                     .foregroundStyle(SolennixColors.textSecondary)
             }
-
-            Spacer()
-
-            HStack(spacing: Spacing.sm) {
-                Button {
-                    showQuickQuote = true
-                } label: {
-                    Image(systemName: "doc.text.magnifyingglass")
-                        .font(.title3)
-                        .fontWeight(.medium)
-                        .foregroundStyle(SolennixColors.text)
-                        .frame(width: 44, height: 44)
-                        .background(SolennixColors.card)
-                        .clipShape(Circle())
-                        .shadowSm()
-                }
-
-                NavigationLink(value: Route.search) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.title3)
-                        .fontWeight(.medium)
-                        .foregroundStyle(SolennixColors.text)
-                        .frame(width: 44, height: 44)
-                        .background(SolennixColors.card)
-                        .clipShape(Circle())
-                        .shadowSm()
-                }
-            }
         }
         .padding(.horizontal, Spacing.md)
         .padding(.top, Spacing.sm)
@@ -219,7 +181,7 @@ public struct DashboardView: View {
     private var quickActionsSection: some View {
         Group {
             if isIPad {
-                // iPad: expanded grid with all actions
+                // iPad: expanded grid with primary actions only
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: Spacing.md)], spacing: Spacing.md) {
                     quickActionItem(
                         icon: "plus.circle.fill",
@@ -236,19 +198,6 @@ public struct DashboardView: View {
                         enabled: planLimitsManager.canCreateClient,
                         destination: Route.clientForm()
                     )
-
-                    Button {
-                        HapticsHelper.play(.light)
-                        showQuickQuote = true
-                    } label: {
-                        quickActionButton(icon: "doc.text.magnifyingglass", label: "Cotizacion Rapida", color: SolennixColors.kpiBlue)
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink(value: Route.search) {
-                        quickActionButton(icon: "magnifyingglass", label: "Buscar", color: SolennixColors.kpiOrange)
-                    }
-                    .buttonStyle(.plain)
                 }
             } else {
                 // iPhone: original 2-button layout
@@ -273,7 +222,6 @@ public struct DashboardView: View {
         }
         .padding(.horizontal, Spacing.md)
         .popoverTip(NewEventTip(), arrowEdge: .bottom)
-        .popoverTip(QuickQuoteTip(), arrowEdge: .top)
     }
 
     @ViewBuilder
