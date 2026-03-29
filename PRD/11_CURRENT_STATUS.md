@@ -141,6 +141,7 @@
 - ✅ Dashboard (KPIs, resumen)
 - ✅ Busqueda global
 - ✅ Calendario con vista de eventos
+- ✅ Lista de eventos (EventList) con filtros: Todos, Proximos, Pasados, Borradores
 - ✅ Cotizacion rapida (Quick Quote)
 
 ### Eventos
@@ -179,6 +180,14 @@
 ### Admin
 - ✅ Admin Dashboard (estadisticas, metricas)
 - ✅ Admin Users (gestion de usuarios)
+
+### Navegacion Web
+- ✅ Sidebar desktop — 6 secciones + Config abajo (sin Cotizacion/CotizacionRapida/Buscar)
+- ✅ Bottom Tab Bar mobile — 5 tabs: Inicio, Calendario, Eventos, Clientes, Mas
+- ✅ Menu "Mas" mobile — Productos, Inventario, Configuracion
+- ✅ QuickActionsFAB — visible solo en mobile
+- ✅ CommandPalette (Cmd+K/Ctrl+K) con navegacion a /events
+- ✅ Ruta /events agregada en App.tsx
 
 ### Infraestructura Web
 - ✅ ProtectedRoute (autenticacion requerida)
@@ -290,8 +299,12 @@
 - ✅ LiveActivityManager
 
 ### Navegacion
-- ✅ CompactTabLayout (bottom navigation)
-- ✅ SidebarSplitLayout (NavigationSplitView para iPad)
+- ✅ CompactTabLayout — 5 tabs: Inicio, Calendario, Eventos, Clientes, Mas
+- ✅ SidebarSplitLayout — 6 secciones + Config abajo (sin Cotizacion/CotizacionRapida/Buscar)
+- ✅ MoreMenuView — 3 items: Productos, Inventario, Configuracion
+- ✅ QuickActionsFAB — FAB flotante con Nuevo Evento + Cotizacion Rapida (phones)
+- ✅ Botones contextuales en EventListView (iPad) — Nuevo Evento + Cotizacion Rapida
+- ✅ Busqueda en topbar via .searchable()
 - ✅ DeepLinkHandler
 - ✅ Route + RouteDestination
 
@@ -388,7 +401,11 @@
 - ✅ DemandForecastChart (Canvas-based bar chart en ProductDetailScreen)
 
 ### Navegacion
-- ✅ Bottom navigation compacta
+- ✅ Bottom navigation — 5 tabs: Inicio, Calendario, Eventos, Clientes, Mas
+- ✅ MoreMenuScreen — 3 items: Productos, Inventario, Configuracion
+- ✅ QuickActionsFAB — FAB con Nuevo Evento + Cotizacion Rapida (phones)
+- ✅ Botones contextuales en EventListScreen (tablet) — Nuevo Evento + Cotizacion Rapida
+- ✅ SearchBar en TopAppBar
 - ✅ Arquitectura modular multi-feature
 
 ### Pendiente Android
@@ -401,7 +418,7 @@
 | ~~RevenueCat sync en register/Google~~ | ✅ | Agregado logInWith despues de register y Google sign-in |
 | Push notifications (FCM) | P1 | No implementado |
 | Deep linking completo | P2 | Parcial |
-| Navigation Rail (tablets) | P2 | No implementado |
+| Navigation Rail (tablets) | P2 | Parcialmente implementado via AdaptiveNavigationRailLayout — falta completar refactor de sidebar |
 | Live Activity equivalente (notificacion persistente) | P2 | No implementado |
 | ~~Cotizacion rapida (Quick Quote)~~ | ✅ | QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator |
 | ~~Feature gating enforcement~~ | ✅ | PlanLimitsManager wired into EventForm, ClientForm, ProductForm + UpgradePlanDialog |
@@ -415,7 +432,7 @@
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
-| Lista de eventos | ✅ | ✅ | ✅ (Calendario) | ✅ | Web usa vista de calendario |
+| Lista de eventos | ✅ | ✅ | ✅ | ✅ | Web: EventList con filtros |
 | Detalle de evento | ✅ | ✅ | ✅ (Summary) | ✅ | |
 | Formulario de evento | ✅ 5 pasos | ✅ 6 pasos | ✅ Multi-seccion | ✅ | Android incluye paso Summary |
 | Productos en evento | ✅ | ✅ | ✅ | ✅ | |

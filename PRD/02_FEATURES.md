@@ -671,7 +671,7 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 | Sugerencias de insumos | ✅ | ✅ | ✅ | ✅ | |
 | Extras (cargos adicionales) | ✅ | ✅ | ✅ | ✅ | |
 | Deposito y cancelacion | ✅ | ✅ | ✅ | ✅ | |
-| Lista de eventos | ✅ | ✅ | ➖ | ✅ | Web usa calendario como vista principal |
+| Lista de eventos | ✅ | ✅ | ✅ | ✅ | Web: EventList page con filtros (Todos/Proximos/Pasados/Borradores) |
 | Detalle de evento | ✅ | ✅ | ✅ | ✅ | Web: EventSummary |
 | Checklist del evento | ✅ | ✅ | ⬜ | ➖ | Generado localmente en mobile |
 
@@ -812,6 +812,18 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 | Datos del negocio | ✅ | ✅ | ✅ | ✅ | Logo, nombre, color |
 | Plantilla de contrato | ✅ | ✅ | ✅ | ✅ | |
 | Defaults de deposito/cancelacion | ✅ | ✅ | ✅ | ✅ | |
+
+### Navegacion
+
+| Feature | iOS | Android | Web | Backend | Notas |
+|---------|-----|---------|-----|---------|-------|
+| Bottom Tab Bar (5 tabs) | ✅ | ✅ | ✅ | ➖ | Inicio, Calendario, Eventos, Clientes, Mas |
+| Sidebar / Navigation Rail (tablet/desktop) | ✅ | 🔄 | ✅ | ➖ | 6 secciones + Config abajo. Android: Navigation Rail pendiente |
+| Menu "Mas" con 3 items | ✅ | ✅ | ✅ | ➖ | Productos, Inventario, Configuracion |
+| FAB acciones rapidas (phones) | ✅ | ✅ | ✅ | ➖ | Nuevo Evento + Cotizacion Rapida |
+| Botones contextuales en Eventos (tablet/desktop) | ✅ | ✅ | ✅ | ➖ | Nuevo Evento + Cotizacion Rapida en header |
+| Busqueda en topbar | ✅ | ✅ | ✅ | ➖ | Icono en phones, barra visible en tablet/desktop |
+| Command Palette (Cmd+K) | ➖ | ➖ | ✅ | ➖ | Navegacion rapida y acciones |
 
 ### Otros
 
