@@ -18,6 +18,7 @@ struct SidebarSplitLayout: View {
 
     @State private var selectedSection: SidebarSection? = .dashboard
     @State private var contentPath = NavigationPath()
+    @State private var searchText = ""
     @Environment(\.apiClient) private var apiClient
     @Environment(AuthManager.self) private var authManager
 
@@ -50,6 +51,10 @@ struct SidebarSplitLayout: View {
                 }
                 .navigationDestination(for: Route.self) { route in
                     RouteDestination(route: route)
+                }
+                .searchable(text: $searchText, prompt: "Buscar eventos, clientes...")
+                .onSubmit(of: .search) {
+                    contentPath.append(Route.search)
                 }
             }
         }

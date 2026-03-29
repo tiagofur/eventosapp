@@ -20,6 +20,7 @@ struct CompactTabLayout: View {
     @State private var eventsPath = NavigationPath()
     @State private var clientsPath = NavigationPath()
     @State private var morePath = NavigationPath()
+    @State private var searchText = ""
     @Environment(\.apiClient) private var apiClient
 
     /// Custom binding that detects same-tab re-taps for pop-to-root.
@@ -43,6 +44,10 @@ struct CompactTabLayout: View {
                     .navigationDestination(for: Route.self) { route in
                         RouteDestination(route: route)
                     }
+                    .searchable(text: $searchText, prompt: "Buscar eventos, clientes...")
+                    .onSubmit(of: .search) {
+                        homePath.append(Route.search)
+                    }
             }
             .tabItem {
                 Label(Tab.home.title, systemImage: Tab.home.iconName)
@@ -54,6 +59,10 @@ struct CompactTabLayout: View {
                 CalendarRootView()
                     .navigationDestination(for: Route.self) { route in
                         RouteDestination(route: route)
+                    }
+                    .searchable(text: $searchText, prompt: "Buscar eventos, clientes...")
+                    .onSubmit(of: .search) {
+                        calendarPath.append(Route.search)
                     }
             }
             .tabItem {
