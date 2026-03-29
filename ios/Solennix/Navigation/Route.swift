@@ -5,10 +5,11 @@ import SolennixCore
 
 // MARK: - Tab
 
-/// The four tabs shown in the compact (iPhone) tab bar.
+/// The five tabs shown in the compact (iPhone) tab bar.
 public enum Tab: Int, Hashable, CaseIterable {
     case home
     case calendar
+    case events
     case clients
     case more
 
@@ -17,6 +18,7 @@ public enum Tab: Int, Hashable, CaseIterable {
         switch self {
         case .home:     return "house.fill"
         case .calendar: return "calendar"
+        case .events:   return "calendar.badge.clock"
         case .clients:  return "person.2.fill"
         case .more:     return "ellipsis"
         }
@@ -27,8 +29,9 @@ public enum Tab: Int, Hashable, CaseIterable {
         switch self {
         case .home:     return "Inicio"
         case .calendar: return "Calendario"
+        case .events:   return "Eventos"
         case .clients:  return "Clientes"
-        case .more:     return "Mas"
+        case .more:     return "Más"
         }
     }
 }
@@ -40,12 +43,9 @@ public enum SidebarSection: String, Hashable, CaseIterable {
     case dashboard
     case calendar
     case events
-    case quote
-    case quickQuote
     case clients
     case products
     case inventory
-    case search
     case settings
 
     /// The SF Symbol icon name for this sidebar section.
@@ -54,12 +54,9 @@ public enum SidebarSection: String, Hashable, CaseIterable {
         case .dashboard:  return "house.fill"
         case .calendar:   return "calendar"
         case .events:     return "calendar.badge.clock"
-        case .quote:      return "doc.text.badge.plus"
-        case .quickQuote: return "bolt.fill"
         case .clients:    return "person.2.fill"
         case .products:   return "shippingbox.fill"
         case .inventory:  return "archivebox.fill"
-        case .search:     return "magnifyingglass"
         case .settings:   return "gearshape.fill"
         }
     }
@@ -70,12 +67,9 @@ public enum SidebarSection: String, Hashable, CaseIterable {
         case .dashboard:  return "Inicio"
         case .calendar:   return "Calendario"
         case .events:     return "Eventos"
-        case .quote:      return "Cotización"
-        case .quickQuote: return "Cotización Rápida"
         case .clients:    return "Clientes"
         case .products:   return "Productos"
         case .inventory:  return "Inventario"
-        case .search:     return "Buscar"
         case .settings:   return "Ajustes"
         }
     }

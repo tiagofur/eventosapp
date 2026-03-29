@@ -17,6 +17,7 @@ struct CompactTabLayout: View {
     @State private var selectedTab: Tab = .home
     @State private var homePath = NavigationPath()
     @State private var calendarPath = NavigationPath()
+    @State private var eventsPath = NavigationPath()
     @State private var clientsPath = NavigationPath()
     @State private var morePath = NavigationPath()
     @Environment(\.apiClient) private var apiClient
@@ -59,6 +60,18 @@ struct CompactTabLayout: View {
                 Label(Tab.calendar.title, systemImage: Tab.calendar.iconName)
             }
             .tag(Tab.calendar)
+
+            // Events Tab
+            NavigationStack(path: $eventsPath) {
+                EventsRootView()
+                    .navigationDestination(for: Route.self) { route in
+                        RouteDestination(route: route)
+                    }
+            }
+            .tabItem {
+                Label(Tab.events.title, systemImage: Tab.events.iconName)
+            }
+            .tag(Tab.events)
 
             // Clients Tab
             NavigationStack(path: $clientsPath) {
@@ -104,6 +117,7 @@ struct CompactTabLayout: View {
         switch tab {
         case .home:     homePath = NavigationPath()
         case .calendar: calendarPath = NavigationPath()
+        case .events:   eventsPath = NavigationPath()
         case .clients:  clientsPath = NavigationPath()
         case .more:     morePath = NavigationPath()
         }
@@ -125,6 +139,15 @@ private struct CalendarRootView: View {
 
     var body: some View {
         CalendarView(viewModel: CalendarViewModel(apiClient: apiClient))
+    }
+}
+
+/// Root view for the Events tab.
+private struct EventsRootView: View {
+    @Environment(\.apiClient) private var apiClient
+
+    var body: some View {
+        EventListView(apiClient: apiClient)
     }
 }
 
