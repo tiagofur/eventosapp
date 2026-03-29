@@ -50,34 +50,51 @@ public struct DashboardView: View {
                 kpiCardsSection
 
                 if isIPad {
-                    // iPad: Status chart + Upcoming events side-by-side
+                    // iPad: Status chart + Financial chart side-by-side
                     HStack(alignment: .top, spacing: Spacing.md) {
-                        // Event Status Chart
                         if let vm = viewModel, !vm.eventsThisMonth.isEmpty {
                             EventStatusChart(statusCounts: vm.eventStatusCounts)
                                 .frame(maxWidth: .infinity)
                         }
 
-                        // Upcoming Events
-                        upcomingEventsSection
-                            .frame(maxWidth: .infinity)
+                        FinancialComparisonChart(
+                            netSales: viewModel?.netSalesThisMonth ?? 0,
+                            cashCollected: viewModel?.cashCollectedThisMonth ?? 0,
+                            vatOutstanding: viewModel?.vatOutstandingThisMonth ?? 0
+                        )
+                        .frame(maxWidth: .infinity)
                     }
                     .padding(.horizontal, Spacing.md)
+
+                    // Low Stock Alerts
+                    if let vm = viewModel, !vm.lowStockItems.isEmpty {
+                        lowStockSection(items: vm.lowStockItems)
+                    }
+
+                    // Upcoming Events - full width
+                    upcomingEventsSection
+                        .padding(.horizontal, Spacing.md)
                 } else {
                     // iPhone: stacked vertically
-                    // Event Status Chart
                     if let vm = viewModel, !vm.eventsThisMonth.isEmpty {
                         EventStatusChart(statusCounts: vm.eventStatusCounts)
                             .padding(.horizontal, Spacing.md)
                     }
 
+                    FinancialComparisonChart(
+                        netSales: viewModel?.netSalesThisMonth ?? 0,
+                        cashCollected: viewModel?.cashCollectedThisMonth ?? 0,
+                        vatOutstanding: viewModel?.vatOutstandingThisMonth ?? 0
+                    )
+                    .padding(.horizontal, Spacing.md)
+
+                    // Low Stock Alerts
+                    if let vm = viewModel, !vm.lowStockItems.isEmpty {
+                        lowStockSection(items: vm.lowStockItems)
+                    }
+
                     // Upcoming Events
                     upcomingEventsSection
-                }
-
-                // Low Stock Alerts
-                if let vm = viewModel, !vm.lowStockItems.isEmpty {
-                    lowStockSection(items: vm.lowStockItems)
                 }
 
                 Spacer(minLength: Spacing.xxl)
