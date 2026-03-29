@@ -70,6 +70,24 @@ public struct DashboardView: View {
         }
         .navigationTitle("Inicio")
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    NavigationLink(value: Route.eventForm()) {
+                        Label("Nuevo Evento", systemImage: "calendar.badge.plus")
+                    }
+                    .disabled(!planLimitsManager.canCreateEvent)
+
+                    NavigationLink(value: Route.quickQuote) {
+                        Label("Cotización Rápida", systemImage: "doc.text.magnifyingglass")
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.body)
+                        .foregroundStyle(SolennixColors.primary)
+                }
+            }
+        }
         .refreshable {
             await viewModel?.refresh()
         }

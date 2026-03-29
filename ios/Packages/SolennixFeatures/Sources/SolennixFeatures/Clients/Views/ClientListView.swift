@@ -29,12 +29,26 @@ public struct ClientListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Spacing.sm) {
-                    NavigationLink(value: Route.clientForm()) {
-                        Image(systemName: "plus.circle")
+                    Menu {
+                        NavigationLink(value: Route.clientForm()) {
+                            Label("Nuevo Cliente", systemImage: "person.badge.plus")
+                        }
+                        .disabled(!planLimitsManager.canCreateClient)
+
+                        Divider()
+
+                        NavigationLink(value: Route.eventForm()) {
+                            Label("Nuevo Evento", systemImage: "calendar.badge.plus")
+                        }
+
+                        NavigationLink(value: Route.quickQuote) {
+                            Label("Cotización Rápida", systemImage: "doc.text.magnifyingglass")
+                        }
+                    } label: {
+                        Image(systemName: "plus")
                             .font(.body)
-                            .foregroundStyle(planLimitsManager.canCreateClient ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .foregroundStyle(SolennixColors.primary)
                     }
-                    .disabled(!planLimitsManager.canCreateClient)
 
                     sortMenu
                 }

@@ -40,34 +40,29 @@ public struct EventListView: View {
             await viewModel.loadEvents()
         }
         .toolbar {
-            // iPad contextual actions
-            if sizeClass == .regular {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: Route.quickQuote) {
-                        Label("Cotización Rápida", systemImage: "bolt.fill")
-                            .font(.subheadline)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(SolennixColors.textSecondary)
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: Route.eventForm()) {
-                        Label("Nuevo Evento", systemImage: "plus")
-                            .font(.subheadline)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(SolennixColors.primary)
-                }
-            }
-
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    exportCsv()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.body)
-                        .foregroundStyle(SolennixColors.primary)
+                HStack(spacing: Spacing.sm) {
+                    Menu {
+                        NavigationLink(value: Route.eventForm()) {
+                            Label("Nuevo Evento", systemImage: "calendar.badge.plus")
+                        }
+
+                        NavigationLink(value: Route.quickQuote) {
+                            Label("Cotización Rápida", systemImage: "doc.text.magnifyingglass")
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.body)
+                            .foregroundStyle(SolennixColors.primary)
+                    }
+
+                    Button {
+                        exportCsv()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.body)
+                            .foregroundStyle(SolennixColors.primary)
+                    }
                 }
             }
         }

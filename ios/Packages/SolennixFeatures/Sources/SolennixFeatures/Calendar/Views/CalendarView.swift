@@ -15,6 +15,7 @@ public struct CalendarView: View {
     @State private var showUnblockAlert = false
     @State private var longPressedDate: Date?
     @State private var showBlockedDatesSheet = false
+    @Environment(PlanLimitsManager.self) private var planLimitsManager
     @Environment(\.apiClient) private var apiClient
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -40,6 +41,22 @@ public struct CalendarView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Spacing.sm) {
+                    // New event / quick quote menu
+                    Menu {
+                        NavigationLink(value: Route.eventForm(date: viewModel.selectedDate)) {
+                            Label("Nuevo Evento", systemImage: "calendar.badge.plus")
+                        }
+                        .disabled(!planLimitsManager.canCreateEvent)
+
+                        NavigationLink(value: Route.quickQuote) {
+                            Label("Cotización Rápida", systemImage: "doc.text.magnifyingglass")
+                        }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.body)
+                            .foregroundStyle(SolennixColors.primary)
+                    }
+
                     Button {
                         showBlockedDatesSheet = true
                     } label: {
