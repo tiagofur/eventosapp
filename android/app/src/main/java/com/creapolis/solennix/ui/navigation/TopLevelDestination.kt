@@ -12,6 +12,7 @@ enum class TopLevelDestination(
 ) {
     HOME("Inicio", Icons.Default.Home, Icons.Filled.Home, "home"),
     CALENDAR("Calendario", Icons.Default.DateRange, Icons.Filled.DateRange, "calendar"),
+    EVENTS("Eventos", Icons.Default.Celebration, Icons.Filled.Celebration, "events"),
     CLIENTS("Clientes", Icons.Default.Person, Icons.Filled.Person, "clients"),
     MORE("Mas", Icons.Default.Menu, Icons.Filled.Menu, "more")
 }
