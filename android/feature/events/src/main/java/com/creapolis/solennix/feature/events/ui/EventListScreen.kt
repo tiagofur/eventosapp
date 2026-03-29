@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.StatusBadge
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCardGrid
+import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
@@ -66,21 +67,60 @@ private fun exportEventsCsv(context: Context, csvContent: String) {
 fun EventListScreen(
     viewModel: EventListViewModel,
     onEventClick: (String) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNewEventClick: (() -> Unit)? = null,
+    onQuickQuoteClick: (() -> Unit)? = null,
+    onSearchClick: (() -> Unit)? = null,
+    showBackButton: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val isWideScreen = LocalIsWideScreen.current
 
     Scaffold(
         topBar = {
             SolennixTopAppBar(
                 title = { Text("Eventos") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar")
+                    if (showBackButton) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Regresar")
+                        }
                     }
                 },
                 actions = {
+                    // Global search icon (phone)
+                    if (onSearchClick != null && !isWideScreen) {
+                        IconButton(onClick = onSearchClick) {
+                            Icon(Icons.Default.Search, contentDescription = "Buscar")
+                        }
+                    }
+                    // Contextual buttons for tablet
+                    if (isWideScreen) {
+                        if (onQuickQuoteClick != null) {
+                            OutlinedButton(
+                                onClick = onQuickQuoteClick,
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Cotización Rápida")
+                            }
+                        }
+                        if (onNewEventClick != null) {
+                            Button(
+                                onClick = onNewEventClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = SolennixTheme.colors.primary
+                                ),
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Nuevo Evento")
+                            }
+                        }
+                    }
                     IconButton(onClick = {
                         val csv = viewModel.generateCsvContent()
                         exportEventsCsv(context, csv)

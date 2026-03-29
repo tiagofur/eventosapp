@@ -315,7 +315,11 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
                     EventListScreen(
                         viewModel = hiltViewModel(),
                         onEventClick = { id -> navController.navigate("event_detail/$id") },
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        onNewEventClick = { navController.navigate("event_form?eventId=") },
+                        onQuickQuoteClick = { navController.navigate("quick_quote") },
+                        onSearchClick = { navController.navigate("search") },
+                        showBackButton = false
                     )
                 }
                 composable(

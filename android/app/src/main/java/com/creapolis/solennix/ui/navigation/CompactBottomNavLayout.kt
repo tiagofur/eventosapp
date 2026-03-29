@@ -246,7 +246,9 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 EventListScreen(
                     viewModel = hiltViewModel(),
                     onEventClick = { id -> navController.navigate("event_detail/$id") },
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    onSearchClick = { navController.navigate("search") },
+                    showBackButton = false
                 )
             }
             composable(TopLevelDestination.MORE.route) {
