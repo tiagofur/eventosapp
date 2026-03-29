@@ -1,9 +1,14 @@
 package com.creapolis.solennix.ui.navigation
 
+import android.content.Context
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
@@ -22,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,7 +44,6 @@ import com.creapolis.solennix.R
 import com.creapolis.solennix.core.designsystem.component.QuickActionsFAB
 import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
-import com.creapolis.solennix.core.designsystem.theme.SolennixTitle
 import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.feature.calendar.ui.CalendarScreen
 import com.creapolis.solennix.feature.clients.ui.ClientDetailScreen
@@ -67,16 +72,40 @@ import com.creapolis.solennix.feature.settings.ui.PrivacyScreen
 import com.creapolis.solennix.feature.settings.ui.SettingsScreen
 import com.creapolis.solennix.feature.settings.ui.TermsScreen
 
+private const val PREF_DRAWER = "nav_prefs"
+private const val PREF_DRAWER_EXPANDED = "drawer_expanded"
+private const val DRAWER_EXPANDED_WIDTH = 240
+private const val DRAWER_COLLAPSED_WIDTH = 72
+
 @Composable
 fun AdaptiveNavigationRailLayout(
     initialDeepLinkRoute: String? = null,
     currentUser: User? = null
 ) {
+    val context = LocalContext.current
     var selectedSection by remember { mutableStateOf(SidebarSection.DASHBOARD) }
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     var calendarBlockDatesRequested by remember { mutableStateOf(false) }
+
+    // Drawer expanded state — persisted across sessions
+    var isExpanded by remember {
+        mutableStateOf(
+            context.getSharedPreferences(PREF_DRAWER, Context.MODE_PRIVATE)
+                .getBoolean(PREF_DRAWER_EXPANDED, true)
+        )
+    }
+    val drawerWidth by animateDpAsState(
+        targetValue = if (isExpanded) DRAWER_EXPANDED_WIDTH.dp else DRAWER_COLLAPSED_WIDTH.dp,
+        animationSpec = tween(durationMillis = 220),
+        label = "drawerWidth"
+    )
+    fun toggleDrawer() {
+        isExpanded = !isExpanded
+        context.getSharedPreferences(PREF_DRAWER, Context.MODE_PRIVATE)
+            .edit().putBoolean(PREF_DRAWER_EXPANDED, isExpanded).apply()
+    }
 
     // Navigate to deep link after NavHost is initialized
     LaunchedEffect(initialDeepLinkRoute) {
@@ -103,61 +132,72 @@ fun AdaptiveNavigationRailLayout(
 
     CompositionLocalProvider(LocalIsWideScreen provides true) {
     Row(Modifier.fillMaxSize()) {
-        NavigationRail(
-            containerColor = SolennixTheme.colors.card,
-            header = {
-                // Branding header: logo + app name
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp)
+        // Permanent collapsible drawer
+        Column(
+            modifier = Modifier
+                .width(drawerWidth)
+                .fillMaxHeight()
+                .background(SolennixTheme.colors.card)
+        ) {
+            // Branding header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .height(48.dp)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_solennix_logo),
+                    contentDescription = "Solennix",
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn(tween(150)) + expandHorizontally(),
+                    exit = fadeOut(tween(100)) + shrinkHorizontally()
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_solennix_logo),
-                        contentDescription = "Solennix",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                    )
-                    Spacer(Modifier.height(6.dp))
                     Text(
                         text = "Solennix",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = SolennixTheme.colors.primaryText
+                        color = SolennixTheme.colors.primaryText,
+                        modifier = Modifier.padding(start = 10.dp)
                     )
                 }
             }
-        ) {
+
+            HorizontalDivider(color = SolennixTheme.colors.divider)
+
+            Spacer(Modifier.height(8.dp))
+
+            // Nav items
             SidebarSection.entries.forEach { section ->
-                NavigationRailItem(
-                    selected = selectedSection == section,
+                DrawerNavItem(
+                    section = section,
+                    isSelected = selectedSection == section,
+                    isExpanded = isExpanded,
                     onClick = {
                         selectedSection = section
                         navController.navigate(section.route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
-                    },
-                    icon = { Icon(section.icon, section.label) },
-                    label = { Text(section.label) },
-                    colors = NavigationRailItemDefaults.colors(
-                        selectedIconColor = SolennixTheme.colors.primary,
-                        unselectedIconColor = SolennixTheme.colors.secondaryText,
-                        indicatorColor = SolennixTheme.colors.primaryLight
-                    )
+                    }
                 )
             }
 
-            // Push user footer to bottom
             Spacer(Modifier.weight(1f))
+
+            HorizontalDivider(color = SolennixTheme.colors.divider)
 
             // User footer
             if (currentUser != null) {
-                NavigationRailUserFooter(
+                DrawerUserFooter(
                     user = currentUser,
+                    isExpanded = isExpanded,
                     onSettingsClick = {
                         selectedSection = SidebarSection.SETTINGS
                         navController.navigate(SidebarSection.SETTINGS.route) {
@@ -166,6 +206,22 @@ fun AdaptiveNavigationRailLayout(
                             restoreState = true
                         }
                     }
+                )
+            }
+
+            // Collapse / expand toggle
+            Box(
+                contentAlignment = if (isExpanded) Alignment.CenterEnd else Alignment.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { toggleDrawer() }
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowLeft
+                                  else Icons.Default.KeyboardArrowRight,
+                    contentDescription = if (isExpanded) "Colapsar menú" else "Expandir menú",
+                    tint = SolennixTheme.colors.secondaryText
                 )
             }
         }
@@ -559,23 +615,73 @@ fun AdaptiveNavigationRailLayout(
 }
 
 @Composable
-private fun NavigationRailUserFooter(user: User, onSettingsClick: () -> Unit) {
-    val goldStart = Color(0xFFC4A265)
-    val goldEnd = Color(0xFFB8965A)
+private fun DrawerNavItem(
+    section: SidebarSection,
+    isSelected: Boolean,
+    isExpanded: Boolean,
+    onClick: () -> Unit
+) {
+    if (isExpanded) {
+        NavigationDrawerItem(
+            icon = { Icon(section.icon, contentDescription = section.label) },
+            label = { Text(section.label) },
+            selected = isSelected,
+            onClick = onClick,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            colors = NavigationDrawerItemDefaults.colors(
+                selectedContainerColor = SolennixTheme.colors.primaryLight,
+                selectedIconColor = SolennixTheme.colors.primary,
+                selectedTextColor = SolennixTheme.colors.primary,
+                unselectedIconColor = SolennixTheme.colors.secondaryText,
+                unselectedTextColor = SolennixTheme.colors.primaryText
+            )
+        )
+    } else {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    if (isSelected) SolennixTheme.colors.primaryLight
+                    else Color.Transparent
+                )
+                .clickable(onClick = onClick)
+        ) {
+            Icon(
+                imageVector = section.icon,
+                contentDescription = section.label,
+                tint = if (isSelected) SolennixTheme.colors.primary
+                       else SolennixTheme.colors.secondaryText
+            )
+        }
+    }
+}
+
+@Composable
+private fun DrawerUserFooter(
+    user: User,
+    isExpanded: Boolean,
+    onSettingsClick: () -> Unit
+) {
+    val goldBrush = Brush.linearGradient(listOf(Color(0xFFC4A265), Color(0xFFB8965A)))
     val initial = user.name.firstOrNull()?.uppercaseChar()?.toString() ?: "S"
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(bottom = 12.dp, top = 4.dp)
+            .fillMaxWidth()
             .clickable { onSettingsClick() }
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(goldStart, goldEnd)))
+                .background(goldBrush)
         ) {
             Text(
                 text = initial,
@@ -584,15 +690,30 @@ private fun NavigationRailUserFooter(user: User, onSettingsClick: () -> Unit) {
                 color = Color.White
             )
         }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = user.name.split(" ").firstOrNull() ?: user.name,
-            style = MaterialTheme.typography.labelSmall,
-            color = SolennixTheme.colors.primaryText,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 72.dp)
-        )
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn(tween(150)) + expandHorizontally(),
+            exit = fadeOut(tween(100)) + shrinkHorizontally()
+        ) {
+            Column(modifier = Modifier.padding(start = 10.dp)) {
+                Text(
+                    text = user.name,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SolennixTheme.colors.primaryText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = user.email,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = SolennixTheme.colors.secondaryText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
 
