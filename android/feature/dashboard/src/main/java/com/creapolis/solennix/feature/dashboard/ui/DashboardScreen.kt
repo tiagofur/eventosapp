@@ -91,10 +91,48 @@ fun DashboardScreen(
                     )
                 }
 
+                // Upgrade Banner for basic plan users
+                if (uiState.isBasicPlan) {
+                    item {
+                        UpgradeBanner(
+                            message = "Potencia tu negocio con el plan Pro: eventos ilimitados, inventario y mas.",
+                            style = UpgradeBannerStyle.PROMO,
+                            onUpgradeClick = onUpgradeClick
+                        )
+                    }
+                }
+
+                // Pending Events Banner
+                if (uiState.pendingEvents.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.warning.copy(alpha = 0.1f)),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Requieren atención (${uiState.pendingEvents.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = SolennixTheme.colors.warning,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                uiState.pendingEvents.forEach { pendingEvent ->
+                                    PendingEventItem(
+                                        pendingEvent = pendingEvent,
+                                        onClick = { onEventClick(pendingEvent.event.id) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // KPI Cards
                 item {
                     if (isWideScreen) {
-                        // Tablet: grid layout (4 columns like web)
                         val kpiItems = listOf(
                             Triple("Ventas Netas", uiState.revenueThisMonth.asMXN(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, "Eventos confirmados y completados")),
                             Triple("Cobrado", uiState.cashCollected.asMXN(), Triple(Icons.Default.Payments, SolennixTheme.colors.kpiOrange, "Este mes")),
@@ -122,7 +160,6 @@ fun DashboardScreen(
                                             modifier = Modifier.weight(1f)
                                         )
                                     }
-                                    // Fill empty slots if row is not full
                                     repeat(4 - rowItems.size) {
                                         Spacer(modifier = Modifier.weight(1f))
                                     }
@@ -131,7 +168,6 @@ fun DashboardScreen(
                             }
                         }
                     } else {
-                        // Phone: horizontal scroll
                         Row(
                             modifier = Modifier
                                 .horizontalScroll(rememberScrollState())
@@ -158,45 +194,6 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         QuickActionButton("Nuevo Evento", Icons.Default.Event, SolennixTheme.colors.primary, onNewEventClick, Modifier.weight(1f))
                         QuickActionButton("Nuevo Cliente", Icons.Default.PersonAdd, SolennixTheme.colors.kpiBlue, onNewClientClick, Modifier.weight(1f))
-                    }
-                }
-
-                // Upgrade Banner for basic plan users
-                if (uiState.isBasicPlan) {
-                    item {
-                        UpgradeBanner(
-                            message = "Potencia tu negocio con el plan Pro: eventos ilimitados, inventario y mas.",
-                            style = UpgradeBannerStyle.PROMO,
-                            onUpgradeClick = onUpgradeClick
-                        )
-                    }
-                }
-
-                // Pending Events Banner
-                if (uiState.pendingEvents.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.warning.copy(alpha = 0.1f)),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = "Eventos Pendientes (${uiState.pendingEvents.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = SolennixTheme.colors.warning,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                uiState.pendingEvents.forEach { pendingEvent ->
-                                    PendingEventItem(
-                                        pendingEvent = pendingEvent,
-                                        onClick = { onEventClick(pendingEvent.event.id) }
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
 
