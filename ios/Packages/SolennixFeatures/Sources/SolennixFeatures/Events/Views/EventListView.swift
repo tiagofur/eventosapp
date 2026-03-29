@@ -32,7 +32,7 @@ public struct EventListView: View {
         }
         .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Eventos")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .refreshable {
             await viewModel.refresh()
         }
@@ -88,28 +88,10 @@ public struct EventListView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(SolennixColors.textTertiary)
-
-            TextField("Filtrar por cliente, servicio o lugar...", text: $viewModel.searchQuery)
-                .textFieldStyle(.plain)
-                .font(.body)
-
-            if !viewModel.searchQuery.isEmpty {
-                Button {
-                    viewModel.searchQuery = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(SolennixColors.textTertiary)
-                }
-            }
-        }
-        .padding(Spacing.sm)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .padding(.horizontal, Spacing.md)
-        .padding(.top, Spacing.sm)
+        InlineFilterBar(
+            placeholder: "Filtrar por cliente, servicio o lugar...",
+            text: $viewModel.searchQuery
+        )
     }
 
     // MARK: - Filter Chips

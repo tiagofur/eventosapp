@@ -88,12 +88,14 @@ struct SidebarSplitLayout: View {
             }
 
             // Settings at the bottom
-            Section {
+            Section("Configuración") {
                 sidebarLabel(for: .settings)
             }
         }
         .listStyle(.sidebar)
         .tint(SolennixColors.primary)
+        .toolbarBackground(SolennixColors.surfaceGrouped, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 
     private func sidebarLabel(for section: SidebarSection) -> some View {

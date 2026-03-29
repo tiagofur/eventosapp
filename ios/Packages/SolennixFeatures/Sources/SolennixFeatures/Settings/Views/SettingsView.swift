@@ -36,53 +36,56 @@ public struct SettingsView: View {
     }
 
     public var body: some View {
+        settingsList
+            .frame(maxWidth: sizeClass == .regular ? 640 : .infinity)
+            .frame(maxWidth: .infinity)
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(SolennixColors.surfaceGrouped)
+            .navigationTitle("Ajustes")
+            .navigationBarTitleDisplayMode(.large)
+            .confirmationDialog(
+                "Cerrar Sesión",
+                isPresented: $showLogoutConfirm
+            ) {
+                Button("Cerrar Sesión", role: .destructive) {
+                    Task { await viewModel.logout() }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text("¿Estás seguro de que quieres cerrar sesión?")
+            }
+            .refreshable { await viewModel.loadUser() }
+            .task { await viewModel.loadUser() }
+    }
+
+    // MARK: - Settings List
+
+    private var settingsList: some View {
         List {
             // User profile header
             if let user = viewModel.user {
                 userHeaderSection(user)
             }
 
-            if sizeClass == .regular {
-                // iPad: 2-column layout
-                Section {
-                    HStack(alignment: .top, spacing: Spacing.lg) {
-                        // Left column: Appearance + Account
-                        VStack(spacing: 0) {
-                            appearanceContent
-                            accountContent
-                        }
-                        .frame(maxWidth: .infinity)
+            Section("Apariencia") {
+                appearanceContent
+            }
 
-                        // Right column: Subscription + Business + Legal
-                        VStack(spacing: 0) {
-                            subscriptionContent
-                            businessContent
-                            legalContent
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-            } else {
-                // iPhone: original single-column layout
-                Section("Apariencia") {
-                    appearanceContent
-                }
+            Section("Cuenta") {
+                accountContent
+            }
 
-                Section("Cuenta") {
-                    accountContent
-                }
+            Section("Suscripción") {
+                subscriptionContent
+            }
 
-                Section("Suscripcion") {
-                    subscriptionContent
-                }
+            Section("Negocio") {
+                businessContent
+            }
 
-                Section("Negocio") {
-                    businessContent
-                }
-
-                Section("Legal") {
-                    legalContent
-                }
+            Section("Legal") {
+                legalContent
             }
 
             // Logout
@@ -92,7 +95,7 @@ public struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                        Text("Cerrar Sesion")
+                        Text("Cerrar Sesión")
                     }
                 }
             }
@@ -100,31 +103,13 @@ public struct SettingsView: View {
             // App version
             Section {
                 HStack {
-                    Text("Version")
+                    Text("Versión")
                     Spacer()
                     Text(Bundle.main.appVersion)
                         .foregroundStyle(SolennixColors.textSecondary)
                 }
             }
         }
-        .listStyle(.insetGrouped)
-        .scrollContentBackground(.hidden)
-        .background(SolennixColors.surfaceGrouped)
-        .navigationTitle("Ajustes")
-        .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog(
-            "Cerrar Sesion",
-            isPresented: $showLogoutConfirm
-        ) {
-            Button("Cerrar Sesion", role: .destructive) {
-                Task { await viewModel.logout() }
-            }
-            Button("Cancelar", role: .cancel) {}
-        } message: {
-            Text("Estas seguro de que quieres cerrar sesion?")
-        }
-        .refreshable { await viewModel.loadUser() }
-        .task { await viewModel.loadUser() }
     }
 
     // MARK: - Section Content Views

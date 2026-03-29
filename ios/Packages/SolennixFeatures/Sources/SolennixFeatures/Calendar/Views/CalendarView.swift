@@ -54,7 +54,7 @@ public struct CalendarView: View {
         }
         .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Calendario")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Spacing.sm) {

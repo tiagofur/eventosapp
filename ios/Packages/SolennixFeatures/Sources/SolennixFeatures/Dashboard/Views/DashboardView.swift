@@ -69,7 +69,7 @@ public struct DashboardView: View {
             }
         }
         .navigationTitle("Inicio")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .refreshable {
             await viewModel?.refresh()
         }

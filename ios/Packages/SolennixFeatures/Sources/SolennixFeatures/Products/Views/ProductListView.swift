@@ -21,7 +21,7 @@ public struct ProductListView: View {
             content
         }
         .navigationTitle("Productos")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .refreshable { await viewModel.loadProducts() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -58,28 +58,10 @@ public struct ProductListView: View {
     // MARK: - Filter Bar
 
     private var filterBar: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(SolennixColors.textTertiary)
-
-            TextField("Filtrar productos por nombre o categoría...", text: $viewModel.searchText)
-                .textFieldStyle(.plain)
-                .font(.body)
-
-            if !viewModel.searchText.isEmpty {
-                Button {
-                    viewModel.searchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(SolennixColors.textTertiary)
-                }
-            }
-        }
-        .padding(Spacing.sm)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .padding(.horizontal, Spacing.md)
-        .padding(.top, Spacing.sm)
+        InlineFilterBar(
+            placeholder: "Filtrar productos por nombre o categoría...",
+            text: $viewModel.searchText
+        )
     }
 
     // MARK: - Content
