@@ -42,8 +42,10 @@ const parseLocalDate = (dateStr: string): Date => {
 
 function makeDayButton(
   onCtxMenu: (date: Date, e: React.MouseEvent) => void,
+  getDots: (date: Date) => string[],
 ) {
-  return function CustomDayButton({ day, ...props }: DayButtonProps) {
+  return function CustomDayButton({ day, children, ...props }: DayButtonProps) {
+    const dots = getDots(day.date);
     return (
       <button
         {...props}
@@ -51,7 +53,18 @@ function makeDayButton(
           e.preventDefault();
           onCtxMenu(day.date, e);
         }}
-      />
+      >
+        <span className="rdp-day-number">{children}</span>
+        <span className="rdp-day-dots">
+          {dots.map((status, i) => (
+            <span
+              key={i}
+              className="rdp-day-dot"
+              style={{ backgroundColor: `var(--color-status-${status})` }}
+            />
+          ))}
+        </span>
+      </button>
     );
   };
 }
@@ -127,8 +140,7 @@ export const CalendarView: React.FC = () => {
     setSelectedDate(today);
   };
 
-  const modifiers: { booked: Date[]; unavailable: Date[] } = {
-    booked: (events || []).map((e) => parseLocalDate(e.event_date)),
+  const modifiers: { unavailable: Date[] } = {
     unavailable: (unavailableDates || []).flatMap((d) => {
       const dates: Date[] = [];
       const currentDate = parseLocalDate(d.start_date);
@@ -178,9 +190,26 @@ export const CalendarView: React.FC = () => {
     [],
   );
 
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const event of events) {
+      const existing = map.get(event.event_date) ?? [];
+      if (existing.length < 3) {
+        map.set(event.event_date, [...existing, event.status]);
+      }
+    }
+    return map;
+  }, [events]);
+
+  const getDots = useCallback(
+    (date: Date): string[] =>
+      eventsByDate.get(format(date, "yyyy-MM-dd")) ?? [],
+    [eventsByDate],
+  );
+
   const CustomDayButton = useMemo(
-    () => makeDayButton(handleContextMenu),
-    [handleContextMenu],
+    () => makeDayButton(handleContextMenu, getDots),
+    [handleContextMenu, getDots],
   );
 
   return (
@@ -234,44 +263,9 @@ export const CalendarView: React.FC = () => {
               margin: 0;
               width: 100%;
           }
-          .rdp-months {
-              justify-content: center;
-              width: 100%;
-          }
-          .rdp-month {
-              width: 100%;
-              max-width: 400px;
-          }
-          .rdp-table {
-              width: 100%;
-              max-width: 100%;
-          }
-          .rdp-selected .rdp-day_button:not([disabled]) {
-              background-color: var(--rdp-accent-color) !important;
-              font-weight: bold;
-              color: white !important;
-              border: 2px solid var(--rdp-accent-color) !important;
-              border-radius: 50% !important;
-          }
-          .rdp-selected .rdp-day_button:hover:not([disabled]) {
-              background-color: var(--color-primary-dark) !important;
-              border-color: var(--color-primary-dark) !important;
-          }
-          .rdp-today:not(.rdp-selected) .rdp-day_button {
-              font-weight: bold;
-              color: var(--rdp-accent-color) !important;
-              background-color: transparent !important;
-              border: 2px solid var(--rdp-accent-color) !important;
-              border-radius: 50% !important;
-          }
-          .rdp-day_button:hover:not([disabled]):not(.rdp-selected .rdp-day_button) {
-              background-color: var(--rdp-background-color) !important;
-              color: var(--rdp-accent-color) !important;
-          }
-          .rdp-day_button:focus-visible:not([disabled]) {
-              outline: none !important;
-              box-shadow: 0 0 0 2px var(--rdp-background-color), 0 0 0 4px var(--rdp-accent-color) !important;
-          }
+          .rdp-months { justify-content: center; width: 100%; }
+          .rdp-month { width: 100%; max-width: 400px; }
+          .rdp-table { width: 100%; max-width: 100%; }
           .rdp-head_cell {
               text-transform: uppercase;
               font-size: 0.75rem;
@@ -279,49 +273,91 @@ export const CalendarView: React.FC = () => {
               color: var(--color-text-secondary);
               padding-bottom: 1rem;
           }
-          .rdp-nav_button {
-              color: var(--color-primary);
-          }
-          .rdp-nav_button:hover {
-              color: var(--color-primary-dark);
-          }
+          .rdp-nav_button { color: var(--color-primary); }
+          .rdp-nav_button:hover { color: var(--color-primary-dark); }
           .rdp-caption_label {
               font-size: 1.125rem;
               font-weight: 700;
               color: var(--color-text);
               text-transform: capitalize;
           }
-          .rdp-day {
+          /* Day button: flex column to hold number circle + status dots */
+          .rdp-day_button {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              height: 52px !important;
+              width: var(--rdp-cell-size) !important;
+              padding: 5px 0 0 !important;
+              background: transparent !important;
+              border: none !important;
+              border-radius: 0 !important;
+              gap: 3px;
+              cursor: pointer;
+          }
+          .rdp-day_button:disabled { cursor: default; opacity: 0.4; }
+          .rdp-day_button:focus-visible {
+              outline: none !important;
+              box-shadow: 0 0 0 2px var(--rdp-background-color), 0 0 0 4px var(--rdp-accent-color) !important;
+              border-radius: 4px !important;
+          }
+          /* Inner number circle — receives selection/today ring */
+          .rdp-day-number {
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 50%;
+              font-size: 0.875rem;
               font-weight: 500;
               color: var(--color-text);
+              flex-shrink: 0;
+              transition: background-color 0.15s;
           }
-          .rdp-day_outside {
-              color: var(--color-text-tertiary) !important;
-              opacity: 0.5;
-          }
-          /* Booked days (have events): orange circle with always-visible white text */
-          .rdp-booked .rdp-day_button {
+          .rdp-selected .rdp-day-number {
               background-color: var(--color-primary) !important;
               color: #ffffff !important;
-              border-radius: 50% !important;
               font-weight: bold;
           }
-          /* Selected booked day: add white ring so it's distinguishable from unselected booked */
-          .rdp-selected.rdp-booked .rdp-day_button:not([disabled]) {
-              background-color: var(--color-primary) !important;
-              color: #ffffff !important;
-              border: 2px solid #ffffff !important;
-              box-shadow: 0 0 0 2px var(--color-primary) !important;
+          .rdp-today:not(.rdp-selected) .rdp-day-number {
+              border: 2px solid var(--color-primary);
+              color: var(--color-primary);
+              font-weight: bold;
           }
-          /* Unavailable days */
-          .rdp-unavailable .rdp-day_button {
+          .rdp-day_button:hover:not([disabled]) .rdp-day-number {
+              background-color: var(--rdp-accent-background-color);
+              color: var(--color-primary);
+          }
+          .rdp-selected .rdp-day_button:hover:not([disabled]) .rdp-day-number {
+              filter: brightness(0.9);
+          }
+          /* Outside-month days */
+          .rdp-day_outside .rdp-day-number {
+              color: var(--color-text-tertiary) !important;
+              opacity: 0.4;
+          }
+          /* Blocked dates */
+          .rdp-unavailable .rdp-day-number {
               background-color: var(--color-surface-alt) !important;
               color: var(--color-text-tertiary) !important;
               text-decoration: line-through;
           }
-          .dark .rdp-unavailable .rdp-day_button {
-               background-color: var(--color-surface-alt) !important;
-               color: var(--color-text-tertiary) !important;
+          /* Status dots row */
+          .rdp-day-dots {
+              display: flex;
+              gap: 2px;
+              align-items: center;
+              justify-content: center;
+              height: 6px;
+              min-height: 6px;
+          }
+          .rdp-day-dot {
+              width: 5px;
+              height: 5px;
+              border-radius: 50%;
+              flex-shrink: 0;
           }
           `}</style>
           <DayPicker
@@ -332,7 +368,6 @@ export const CalendarView: React.FC = () => {
             onMonthChange={handleMonthChange}
             modifiers={modifiers}
             modifiersClassNames={{
-              booked: "rdp-booked",
               unavailable: "rdp-unavailable",
             }}
             className="flex justify-center"
