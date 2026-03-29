@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, type DayButtonProps } from "react-day-picker";
 import "react-day-picker/style.css";
 import { eventService } from "../../services/eventService";
 import {
@@ -7,7 +7,7 @@ import {
   UnavailableDate,
 } from "../../services/unavailableDatesService";
 import { UnavailableDatesModal } from "./components/UnavailableDatesModal";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar,
   Users,
@@ -43,7 +43,7 @@ const parseLocalDate = (dateStr: string): Date => {
 function makeDayButton(
   onCtxMenu: (date: Date, e: React.MouseEvent) => void,
 ) {
-  return function CustomDayButton({ day, ...props }: any) {
+  return function CustomDayButton({ day, ...props }: DayButtonProps) {
     return (
       <button
         {...props}
@@ -128,8 +128,8 @@ export const CalendarView: React.FC = () => {
   };
 
   const modifiers: { booked: Date[]; unavailable: Date[] } = {
-    booked: (events || []).map((e: any) => parseLocalDate(e.event_date)),
-    unavailable: (unavailableDates || []).flatMap((d: any) => {
+    booked: (events || []).map((e) => parseLocalDate(e.event_date)),
+    unavailable: (unavailableDates || []).flatMap((d) => {
       const dates: Date[] = [];
       const currentDate = parseLocalDate(d.start_date);
       const end = parseLocalDate(d.end_date);
@@ -162,7 +162,7 @@ export const CalendarView: React.FC = () => {
       addToast("Fechas desbloqueadas exitosamente", "success");
       setSelectedDate(undefined);
     } catch (error) {
-      console.error(error);
+      logError("CalendarView:handleUnblock", error);
       addToast("Error al desbloquear las fechas", "error");
     } finally {
       setIsConfirmingUnblock(false);
@@ -412,6 +412,15 @@ export const CalendarView: React.FC = () => {
                 <p className="text-text-secondary text-sm font-medium">
                   No hay eventos para este día.
                 </p>
+                {selectedDate && (
+                  <Link
+                    to={`/events/new?date=${format(selectedDate, "yyyy-MM-dd")}`}
+                    className="mt-4 inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
+                    aria-label="Crear evento para esta fecha"
+                  >
+                    Crear evento para esta fecha
+                  </Link>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
@@ -513,6 +522,15 @@ export const CalendarView: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                {selectedDate && (
+                  <Link
+                    to={`/events/new?date=${format(selectedDate, "yyyy-MM-dd")}`}
+                    className="flex items-center justify-center pt-2 text-xs text-text-tertiary hover:text-primary transition-colors"
+                    aria-label="Agregar otro evento para esta fecha"
+                  >
+                    + Agregar evento
+                  </Link>
+                )}
               </div>
             )}
           </div>
