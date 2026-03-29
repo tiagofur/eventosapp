@@ -108,10 +108,7 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
                                 saveState = true
                             }
                             launchSingleTop = true
-                            // Don't restore state for QUOTE — always open fresh form
-                            if (section != SidebarSection.QUOTE) {
-                                restoreState = true
-                            }
+                            restoreState = true
                         }
                     },
                     icon = { Icon(section.icon, section.label) },
@@ -128,11 +125,11 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
         // Content area with NavHost
         Scaffold(
             floatingActionButton = {
-                // Simple FAB on section-level routes (except calendar, search, quick_quote, and settings)
+                // Simple FAB on section-level routes (except calendar, events, and settings)
+                // Events gets contextual toolbar buttons instead of FAB on tablet
                 val showSimpleFab = isAtSectionLevel
                     && currentRoute != "calendar"
-                    && currentRoute != "search"
-                    && currentRoute != "quick_quote"
+                    && currentRoute != "events"
                     && currentRoute != "settings"
 
                 if (showSimpleFab) {
