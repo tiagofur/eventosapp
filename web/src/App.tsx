@@ -20,6 +20,7 @@ import { InventoryForm } from "@/pages/Inventory/InventoryForm";
 import { InventoryDetails } from "@/pages/Inventory/InventoryDetails";
 import { ProductDetails } from "@/pages/Products/ProductDetails";
 import { CalendarView } from "@/pages/Calendar/CalendarView";
+import { EventList } from "@/pages/Events/EventList";
 import { EventForm } from "@/pages/Events/EventForm";
 import { EventSummary } from "@/pages/Events/EventSummary";
 import EventPaymentSuccess from "@/pages/Events/EventPaymentSuccess";
@@ -62,6 +63,7 @@ function App() {
             {/* Rutas de Calendario y Eventos */}
             <Route path="/calendar" element={<CalendarView />} />
             <Route path="/cotizacion-rapida" element={<QuickQuotePage />} />
+            <Route path="/events" element={<EventList />} />
             <Route path="/events/new" element={<EventForm />} />
             <Route path="/events/:id/edit" element={<EventForm />} />
             <Route path="/events/:id/summary" element={<EventSummary />} />

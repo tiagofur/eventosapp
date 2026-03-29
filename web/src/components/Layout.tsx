@@ -3,6 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calendar,
+  CalendarCheck,
   Users,
   Package,
   Boxes,
@@ -13,8 +14,6 @@ import {
   Search,
   Moon,
   Sun,
-  Calculator,
-  Zap,
   Shield,
   ChevronsLeft,
   ChevronsRight
@@ -62,10 +61,9 @@ export const Layout: React.FC = () => {
   }, []);
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Calendario', href: '/calendar', icon: Calendar },
-    { name: 'Cotización', href: '/events/new', icon: Calculator },
-    { name: 'Cotización Rápida', href: '/cotizacion-rapida', icon: Zap },
+    { name: 'Eventos', href: '/events', icon: CalendarCheck },
     { name: 'Clientes', href: '/clients', icon: Users },
     { name: 'Productos', href: '/products', icon: Package },
     { name: 'Inventario', href: '/inventory', icon: Boxes },
