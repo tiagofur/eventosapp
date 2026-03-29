@@ -245,7 +245,8 @@
       "Bash(wc -l /Users/tiagofur/Dev/eventosapp/web/src/pages/Products/*.tsx /Users/tiagofur/Dev/eventosapp/web/src/pages/Products/*.test.tsx)",
       "Bash(adb devices:*)",
       "Bash(xcodebuild -scheme Solennix -destination 'id=894B1409-0EF2-4B78-8A67-1020F9EB37A0' -configuration Debug build install)",
-      "Bash(./gradlew installDebug -x test)"
+      "Bash(./gradlew installDebug -x test)",
+      "Bash(defaults read:*)"
     ]
   }
 }
