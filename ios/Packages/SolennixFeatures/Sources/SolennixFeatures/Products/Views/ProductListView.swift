@@ -16,10 +16,12 @@ public struct ProductListView: View {
     }
 
     public var body: some View {
-        content
+        VStack(spacing: 0) {
+            filterBar
+            content
+        }
         .navigationTitle("Productos")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $viewModel.searchText, prompt: "Filtrar productos...")
         .refreshable { await viewModel.loadProducts() }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -51,6 +53,33 @@ public struct ProductListView: View {
             await viewModel.loadProducts() 
             await planLimitsManager.checkLimits()
         }
+    }
+
+    // MARK: - Filter Bar
+
+    private var filterBar: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(SolennixColors.textTertiary)
+
+            TextField("Filtrar productos por nombre o categoría...", text: $viewModel.searchText)
+                .textFieldStyle(.plain)
+                .font(.body)
+
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(SolennixColors.textTertiary)
+                }
+            }
+        }
+        .padding(Spacing.sm)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, Spacing.sm)
     }
 
     // MARK: - Content

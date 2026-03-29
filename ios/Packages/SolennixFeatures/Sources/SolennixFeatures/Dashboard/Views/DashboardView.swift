@@ -68,6 +68,8 @@ public struct DashboardView: View {
                 Spacer(minLength: Spacing.xxl)
             }
         }
+        .navigationTitle("Inicio")
+        .navigationBarTitleDisplayMode(.inline)
         .refreshable {
             await viewModel?.refresh()
         }
