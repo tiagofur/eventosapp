@@ -55,6 +55,12 @@ export const Layout: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    const handleOpenPalette = () => setIsCommandPaletteOpen(true);
+    document.addEventListener('open-command-palette', handleOpenPalette);
+    return () => document.removeEventListener('open-command-palette', handleOpenPalette);
+  }, []);
+
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Calendario', href: '/calendar', icon: Calendar },

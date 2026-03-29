@@ -38,7 +38,7 @@
   /* Event Status */
   --color-status-quoted: #d97706;
   --color-status-confirmed: #007aff;
-  --color-status-completed: #34c759;
+  --color-status-completed: #2D6A4F;
   --color-status-cancelled: #ff3b30;
 
   /* Border Radius */
@@ -78,7 +78,7 @@
     /* Event Status */
     --color-status-quoted: #d97706;
     --color-status-confirmed: #007aff;
-    --color-status-completed: #34c759;
+    --color-status-completed: #2D6A4F;
     --color-status-cancelled: #ff3b30;
 
     color-scheme: light;
@@ -112,7 +112,7 @@
     /* Event Status (brighter for dark) */
     --color-status-quoted: #fbbf24;
     --color-status-confirmed: #0a84ff;
-    --color-status-completed: #30d158;
+    --color-status-completed: #52B788;
     --color-status-cancelled: #ff453a;
 
     color-scheme: dark;

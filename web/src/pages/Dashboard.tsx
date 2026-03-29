@@ -19,7 +19,12 @@ import {
   Plus,
   Users,
   TrendingUp,
+  Search,
+  Zap,
+  UserPlus,
+  FileText,
 } from "lucide-react";
+import { clientService } from "../services/clientService";
 import { logError } from "../lib/errorHandler";
 import {
   getEventNetSales,
@@ -107,6 +112,128 @@ function KpiCard({ icon: Icon, iconBg, iconColor, label, value, sub }: KpiCardPr
   );
 }
 
+// ── Quick Action Card ───────────────────────────────────────────
+interface QuickActionCardProps {
+  icon: React.ElementType;
+  label: string;
+  accent: "gold" | "blue" | "orange";
+  onClick?: () => void;
+  to?: string;
+}
+
+const QUICK_ACTION_ACCENT = {
+  gold:   { bg: "bg-primary/10",  icon: "text-primary",  border: "hover:border-primary/40" },
+  blue:   { bg: "bg-info/10",     icon: "text-info",     border: "hover:border-info/40" },
+  orange: { bg: "bg-warning/10",  icon: "text-warning",  border: "hover:border-warning/40" },
+};
+
+function QuickActionCard({ icon: Icon, label, accent, onClick, to }: QuickActionCardProps) {
+  const a = QUICK_ACTION_ACCENT[accent];
+  const inner = (
+    <div className={`bg-card shadow-sm border border-border ${a.border} rounded-3xl p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer h-full min-h-[88px]`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${a.bg}`}>
+        <Icon className={`h-5 w-5 ${a.icon}`} aria-hidden="true" />
+      </div>
+      <span className="text-xs font-semibold text-text text-center leading-tight">{label}</span>
+    </div>
+  );
+  if (to) return <Link to={to} className="block h-full">{inner}</Link>;
+  return <button type="button" onClick={onClick} className="block w-full h-full text-left">{inner}</button>;
+}
+
+// ── Event Status Bar ────────────────────────────────────────────
+interface StatusSegment { name: string; value: number; color: string; }
+
+function EventStatusBar({ data, loading }: { data: StatusSegment[]; loading: boolean }) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <RefreshCw className="h-7 w-7 animate-spin text-border" />
+      </div>
+    );
+  }
+  if (total === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 text-text-tertiary">
+        <Calendar className="h-12 w-12 opacity-20" />
+        <p className="text-sm text-text-secondary">Sin datos para graficar este mes</p>
+        <Link to="/events/new" className="text-xs font-semibold text-primary hover:underline">Crear primer evento</Link>
+      </div>
+    );
+  }
+  return (
+    <div className="flex-1 flex flex-col justify-center gap-6">
+      <div className="text-center">
+        <span className="text-4xl font-black text-text">{total}</span>
+        <p className="text-xs text-text-secondary mt-1">eventos este mes</p>
+      </div>
+      <div className="flex h-3 rounded-full overflow-hidden w-full" role="img"
+        aria-label={`Distribución: ${data.map(d => `${d.name} ${d.value}`).join(', ')}`}>
+        {data.map((seg) => (
+          <div key={seg.name} className="h-full transition-all duration-500"
+            style={{ width: `${(seg.value / total) * 100}%`, backgroundColor: seg.color }}
+            title={`${seg.name}: ${seg.value}`} />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center">
+        {data.map((seg) => (
+          <div key={seg.name} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+            <span className="text-xs text-text-secondary">{seg.name} <span className="font-semibold text-text">{seg.value}</span></span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Upcoming Event Card ─────────────────────────────────────────
+function UpcomingEventCard({ event, onStatusChange }: {
+  event: DashboardEvent;
+  onStatusChange: (id: string, status: EventStatus) => void;
+}) {
+  const navigate = useNavigate();
+  const dateObj = new Date(event.event_date + "T12:00:00");
+  return (
+    <div className="bg-card shadow-sm border border-border rounded-3xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+      onClick={() => navigate(`/events/${event.id}/summary`)} role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/events/${event.id}/summary`); }}>
+      <div className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center shrink-0"
+        style={{ backgroundColor: "var(--color-primary-light)" }}>
+        <span className="text-xs font-bold uppercase text-primary leading-none">{format(dateObj, "MMM", { locale: es })}</span>
+        <span className="text-xl font-black text-primary leading-tight">{format(dateObj, "d")}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-text truncate">{event.clients?.name ?? "—"}</p>
+        <p className="text-xs text-text-secondary truncate mt-0.5">{event.service_type} · {event.num_people} pax</p>
+      </div>
+      <div onClick={(e) => e.stopPropagation()}>
+        <StatusDropdown eventId={event.id} currentStatus={event.status as EventStatus}
+          onStatusChange={(newStatus) => onStatusChange(event.id, newStatus)} />
+      </div>
+    </div>
+  );
+}
+
+// ── Low Stock Card ──────────────────────────────────────────────
+function LowStockCard({ item }: { item: InventoryItem }) {
+  return (
+    <div className="bg-card shadow-sm border border-border rounded-2xl p-4 flex items-start gap-3">
+      <div className="w-8 h-8 rounded-xl bg-error/10 flex items-center justify-center shrink-0 mt-0.5">
+        <AlertTriangle className="h-4 w-4 text-error" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-text truncate">{item.ingredient_name}</p>
+        <p className="text-xs text-text-secondary mt-0.5">
+          Stock: <span className="font-bold text-error">{item.current_stock}</span>
+          <span className="text-text-tertiary">/{item.minimum_stock}</span> {item.unit}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ────────────────────────────────────────────────────────────────
 export const Dashboard: React.FC = () => {
   const { user, checkAuth } = useAuth();
@@ -126,12 +253,18 @@ export const Dashboard: React.FC = () => {
   const [vatOutstandingThisMonth, setVatOutstandingThisMonth] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
 
+  const [clientCount, setClientCount] = useState(0);
+  const [loadingClients, setLoadingClients] = useState(true);
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
   const [loadingInventory, setLoadingInventory] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isLoading = loadingMonth || loadingUpcoming || loadingInventory;
+  const isLoading = loadingMonth || loadingUpcoming || loadingInventory || loadingClients;
+
+  const handleOpenSearch = () => {
+    document.dispatchEvent(new CustomEvent('open-command-palette'));
+  };
 
   const fmt = (n: number) =>
     `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
@@ -217,6 +350,13 @@ export const Dashboard: React.FC = () => {
       })
       .catch((err) => logError("Error loading inventory", err))
       .finally(() => setLoadingInventory(false));
+
+    // 4. Load Client Count
+    setLoadingClients(true);
+    clientService.getAll()
+      .then((data) => setClientCount((data || []).length))
+      .catch((err) => logError("Error loading clients", err))
+      .finally(() => setLoadingClients(false));
   };
 
   useEffect(() => { loadDashboardData(); }, []);
@@ -265,35 +405,20 @@ export const Dashboard: React.FC = () => {
       {/* ── HEADER ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-text tracking-tight">
-            Hola, {firstName} 👋
-          </h1>
+          <h1 className="text-2xl font-black text-text tracking-tight">Hola, {firstName} 👋</h1>
           <p className="text-sm text-text-secondary mt-0.5 first-letter:uppercase">
             {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            to="/events/new"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
-            aria-label="Crear nuevo evento"
-          >
-            <Plus className="h-4 w-4" /> Evento
+          <Link to="/cotizacion-rapida" className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card text-text-secondary hover:text-info hover:border-info/40 hover:bg-info/5 transition-colors" aria-label="Cotización rápida">
+            <Zap className="h-4 w-4" />
           </Link>
-          <Link
-            to="/clients/new"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 border border-border rounded-xl text-sm font-semibold text-text bg-card hover:bg-surface-alt transition-colors"
-            aria-label="Crear nuevo cliente"
-          >
-            <Users className="h-4 w-4" /> Cliente
-          </Link>
-          <button
-            type="button"
-            onClick={loadDashboardData}
-            className="p-2.5 rounded-xl border border-border bg-card text-text-secondary hover:text-primary hover:bg-surface-alt transition-colors"
-            aria-label="Recargar datos del dashboard"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
+          <button type="button" onClick={handleOpenSearch} className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card text-text-secondary hover:text-warning hover:border-warning/40 hover:bg-warning/5 transition-colors" aria-label="Buscar">
+            <Search className="h-4 w-4" />
+          </button>
+          <button type="button" onClick={loadDashboardData} className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card text-text-secondary hover:text-primary hover:bg-surface-alt transition-colors" aria-label="Recargar">
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
@@ -324,10 +449,18 @@ export const Dashboard: React.FC = () => {
         />
       )}
 
+      {/* ── QUICK ACTIONS ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <QuickActionCard icon={Plus} label="Nuevo Evento" accent="gold" to="/events/new" />
+        <QuickActionCard icon={UserPlus} label="Nuevo Cliente" accent="blue" to="/clients/new" />
+        <QuickActionCard icon={Zap} label="Cotización Rápida" accent="blue" to="/cotizacion-rapida" />
+        <QuickActionCard icon={Search} label="Buscar" accent="orange" onClick={handleOpenSearch} />
+      </div>
+
       {/* ── KPI CARDS ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-        {loadingMonth ? (
-          Array.from({ length: 6 }).map((_, i) => <SkeletonKpi key={i} />)
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {(loadingMonth || loadingClients) ? (
+          Array.from({ length: 8 }).map((_, i) => <SkeletonKpi key={i} />)
         ) : (
           <>
             <KpiCard
@@ -378,6 +511,22 @@ export const Dashboard: React.FC = () => {
               value={lowStockCount > 0 ? `${lowStockCount} ítems bajos` : "Todo en orden"}
               sub={<Link to="/inventory" className="font-semibold text-primary hover:underline">Ver inventario</Link>}
             />
+            <KpiCard
+              icon={Users}
+              iconBg="bg-info/10"
+              iconColor="text-info"
+              label="Clientes"
+              value={String(clientCount)}
+              sub={<Link to="/clients" className="font-semibold text-primary hover:underline">Ver clientes</Link>}
+            />
+            <KpiCard
+              icon={FileText}
+              iconBg="bg-warning/10"
+              iconColor="text-warning"
+              label="Cotizaciones"
+              value={String(eventsThisMonthList.filter(e => e.status === 'quoted').length)}
+              sub="Pendientes de confirmar este mes"
+            />
           </>
         )}
       </div>
@@ -425,202 +574,65 @@ export const Dashboard: React.FC = () => {
             <h3 className="text-base font-bold text-text">Estado de Eventos</h3>
             <span className="text-xs text-text-secondary bg-surface-alt px-3 py-1 rounded-full">Este mes</span>
           </div>
-          <div className="h-72 w-full" role="img" aria-label="Gráfico de barras con estados de eventos del mes">
-            {loadingMonth ? (
-              <div className="h-full flex items-center justify-center">
-                <RefreshCw className="h-7 w-7 animate-spin text-border" aria-hidden="true" />
-                <span className="sr-only">Cargando...</span>
-              </div>
-            ) : chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={288}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip
-                    cursor={{ fill: "var(--color-surface-alt)" }}
-                    contentStyle={tooltipStyle}
-                  />
-                  <Bar dataKey="value" name="Eventos" radius={[6, 6, 0, 0]} barSize={44}>
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex flex-col items-center justify-center gap-3 text-text-tertiary">
-                <Calendar className="h-12 w-12 opacity-20" aria-hidden="true" />
-                <p className="text-sm text-text-secondary">Sin datos para graficar este mes</p>
-                <Link to="/events/new" className="text-xs font-semibold text-primary hover:underline">
-                  Crear primer evento
-                </Link>
-              </div>
-            )}
-          </div>
+          <EventStatusBar data={chartData} loading={loadingMonth} />
         </div>
+      </div>
 
-        {/* ── LOW STOCK ── */}
-        {lowStockItems.length > 0 && (
-          <div className="bg-card shadow-sm border border-border rounded-3xl xl:col-span-2 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h3 className="text-base font-bold text-text flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-error/10 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="h-3.5 w-3.5 text-error" aria-hidden="true" />
-                </span>
-                Inventario crítico
-                <span className="ml-1 text-xs font-semibold bg-error/10 text-error px-2 py-0.5 rounded-full">
-                  {lowStockItems.length}
-                </span>
-              </h3>
-              <Link to="/inventory" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-                Ver todo <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border" aria-label="Inventario con stock crítico">
-                <caption className="sr-only">{lowStockItems.length} ítems con stock crítico</caption>
-                <thead className="bg-surface-alt">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Ítem</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Stock actual</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Mínimo</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-card divide-y divide-border">
-                  {lowStockItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-surface-alt/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-text">{item.ingredient_name}</div>
-                        <div className="text-xs text-text-secondary">Unidad: {item.unit}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-error/10 text-error rounded-full text-xs font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse" />
-                          {item.current_stock} {item.unit}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                        {item.minimum_stock} {item.unit}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <Link to="/inventory" className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors">
-                          Gestionar
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ── UPCOMING EVENTS ── */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl xl:col-span-2 overflow-hidden">
+      {/* ── LOW STOCK ── */}
+      {lowStockItems.length > 0 && (
+        <div className="bg-card shadow-sm border border-border rounded-3xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <h3 className="text-base font-bold text-text">Próximos Eventos</h3>
-            <Link to="/calendar" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-              Ver todos <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            <h3 className="text-base font-bold text-text flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-3.5 w-3.5 text-error" />
+              </span>
+              Inventario crítico
+              <span className="ml-1 text-xs font-semibold bg-error/10 text-error px-2 py-0.5 rounded-full">{lowStockItems.length}</span>
+            </h3>
+            <Link to="/inventory" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+              Ver todo <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-
-          {loadingUpcoming ? (
-            <div className="divide-y divide-border">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 px-6 py-4 animate-pulse">
-                  <div className="w-9 h-9 rounded-xl bg-surface-alt shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3.5 bg-surface-alt rounded w-1/3" />
-                    <div className="h-3 bg-surface rounded w-1/4" />
-                  </div>
-                  <div className="w-14 h-5 bg-surface-alt rounded-full" />
-                  <div className="w-20 h-3 bg-surface rounded" />
-                  <div className="w-12 h-7 bg-surface-alt rounded-xl" />
-                </div>
-              ))}
-            </div>
-          ) : upcomingEvents.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border" aria-label="Próximos eventos">
-                <thead className="bg-surface-alt">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Fecha</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Cliente</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Estado</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Servicio / Personas</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-text-secondary uppercase tracking-wider">
-                      <span className="sr-only">Acción</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-card divide-y divide-border">
-                  {upcomingEvents.map((event) => (
-                    <tr
-                      key={event.id}
-                      className="hover:bg-surface-alt/50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/events/${event.id}/summary`)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col items-center justify-center bg-surface-alt border border-border rounded-xl w-11 h-11 shrink-0">
-                            <span className="text-lg font-black leading-none text-text">
-                              {format(new Date(event.event_date + "T12:00:00"), "d")}
-                            </span>
-                            <span className="text-[9px] font-semibold uppercase text-text-secondary leading-none mt-0.5">
-                              {format(new Date(event.event_date + "T12:00:00"), "MMM", { locale: es })}
-                            </span>
-                          </div>
-                          <div className="text-xs text-text-secondary capitalize">
-                            {format(new Date(event.event_date + "T12:00:00"), "EEEE", { locale: es })}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">
-                        {event.clients?.name ?? "—"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                        <StatusDropdown
-                          eventId={event.id}
-                          currentStatus={event.status as EventStatus}
-                          onStatusChange={(newStatus) => {
-                            setUpcomingEvents((prev) =>
-                              prev.map((ev) =>
-                                ev.id === event.id ? { ...ev, status: newStatus } : ev,
-                              ),
-                            );
-                          }}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                        {event.service_type} · {event.num_people} pax
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          to={`/events/${event.id}/summary`}
-                          className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors"
-                        >
-                          Ver
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-surface-alt flex items-center justify-center">
-                <Clock className="h-7 w-7 text-text-tertiary opacity-50" aria-hidden="true" />
-              </div>
-              <p className="text-sm text-text-secondary">No hay eventos próximos agendados</p>
-              <Link to="/events/new" className="text-sm font-bold text-primary hover:underline">
-                Agendar uno ahora →
-              </Link>
-            </div>
-          )}
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {lowStockItems.map((item) => <LowStockCard key={item.id} item={item} />)}
+          </div>
         </div>
+      )}
+
+      {/* ── UPCOMING EVENTS ── */}
+      <div className="bg-card shadow-sm border border-border rounded-3xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h3 className="text-base font-bold text-text">Próximos Eventos</h3>
+          <Link to="/calendar" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+            Ver todos <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        {loadingUpcoming ? (
+          <div className="p-4 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-card border border-border rounded-3xl p-4 flex items-center gap-4 animate-pulse">
+                <div className="w-12 h-12 rounded-2xl bg-surface-alt shrink-0" />
+                <div className="flex-1 space-y-2"><div className="h-3.5 bg-surface-alt rounded w-1/3" /><div className="h-3 bg-surface rounded w-1/4" /></div>
+                <div className="w-16 h-6 bg-surface-alt rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : upcomingEvents.length > 0 ? (
+          <div className="p-4 space-y-3">
+            {upcomingEvents.map((event) => (
+              <UpcomingEventCard key={event.id} event={event}
+                onStatusChange={(id, newStatus) => setUpcomingEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev)))} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-surface-alt flex items-center justify-center">
+              <Clock className="h-7 w-7 text-text-tertiary opacity-50" />
+            </div>
+            <p className="text-sm text-text-secondary">No hay eventos próximos agendados</p>
+            <Link to="/events/new" className="text-sm font-bold text-primary hover:underline">Agendar uno ahora →</Link>
+          </div>
+        )}
       </div>
 
       <PendingEventsModal />
