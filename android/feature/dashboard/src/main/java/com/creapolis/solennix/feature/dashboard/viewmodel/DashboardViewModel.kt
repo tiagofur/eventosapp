@@ -6,6 +6,7 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
+import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
@@ -13,6 +14,7 @@ import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.Payment
 import com.creapolis.solennix.core.model.Plan
+import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.network.AuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -24,7 +26,8 @@ private data class DataSnapshot(
     val lowStock: List<InventoryItem>,
     val allEvents: List<Event>,
     val allClients: List<Client>,
-    val allPayments: List<Payment>
+    val allPayments: List<Payment>,
+    val allProducts: List<Product>
 )
 
 data class StatusCount(
@@ -55,7 +58,10 @@ data class DashboardUiState(
     val pendingEvents: List<PendingEvent> = emptyList(),
     val statusDistribution: List<StatusCount> = emptyList(),
     val userName: String = "",
-    val clientMap: Map<String, String> = emptyMap()
+    val clientMap: Map<String, String> = emptyMap(),
+    val hasClients: Boolean = false,
+    val hasProducts: Boolean = false,
+    val hasEvents: Boolean = false
 )
 
 @HiltViewModel
@@ -64,6 +70,7 @@ class DashboardViewModel @Inject constructor(
     private val inventoryRepository: InventoryRepository,
     private val clientRepository: ClientRepository,
     private val paymentRepository: PaymentRepository,
+    private val productRepository: ProductRepository,
     private val authManager: AuthManager
 ) : ViewModel() {
 
@@ -76,11 +83,18 @@ class DashboardViewModel @Inject constructor(
         clientRepository.getClients(),
         paymentRepository.getPayments()
     ) { upcoming, lowStock, allEvents, allClients, allPayments ->
-        DataSnapshot(upcoming, lowStock, allEvents, allClients, allPayments)
+        DataSnapshot(upcoming, lowStock, allEvents, allClients, allPayments, emptyList())
+    }
+
+    private val enrichedDataFlow = combine(
+        dataFlow,
+        productRepository.getProducts()
+    ) { data, allProducts ->
+        data.copy(allProducts = allProducts)
     }
 
     val uiState: StateFlow<DashboardUiState> = combine(
-        dataFlow,
+        enrichedDataFlow,
         _isRefreshing
     ) { data, isRefreshing ->
         // Basic KPI calculation for this month
@@ -190,7 +204,10 @@ class DashboardViewModel @Inject constructor(
             pendingEvents = pendingEvents,
             statusDistribution = statusDistribution,
             userName = firstName,
-            clientMap = clientMap
+            clientMap = clientMap,
+            hasClients = data.allClients.isNotEmpty(),
+            hasProducts = data.allProducts.isNotEmpty(),
+            hasEvents = data.allEvents.isNotEmpty()
         )
     }.stateIn(
         scope = viewModelScope,
@@ -210,6 +227,7 @@ class DashboardViewModel @Inject constructor(
                 inventoryRepository.syncInventory()
                 clientRepository.syncClients()
                 paymentRepository.syncPayments()
+                productRepository.syncProducts()
             } catch (e: Exception) {
                 // Network sync errors are non-fatal
             } finally {

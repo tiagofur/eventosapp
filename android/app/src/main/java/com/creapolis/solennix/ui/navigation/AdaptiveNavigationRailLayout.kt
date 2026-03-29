@@ -250,7 +250,14 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
                         onUpgradeClick = { navController.navigate("pricing") },
                         onNewEventClick = { navController.navigate("event_form?eventId=") },
                         onNewClientClick = { navController.navigate("client_form") },
-                        onSearchClick = { navController.navigate("search") }
+                        onSearchClick = { navController.navigate("search") },
+                        onOnboardingAction = { action ->
+                            when (action) {
+                                "clients" -> navController.navigate("client_form")
+                                "products" -> navController.navigate("product_form")
+                                "events" -> navController.navigate("event_form?eventId=")
+                            }
+                        }
                     )
                 }
                 composable("calendar") {

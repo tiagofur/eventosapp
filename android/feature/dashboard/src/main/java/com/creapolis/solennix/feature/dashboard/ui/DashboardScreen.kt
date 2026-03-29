@@ -14,7 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +48,8 @@ fun DashboardScreen(
     onUpgradeClick: () -> Unit = {},
     onNewEventClick: () -> Unit = {},
     onNewClientClick: () -> Unit = {},
-    onSearchClick: () -> Unit = {}
+    onSearchClick: () -> Unit = {},
+    onOnboardingAction: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isWideScreen = LocalIsWideScreen.current
@@ -88,6 +92,22 @@ fun DashboardScreen(
                 item {
                     DashboardGreetingHeader(
                         userName = uiState.userName
+                    )
+                }
+
+                // Onboarding Checklist
+                item {
+                    var onboardingDismissed by rememberSaveable { mutableStateOf(false) }
+                    val onboardingSteps = OnboardingSteps.getDefaultSteps(
+                        hasClients = uiState.hasClients,
+                        hasProducts = uiState.hasProducts,
+                        hasEvents = uiState.hasEvents
+                    )
+                    OnboardingChecklist(
+                        steps = onboardingSteps,
+                        onStepClick = { step -> onOnboardingAction(step.action) },
+                        onDismiss = { onboardingDismissed = true },
+                        visible = !onboardingDismissed
                     )
                 }
 
