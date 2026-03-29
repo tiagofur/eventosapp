@@ -491,8 +491,11 @@
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
-| Vista de calendario | ✅ | ✅ | ✅ | ✅ | |
-| Fechas no disponibles | ✅ | ⬜ | ✅ | ✅ | Falta UI en Android |
+| Vista mensual (unica vista) | ✅ | ✅ | ✅ | ✅ | Vista lista ELIMINADA — migrada a seccion Eventos |
+| Fechas no disponibles (long-press) | ✅ | ✅ | 🔄 | ✅ | Web: pendiente agregar right-click. iOS: pendiente rangos en long-press |
+| Gestion centralizada de bloqueos | 🔄 | ✅ | 🔄 | ✅ | iOS: crear BlockedDatesSheet. Web: expandir modal. Android: ya tiene BottomSheet |
+| Toolbar simplificado | 🔄 | 🔄 | 🔄 | ➖ | Refactor pendiente: solo "Gestionar Bloqueos" + "Hoy" |
+| Panel de dia seleccionado | ✅ | ✅ | ✅ | ➖ | Split view en tablet/desktop |
 
 ### Autenticacion
 
@@ -512,10 +515,16 @@
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
 | Dashboard principal | ✅ | ✅ | ✅ | ✅ | |
-| KPI cards | ✅ | ✅ | ✅ | ✅ | |
-| Eventos pendientes | ✅ | ✅ | ✅ | ✅ | |
-| Onboarding | ✅ | ✅ | ⬜ | ➖ | Solo movil |
-| Grafico de estado | ✅ | ⬜ | ⬜ | ✅ | iOS: EventStatusChart, Android: DemandForecastChart en ProductDetail |
+| Header (saludo + fecha) | ✅ | 🔄 | ✅ | ➖ | Android Phone: pendiente agregar saludo |
+| KPI cards (8) | ✅ | ✅ | ✅ | ✅ | Pendiente unificar nombre "Ventas Netas" en Android |
+| Alertas de Atencion | 🔄 | ✅ | 🔄 | ✅ | NUEVO. iOS y Web: pendiente crear. Android: expandir con criterio "sin confirmar 14 dias" |
+| Quick Actions (2) | 🔄 | 🔄 | 🔄 | ➖ | Pendiente reducir de 4 a 2 en tablet/desktop |
+| Chart: Distribucion estados | ✅ | ✅ | ✅ | ➖ | |
+| Chart: Comparacion financiera | ✅ | ✅ | ✅ | ➖ | |
+| Stock Bajo | ✅ | ✅ | ✅ | ➖ | |
+| Proximos Eventos | ✅ | ✅ | ✅ | ✅ | iOS: pendiente agregar dropdown cambio estado inline |
+| Onboarding Checklist | ✅ | 🔄 | ✅ | ➖ | Android: pendiente agregar inline en Dashboard |
+| Orden alertas primero | 🔄 | 🔄 | 🔄 | ➖ | Pendiente reordenar en las 3 plataformas |
 
 ### Pagos
 
@@ -641,7 +650,55 @@
 
 ---
 
-## 8. Resumen de Brechas Criticas
+## 8. Refactors UI/UX en Progreso (Marzo 2026)
+
+Refactors planificados para lograr paridad total entre las 6 plataformas (iPhone, iPad, Android Phone, Android Tablet, Web Desktop, Web Mobile). Los planes detallados estan en archivos `*_REFACTOR_PLAN.md` en la raiz del proyecto.
+
+### 8.1 Refactor de Navegacion (NAVIGATION_REFACTOR_PLAN.md)
+
+**Estado:** En progreso — implementacion por plataforma en paralelo.
+
+| Cambio | iOS | Android | Web | Descripcion |
+|--------|-----|---------|-----|-------------|
+| Bottom Tab Bar: 5 tabs | ✅ | ✅ | ✅ | Inicio, Calendario, Eventos (NUEVO), Clientes, Mas |
+| Sidebar: 6+1 secciones | ✅ | 🔄 | ✅ | 6 secciones + Config abajo. Removidos: Cotizacion, Cotizacion Rapida, Buscar |
+| Menu Mas: 3 items | ✅ | ✅ | ✅ | Solo Productos, Inventario, Config |
+| FAB acciones rapidas | ✅ | ✅ | ✅ | Nuevo Evento + Cotizacion Rapida en phones |
+| Busqueda en topbar | ✅ | ✅ | ✅ | Barra en desktop, icono en phones |
+| Botones contextuales Eventos | ✅ | ✅ | ✅ | Header de EventList en tablet/desktop |
+| Web Mobile bottom tab bar | ➖ | ➖ | ✅ | NUEVO: bottom tabs para web <1024px |
+
+### 8.2 Refactor de Dashboard (DASHBOARD_REFACTOR_PLAN.md)
+
+**Estado:** Planificado — pendiente implementacion.
+
+| Cambio | iOS | Android | Web | Descripcion |
+|--------|-----|---------|-----|-------------|
+| Remover botones accion del header | 🔄 | 🔄 | 🔄 | Quick Quote, Search, Refresh → ya viven en FAB y topbar |
+| Reducir Quick Actions de 4 a 2 | 🔄 | 🔄 | 🔄 | Solo Nuevo Evento + Nuevo Cliente |
+| Crear widget Alertas de Atencion | 🔄 | ✅ (parcial) | 🔄 | Eventos con pago pendiente, vencidos, sin confirmar |
+| Reordenar secciones | 🔄 | 🔄 | 🔄 | Alertas → KPIs → Actions → Charts → Stock → Eventos |
+| Saludo en Android Phone | ➖ | 🔄 | ➖ | Agregar saludo (solo estaba en tablet) |
+| Onboarding inline en Android | ➖ | 🔄 | ➖ | Agregar checklist como iOS y Web |
+| Unificar nombre "Ventas Netas" | ✅ | 🔄 | ✅ | Android decia "Ventas del Mes" |
+
+### 8.3 Refactor de Calendario (CALENDAR_REFACTOR_PLAN.md)
+
+**Estado:** Planificado — pendiente implementacion.
+
+| Cambio | iOS | Android | Web | Descripcion |
+|--------|-----|---------|-----|-------------|
+| Eliminar vista lista | 🔄 | 🔄 | 🔄 | Migrada a seccion Eventos. Eliminar toggle y codigo de lista |
+| Simplificar toolbar | 🔄 | 🔄 | 🔄 | Solo "Gestionar Bloqueos" + "Hoy" |
+| Renombrar titulo Web | ➖ | ➖ | 🔄 | De "Eventos" a "Calendario" |
+| Crear gestion de bloqueos | 🔄 | ✅ | 🔄 | iOS: BlockedDatesSheet. Web: expandir modal |
+| Long-press rangos (iOS) | 🔄 | ✅ | ➖ | Agregar campo "Fecha fin" al dialogo |
+| Right-click bloqueo (Web) | ➖ | ➖ | 🔄 | onContextMenu para bloqueo rapido |
+| Mover exportar CSV a Eventos | ➖ | ➖ | 🔄 | De CalendarView a EventList |
+
+---
+
+## 9. Resumen de Brechas Criticas
 
 | Brecha | Plataformas Afectadas | Impacto | Esfuerzo Estimado | Prioridad |
 |--------|----------------------|---------|-------------------|-----------|
@@ -653,10 +710,13 @@
 | Modo offline incompleto en movil | iOS, Android | Sin funcionalidad sin conexion | 20-30h | P1 |
 | ~~StoreKit 2 flujo incompleto~~ | ✅ | Reemplazado por RevenueCat SDK | 0h | ✅ |
 | Notificaciones email limitadas | Backend | Solo reset de contrasena; sin recordatorios | 10-15h | P1 |
-| ~~Google/Apple Sign-In sin UI~~ | ✅ | Implementado en todas las plataformas: iOS (Apple+Google), Android (Google+Apple), Web (Google+Apple) | 0h | ✅ |
+| ~~Google/Apple Sign-In sin UI~~ | ✅ | Implementado en todas las plataformas | 0h | ✅ |
 | ~~Cotizacion rapida falta en Android~~ | ✅ | QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator | 0h | ✅ |
 | Fotos de evento falta en Android y Web | Android, Web | Solo iOS tiene galeria de fotos | 10-15h | P2 |
 | Panel admin solo en web | iOS, Android | Administracion solo desde navegador | ➖ | P3 (aceptable) |
 | Deep linking incompleto en Android | Android | Navegacion desde URLs externas limitada | 4-6h | P2 |
 | Live Activity equivalente en Android | Android | Sin notificacion persistente durante eventos | 6-8h | P2 |
-| Graficos de estado en Dashboard | Web | iOS tiene EventStatusChart, Android tiene DemandForecastChart en ProductDetail | 2-4h | P2 |
+| ~~Graficos de estado en Dashboard~~ | ✅ | Implementado en las 3 plataformas (EventStatusChart + FinancialComparisonChart) | 0h | ✅ |
+| Refactor Dashboard: Alertas de Atencion | iOS, Web | Widget critico para organizadores — Android tiene PendingEventsBanner, falta en iOS y Web | 6-8h | P1 |
+| Refactor Calendario: Gestion de bloqueos | iOS, Web | Falta panel centralizado de gestion de bloqueos (Android tiene BottomSheet) | 4-6h | P1 |
+| Refactor Calendario: Eliminar vista lista | iOS, Android, Web | Vista lista del calendario es redundante con nueva seccion Eventos | 2-4h | P1 |

@@ -225,17 +225,40 @@ Gestion de equipos e insumos necesarios para los eventos.
 
 ### 5. Calendario [Todas]
 
-Vista mensual de eventos con soporte para fechas no disponibles (blackout dates).
+Vista mensual de eventos enfocada en visualizacion y gestion de disponibilidad. El Calendario NO incluye vista de lista de eventos — esa funcionalidad vive en la seccion Eventos (ver seccion 1).
 
 #### Funcionalidades
 
 | Feature | Detalle |
 |---------|---------|
-| Vista mensual | Grid de calendario con indicadores de eventos por dia |
+| Vista mensual (unica vista) | Grid de calendario con indicadores de eventos por dia. No hay vista lista — se elimino para evitar duplicacion con la seccion Eventos |
 | Navegacion por mes | Botones/gestos para avanzar y retroceder meses |
-| Indicadores de eventos | Puntos o badges que muestran eventos en cada dia |
-| Fechas no disponibles | El usuario puede bloquear fechas (vacaciones, dias festivos, etc.) |
-| Tap en dia | Navega al detalle de eventos de ese dia |
+| Indicadores de eventos | Dots de colores por status: gris (cotizado), azul (confirmado), verde (completado), rojo (cancelado). Max 3 dots por dia |
+| Fechas no disponibles | Long-press para bloquear/desbloquear rapido + boton "Gestionar Bloqueos" para ver/editar todos los bloqueos |
+| Tap en dia | Muestra eventos de ese dia en panel inferior (phone) o panel lateral (tablet/desktop) |
+| Panel de dia seleccionado | Muestra event cards con tipo de servicio, hora, cliente, status badge. Tap en card → detalle del evento |
+
+#### Toolbar del Calendario
+
+| Elemento | Descripcion |
+|----------|-------------|
+| Titulo | "Calendario" (unificado en todas las plataformas) |
+| Boton "Gestionar Bloqueos" | Abre panel/modal con lista de todos los bloqueos, opcion de agregar y eliminar |
+| Boton "Hoy" | Navega al mes actual y selecciona la fecha de hoy |
+
+**Removidos del toolbar:** ~~Toggle vista calendario/lista~~, ~~Boton crear evento~~ (ahora en FAB), ~~Boton Quick Quote~~ (ahora en FAB), ~~Boton exportar CSV~~ (movido a seccion Eventos), ~~Boton busqueda~~ (ahora en topbar global).
+
+#### Bloqueo de fechas
+
+**Interaccion rapida (long-press):**
+- Long-press en fecha NO bloqueada → dialogo "Bloquear Fecha" con fecha inicio, fecha fin (opcional, para rangos), razon (opcional)
+- Long-press en fecha BLOQUEADA → dialogo con info del bloqueo + boton "Desbloquear"
+- Web: right-click (onContextMenu) en vez de long-press
+
+**Gestion centralizada (boton toolbar):**
+- Lista de todos los bloqueos activos con rango de fechas, razon, boton eliminar
+- Boton "Agregar Bloqueo" con formulario fecha inicio + fecha fin + razon
+- Implementacion: Sheet (iOS), BottomSheet (Android), Modal (Web)
 
 #### Fechas no disponibles (Blackout Dates)
 
@@ -250,10 +273,17 @@ Vista mensual de eventos con soporte para fechas no disponibles (blackout dates)
 - `POST /api/unavailable-dates` — crear
 - `DELETE /api/unavailable-dates/{id}` — eliminar
 
+#### Layout por form factor
+
+| Form Factor | Layout |
+|-------------|--------|
+| iPhone / Android Phone / Web Mobile | Scroll vertical: calendario arriba, eventos del dia seleccionado abajo |
+| iPad / Android Tablet / Web Desktop | Split view: calendario a la izquierda (~55%), panel de eventos del dia a la derecha (~45%) |
+
 **Vistas por plataforma:**
-- **[iOS]**: `CalendarView`, `CalendarGridView`
-- **[Android]**: `CalendarScreen`
-- **[Web]**: `CalendarView`
+- **[iOS]**: `CalendarView`, `CalendarGridView`, `BlockedDatesSheet` (nuevo)
+- **[Android]**: `CalendarScreen` (con BottomSheet de bloqueos existente)
+- **[Web]**: `CalendarView`, `UnavailableDatesModal` (expandido para gestion)
 
 **Tier:** FREE
 
@@ -302,23 +332,74 @@ Sistema completo de autenticacion con multiples proveedores y gestion segura de 
 
 ### 7. Dashboard [Todas]
 
-Pantalla principal con KPIs del negocio, acciones rapidas y alertas de eventos pendientes.
+Pantalla principal con KPIs del negocio, alertas de eventos que requieren atencion, acciones rapidas y resumen visual. El orden de secciones prioriza lo urgente.
 
-#### Componentes del dashboard
+#### Orden de secciones (scroll vertical)
 
-| Componente | Detalle | Plataforma |
-|------------|---------|------------|
-| KPI Cards | Metricas clave del negocio (ingresos, eventos del mes, tasa de conversion, etc.) | [Todas] |
-| Grafica de estados | Distribucion de eventos por status (cotizado, confirmado, completado, cancelado) | [iOS] |
-| Eventos pendientes | Modal con eventos confirmados en el pasado que requieren atencion (completar o cancelar) | [Todas] |
-| Acciones rapidas | Botones para crear evento, ver calendario, agregar cliente | [Todas] |
+| # | Seccion | Condicional | Descripcion |
+|---|---------|-------------|-------------|
+| 1 | Header (saludo + fecha) | Siempre | "Hola, [Nombre]" + fecha larga en espanol. Sin botones de accion (busqueda en topbar, cotizacion rapida en FAB) |
+| 2 | Onboarding Checklist | Solo si no completado | Progreso de configuracion inicial (negocio, cliente, producto, evento) |
+| 3 | Plan Limits Banner | Solo si plan basico | Mensaje + boton "Actualizar Plan" |
+| 4 | Alertas de Atencion | Solo si hay alertas | **Widget critico** — eventos con pago pendiente (7 dias), vencidos, sin confirmar (14 dias) |
+| 5 | KPI Cards (8) | Siempre | Metricas clave del negocio |
+| 6 | Quick Actions (2) | Siempre | Solo "Nuevo Evento" + "Nuevo Cliente" (cotizacion rapida en FAB, busqueda en topbar) |
+| 7 | Charts (2) | Siempre | Distribucion de estados + comparacion financiera |
+| 8 | Stock Bajo | Solo si hay items | Alertas de inventario critico |
+| 9 | Proximos Eventos (5) | Siempre | Siguientes 5 eventos con status inline editable |
 
-**Eventos pendientes:**
-El sistema detecta eventos con status `confirmado` cuya fecha ya paso. Estos necesitan ser marcados como `completado` o `cancelado`. Se muestran en un modal/alerta al abrir el dashboard.
+#### KPI Cards (8 tarjetas)
 
-- **[iOS]**: `DashboardView`, `KPICardView`, `EventStatusChart`, `PendingEventsModalView`
-- **[Android]**: `DashboardScreen`
-- **[Web]**: `Dashboard`
+| # | KPI | Color | Subtitulo |
+|---|-----|-------|-----------|
+| 1 | Ventas Netas | Verde | "Eventos confirmados y completados" |
+| 2 | Cobrado (mes) | Dorado | "Este mes" |
+| 3 | IVA Cobrado | Azul | "Proporcional al % pagado" |
+| 4 | IVA Pendiente | Rojo | "Por cobrar" |
+| 5 | Eventos del Mes | Naranja | Cantidad + link "Ver calendario" (tablet) |
+| 6 | Stock Bajo | Naranja/Verde | "X items bajos" o "Todo en orden" + link "Ver inventario" (tablet) |
+| 7 | Clientes | Azul | "Total" + link "Ver clientes" (tablet) |
+| 8 | Cotizaciones Pendientes | Naranja | "Pendientes de confirmar" |
+
+#### Alertas de Atencion (widget)
+
+Muestra eventos que necesitan accion inmediata del organizador. Si no hay alertas, la seccion no se muestra.
+
+| Tipo de alerta | Criterio |
+|----------------|----------|
+| Pago pendiente | Eventos confirmados con fecha dentro de 7 dias, no completamente pagados |
+| Evento vencido | Eventos con fecha pasada en estado "cotizado" o "confirmado" |
+| Sin confirmar | Eventos cotizados con fecha dentro de 14 dias sin confirmacion |
+
+Cada alerta muestra: nombre del evento, fecha, razon (badge), monto pendiente. Tap → detalle del evento.
+
+#### Quick Actions (2 botones)
+
+| # | Accion | Icono | Color |
+|---|--------|-------|-------|
+| 1 | Nuevo Evento | plus.circle / Plus | Dorado (primary) |
+| 2 | Nuevo Cliente | person.badge.plus / UserPlus | Azul (info) |
+
+**Removidos:** ~~Cotizacion Rapida~~ (ahora en FAB), ~~Buscar~~ (ahora en topbar).
+
+#### Charts
+
+| Chart | Tipo | Detalle |
+|-------|------|---------|
+| Distribucion de Estados | Barra horizontal segmentada | Cotizado, Confirmado, Completado, Cancelado con conteo y porcentaje |
+| Comparacion Financiera | Barras horizontales | Ventas Netas (verde), Cobrado Real (dorado), IVA por Cobrar (rojo) |
+
+#### Layout por form factor
+
+| Form Factor | KPIs | Quick Actions | Charts | Stock + Eventos |
+|-------------|------|---------------|--------|-----------------|
+| Phone | Scroll horizontal (2 visibles) | 2 botones fila | Apilados | Apilados |
+| Tablet/Desktop | Grid 4 columnas | 2 botones fila (ancho fijo) | Side by side | Side by side |
+
+**Vistas por plataforma:**
+- **[iOS]**: `DashboardView`, `KPICardView`, `EventStatusChart`, `AttentionEventsCard` (nuevo)
+- **[Android]**: `DashboardScreen`, `PendingEventsBanner` (expandido con criterio "sin confirmar")
+- **[Web]**: `Dashboard`, `AttentionEventsCard` (nuevo)
 
 **Endpoint:** `GET /api/events/upcoming` — retorna eventos proximos y pendientes.
 
@@ -569,6 +650,71 @@ Navegacion profunda a pantallas especificas mediante URL schemes e integracion c
 
 ---
 
+### 18b. Arquitectura de Navegacion Unificada [Todas]
+
+Principio fundamental: **Navegacion = Secciones (sustantivos)**, no acciones. Las acciones de creacion viven en FABs y botones contextuales.
+
+#### Bottom Tab Bar (Phones: iPhone, Android Phone, Web Mobile <1024px)
+
+| # | Tab | Icono iOS | Icono Android/Web | Ruta |
+|---|-----|-----------|-------------------|------|
+| 1 | Inicio | house.fill | Home/LayoutDashboard | /dashboard |
+| 2 | Calendario | calendar | Calendar/DateRange | /calendar |
+| 3 | Eventos | calendar.badge.clock | PartyPopper/Celebration | /events |
+| 4 | Clientes | person.2.fill | Users/People | /clients |
+| 5 | Mas | ellipsis | MoreHorizontal/Menu | /more |
+
+#### Menu "Mas" (solo phones — 3 items)
+
+| Seccion | Item | Ruta |
+|---------|------|------|
+| Catalogo | Productos | /products |
+| Catalogo | Inventario | /inventory |
+| Configuracion | Configuracion | /settings |
+
+#### Sidebar (Tablets/Desktop: iPad, Android Tab, Web Desktop >=1024px)
+
+| # | Seccion | Ruta | Posicion |
+|---|---------|------|----------|
+| 1 | Inicio | /dashboard | Principal |
+| 2 | Calendario | /calendar | Principal |
+| 3 | Eventos | /events | Principal |
+| 4 | Clientes | /clients | Principal |
+| 5 | Productos | /products | Principal |
+| 6 | Inventario | /inventory | Principal |
+| 7 | Configuracion | /settings | Parte inferior |
+
+El sidebar es colapsable a solo iconos en Web Desktop e iPad.
+
+#### Busqueda Global (Topbar)
+
+| Plataforma | Implementacion |
+|------------|----------------|
+| Web Desktop / iPad / Android Tab | Barra de busqueda visible en topbar + Cmd+K/Ctrl+K |
+| iPhone / Android Phone / Web Mobile | Icono de lupa en topbar → expande a barra de busqueda |
+| iOS nativo | Core Spotlight + .searchable() en NavigationStack |
+
+#### FAB de Acciones Rapidas (Phones)
+
+Boton flotante dorado "+" en esquina inferior derecha que al presionar muestra menu con:
+- **Nuevo Evento** — crear evento completo con cliente y fecha
+- **Cotizacion Rapida** — presupuesto sin registrar cliente
+
+Se oculta en: Configuracion, menu Mas, formularios.
+En tablets/desktop: estas acciones aparecen como botones contextuales en el header de la seccion Eventos.
+
+#### Items REMOVIDOS de la navegacion
+
+| Item | Razon | Donde vive ahora |
+|------|-------|-------------------|
+| ~~Cotizacion~~ (sidebar) | Era una accion, no una seccion | Boton en seccion Eventos / FAB |
+| ~~Cotizacion Rapida~~ (sidebar) | Era una accion, no una seccion | FAB / botones contextuales |
+| ~~Buscar~~ (sidebar/Mas) | Duplicaba funcionalidad | Topbar global (siempre visible) |
+
+**Tier:** FREE
+
+---
+
 ### 19. Configuracion de Negocio [Todas]
 
 Personalizacion del perfil comercial del organizador de eventos.
@@ -718,10 +864,14 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
-| Vista mensual | ✅ | ✅ | ✅ | ✅ | |
+| Vista mensual (unica vista) | ✅ | ✅ | ✅ | ✅ | Vista lista ELIMINADA — migrada a seccion Eventos |
 | Navegacion por mes | ✅ | ✅ | ✅ | ➖ | |
-| Fechas no disponibles | ✅ | ✅ | ✅ | ✅ | blackout dates |
-| Indicadores de eventos | ✅ | ✅ | ✅ | ➖ | |
+| Fechas no disponibles (long-press) | ✅ | ✅ | 🔄 | ✅ | Web: agregar right-click/long-press. iOS: agregar soporte de rangos |
+| Gestion centralizada de bloqueos | 🔄 | ✅ | 🔄 | ✅ | iOS: crear BlockedDatesSheet. Web: expandir modal. Android: ya tiene BottomSheet |
+| Indicadores de eventos (dots) | ✅ | ✅ | ✅ | ➖ | Dots de colores por status |
+| Panel de dia seleccionado | ✅ | ✅ | ✅ | ➖ | Phone: abajo. Tablet: panel lateral |
+| Toolbar simplificado | 🔄 | 🔄 | 🔄 | ➖ | Solo "Gestionar Bloqueos" + "Hoy". Removidos: toggle vista, crear evento, CSV |
+| Titulo "Calendario" | ✅ | ✅ | 🔄 | ➖ | Web: renombrar de "Eventos" a "Calendario" |
 
 ### Auth
 
@@ -739,10 +889,16 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 
 | Feature | iOS | Android | Web | Backend | Notas |
 |---------|-----|---------|-----|---------|-------|
-| KPI Cards | ✅ | ✅ | ✅ | ✅ | |
-| Eventos pendientes | ✅ | ✅ | ✅ | ✅ | PendingEventsModal |
-| Grafica de estados | ✅ | ⬜ | ⬜ | ➖ | EventStatusChart solo en iOS |
-| Acciones rapidas | ✅ | ✅ | ✅ | ➖ | |
+| Header (saludo + fecha) | ✅ | 🔄 | ✅ | ➖ | Android Phone: agregar saludo (solo tenia en tablet) |
+| KPI Cards (8) | ✅ | ✅ | ✅ | ✅ | Nombres unificados: "Ventas Netas" en todas |
+| Alertas de Atencion | 🔄 | ✅ | 🔄 | ✅ | NUEVO widget. iOS y Web: crear. Android: expandir con "sin confirmar 14 dias" |
+| Quick Actions (2) | 🔄 | 🔄 | 🔄 | ➖ | Reducido de 4 a 2: solo Nuevo Evento + Nuevo Cliente |
+| Chart: Distribucion estados | ✅ | ✅ | ✅ | ➖ | Barra horizontal segmentada |
+| Chart: Comparacion financiera | ✅ | ✅ | ✅ | ➖ | Barras: Ventas Netas, Cobrado, IVA pendiente |
+| Stock Bajo | ✅ | ✅ | ✅ | ➖ | Solo se muestra si hay items con stock bajo |
+| Proximos Eventos (5) | ✅ | ✅ | ✅ | ✅ | Con status inline editable (dropdown) |
+| Onboarding Checklist | ✅ | 🔄 | ✅ | ➖ | Android: agregar inline en Dashboard |
+| Orden: alertas primero | 🔄 | 🔄 | 🔄 | ➖ | Nuevo orden: Alertas → KPIs → Actions → Charts → Stock → Eventos |
 
 ### Pagos
 
