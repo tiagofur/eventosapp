@@ -25,17 +25,8 @@ struct SidebarSplitLayout: View {
     var body: some View {
         NavigationSplitView {
             sidebarContent
-                .navigationTitle("Solennix")
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            contentPath.append(Route.eventForm())
-                        } label: {
-                            Image(systemName: "plus")
-                        }
-                        .accessibilityLabel("Nuevo Evento")
-                    }
-                }
+                .navigationTitle("")
+                .navigationBarTitleDisplayMode(.inline)
         } detail: {
             NavigationStack(path: $contentPath) {
                 Group {
@@ -80,6 +71,12 @@ struct SidebarSplitLayout: View {
     @ViewBuilder
     private var sidebarContent: some View {
         List(selection: $selectedSection) {
+            // Branding header
+            Section {
+                sidebarBrandingHeader
+            }
+            .listSectionSeparator(.hidden)
+
             // Main sections
             Section("Principal") {
                 ForEach(SidebarSection.mainSections, id: \.self) { section in
@@ -91,11 +88,84 @@ struct SidebarSplitLayout: View {
             Section("Configuración") {
                 sidebarLabel(for: .settings)
             }
+
+            // User footer
+            Section {
+                sidebarUserFooter
+            }
+            .listSectionSeparator(.hidden, edges: .top)
         }
         .listStyle(.sidebar)
         .tint(SolennixColors.primary)
         .toolbarBackground(SolennixColors.surfaceGrouped, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+    }
+
+    // MARK: - Branding Header
+
+    private var sidebarBrandingHeader: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(SolennixGradient.premium)
+                    .frame(width: 36, height: 36)
+
+                Image(systemName: "sparkles")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+
+            Text("Solennix")
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(SolennixColors.text)
+        }
+        .padding(.vertical, 6)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+
+    // MARK: - User Footer
+
+    @ViewBuilder
+    private var sidebarUserFooter: some View {
+        if let user = authManager.currentUser {
+            Button {
+                selectedSection = .settings
+            } label: {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(SolennixGradient.premium)
+                            .frame(width: 36, height: 36)
+
+                        Text(user.name.prefix(1).uppercased())
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(user.name)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(SolennixColors.text)
+
+                        Text(user.email)
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    PlanBadge(plan: user.plan)
+                }
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
     }
 
     private func sidebarLabel(for section: SidebarSection) -> some View {
