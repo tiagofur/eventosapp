@@ -23,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.creapolis.solennix.core.designsystem.component.QuickActionsFAB
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
@@ -101,18 +102,15 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
         },
         floatingActionButton = {
-            // Simple FAB on top-level destinations (except More, Calendar, and Events — Events gets QuickActionsFAB later)
-            val showSimpleFab = isAtTopLevel && currentRoute != TopLevelDestination.MORE.route && currentRoute != TopLevelDestination.CALENDAR.route && currentRoute != TopLevelDestination.EVENTS.route
-            if (showSimpleFab) {
-                FloatingActionButton(
-                    onClick = { navController.navigate("event_form?eventId=") },
-                    containerColor = SolennixTheme.colors.primary,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = SolennixElevation.fab
-                    )
-                ) {
-                    Icon(Icons.Filled.Add, "Nuevo Evento", tint = Color.White)
-                }
+            // QuickActionsFAB on Home, Events, and Clients
+            val showQuickActions = isAtTopLevel
+                && currentRoute != TopLevelDestination.MORE.route
+                && currentRoute != TopLevelDestination.CALENDAR.route
+            if (showQuickActions) {
+                QuickActionsFAB(
+                    onNewEventClick = { navController.navigate("event_form?eventId=") },
+                    onQuickQuoteClick = { navController.navigate("quick_quote") }
+                )
             }
 
             // Expandable FAB for Calendar

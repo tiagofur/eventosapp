@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.creapolis.solennix.core.designsystem.component.QuickActionsFAB
 import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.designsystem.theme.SolennixTitle
@@ -125,23 +126,18 @@ fun AdaptiveNavigationRailLayout(initialDeepLinkRoute: String? = null) {
         // Content area with NavHost
         Scaffold(
             floatingActionButton = {
-                // Simple FAB on section-level routes (except calendar, events, and settings)
-                // Events gets contextual toolbar buttons instead of FAB on tablet
-                val showSimpleFab = isAtSectionLevel
+                // QuickActionsFAB on section-level routes (except calendar, events, and settings)
+                // Events gets contextual toolbar buttons on tablet
+                val showQuickActions = isAtSectionLevel
                     && currentRoute != "calendar"
                     && currentRoute != "events"
                     && currentRoute != "settings"
 
-                if (showSimpleFab) {
-                    FloatingActionButton(
-                        onClick = { navController.navigate("event_form?eventId=") },
-                        containerColor = SolennixTheme.colors.primary,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = SolennixElevation.fab
-                        )
-                    ) {
-                        Icon(Icons.Filled.Add, "Nuevo Evento", tint = Color.White)
-                    }
+                if (showQuickActions) {
+                    QuickActionsFAB(
+                        onNewEventClick = { navController.navigate("event_form?eventId=") },
+                        onQuickQuoteClick = { navController.navigate("quick_quote") }
+                    )
                 }
 
                 // Expandable FAB for Calendar
