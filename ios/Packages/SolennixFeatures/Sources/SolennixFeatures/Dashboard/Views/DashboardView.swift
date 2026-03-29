@@ -443,10 +443,7 @@ public struct DashboardView: View {
             if let vm = viewModel, !vm.upcomingEvents.isEmpty {
                 VStack(spacing: Spacing.sm) {
                     ForEach(vm.upcomingEvents) { event in
-                        NavigationLink(value: Route.eventDetail(id: event.id)) {
-                            upcomingEventCard(event: event)
-                        }
-                        .buttonStyle(.plain)
+                        upcomingEventCard(event: event)
                     }
                 }
                 .padding(.horizontal, isIPad ? 0 : Spacing.md)
@@ -459,35 +456,92 @@ public struct DashboardView: View {
 
     private func upcomingEventCard(event: Event) -> some View {
         HStack(spacing: Spacing.md) {
-            // Date box
-            dateBox(for: event.eventDate)
+            NavigationLink(value: Route.eventDetail(id: event.id)) {
+                HStack(spacing: Spacing.md) {
+                    // Date box
+                    dateBox(for: event.eventDate)
 
-            // Event info
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(viewModel?.clientName(for: event.clientId) ?? "Cliente")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.text)
+                    // Event info
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(viewModel?.clientName(for: event.clientId) ?? "Cliente")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(SolennixColors.text)
 
-                HStack(spacing: Spacing.sm) {
-                    Text(event.serviceType)
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
+                        HStack(spacing: Spacing.sm) {
+                            Text(event.serviceType)
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.textSecondary)
 
-                    Text("\(event.numPeople) personas")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textTertiary)
+                            Text("\(event.numPeople) personas")
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.textTertiary)
+                        }
+                    }
+
+                    Spacer(minLength: 0)
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
-            Spacer()
-
-            StatusBadge(status: event.status.rawValue)
+            upcomingEventStatusMenu(event: event)
         }
         .padding(Spacing.md)
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
         .shadowSm()
+    }
+
+    private func upcomingEventStatusMenu(event: Event) -> some View {
+        let isUpdating = viewModel?.updatingEventId == event.id
+
+        return Menu {
+            upcomingEventStatusButton(title: "Cotizado", status: .quoted, event: event)
+            upcomingEventStatusButton(title: "Confirmado", status: .confirmed, event: event)
+            upcomingEventStatusButton(title: "Completado", status: .completed, event: event)
+            upcomingEventStatusButton(title: "Cancelado", status: .cancelled, event: event, role: .destructive)
+        } label: {
+            HStack(spacing: Spacing.xs) {
+                if isUpdating {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(SolennixColors.primary)
+                }
+
+                StatusBadge(status: event.status.rawValue)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(SolennixColors.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isUpdating)
+        .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func upcomingEventStatusButton(
+        title: String,
+        status: EventStatus,
+        event: Event,
+        role: ButtonRole? = nil
+    ) -> some View {
+        Button(role: role) {
+            guard event.status != status else { return }
+
+            HapticsHelper.play(.selection)
+            Task {
+                await viewModel?.updateEventStatus(eventId: event.id, newStatus: status)
+            }
+        } label: {
+            if event.status == status {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
     }
 
     private func dateBox(for dateString: String) -> some View {

@@ -80,6 +80,7 @@ public final class DashboardViewModel {
     public var isLoading: Bool = false
     public var errorMessage: String?
     public var attentionEvents: [DashboardAttentionEvent] = []
+    public var updatingEventId: String?
 
     /// Map of client ID -> Client for joining event data with client names.
     public var clientMap: [String: Client] = [:]
@@ -87,6 +88,8 @@ public final class DashboardViewModel {
     // MARK: - Dependencies
 
     private let apiClient: APIClient
+    private var allEvents: [Event] = []
+    private var allPayments: [Payment] = []
 
     // MARK: - Init
 
@@ -165,25 +168,22 @@ public final class DashboardViewModel {
             let clients = try await clientsResult
             let monthEvents = try await monthEventsResult
             let upcoming = try await upcomingResult
-            let allEvents = try await allEventsResult
+            let loadedAllEvents = try await allEventsResult
             let inventory = try await inventoryResult
             let products = try await productsResult
             let monthPayments = try await monthPaymentsResult
-            let allPayments = try await allPaymentsResult
+            let loadedAllPayments = try await allPaymentsResult
 
             // Build client map
             clientMap = Dictionary(uniqueKeysWithValues: clients.map { ($0.id, $0) })
 
             // Events this month
             eventsThisMonth = monthEvents
+            allEvents = loadedAllEvents
+            allPayments = loadedAllPayments
 
             // Upcoming events
             upcomingEvents = upcoming
-
-            // Net sales = sum of total_amount for confirmed/completed events
-            netSalesThisMonth = monthEvents
-                .filter { $0.status == .confirmed || $0.status == .completed }
-                .reduce(0) { $0 + $1.totalAmount }
 
             // Low stock items = inventory where current_stock < minimum_stock AND minimum_stock > 0
             lowStockItems = inventory.filter { $0.minimumStock > 0 && $0.currentStock < $0.minimumStock }
@@ -191,35 +191,19 @@ public final class DashboardViewModel {
 
             // Counts for onboarding checklist
             totalProducts = products.count
-            totalEvents = allEvents.count
+            totalEvents = loadedAllEvents.count
 
             // Attention events for dashboard alerts/cards.
             attentionEvents = Self.makeAttentionEvents(
-                events: allEvents,
-                payments: allPayments,
+                events: loadedAllEvents,
+                payments: loadedAllPayments,
                 clientMap: clientMap,
                 now: now
             )
 
             // Cash collected = sum of payment amounts in current month
             cashCollectedThisMonth = monthPayments.reduce(0) { $0 + $1.amount }
-
-            // VAT calculation based on payment ratio
-            let totalEventAmount = monthEvents
-                .filter { $0.status == .confirmed || $0.status == .completed }
-                .reduce(0) { $0 + $1.totalAmount }
-            let totalTaxAmount = monthEvents
-                .filter { $0.status == .confirmed || $0.status == .completed }
-                .reduce(0) { $0 + $1.taxAmount }
-
-            if totalEventAmount > 0 {
-                let paymentRatio = cashCollectedThisMonth / totalEventAmount
-                vatCollectedThisMonth = totalTaxAmount * paymentRatio
-                vatOutstandingThisMonth = totalTaxAmount - vatCollectedThisMonth
-            } else {
-                vatCollectedThisMonth = 0
-                vatOutstandingThisMonth = 0
-            }
+            recalculateMonthlyMetrics()
 
         } catch {
             if let apiError = error as? APIError {
@@ -235,6 +219,95 @@ public final class DashboardViewModel {
     @MainActor
     public func refresh() async {
         await loadDashboard()
+    }
+
+    @MainActor
+    public func updateEventStatus(eventId: String, newStatus: EventStatus) async {
+        guard updatingEventId == nil else { return }
+
+        updatingEventId = eventId
+        defer { updatingEventId = nil }
+
+        do {
+            let body = ["status": newStatus.rawValue]
+            let updatedEvent: Event = try await apiClient.put(Endpoint.event(eventId), body: body)
+
+            applyUpdatedEvent(updatedEvent)
+            HapticsHelper.play(.success)
+        } catch {
+            HapticsHelper.play(.error)
+
+            if let apiError = error as? APIError {
+                errorMessage = apiError.errorDescription ?? "Error al cambiar el estado"
+            } else {
+                errorMessage = "Error al cambiar el estado"
+            }
+        }
+    }
+
+    private func applyUpdatedEvent(_ updatedEvent: Event, now: Date = Date()) {
+        allEvents = replacing(event: updatedEvent, in: allEvents, allowInsert: true)
+        eventsThisMonth = replacing(event: updatedEvent, in: eventsThisMonth)
+
+        if shouldDisplayInUpcoming(updatedEvent, now: now) {
+            upcomingEvents = replacing(event: updatedEvent, in: upcomingEvents)
+                .sorted(by: Self.compareDashboardEvents)
+            if upcomingEvents.count > 5 {
+                upcomingEvents = Array(upcomingEvents.prefix(5))
+            }
+        } else {
+            upcomingEvents.removeAll { $0.id == updatedEvent.id }
+        }
+
+        attentionEvents = Self.makeAttentionEvents(
+            events: allEvents,
+            payments: allPayments,
+            clientMap: clientMap,
+            now: now
+        )
+        recalculateMonthlyMetrics()
+    }
+
+    private func recalculateMonthlyMetrics() {
+        let realizedEvents = eventsThisMonth
+            .filter { $0.status == .confirmed || $0.status == .completed }
+
+        netSalesThisMonth = realizedEvents.reduce(0) { $0 + $1.totalAmount }
+
+        let totalEventAmount = realizedEvents.reduce(0) { $0 + $1.totalAmount }
+        let totalTaxAmount = realizedEvents.reduce(0) { $0 + $1.taxAmount }
+
+        if totalEventAmount > 0 {
+            let paymentRatio = cashCollectedThisMonth / totalEventAmount
+            vatCollectedThisMonth = totalTaxAmount * paymentRatio
+            vatOutstandingThisMonth = totalTaxAmount - vatCollectedThisMonth
+        } else {
+            vatCollectedThisMonth = 0
+            vatOutstandingThisMonth = 0
+        }
+    }
+
+    private func shouldDisplayInUpcoming(_ event: Event, now: Date) -> Bool {
+        guard event.status == .confirmed,
+              let eventDate = Self.dashboardDateFormatter.date(from: String(event.eventDate.prefix(10)))
+        else {
+            return false
+        }
+
+        return eventDate >= Calendar.current.startOfDay(for: now)
+    }
+
+    private func replacing(event updatedEvent: Event, in events: [Event], allowInsert: Bool = false) -> [Event] {
+        guard let index = events.firstIndex(where: { $0.id == updatedEvent.id }) else {
+            if allowInsert {
+                return events + [updatedEvent]
+            }
+            return events
+        }
+
+        var events = events
+        events[index] = updatedEvent
+        return events
     }
 
     private static func makeAttentionEvents(
@@ -327,6 +400,17 @@ public final class DashboardViewModel {
         }
 
         return lhs.event.id < rhs.event.id
+    }
+
+    private static func compareDashboardEvents(lhs: Event, rhs: Event) -> Bool {
+        let lhsDate = dashboardDateFormatter.date(from: String(lhs.eventDate.prefix(10))) ?? .distantFuture
+        let rhsDate = dashboardDateFormatter.date(from: String(rhs.eventDate.prefix(10))) ?? .distantFuture
+
+        if lhsDate != rhsDate {
+            return lhsDate < rhsDate
+        }
+
+        return lhs.id < rhs.id
     }
 
     private static let dashboardDateFormatter: DateFormatter = {
