@@ -4,15 +4,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,7 +17,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.CalendarMonth
-import androidx.compose.material.icons.outlined.ViewList
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,8 +44,6 @@ import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.UnavailableDate
 import com.creapolis.solennix.feature.calendar.viewmodel.CalendarUiState
 import com.creapolis.solennix.feature.calendar.viewmodel.CalendarViewModel
-import com.creapolis.solennix.feature.calendar.viewmodel.CalendarViewMode
-import com.creapolis.solennix.feature.calendar.viewmodel.StatusFilter
 import java.time.LocalDate
 import java.time.YearMonth
 import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
@@ -86,53 +80,36 @@ fun CalendarScreen(
         topBar = {
             SolennixSectionTopAppBar(
                 title = "Calendario",
-                onSearchClick = onSearchClick
+                onSearchClick = onSearchClick,
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.loadAllUnavailableDates()
+                        showManageUnavailableSheet = true
+                    }) {
+                        Icon(Icons.Default.Lock, contentDescription = "Gestionar Bloqueos")
+                    }
+                }
             )
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            // View Mode Toggle
-            ViewModeToggle(
-                currentMode = uiState.viewMode,
-                onModeChange = { viewModel.onViewModeChange(it) }
+            CalendarViewContent(
+                uiState = uiState,
+                isWideScreen = isWideScreen,
+                onPreviousMonth = { viewModel.onMonthChange(uiState.currentMonth.minusMonths(1)) },
+                onNextMonth = { viewModel.onMonthChange(uiState.currentMonth.plusMonths(1)) },
+                onGoToToday = { viewModel.goToToday() },
+                onDateSelected = { viewModel.onDateSelected(it) },
+                onDateLongPress = { date ->
+                    longPressedDate = date
+                    if (viewModel.isDateBlocked(date)) {
+                        showUnblockDialog = true
+                    } else {
+                        showBlockDialog = true
+                    }
+                },
+                onEventClick = onEventClick
             )
-
-            when (uiState.viewMode) {
-                CalendarViewMode.CALENDAR -> {
-                    CalendarViewContent(
-                        uiState = uiState,
-                        isWideScreen = isWideScreen,
-                        onPreviousMonth = { viewModel.onMonthChange(uiState.currentMonth.minusMonths(1)) },
-                        onNextMonth = { viewModel.onMonthChange(uiState.currentMonth.plusMonths(1)) },
-                        onGoToToday = { viewModel.goToToday() },
-                        onDateSelected = { viewModel.onDateSelected(it) },
-                        onDateLongPress = { date ->
-                            longPressedDate = date
-                            if (viewModel.isDateBlocked(date)) {
-                                showUnblockDialog = true
-                            } else {
-                                showBlockDialog = true
-                            }
-                        },
-                        onEventClick = onEventClick
-                    )
-                }
-                CalendarViewMode.LIST -> {
-                    // Status filters only in list view (saves space for calendar grid)
-                    StatusFilterRow(
-                        filters = uiState.statusFilters,
-                        selectedStatus = uiState.selectedStatus,
-                        onFilterSelected = { viewModel.onStatusFilterChange(it) }
-                    )
-                    ListViewContent(
-                        uiState = uiState,
-                        isWideScreen = isWideScreen,
-                        searchQuery = uiState.searchQuery,
-                        onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
-                        onEventClick = onEventClick
-                    )
-                }
-            }
         }
     }
 
@@ -189,96 +166,6 @@ fun CalendarScreen(
             },
             onDismiss = { showAddRangeDialog = false }
         )
-    }
-}
-
-@Composable
-fun ViewModeToggle(
-    currentMode: CalendarViewMode,
-    onModeChange: (CalendarViewMode) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        SingleChoiceSegmentedButtonRow {
-            SegmentedButton(
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                onClick = { onModeChange(CalendarViewMode.CALENDAR) },
-                selected = currentMode == CalendarViewMode.CALENDAR,
-                icon = {
-                    Icon(
-                        Icons.Outlined.CalendarMonth,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            ) {
-                Text("Calendario")
-            }
-            SegmentedButton(
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                onClick = { onModeChange(CalendarViewMode.LIST) },
-                selected = currentMode == CalendarViewMode.LIST,
-                icon = {
-                    Icon(
-                        Icons.Outlined.ViewList,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            ) {
-                Text("Lista")
-            }
-        }
-    }
-}
-
-@Composable
-fun StatusFilterRow(
-    filters: List<StatusFilter>,
-    selectedStatus: EventStatus?,
-    onFilterSelected: (EventStatus?) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        filters.forEach { filter ->
-            val isSelected = filter.status == selectedStatus
-            FilterChip(
-                selected = isSelected,
-                onClick = { onFilterSelected(filter.status) },
-                label = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(filter.label)
-                        if (filter.count > 0) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Badge(
-                                containerColor = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    SolennixTheme.colors.secondaryText.copy(alpha = 0.3f)
-                            ) {
-                                Text(
-                                    filter.count.toString(),
-                                    color = if (isSelected) Color.White else SolennixTheme.colors.primaryText
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = SolennixTheme.colors.primaryLight,
-                    selectedLabelColor = SolennixTheme.colors.primary
-                )
-            )
-        }
     }
 }
 
@@ -429,103 +316,6 @@ fun CalendarViewContent(
             } else {
                 items(uiState.eventsForSelectedDate) { event ->
                     CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ListViewContent(
-    uiState: CalendarUiState,
-    isWideScreen: Boolean = false,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onEventClick: (String) -> Unit
-) {
-    Column {
-        // Search Field
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier
-                .then(if (isWideScreen) Modifier.widthIn(max = 600.dp) else Modifier.fillMaxWidth())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text("Buscar por cliente o servicio...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onSearchQueryChange("") }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
-                    }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = SolennixTheme.colors.primary,
-                unfocusedBorderColor = SolennixTheme.colors.divider
-            )
-        )
-
-        // Results count
-        Text(
-            text = "${uiState.filteredCount} evento${if (uiState.filteredCount != 1) "s" else ""}",
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelMedium,
-            color = SolennixTheme.colors.secondaryText
-        )
-
-        if (uiState.filteredEvents.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.EventBusy,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = if (searchQuery.isNotEmpty())
-                            "No se encontraron eventos"
-                        else
-                            "No hay eventos",
-                        color = SolennixTheme.colors.secondaryText
-                    )
-                    if (searchQuery.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Intenta ajustar los filtros de busqueda",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SolennixTheme.colors.secondaryText
-                        )
-                    }
-                }
-            }
-        } else if (isWideScreen) {
-            // Tablet: 2-column grid of event cards
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp, horizontal = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(uiState.filteredEvents) { event ->
-                    ListEventItem(event = event, onClick = { onEventClick(event.id) })
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(uiState.filteredEvents) { event ->
-                    ListEventItem(event = event, onClick = { onEventClick(event.id) })
                 }
             }
         }
@@ -771,125 +561,6 @@ fun CalendarEventItem(
                 style = MaterialTheme.typography.labelLarge,
                 color = SolennixTheme.colors.primary
             )
-        }
-    }
-}
-
-@Composable
-fun ListEventItem(
-    event: Event,
-    onClick: () -> Unit
-) {
-    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
-    val eventDate = parseFlexibleDate(event.eventDate)?.format(dateFormatter) ?: event.eventDate
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = event.serviceType,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = SolennixTheme.colors.primaryText
-                )
-                StatusBadge(status = event.status.name.lowercase())
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = eventDate,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SolennixTheme.colors.secondaryText
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = event.startTime ?: "Todo el dia",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SolennixTheme.colors.secondaryText
-                    )
-                }
-            }
-
-            event.location?.let { location ->
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = location,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SolennixTheme.colors.secondaryText,
-                        maxLines = 1
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider(color = SolennixTheme.colors.divider)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.People,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${event.numPeople} personas",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SolennixTheme.colors.secondaryText
-                    )
-                }
-                Text(
-                    text = "$${String.format("%.2f", event.totalAmount)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = SolennixTheme.colors.primary
-                )
-            }
         }
     }
 }
