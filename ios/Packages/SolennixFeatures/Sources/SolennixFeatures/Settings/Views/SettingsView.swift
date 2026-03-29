@@ -40,6 +40,7 @@ public struct SettingsView: View {
             .frame(maxWidth: sizeClass == .regular ? 640 : .infinity)
             .frame(maxWidth: .infinity)
             .listStyle(.insetGrouped)
+            .tint(SolennixColors.primary)
             .scrollContentBackground(.hidden)
             .background(SolennixColors.surfaceGrouped)
             .navigationTitle("Ajustes")
