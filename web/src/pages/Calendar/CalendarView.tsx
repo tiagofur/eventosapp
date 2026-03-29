@@ -339,7 +339,7 @@ export const CalendarView: React.FC = () => {
 
       {viewMode === "calendar" ? (
         <div 
-          className="relative grid grid-cols-1 xl:grid-cols-5 gap-8 fade-in"
+          className="relative flex flex-col xl:flex-row gap-8 fade-in"
           aria-busy={isFetching}
         >
           {isFetching && (
@@ -352,7 +352,7 @@ export const CalendarView: React.FC = () => {
             </div>
           )}
           {/* Calendar Card */}
-          <div className="bg-card shadow-sm rounded-3xl p-4 sm:p-8 xl:col-span-3 border border-border transition-colors">
+          <div className="bg-card shadow-sm rounded-3xl p-4 sm:p-6 xl:w-fit xl:shrink-0 border border-border transition-colors">
             <div className="flex justify-end mb-2">
               <button
                 type="button"
@@ -476,7 +476,7 @@ export const CalendarView: React.FC = () => {
           </div>
 
           {/* Events List Card */}
-          <div className="bg-card shadow-sm rounded-3xl p-6 xl:col-span-2 border border-border flex flex-col transition-colors">
+          <div className="bg-card shadow-sm rounded-3xl p-6 xl:flex-1 xl:min-w-0 border border-border flex flex-col transition-colors">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-text">
                 Eventos del{" "}
