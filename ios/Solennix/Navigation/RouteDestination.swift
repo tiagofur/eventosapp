@@ -51,8 +51,8 @@ struct RouteDestination: View {
             InventoryFormView(apiClient: apiClient, itemId: id)
 
         // Tools
-        case .search:
-            SearchView()
+        case .search(let query):
+            SearchView(initialQuery: query)
         case .settings:
             SettingsView(apiClient: apiClient, authManager: authManager)
 

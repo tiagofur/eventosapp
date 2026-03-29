@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.search.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.model.Client
@@ -35,7 +36,8 @@ data class SearchUiState(
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _query = MutableStateFlow("")
@@ -78,11 +80,15 @@ class SearchViewModel @Inject constructor(
                 }
             }
             .launchIn(viewModelScope)
+
+        val initialQuery = savedStateHandle.get<String>("query")
+        if (!initialQuery.isNullOrBlank()) {
+            onQueryChange(initialQuery)
+        }
     }
 
     fun onQueryChange(query: String) {
         _query.value = query
-        // Update query immediately for the text field, search will follow after debounce
         _searchResult.value = _searchResult.value.copy(query = query)
     }
 }

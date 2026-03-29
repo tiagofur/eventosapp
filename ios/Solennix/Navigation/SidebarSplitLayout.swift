@@ -54,7 +54,8 @@ struct SidebarSplitLayout: View {
                 }
                 .searchable(text: $searchText, prompt: "Buscar eventos, clientes...")
                 .onSubmit(of: .search) {
-                    contentPath.append(Route.search)
+                    let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    contentPath.append(Route.search(query: query))
                 }
             }
         }

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ import com.creapolis.solennix.feature.search.viewmodel.SearchViewModel
 @Composable
 fun SearchScreen(
     viewModel: SearchViewModel,
+    initialQuery: String? = null,
     onNavigateBack: () -> Unit,
     onClientClick: (String) -> Unit,
     onEventClick: (String) -> Unit,
@@ -39,6 +41,12 @@ fun SearchScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isWideScreen = LocalIsWideScreen.current
+
+    LaunchedEffect(Unit) {
+        if (!initialQuery.isNullOrBlank()) {
+            viewModel.onQueryChange(initialQuery)
+        }
+    }
 
     val hasNoResults = uiState.query.isNotBlank() &&
         !uiState.isLoading &&

@@ -1,5 +1,6 @@
 package com.creapolis.solennix.ui.navigation
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,10 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.creapolis.solennix.core.designsystem.component.QuickActionsFAB
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.theme.SolennixElevation
@@ -223,7 +225,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onUpgradeClick = { navController.navigate("pricing") },
                     onNewEventClick = { navController.navigate("event_form?eventId=") },
                     onNewClientClick = { navController.navigate("client_form") },
-                    onSearchClick = { navController.navigate("search") },
+                    onSearchClick = { navController.navigate(buildSearchRoute()) },
                     onOnboardingAction = { action ->
                         when (action) {
                             "clients" -> navController.navigate("client_form")
@@ -253,7 +255,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     viewModel = hiltViewModel(),
                     onEventClick = { id -> navController.navigate("event_detail/$id") },
                     onNavigateBack = { navController.popBackStack() },
-                    onSearchClick = { navController.navigate("search") },
+                    onSearchClick = { navController.navigate(buildSearchRoute()) },
                     showBackButton = false
                 )
             }
@@ -375,9 +377,19 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
-            composable("search") {
+            composable(
+                "search?query={query}",
+                arguments = listOf(
+                    navArgument("query") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
                 SearchScreen(
                     viewModel = hiltViewModel(),
+                    initialQuery = backStackEntry.arguments?.getString("query")?.let(Uri::decode),
                     onClientClick = { id -> navController.navigate("client_detail/$id") },
                     onEventClick = { id -> navController.navigate("event_detail/$id") },
                     onProductClick = { id -> navController.navigate("product_detail/$id") },
@@ -506,3 +518,6 @@ fun MenuCard(
     }
 }
 
+private fun buildSearchRoute(query: String? = null): String {
+    return "search?query=${Uri.encode(query.orEmpty())}"
+}

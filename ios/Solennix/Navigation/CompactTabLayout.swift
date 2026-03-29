@@ -46,7 +46,8 @@ struct CompactTabLayout: View {
                     }
                     .searchable(text: $searchText, prompt: "Buscar eventos, clientes...")
                     .onSubmit(of: .search) {
-                        homePath.append(Route.search)
+                        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        homePath.append(Route.search(query: query))
                     }
             }
             .tabItem {
@@ -62,7 +63,8 @@ struct CompactTabLayout: View {
                     }
                     .searchable(text: $searchText, prompt: "Buscar eventos, clientes...")
                     .onSubmit(of: .search) {
-                        calendarPath.append(Route.search)
+                        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        calendarPath.append(Route.search(query: query))
                     }
             }
             .tabItem {

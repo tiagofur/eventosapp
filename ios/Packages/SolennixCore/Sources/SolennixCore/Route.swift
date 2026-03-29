@@ -28,7 +28,7 @@ public enum Route: Hashable {
     case inventoryForm(id: String? = nil)
 
     // MARK: Tools
-    case search
+    case search(query: String = "")
     case settings
 
     // MARK: Settings Sub-Routes

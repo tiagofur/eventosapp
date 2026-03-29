@@ -7,12 +7,15 @@ import SolennixNetwork
 
 public struct SearchView: View {
 
+    private let initialQuery: String
     @Environment(AuthManager.self) private var authManager
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var viewModel: SearchViewModel?
     @FocusState private var isSearchFocused: Bool
 
-    public init() {}
+    public init(initialQuery: String = "") {
+        self.initialQuery = initialQuery
+    }
 
     public var body: some View {
         Group {
@@ -28,9 +31,17 @@ public struct SearchView: View {
         .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
         .onAppear {
             if viewModel == nil, let client = authManager.apiClient {
-                viewModel = SearchViewModel(apiClient: client)
+                let model = SearchViewModel(apiClient: client)
+                viewModel = model
+
+                let trimmedInitialQuery = initialQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedInitialQuery.isEmpty {
+                    model.query = trimmedInitialQuery
+                    Task { await model.search() }
+                }
             }
-            isSearchFocused = true
+
+            isSearchFocused = initialQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
