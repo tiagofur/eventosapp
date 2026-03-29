@@ -204,7 +204,6 @@ fun CalendarViewContent(
                     onDateLongPress = onDateLongPress,
                     events = uiState.events,
                     unavailableDates = uiState.unavailableDates,
-                    selectedStatus = uiState.selectedStatus,
                     isWideScreen = true,
                     modifier = Modifier.weight(1f)
                 )
@@ -275,8 +274,7 @@ fun CalendarViewContent(
                     onDateSelected = onDateSelected,
                     onDateLongPress = onDateLongPress,
                     events = uiState.events,
-                    unavailableDates = uiState.unavailableDates,
-                    selectedStatus = uiState.selectedStatus
+                    unavailableDates = uiState.unavailableDates
                 )
             }
 
@@ -379,7 +377,6 @@ fun CalendarGrid(
     onDateLongPress: (LocalDate) -> Unit = {},
     events: List<Event>,
     unavailableDates: List<UnavailableDate> = emptyList(),
-    selectedStatus: EventStatus? = null,
     isWideScreen: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -388,13 +385,7 @@ fun CalendarGrid(
     val days = (1..daysInMonth).toList()
     val previousMonthDays = (0 until firstDayOfMonth).map { null }
     val allDays = previousMonthDays + days
-
-    // Filter events by status if selected
-    val filteredEvents = if (selectedStatus != null) {
-        events.filter { it.status == selectedStatus }
-    } else {
-        events
-    }
+    val filteredEvents = events
 
     val errorColor = SolennixTheme.colors.error
     val today = LocalDate.now()
