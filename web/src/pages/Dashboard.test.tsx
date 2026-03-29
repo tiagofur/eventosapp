@@ -51,11 +51,19 @@ const renderDashboard = () =>
     </MemoryRouter>
   );
 
+const toLocalDateString = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedTooltipFormatters.length = 0;
     (useAuth as any).mockReturnValue({ user: { name: 'Test User' }, profile: { name: 'Test User' }, checkAuth: vi.fn() });
+    (eventService.getAll as any).mockResolvedValue([]);
     (eventService.getByDateRange as any).mockResolvedValue([]);
     (eventService.getUpcoming as any).mockResolvedValue([]);
     (inventoryService.getAll as any).mockResolvedValue([]);
@@ -75,10 +83,35 @@ describe('Dashboard', () => {
 
     expect(await screen.findByText(/no hay eventos próximos/i)).toBeInTheDocument();
     expect(screen.getByText(/Sin datos para graficar este mes/i)).toBeInTheDocument();
-    expect(screen.getByText(/todo en orden/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/todo en orden/i).length).toBeGreaterThan(0);
+  });
+
+  it('keeps only the planned header and quick actions', async () => {
+    renderDashboard();
+
+    expect(await screen.findByText(/hola/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Nuevo Evento/i })).toHaveAttribute('href', '/events/new');
+    expect(screen.getByRole('link', { name: /Nuevo Cliente/i })).toHaveAttribute('href', '/clients/new');
+    expect(screen.queryByRole('link', { name: /Cotización Rápida/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Buscar/i })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Cotización rápida/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Buscar$/i)).not.toBeInTheDocument();
   });
 
   it('shows data cards and upcoming events when present', async () => {
+    (eventService.getAll as any).mockResolvedValue([
+      {
+        id: 'event-1',
+        status: 'confirmed',
+        total_amount: 1000,
+        tax_amount: 160,
+        requires_invoice: true,
+        event_date: '2024-01-20',
+        clients: { name: 'Ana' },
+        service_type: 'Boda',
+        num_people: 100,
+      },
+    ]);
     (eventService.getByDateRange as any).mockResolvedValue([
       {
         id: 'event-1',
@@ -113,10 +146,107 @@ describe('Dashboard', () => {
 
     renderDashboard();
 
-    expect(await screen.findByText(/eventos este mes/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Ventas Netas/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cobrado \(mes\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/IVA Cobrado/i)).toBeInTheDocument();
+    expect(screen.getByText(/IVA Pendiente/i)).toBeInTheDocument();
+    expect(screen.getByText(/Eventos del Mes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Stock Bajo/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Clientes$/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cotizaciones Pendientes/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^Este mes$/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Por cobrar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Pendientes de confirmar$/i)).toBeInTheDocument();
     expect(screen.getByText(/Inventario crítico/i)).toBeInTheDocument();
     expect(screen.getByText('Luis')).toBeInTheDocument();
     expect(screen.getByText(/XV/i)).toBeInTheDocument();
+  });
+
+  it('renders attention widget when events require follow-up', async () => {
+    const today = new Date();
+    const inThreeDays = new Date(today);
+    inThreeDays.setDate(today.getDate() + 3);
+    const inTenDays = new Date(today);
+    inTenDays.setDate(today.getDate() + 10);
+    const twoDaysAgo = new Date(today);
+    twoDaysAgo.setDate(today.getDate() - 2);
+
+    (eventService.getAll as any).mockResolvedValue([
+      {
+        id: 'confirmed-unpaid',
+        status: 'confirmed',
+        total_amount: 1000,
+        tax_amount: 0,
+        requires_invoice: false,
+        event_date: toLocalDateString(inThreeDays),
+        clients: { name: 'Ana' },
+        service_type: 'Boda',
+        num_people: 100,
+      },
+      {
+        id: 'past-quoted',
+        status: 'quoted',
+        total_amount: 500,
+        tax_amount: 0,
+        requires_invoice: false,
+        event_date: toLocalDateString(twoDaysAgo),
+        clients: { name: 'Luis' },
+        service_type: 'XV',
+        num_people: 60,
+      },
+      {
+        id: 'quoted-soon',
+        status: 'quoted',
+        total_amount: 700,
+        tax_amount: 0,
+        requires_invoice: false,
+        event_date: toLocalDateString(inTenDays),
+        clients: { name: 'Carla' },
+        service_type: 'Cena',
+        num_people: 40,
+      },
+    ]);
+    (paymentService.getByEventIds as any)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ event_id: 'confirmed-unpaid', amount: 250 }]);
+
+    renderDashboard();
+
+    expect(await screen.findByText(/Eventos que Requieren Atención/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cobros por cerrar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Eventos vencidos/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cotizaciones urgentes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Saldo pendiente/i)).toBeInTheDocument();
+    expect(screen.getByText(/Cotización vencida sin cerrar/i)).toBeInTheDocument();
+    expect(screen.getByText(/Faltan \d+ día\(s\) para confirmar/i)).toBeInTheDocument();
+  });
+
+  it('hides attention widget when there are no alerts', async () => {
+    const today = new Date();
+    const inThirtyDays = new Date(today);
+    inThirtyDays.setDate(today.getDate() + 30);
+
+    (eventService.getAll as any).mockResolvedValue([
+      {
+        id: 'completed-event',
+        status: 'completed',
+        total_amount: 800,
+        tax_amount: 0,
+        requires_invoice: false,
+        event_date: toLocalDateString(inThirtyDays),
+        clients: { name: 'Ana' },
+        service_type: 'Boda',
+        num_people: 100,
+      },
+    ]);
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText(/hola/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText(/Eventos que Requieren Atención/i)).not.toBeInTheDocument();
   });
 
   it('logs error when month events fail', async () => {
@@ -150,9 +280,11 @@ describe('Dashboard', () => {
   });
 
   it('retries when refresh is clicked', async () => {
+    (eventService.getUpcoming as any).mockRejectedValue(new Error('oops'));
+
     renderDashboard();
 
-    const refresh = screen.getByRole('button', { name: /Recargar datos del dashboard/i });
+    const refresh = await screen.findByRole('button', { name: /Recargar/i });
     fireEvent.click(refresh);
 
     await waitFor(() => {

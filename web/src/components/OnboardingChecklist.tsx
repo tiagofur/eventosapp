@@ -31,7 +31,7 @@ export const OnboardingChecklist: React.FC = () => {
         const [clients, products, events] = await Promise.all([
           clientService.getAll(),
           productService.getAll(),
-          eventService.getUpcoming(1) // Just need to know if any exist
+          eventService.getAll()
         ]);
 
         const clientExists = (clients || []).length > 0;

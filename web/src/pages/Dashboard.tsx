@@ -4,7 +4,7 @@ import { eventService } from "../services/eventService";
 import { inventoryService } from "../services/inventoryService";
 import { paymentService } from "../services/paymentService";
 import { Event, Payment, InventoryItem } from "../types/entities";
-import { startOfMonth, endOfMonth, format } from "date-fns";
+import { addDays, differenceInCalendarDays, endOfMonth, format, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -19,8 +19,6 @@ import {
   Plus,
   Users,
   TrendingUp,
-  Search,
-  Zap,
   UserPlus,
   FileText,
 } from "lucide-react";
@@ -32,7 +30,6 @@ import {
   getEventTotalCharged,
 } from "../lib/finance";
 import { StatusDropdown, EventStatus } from "../components/StatusDropdown";
-import { PendingEventsModal } from "../components/PendingEventsModal";
 import { OnboardingChecklist } from "../components/OnboardingChecklist";
 import { UpgradeBanner } from "../components/UpgradeBanner";
 import { usePlanLimits } from "../hooks/usePlanLimits";
@@ -49,7 +46,44 @@ import {
 
 type DashboardEvent = Event & {
   clients?: { name: string } | null;
+  client?: { name: string } | null;
 };
+
+type AttentionAlertTone = "warning" | "error";
+
+interface DashboardAttentionItem {
+  event: DashboardEvent;
+  detail: string;
+}
+
+interface DashboardAttentionAlert {
+  key: string;
+  title: string;
+  description: string;
+  tone: AttentionAlertTone;
+  items: DashboardAttentionItem[];
+}
+
+const ATTENTION_TONE_STYLES: Record<AttentionAlertTone, { badge: string; card: string; detail: string }> = {
+  warning: {
+    badge: "bg-warning/10 text-warning",
+    card: "border-warning/20 bg-warning/5",
+    detail: "text-warning",
+  },
+  error: {
+    badge: "bg-error/10 text-error",
+    card: "border-error/20 bg-error/5",
+    detail: "text-error",
+  },
+};
+
+function parseDashboardEventDate(eventDate: string) {
+  return new Date(`${eventDate}T12:00:00`);
+}
+
+function getDashboardEventClientName(event: DashboardEvent) {
+  return event.clients?.name ?? event.client?.name ?? "Sin cliente";
+}
 
 // ── Skeleton loader ──────────────────────────────────────────────
 function SkeletonKpi() {
@@ -64,23 +98,6 @@ function SkeletonKpi() {
         </div>
       </div>
     </div>
-  );
-}
-
-// ── Status badge ─────────────────────────────────────────────────
-const statusConfig: Record<string, { label: string; classes: string }> = {
-  quoted:    { label: "Cotizado",    classes: "bg-status-quoted/10 text-status-quoted" },
-  confirmed: { label: "Confirmado",  classes: "bg-status-confirmed/10 text-status-confirmed" },
-  completed: { label: "Completado",  classes: "bg-status-completed/10 text-status-completed" },
-  cancelled: { label: "Cancelado",   classes: "bg-status-cancelled/10 text-status-cancelled" },
-};
-
-function StatusBadge({ status }: { status: string }) {
-  const cfg = statusConfig[status] ?? { label: status, classes: "bg-surface-alt text-text-secondary" };
-  return (
-    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${cfg.classes}`}>
-      {cfg.label}
-    </span>
   );
 }
 
@@ -234,10 +251,83 @@ function LowStockCard({ item }: { item: InventoryItem }) {
   );
 }
 
+function DashboardAttentionSection({ alerts }: { alerts: DashboardAttentionAlert[] }) {
+  if (alerts.length === 0) return null;
+
+  const totalAlerts = alerts.reduce((sum, alert) => sum + alert.items.length, 0);
+
+  return (
+    <section className="bg-card shadow-sm border border-warning/20 rounded-3xl overflow-hidden">
+      <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="w-10 h-10 rounded-2xl bg-warning/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-text">Eventos que Requieren Atención</h2>
+            <p className="text-sm text-text-secondary mt-1">
+              Eventos próximos o vencidos que necesitan seguimiento operativo o comercial.
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-xs font-bold px-3 py-1 rounded-full bg-warning/10 text-warning">
+          {totalAlerts} alerta{totalAlerts === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {alerts.map((alert) => {
+          const styles = ATTENTION_TONE_STYLES[alert.tone];
+
+          return (
+            <div key={alert.key} className={`rounded-3xl border p-4 ${styles.card}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-text">{alert.title}</p>
+                  <p className="text-xs text-text-secondary mt-1">{alert.description}</p>
+                </div>
+                <span className={`shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${styles.badge}`}>
+                  {alert.items.length}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-2.5">
+                {alert.items.slice(0, 3).map(({ event, detail }) => (
+                  <Link
+                    key={event.id}
+                    to={`/events/${event.id}/summary`}
+                    className="block rounded-2xl border border-border bg-card px-3 py-3 hover:border-primary/30 hover:shadow-sm transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-text truncate">{getDashboardEventClientName(event)}</p>
+                        <p className="text-xs text-text-secondary truncate mt-0.5">{event.service_type}</p>
+                      </div>
+                      <span className="shrink-0 text-[11px] text-text-secondary whitespace-nowrap">
+                        {format(parseDashboardEventDate(event.event_date), "d MMM", { locale: es })}
+                      </span>
+                    </div>
+                    <p className={`text-xs font-semibold mt-2 ${styles.detail}`}>{detail}</p>
+                  </Link>
+                ))}
+
+                {alert.items.length > 3 && (
+                  <Link to="/calendar" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                    Ver {alert.items.length - 3} más <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ────────────────────────────────────────────────────────────────
 export const Dashboard: React.FC = () => {
   const { user, checkAuth } = useAuth();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const firstName = user?.name ? user.name.split(" ")[0] : "Usuario";
 
@@ -257,14 +347,11 @@ export const Dashboard: React.FC = () => {
   const [loadingClients, setLoadingClients] = useState(true);
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
-  const [loadingInventory, setLoadingInventory] = useState(true);
+  const [loadingAttention, setLoadingAttention] = useState(true);
+  const [, setLoadingInventory] = useState(true);
+  const [attentionEvents, setAttentionEvents] = useState<DashboardEvent[]>([]);
+  const [attentionPaidByEvent, setAttentionPaidByEvent] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
-
-  const isLoading = loadingMonth || loadingUpcoming || loadingInventory || loadingClients;
-
-  const handleOpenSearch = () => {
-    document.dispatchEvent(new CustomEvent('open-command-palette'));
-  };
 
   const fmt = (n: number) =>
     `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
@@ -273,6 +360,7 @@ export const Dashboard: React.FC = () => {
     setError(null);
     setLoadingMonth(true);
     setLoadingUpcoming(true);
+    setLoadingAttention(true);
     setLoadingInventory(true);
 
     const today = new Date();
@@ -340,11 +428,43 @@ export const Dashboard: React.FC = () => {
       })
       .finally(() => setLoadingUpcoming(false));
 
+    // 2.5. Load attention alerts data
+    eventService
+      .getAll()
+      .then(async (data) => {
+        const events = data || [];
+        setAttentionEvents(events);
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const confirmedCutoff = addDays(todayStart, 7);
+
+        const candidateIds = events
+          .filter((event) => {
+            const eventDate = parseDashboardEventDate(event.event_date);
+            return event.status === "confirmed" && eventDate >= todayStart && eventDate <= confirmedCutoff;
+          })
+          .map((event) => event.id);
+
+        const payments = await paymentService.getByEventIds(candidateIds);
+        const paidByEvent: Record<string, number> = {};
+        payments.forEach((payment: Payment) => {
+          paidByEvent[payment.event_id] = (paidByEvent[payment.event_id] || 0) + Number(payment.amount || 0);
+        });
+        setAttentionPaidByEvent(paidByEvent);
+      })
+      .catch((err) => {
+        logError("Error loading dashboard attention events", err);
+        setAttentionEvents([]);
+        setAttentionPaidByEvent({});
+      })
+      .finally(() => setLoadingAttention(false));
+
     // 3. Load Inventory Alerts
     inventoryService
       .getAll()
       .then((data) => {
-        const items = (data || []).filter((item) => item.minimum_stock > 0 && item.current_stock < item.minimum_stock);
+        const items = (data || []).filter((item) => item.minimum_stock > 0 && item.current_stock <= item.minimum_stock);
         setLowStockCount(items.length);
         setLowStockItems(items.slice(0, 5));
       })
@@ -390,6 +510,88 @@ export const Dashboard: React.FC = () => {
     { name: "IVA por Cobrar",  value: vatOutstandingThisMonth, color: "var(--color-error)" },
   ], [netSalesThisMonth, cashCollectedThisMonth, vatOutstandingThisMonth]);
 
+  const attentionAlerts = React.useMemo<DashboardAttentionAlert[]>(() => {
+    if (loadingAttention || attentionEvents.length === 0) return [];
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const paymentCutoff = addDays(todayStart, 7);
+    const quoteCutoff = addDays(todayStart, 14);
+
+    const confirmedWithPendingPayment = attentionEvents
+      .filter((event) => {
+        const eventDate = parseDashboardEventDate(event.event_date);
+        if (event.status !== "confirmed" || eventDate < todayStart || eventDate > paymentCutoff) return false;
+
+        const totalCharged = getEventTotalCharged(event);
+        const totalPaid = attentionPaidByEvent[event.id] || 0;
+        return totalCharged - totalPaid > 0.01;
+      })
+      .sort((a, b) => parseDashboardEventDate(a.event_date).getTime() - parseDashboardEventDate(b.event_date).getTime())
+      .map((event) => {
+        const totalCharged = getEventTotalCharged(event);
+        const totalPaid = attentionPaidByEvent[event.id] || 0;
+        const pendingAmount = Math.max(totalCharged - totalPaid, 0);
+
+        return {
+          event,
+          detail: `Saldo pendiente ${fmt(pendingAmount)} de ${fmt(totalCharged)}`,
+        };
+      });
+
+    const pastActiveEvents = attentionEvents
+      .filter((event) => {
+        const eventDate = parseDashboardEventDate(event.event_date);
+        return eventDate < todayStart && (event.status === "quoted" || event.status === "confirmed");
+      })
+      .sort((a, b) => parseDashboardEventDate(a.event_date).getTime() - parseDashboardEventDate(b.event_date).getTime())
+      .map((event) => ({
+        event,
+        detail: event.status === "confirmed" ? "Evento pasado aún confirmado" : "Cotización vencida sin cerrar",
+      }));
+
+    const quotesWithoutConfirmation = attentionEvents
+      .filter((event) => {
+        const eventDate = parseDashboardEventDate(event.event_date);
+        return event.status === "quoted" && eventDate >= todayStart && eventDate <= quoteCutoff;
+      })
+      .sort((a, b) => parseDashboardEventDate(a.event_date).getTime() - parseDashboardEventDate(b.event_date).getTime())
+      .map((event) => {
+        const daysUntilEvent = differenceInCalendarDays(parseDashboardEventDate(event.event_date), todayStart);
+
+        return {
+          event,
+          detail: daysUntilEvent === 0
+            ? "La fecha del evento es hoy y sigue sin confirmar"
+            : `Faltan ${daysUntilEvent} día(s) para confirmar`,
+        };
+      });
+
+    return [
+      {
+        key: "confirmed-payment",
+        title: "Cobros por cerrar",
+        description: "Eventos confirmados dentro de 7 días con pago incompleto.",
+        tone: "warning" as const,
+        items: confirmedWithPendingPayment,
+      },
+      {
+        key: "past-active",
+        title: "Eventos vencidos",
+        description: "Eventos pasados que siguen activos en flujo comercial u operativo.",
+        tone: "error" as const,
+        items: pastActiveEvents,
+      },
+      {
+        key: "quoted-soon",
+        title: "Cotizaciones urgentes",
+        description: "Eventos dentro de 14 días que todavía no fueron confirmados.",
+        tone: "warning" as const,
+        items: quotesWithoutConfirmation,
+      },
+    ].filter((alert) => alert.items.length > 0);
+  }, [attentionEvents, attentionPaidByEvent, fmt, loadingAttention]);
+
   const tooltipStyle = {
     borderRadius: "12px",
     border: "1px solid var(--color-border)",
@@ -409,17 +611,6 @@ export const Dashboard: React.FC = () => {
           <p className="text-sm text-text-secondary mt-0.5 first-letter:uppercase">
             {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link to="/cotizacion-rapida" className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card text-text-secondary hover:text-info hover:border-info/40 hover:bg-info/5 transition-colors" aria-label="Cotización rápida">
-            <Zap className="h-4 w-4" />
-          </Link>
-          <button type="button" onClick={handleOpenSearch} className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card text-text-secondary hover:text-warning hover:border-warning/40 hover:bg-warning/5 transition-colors" aria-label="Buscar">
-            <Search className="h-4 w-4" />
-          </button>
-          <button type="button" onClick={loadDashboardData} className="w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-card text-text-secondary hover:text-primary hover:bg-surface-alt transition-colors" aria-label="Recargar">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </div>
 
@@ -449,13 +640,8 @@ export const Dashboard: React.FC = () => {
         />
       )}
 
-      {/* ── QUICK ACTIONS ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <QuickActionCard icon={Plus} label="Nuevo Evento" accent="gold" to="/events/new" />
-        <QuickActionCard icon={UserPlus} label="Nuevo Cliente" accent="blue" to="/clients/new" />
-        <QuickActionCard icon={Zap} label="Cotización Rápida" accent="blue" to="/cotizacion-rapida" />
-        <QuickActionCard icon={Search} label="Buscar" accent="orange" onClick={handleOpenSearch} />
-      </div>
+      {/* ── ALERTAS DE ATENCIÓN ── */}
+      <DashboardAttentionSection alerts={attentionAlerts} />
 
       {/* ── KPI CARDS ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -467,7 +653,7 @@ export const Dashboard: React.FC = () => {
               icon={TrendingUp}
               iconBg="bg-success/10"
               iconColor="text-success"
-              label="Ventas netas"
+              label="Ventas Netas"
               value={fmt(netSalesThisMonth)}
               sub="Eventos confirmados y completados"
             />
@@ -477,13 +663,13 @@ export const Dashboard: React.FC = () => {
               iconColor="text-primary"
               label="Cobrado (mes)"
               value={fmt(cashCollectedThisMonth)}
-              sub={<>Aplicado a eventos: <span className="font-semibold text-text">{fmt(cashAppliedToThisMonthsEvents)}</span></>}
+              sub="Este mes"
             />
             <KpiCard
               icon={FileCheck}
               iconBg="bg-info/10"
               iconColor="text-info"
-              label="IVA cobrado"
+              label="IVA Cobrado"
               value={fmt(vatCollectedThisMonth)}
               sub="Proporcional al % pagado"
             />
@@ -491,25 +677,25 @@ export const Dashboard: React.FC = () => {
               icon={AlertTriangle}
               iconBg="bg-error/10"
               iconColor="text-error"
-              label="IVA pendiente"
+              label="IVA Pendiente"
               value={fmt(vatOutstandingThisMonth)}
-              sub={<Link to="/calendar" className="font-semibold text-primary hover:underline">Ver eventos del mes</Link>}
+              sub="Por cobrar"
             />
             <KpiCard
               icon={Calendar}
               iconBg="bg-primary/10"
               iconColor="text-primary"
-              label="Eventos este mes"
+              label="Eventos del Mes"
               value={String(eventsThisMonthList.length)}
-              sub={<Link to="/calendar" className="font-semibold text-primary hover:underline">Ver calendario</Link>}
+              sub="Cantidad"
             />
             <KpiCard
               icon={Package}
               iconBg={lowStockCount > 0 ? "bg-error/10" : "bg-success/10"}
               iconColor={lowStockCount > 0 ? "text-error" : "text-success"}
-              label="Alertas de stock"
+              label="Stock Bajo"
               value={lowStockCount > 0 ? `${lowStockCount} ítems bajos` : "Todo en orden"}
-              sub={<Link to="/inventory" className="font-semibold text-primary hover:underline">Ver inventario</Link>}
+              sub={lowStockCount > 0 ? `${lowStockCount} ítems bajos` : "Todo en orden"}
             />
             <KpiCard
               icon={Users}
@@ -517,18 +703,24 @@ export const Dashboard: React.FC = () => {
               iconColor="text-info"
               label="Clientes"
               value={String(clientCount)}
-              sub={<Link to="/clients" className="font-semibold text-primary hover:underline">Ver clientes</Link>}
+              sub="Total"
             />
             <KpiCard
               icon={FileText}
               iconBg="bg-warning/10"
               iconColor="text-warning"
-              label="Cotizaciones"
+              label="Cotizaciones Pendientes"
               value={String(eventsThisMonthList.filter(e => e.status === 'quoted').length)}
-              sub="Pendientes de confirmar este mes"
+              sub="Pendientes de confirmar"
             />
           </>
         )}
+      </div>
+
+      {/* ── QUICK ACTIONS ── */}
+      <div className="grid grid-cols-2 gap-4 lg:max-w-md">
+        <QuickActionCard icon={Plus} label="Nuevo Evento" accent="gold" to="/events/new" />
+        <QuickActionCard icon={UserPlus} label="Nuevo Cliente" accent="blue" to="/clients/new" />
       </div>
 
       {/* ── CHARTS ── */}
@@ -621,7 +813,10 @@ export const Dashboard: React.FC = () => {
           <div className="p-4 space-y-3">
             {upcomingEvents.map((event) => (
               <UpcomingEventCard key={event.id} event={event}
-                onStatusChange={(id, newStatus) => setUpcomingEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev)))} />
+                onStatusChange={(id, newStatus) => {
+                  setUpcomingEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev)));
+                  setAttentionEvents((prev) => prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev)));
+                }} />
             ))}
           </div>
         ) : (
@@ -634,8 +829,6 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
-
-      <PendingEventsModal />
     </div>
   );
 };
