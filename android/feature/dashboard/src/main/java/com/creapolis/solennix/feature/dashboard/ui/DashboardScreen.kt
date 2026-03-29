@@ -96,7 +96,7 @@ fun DashboardScreen(
                     if (isWideScreen) {
                         // Tablet: grid layout (4 columns like web)
                         val kpiItems = listOf(
-                            Triple("Ventas del Mes", uiState.revenueThisMonth.asMXN(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, null as String?)),
+                            Triple("Ventas Netas", uiState.revenueThisMonth.asMXN(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, "Eventos confirmados y completados")),
                             Triple("Cobrado", uiState.cashCollected.asMXN(), Triple(Icons.Default.Payments, SolennixTheme.colors.kpiOrange, "Este mes")),
                             Triple("IVA Cobrado", uiState.vatCollected.asMXN(), Triple(Icons.Default.Receipt, SolennixTheme.colors.kpiBlue, "Este mes")),
                             Triple("IVA Pendiente", uiState.vatOutstanding.asMXN(), Triple(Icons.Default.ReceiptLong, SolennixTheme.colors.kpiBlue, "Por cobrar")),
@@ -139,7 +139,7 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Spacer(modifier = Modifier.width(4.dp))
-                            KPICard(title = "Ventas del Mes", value = uiState.revenueThisMonth.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen)
+                            KPICard(title = "Ventas Netas", value = uiState.revenueThisMonth.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, subtitle = "Eventos confirmados y completados")
                             KPICard(title = "Cobrado", value = uiState.cashCollected.asMXN(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = "Este mes")
                             KPICard(title = "IVA Cobrado", value = uiState.vatCollected.asMXN(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Este mes")
                             KPICard(title = "IVA Pendiente", value = uiState.vatOutstanding.asMXN(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Por cobrar")
