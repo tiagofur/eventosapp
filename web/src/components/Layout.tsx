@@ -114,7 +114,7 @@ export const Layout: React.FC = () => {
           // Mobile: always w-64
           "w-64",
           // Desktop: collapsible
-          isCollapsed ? "lg:w-16" : "lg:w-64",
+          isCollapsed ? "lg:w-20" : "lg:w-64",
           isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
         aria-label="Menú de navegación principal"
@@ -138,7 +138,7 @@ export const Layout: React.FC = () => {
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-2">
-            <nav className={clsx("space-y-1", isCollapsed ? "lg:px-2 px-3" : "px-3 lg:px-2")} aria-label="Navegación principal">
+            <nav className={clsx("space-y-1", isCollapsed ? "lg:flex lg:flex-col lg:items-center lg:px-0 px-3" : "px-3 lg:px-2")} aria-label="Navegación principal">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -147,8 +147,10 @@ export const Layout: React.FC = () => {
                     key={item.name}
                     to={item.href}
                     className={clsx(
-                      "flex items-center text-sm font-semibold rounded-2xl transition-all duration-200",
-                      isCollapsed ? "lg:justify-center lg:py-3 lg:px-0 px-4 py-3" : "px-4 py-3",
+                      "flex items-center justify-center text-sm font-semibold transition-all duration-200",
+                      isCollapsed
+                        ? "lg:w-11 lg:h-11 lg:rounded-xl px-4 py-3 rounded-2xl w-full"
+                        : "px-4 py-3 rounded-2xl w-full",
                       isActive
                         ? "bg-[var(--color-primary-light)] text-primary"
                         : "text-text-secondary hover:bg-surface-alt hover:text-text"
@@ -156,7 +158,7 @@ export const Layout: React.FC = () => {
                     onClick={() => setIsSidebarOpen(false)}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <Icon className={clsx("h-[22px] w-[22px]", isCollapsed ? "lg:mr-0 mr-3" : "mr-3")} aria-hidden="true" />
+                    <Icon className={clsx("h-[22px] w-[22px] shrink-0", !isCollapsed && "mr-3")} aria-hidden="true" />
                     <span className={clsx(isCollapsed && "lg:hidden")}>{item.name}</span>
                   </Link>
                 );
