@@ -166,9 +166,14 @@ struct SidebarSplitLayout: View {
     }
 
     private func sidebarLabel(for section: SidebarSection) -> some View {
-        Label(section.title, systemImage: section.iconName)
-            .foregroundStyle(selectedSection == section ? SolennixColors.primary : SolennixColors.text)
+        let isActive = selectedSection == section
+        return Label(section.title, systemImage: section.iconName)
+            .foregroundStyle(isActive ? SolennixColors.primary : SolennixColors.textSecondary)
+            .fontWeight(isActive ? .semibold : .regular)
             .tag(section)
+            .listRowBackground(
+                isActive ? SolennixColors.primaryLight : Color.clear
+            )
     }
 
     private var globalSearchPrompt: String {
