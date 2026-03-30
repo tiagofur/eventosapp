@@ -228,8 +228,13 @@ fun AdaptiveNavigationRailLayout(
         // Content area with NavHost
         Scaffold(
             floatingActionButton = {
-                // QuickActionsFAB on all section-level routes except settings
-                val showQuickActions = isAtSectionLevel && currentRoute != "settings"
+                // QuickActionsFAB on home, calendar and events only
+                // clients/products/inventory have their own contextual FABs
+                val showQuickActions = isAtSectionLevel
+                    && currentRoute != "settings"
+                    && currentRoute != "clients"
+                    && currentRoute != "products"
+                    && currentRoute != "inventory"
 
                 if (showQuickActions) {
                     QuickActionsFAB(

@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -97,17 +98,20 @@ fun ClientListScreen(
                     }) {
                         Icon(Icons.Default.FileDownload, contentDescription = "Exportar CSV")
                     }
-                    IconButton(onClick = {
-                        if (viewModel.isLimitReached) {
-                            showLimitDialog = true
-                        } else {
-                            onAddClientClick()
-                        }
-                    }) {
-                        Icon(Icons.Default.Add, contentDescription = "Agregar Cliente")
-                    }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (viewModel.isLimitReached) showLimitDialog = true
+                    else onAddClientClick()
+                },
+                containerColor = SolennixTheme.colors.primary,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar Cliente")
+            }
         }
     ) { padding ->
         PullToRefreshBox(

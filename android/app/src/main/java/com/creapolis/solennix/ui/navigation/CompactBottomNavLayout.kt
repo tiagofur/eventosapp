@@ -101,8 +101,10 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
         },
         floatingActionButton = {
-            // QuickActionsFAB on all top-level routes except MORE
-            val showQuickActions = isAtTopLevel && currentRoute != TopLevelDestination.MORE.route
+            // QuickActionsFAB on home, calendar and events — not on clients (has its own FAB)
+            val showQuickActions = isAtTopLevel
+                && currentRoute != TopLevelDestination.MORE.route
+                && currentRoute != TopLevelDestination.CLIENTS.route
             if (showQuickActions) {
                 QuickActionsFAB(
                     onNewEventClick = { navController.navigate("event_form?eventId=") },
