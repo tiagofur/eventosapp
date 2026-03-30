@@ -171,9 +171,6 @@ struct SidebarSplitLayout: View {
             .foregroundStyle(isActive ? SolennixColors.primary : SolennixColors.textSecondary)
             .fontWeight(isActive ? .semibold : .regular)
             .tag(section)
-            .listRowBackground(
-                isActive ? SolennixColors.primaryLight : Color.clear
-            )
     }
 
     private var globalSearchPrompt: String {
