@@ -23,6 +23,7 @@ public struct ClientListView: View {
             filterBar
             content
         }
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Clientes")
         .navigationBarTitleDisplayMode(.large)
         .refreshable { await viewModel.loadClients() }
