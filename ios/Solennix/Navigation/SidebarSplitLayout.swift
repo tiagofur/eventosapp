@@ -70,33 +70,31 @@ struct SidebarSplitLayout: View {
 
     @ViewBuilder
     private var sidebarContent: some View {
-        List(selection: $selectedSection) {
-            // Branding header
+        // Plain List (no selection binding) so we own 100% of the active-row rendering.
+        // selectedSection is updated manually via Button taps; the detail column reads
+        // it directly, so NavigationSplitView works without the binding.
+        List {
             Section {
                 sidebarBrandingHeader
             }
             .listSectionSeparator(.hidden)
 
-            // Main sections
             Section("Principal") {
                 ForEach(SidebarSection.mainSections, id: \.self) { section in
-                    sidebarLabel(for: section)
+                    sidebarRow(for: section)
                 }
             }
 
-            // Settings at the bottom
             Section("Configuración") {
-                sidebarLabel(for: .settings)
+                sidebarRow(for: .settings)
             }
 
-            // User footer
             Section {
                 sidebarUserFooter
             }
             .listSectionSeparator(.hidden, edges: .top)
         }
         .listStyle(.sidebar)
-        .tint(SolennixColors.primary)
         .toolbarBackground(SolennixColors.surfaceGrouped, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
     }
@@ -165,22 +163,24 @@ struct SidebarSplitLayout: View {
         }
     }
 
-    private func sidebarLabel(for section: SidebarSection) -> some View {
+    private func sidebarRow(for section: SidebarSection) -> some View {
         let isActive = selectedSection == section
-        return Label(section.title, systemImage: section.iconName)
-            .foregroundStyle(isActive ? SolennixColors.primary : SolennixColors.textSecondary)
-            .fontWeight(isActive ? .semibold : .regular)
-            .tag(section)
-            // Suppress system tint overlay and draw our own pill background
-            .tint(Color.clear)
-            .listRowBackground(
-                isActive
-                    ? RoundedRectangle(cornerRadius: 10)
-                        .fill(SolennixColors.primaryLight)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                    : nil
-            )
+        return Button {
+            selectedSection = section
+        } label: {
+            Label(section.title, systemImage: section.iconName)
+                .foregroundStyle(isActive ? SolennixColors.primary : SolennixColors.textSecondary)
+                .fontWeight(isActive ? .semibold : .regular)
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(
+            isActive
+                ? RoundedRectangle(cornerRadius: 12)
+                    .fill(SolennixColors.primaryLight)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                : nil
+        )
     }
 
     private var globalSearchPrompt: String {
