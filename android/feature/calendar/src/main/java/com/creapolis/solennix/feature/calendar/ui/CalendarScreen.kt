@@ -173,105 +173,125 @@ fun CalendarViewContent(
 
     if (isWideScreen) {
         // Tablet: compact calendar (left, max 480dp) + events panel (right)
-        Row(modifier = Modifier.fillMaxSize()) {
-            // Left panel: Calendar — constrained width so cells stay small
-            Column(
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Left panel: Calendar card
+            Surface(
                 modifier = Modifier
                     .widthIn(max = 480.dp)
-                    .fillMaxHeight()
+                    .fillMaxHeight(),
+                color = SolennixTheme.colors.card,
+                shape = MaterialTheme.shapes.large
             ) {
-                CalendarHeader(
-                    currentMonth = uiState.currentMonth,
-                    onPreviousMonth = onPreviousMonth,
-                    onNextMonth = onNextMonth,
-                    onGoToToday = onGoToToday
-                )
-                CalendarGrid(
-                    currentMonth = uiState.currentMonth,
-                    selectedDate = uiState.selectedDate,
-                    onDateSelected = onDateSelected,
-                    onDateLongPress = onDateLongPress,
-                    events = uiState.events,
-                    unavailableDates = uiState.unavailableDates,
-                    isWideScreen = true,
-                    modifier = Modifier.weight(1f)
-                )
+                Column {
+                    CalendarHeader(
+                        currentMonth = uiState.currentMonth,
+                        onPreviousMonth = onPreviousMonth,
+                        onNextMonth = onNextMonth,
+                        onGoToToday = onGoToToday
+                    )
+                    CalendarGrid(
+                        currentMonth = uiState.currentMonth,
+                        selectedDate = uiState.selectedDate,
+                        onDateSelected = onDateSelected,
+                        onDateLongPress = onDateLongPress,
+                        events = uiState.events,
+                        unavailableDates = uiState.unavailableDates,
+                        isWideScreen = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
-            // Right panel: Selected day's events — takes remaining space
-            Column(
+            // Right panel: Selected day's events card
+            Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
+                    .fillMaxHeight(),
+                color = SolennixTheme.colors.card,
+                shape = MaterialTheme.shapes.large
             ) {
-                Text(
-                    text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = SolennixTheme.colors.primaryText
-                )
+                Column {
+                    Text(
+                        text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = SolennixTheme.colors.primaryText
+                    )
 
-                if (uiState.eventsForSelectedDate.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Outlined.CalendarMonth,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = SolennixTheme.colors.secondaryText
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "No hay eventos programados",
-                                color = SolennixTheme.colors.secondaryText
-                            )
+                    if (uiState.eventsForSelectedDate.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Outlined.CalendarMonth,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = SolennixTheme.colors.secondaryText
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "No hay eventos programados",
+                                    color = SolennixTheme.colors.secondaryText
+                                )
+                            }
                         }
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(uiState.eventsForSelectedDate) { event ->
-                            CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            items(uiState.eventsForSelectedDate) { event ->
+                                CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
+                            }
                         }
                     }
                 }
             }
         }
     } else {
-        // Phone: original single-column LazyColumn layout
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // Phone: single-column layout with calendar in a card
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             item {
-                CalendarHeader(
-                    currentMonth = uiState.currentMonth,
-                    onPreviousMonth = onPreviousMonth,
-                    onNextMonth = onNextMonth,
-                    onGoToToday = onGoToToday
-                )
+                Surface(
+                    color = SolennixTheme.colors.card,
+                    shape = MaterialTheme.shapes.large
+                ) {
+                    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                        CalendarHeader(
+                            currentMonth = uiState.currentMonth,
+                            onPreviousMonth = onPreviousMonth,
+                            onNextMonth = onNextMonth,
+                            onGoToToday = onGoToToday
+                        )
+                        CalendarGrid(
+                            currentMonth = uiState.currentMonth,
+                            selectedDate = uiState.selectedDate,
+                            onDateSelected = onDateSelected,
+                            onDateLongPress = onDateLongPress,
+                            events = uiState.events,
+                            unavailableDates = uiState.unavailableDates
+                        )
+                    }
+                }
             }
 
             item {
-                CalendarGrid(
-                    currentMonth = uiState.currentMonth,
-                    selectedDate = uiState.selectedDate,
-                    onDateSelected = onDateSelected,
-                    onDateLongPress = onDateLongPress,
-                    events = uiState.events,
-                    unavailableDates = uiState.unavailableDates
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = uiState.selectedDate.format(dateFormatter).replaceFirstChar { it.uppercase() },
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp),
                     style = MaterialTheme.typography.titleMedium,
                     color = SolennixTheme.colors.primaryText
                 )
