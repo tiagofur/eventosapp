@@ -70,33 +70,32 @@ struct SidebarSplitLayout: View {
 
     @ViewBuilder
     private var sidebarContent: some View {
-        // Plain List (no selection binding) so we own 100% of the active-row rendering.
-        // selectedSection is updated manually via Button taps; the detail column reads
-        // it directly, so NavigationSplitView works without the binding.
-        List {
-            Section {
-                sidebarBrandingHeader
-            }
-            .listSectionSeparator(.hidden)
+        VStack(spacing: 0) {
+            List {
+                Section {
+                    sidebarBrandingHeader
+                }
+                .listSectionSeparator(.hidden)
 
-            Section("Principal") {
-                ForEach(SidebarSection.mainSections, id: \.self) { section in
-                    sidebarRow(for: section)
+                Section("Principal") {
+                    ForEach(SidebarSection.mainSections, id: \.self) { section in
+                        sidebarRow(for: section)
+                    }
+                }
+
+                Section("Configuración") {
+                    sidebarRow(for: .settings)
                 }
             }
+            .listStyle(.sidebar)
+            .frame(maxHeight: .infinity)
+            .toolbarBackground(SolennixColors.surfaceGrouped, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
 
-            Section("Configuración") {
-                sidebarRow(for: .settings)
-            }
+            Divider()
 
-            Section {
-                sidebarUserFooter
-            }
-            .listSectionSeparator(.hidden, edges: .top)
+            sidebarUserFooter
         }
-        .listStyle(.sidebar)
-        .toolbarBackground(SolennixColors.surfaceGrouped, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
     }
 
     // MARK: - Branding Header
@@ -158,8 +157,8 @@ struct SidebarSplitLayout: View {
                 }
             }
             .buttonStyle(.plain)
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
     }
 
