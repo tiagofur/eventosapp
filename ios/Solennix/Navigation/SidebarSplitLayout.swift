@@ -175,7 +175,7 @@ struct SidebarSplitLayout: View {
         .buttonStyle(.plain)
         .listRowBackground(
             isActive
-                ? RoundedRectangle(cornerRadius: 12)
+                ? RoundedRectangle(cornerRadius: 28)
                     .fill(SolennixColors.primaryLight)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
