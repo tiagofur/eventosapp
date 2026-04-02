@@ -21,6 +21,7 @@ import {
   TrendingUp,
   UserPlus,
   FileText,
+  Zap,
 } from "lucide-react";
 import { clientService } from "../services/clientService";
 import { logError } from "../lib/errorHandler";
@@ -133,7 +134,7 @@ function KpiCard({ icon: Icon, iconBg, iconColor, label, value, sub }: KpiCardPr
 interface QuickActionCardProps {
   icon: React.ElementType;
   label: string;
-  accent: "gold" | "blue" | "orange";
+  accent: "gold" | "blue" | "orange" | "green";
   onClick?: () => void;
   to?: string;
 }
@@ -142,6 +143,7 @@ const QUICK_ACTION_ACCENT = {
   gold:   { bg: "bg-primary/10",  icon: "text-primary",  border: "hover:border-primary/40" },
   blue:   { bg: "bg-info/10",     icon: "text-info",     border: "hover:border-info/40" },
   orange: { bg: "bg-warning/10",  icon: "text-warning",  border: "hover:border-warning/40" },
+  green:  { bg: "bg-success/10",  icon: "text-success",  border: "hover:border-success/40" },
 };
 
 function QuickActionCard({ icon: Icon, label, accent, onClick, to }: QuickActionCardProps) {
@@ -325,6 +327,10 @@ function DashboardAttentionSection({ alerts }: { alerts: DashboardAttentionAlert
   );
 }
 
+function fmt(n: number) {
+  return `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+}
+
 // ────────────────────────────────────────────────────────────────
 export const Dashboard: React.FC = () => {
   const { user, checkAuth } = useAuth();
@@ -338,7 +344,6 @@ export const Dashboard: React.FC = () => {
   const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([]);
   const [netSalesThisMonth, setNetSalesThisMonth] = useState(0);
   const [cashCollectedThisMonth, setCashCollectedThisMonth] = useState(0);
-  const [cashAppliedToThisMonthsEvents, setCashAppliedToThisMonthsEvents] = useState(0);
   const [vatCollectedThisMonth, setVatCollectedThisMonth] = useState(0);
   const [vatOutstandingThisMonth, setVatOutstandingThisMonth] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
@@ -348,13 +353,10 @@ export const Dashboard: React.FC = () => {
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
   const [loadingAttention, setLoadingAttention] = useState(true);
-  const [, setLoadingInventory] = useState(true);
+  const [loadingInventory, setLoadingInventory] = useState(true);
   const [attentionEvents, setAttentionEvents] = useState<DashboardEvent[]>([]);
   const [attentionPaidByEvent, setAttentionPaidByEvent] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
-
-  const fmt = (n: number) =>
-    `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
   const loadDashboardData = () => {
     setError(null);
@@ -385,9 +387,6 @@ export const Dashboard: React.FC = () => {
         payments.forEach((p: Payment) => {
           paidByEvent[p.event_id] = (paidByEvent[p.event_id] || 0) + Number(p.amount || 0);
         });
-
-        const cashApplied = Object.values(paidByEvent).reduce((sum, v) => sum + v, 0);
-        setCashAppliedToThisMonthsEvents(cashApplied);
 
         const paymentsInMonth = await paymentService.getByPaymentDateRange(start, end);
         const cashInMonth = (paymentsInMonth || []).reduce(
@@ -644,7 +643,7 @@ export const Dashboard: React.FC = () => {
       <DashboardAttentionSection alerts={attentionAlerts} />
 
       {/* ── KPI CARDS ── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {(loadingMonth || loadingClients) ? (
           Array.from({ length: 8 }).map((_, i) => <SkeletonKpi key={i} />)
         ) : (
@@ -695,7 +694,7 @@ export const Dashboard: React.FC = () => {
               iconColor={lowStockCount > 0 ? "text-error" : "text-success"}
               label="Stock Bajo"
               value={lowStockCount > 0 ? `${lowStockCount} ítems bajos` : "Todo en orden"}
-              sub={lowStockCount > 0 ? `${lowStockCount} ítems bajos` : "Todo en orden"}
+              sub="Revisar inventario"
             />
             <KpiCard
               icon={Users}
@@ -718,9 +717,11 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* ── QUICK ACTIONS ── */}
-      <div className="grid grid-cols-2 gap-4 lg:max-w-md">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <QuickActionCard icon={Plus} label="Nuevo Evento" accent="gold" to="/events/new" />
+        <QuickActionCard icon={Zap} label="Cotización Rápida" accent="orange" to="/cotizacion-rapida" />
         <QuickActionCard icon={UserPlus} label="Nuevo Cliente" accent="blue" to="/clients/new" />
+        <QuickActionCard icon={Package} label="Nuevo Producto" accent="green" to="/products/new" />
       </div>
 
       {/* ── CHARTS ── */}
