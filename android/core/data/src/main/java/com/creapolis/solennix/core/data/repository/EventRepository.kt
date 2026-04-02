@@ -136,11 +136,12 @@ class OfflineFirstEventRepository @Inject constructor(
         eventItemDao.getExtrasByEventId(eventId).map { it.map { it.asExternalModel() } }
 
     override suspend fun syncEventItems(eventId: String) {
-        val response: EventItemsResponse = apiService.get(Endpoints.eventItems(eventId))
+        val products: List<EventProduct> = apiService.get(Endpoints.eventProducts(eventId))
+        val extras: List<EventExtra> = apiService.get(Endpoints.eventExtras(eventId))
         eventItemDao.deleteProductsByEventId(eventId)
         eventItemDao.deleteExtrasByEventId(eventId)
-        eventItemDao.insertProducts(response.products.map { it.asEntity() })
-        eventItemDao.insertExtras(response.extras.map { it.asEntity() })
+        eventItemDao.insertProducts(products.map { it.asEntity() })
+        eventItemDao.insertExtras(extras.map { it.asEntity() })
     }
 
     override suspend fun getEventsFromApi(): List<Event> =
@@ -231,12 +232,6 @@ class OfflineFirstEventRepository @Inject constructor(
         apiService.delete(Endpoints.eventPhoto(eventId, photoId))
     }
 }
-
-@Serializable
-data class EventItemsResponse(
-    val products: List<EventProduct> = emptyList(),
-    val extras: List<EventExtra> = emptyList()
-)
 
 @Serializable
 data class UpdateItemsPayload(
