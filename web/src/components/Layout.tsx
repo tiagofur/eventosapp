@@ -147,10 +147,10 @@ export const Layout: React.FC = () => {
                     key={item.name}
                     to={item.href}
                     className={clsx(
-                      "flex items-center justify-center text-sm font-semibold transition-all duration-200",
+                      "flex items-center text-sm font-semibold transition-all duration-200",
                       isCollapsed
-                        ? "lg:w-11 lg:h-11 lg:rounded-xl px-4 py-3 rounded-2xl w-full"
-                        : "px-4 py-3 rounded-2xl w-full",
+                        ? "lg:w-11 lg:h-11 lg:rounded-xl lg:justify-center px-4 py-3 rounded-2xl w-full"
+                        : "justify-start px-4 py-3 rounded-2xl w-full",
                       isActive
                         ? "bg-[var(--color-primary-light)] text-primary"
                         : "text-text-secondary hover:bg-surface-alt hover:text-text"
