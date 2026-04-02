@@ -21,6 +21,7 @@ import {
   TrendingUp,
   UserPlus,
   FileText,
+  Zap,
 } from "lucide-react";
 import { clientService } from "../services/clientService";
 import { logError } from "../lib/errorHandler";
@@ -133,7 +134,7 @@ function KpiCard({ icon: Icon, iconBg, iconColor, label, value, sub }: KpiCardPr
 interface QuickActionCardProps {
   icon: React.ElementType;
   label: string;
-  accent: "gold" | "blue" | "orange";
+  accent: "gold" | "blue" | "orange" | "green";
   onClick?: () => void;
   to?: string;
 }
@@ -142,6 +143,7 @@ const QUICK_ACTION_ACCENT = {
   gold:   { bg: "bg-primary/10",  icon: "text-primary",  border: "hover:border-primary/40" },
   blue:   { bg: "bg-info/10",     icon: "text-info",     border: "hover:border-info/40" },
   orange: { bg: "bg-warning/10",  icon: "text-warning",  border: "hover:border-warning/40" },
+  green:  { bg: "bg-success/10",  icon: "text-success",  border: "hover:border-success/40" },
 };
 
 function QuickActionCard({ icon: Icon, label, accent, onClick, to }: QuickActionCardProps) {
@@ -644,7 +646,7 @@ export const Dashboard: React.FC = () => {
       <DashboardAttentionSection alerts={attentionAlerts} />
 
       {/* ── KPI CARDS ── */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {(loadingMonth || loadingClients) ? (
           Array.from({ length: 8 }).map((_, i) => <SkeletonKpi key={i} />)
         ) : (
@@ -718,9 +720,11 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* ── QUICK ACTIONS ── */}
-      <div className="grid grid-cols-2 gap-4 lg:max-w-md">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <QuickActionCard icon={Plus} label="Nuevo Evento" accent="gold" to="/events/new" />
+        <QuickActionCard icon={Zap} label="Cotización Rápida" accent="orange" to="/cotizacion-rapida" />
         <QuickActionCard icon={UserPlus} label="Nuevo Cliente" accent="blue" to="/clients/new" />
+        <QuickActionCard icon={Package} label="Nuevo Producto" accent="green" to="/products/new" />
       </div>
 
       {/* ── CHARTS ── */}
