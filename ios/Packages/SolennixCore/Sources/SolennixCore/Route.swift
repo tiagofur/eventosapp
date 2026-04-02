@@ -10,6 +10,14 @@ public enum Route: Hashable {
     case eventDetail(id: String)
     case eventForm(id: String? = nil, clientId: String? = nil, date: Date? = nil)
     case eventChecklist(id: String)
+    case eventFinances(id: String)
+    case eventPayments(id: String)
+    case eventProducts(id: String)
+    case eventExtras(id: String)
+    case eventSupplies(id: String)
+    case eventEquipment(id: String)
+    case eventShoppingList(id: String)
+    case eventPhotos(id: String)
 
     // Clients
     case clientList
