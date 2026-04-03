@@ -219,13 +219,17 @@ fun DashboardScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         AdaptiveDetailLayout(
                             left = {
-                                EventStatusDistributionCard(statusCounts = uiState.statusDistribution)
+                                EventStatusDistributionCard(
+                                    statusCounts = uiState.statusDistribution,
+                                    modifier = Modifier.fillMaxHeight()
+                                )
                             },
                             right = {
                                 FinancialComparisonCard(
                                     revenueThisMonth = uiState.revenueThisMonth,
                                     cashCollected = uiState.cashCollected,
-                                    vatOutstanding = uiState.vatOutstanding
+                                    vatOutstanding = uiState.vatOutstanding,
+                                    modifier = Modifier.fillMaxHeight()
                                 )
                             }
                         )
