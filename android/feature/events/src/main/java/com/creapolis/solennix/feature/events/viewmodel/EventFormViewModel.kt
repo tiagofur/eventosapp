@@ -697,6 +697,16 @@ class EventFormViewModel @Inject constructor(
         }
     }
 
+    fun validateStep(step: Int): String? = when (step) {
+        0 -> when {
+            selectedClient == null -> "Seleccioná un cliente"
+            serviceType.isBlank() -> "Ingresá el tipo de servicio"
+            (numPeople.toIntOrNull() ?: 0) < 1 -> "Ingresá la cantidad de personas"
+            else -> null
+        }
+        else -> null
+    }
+
     fun saveEvent() {
         val client = selectedClient ?: run {
             saveError = "Selecciona un cliente"
@@ -744,22 +754,12 @@ class EventFormViewModel @Inject constructor(
                     eventRepository.createEvent(eventData)
                 }
 
-                // Save products and extras for the event
+                // Save all items (products, extras, equipment, supplies) in one request
                 eventRepository.updateItems(
                     eventId = savedEvent.id,
                     products = selectedProducts.toList(),
-                    extras = eventExtras.toList()
-                )
-
-                // Save equipment for the event
-                eventRepository.updateEventEquipment(
-                    eventId = savedEvent.id,
-                    equipment = selectedEquipment.toList()
-                )
-
-                // Save supplies for the event
-                eventRepository.updateEventSupplies(
-                    eventId = savedEvent.id,
+                    extras = eventExtras.toList(),
+                    equipment = selectedEquipment.toList(),
                     supplies = selectedSupplies.toList()
                 )
 

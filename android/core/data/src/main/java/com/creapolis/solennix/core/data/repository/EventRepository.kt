@@ -30,7 +30,13 @@ interface EventRepository {
     suspend fun createEvent(event: Event): Event
     suspend fun updateEvent(event: Event): Event
     suspend fun deleteEvent(id: String)
-    suspend fun updateItems(eventId: String, products: List<EventProduct>, extras: List<EventExtra>)
+    suspend fun updateItems(
+        eventId: String,
+        products: List<EventProduct>,
+        extras: List<EventExtra>,
+        equipment: List<EventEquipment> = emptyList(),
+        supplies: List<EventSupply> = emptyList()
+    )
     fun getEventProducts(eventId: String): Flow<List<EventProduct>>
     fun getEventExtras(eventId: String): Flow<List<EventExtra>>
     suspend fun syncEventItems(eventId: String)
@@ -55,8 +61,6 @@ interface EventRepository {
         numPeople: Int
     ): List<SupplySuggestion>
 
-    suspend fun updateEventEquipment(eventId: String, equipment: List<EventEquipment>)
-    suspend fun updateEventSupplies(eventId: String, supplies: List<EventSupply>)
 
     // Photos
     suspend fun getEventPhotos(eventId: String): List<EventPhoto>
@@ -105,7 +109,13 @@ class OfflineFirstEventRepository @Inject constructor(
         }
     }
 
-    override suspend fun updateItems(eventId: String, products: List<EventProduct>, extras: List<EventExtra>) {
+    override suspend fun updateItems(
+        eventId: String,
+        products: List<EventProduct>,
+        extras: List<EventExtra>,
+        equipment: List<EventEquipment>,
+        supplies: List<EventSupply>
+    ) {
         val payload = UpdateItemsPayload(
             products = products.map {
                 ProductItemPayload(
@@ -122,10 +132,25 @@ class OfflineFirstEventRepository @Inject constructor(
                     price = it.price,
                     excludeUtility = it.excludeUtility
                 )
+            },
+            equipment = equipment.map {
+                EquipmentItemPayload(
+                    inventoryId = it.inventoryId,
+                    quantity = it.quantity,
+                    notes = it.notes
+                )
+            },
+            supplies = supplies.map {
+                SupplyItemPayload(
+                    inventoryId = it.inventoryId,
+                    quantity = it.quantity,
+                    unitCost = it.unitCost,
+                    source = it.source.name.lowercase(),
+                    excludeCost = it.excludeCost
+                )
             }
         )
         apiService.put<Any>(Endpoints.eventItems(eventId), payload)
-        // Optionally sync immediately
         syncEventItems(eventId)
     }
 
@@ -188,34 +213,6 @@ class OfflineFirstEventRepository @Inject constructor(
         return apiService.get(Endpoints.SUPPLY_SUGGESTIONS, params)
     }
 
-    override suspend fun updateEventEquipment(eventId: String, equipment: List<EventEquipment>) {
-        val payload = EquipmentListPayload(
-            equipment = equipment.map {
-                EquipmentItemPayload(
-                    inventoryId = it.inventoryId,
-                    quantity = it.quantity,
-                    notes = it.notes
-                )
-            }
-        )
-        apiService.put<Any>(Endpoints.eventEquipment(eventId), payload)
-    }
-
-    override suspend fun updateEventSupplies(eventId: String, supplies: List<EventSupply>) {
-        val payload = SupplyListPayload(
-            supplies = supplies.map {
-                SupplyItemPayload(
-                    inventoryId = it.inventoryId,
-                    quantity = it.quantity,
-                    unitCost = it.unitCost,
-                    source = it.source.name.lowercase(),
-                    excludeCost = it.excludeCost
-                )
-            }
-        )
-        apiService.put<Any>(Endpoints.eventSupplies(eventId), payload)
-    }
-
     override suspend fun getEventPhotos(eventId: String): List<EventPhoto> {
         return apiService.get(Endpoints.eventPhotos(eventId))
     }
@@ -236,7 +233,9 @@ class OfflineFirstEventRepository @Inject constructor(
 @Serializable
 data class UpdateItemsPayload(
     val products: List<ProductItemPayload>,
-    val extras: List<ExtraItemPayload>
+    val extras: List<ExtraItemPayload>,
+    val equipment: List<EquipmentItemPayload>,
+    val supplies: List<SupplyItemPayload>
 )
 
 @Serializable

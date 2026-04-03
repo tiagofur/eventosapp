@@ -73,7 +73,10 @@ fun EventFormScreen(
                 currentPage = pagerState.currentPage,
                 totalPages = 6,
                 onNext = {
-                    if (pagerState.currentPage < 5) {
+                    val error = viewModel.validateStep(pagerState.currentPage)
+                    if (error != null) {
+                        viewModel.saveError = error
+                    } else if (pagerState.currentPage < 5) {
                         scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                     } else {
                         viewModel.saveEvent()
