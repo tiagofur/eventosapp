@@ -138,6 +138,15 @@ class EventDetailViewModel @Inject constructor(
 
     init {
         loadEvent()
+        // Keep _event in sync with Room so status changes from other screens reflect immediately
+        viewModelScope.launch {
+            eventRepository.getEvents().collect { events ->
+                val updated = events.find { it.id == eventId }
+                if (updated != null && updated != _event.value) {
+                    _event.value = updated
+                }
+            }
+        }
     }
 
     fun loadEvent() {
