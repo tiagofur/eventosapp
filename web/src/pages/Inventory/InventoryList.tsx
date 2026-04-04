@@ -15,6 +15,8 @@ import {
   Fuel,
   Eye,
   PlusCircle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
@@ -23,8 +25,8 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { logError } from "../../lib/errorHandler";
 import Empty from "../../components/Empty";
 import { useToast } from "../../hooks/useToast";
-import { ArrowUp, ArrowDown } from "lucide-react";
 import { SkeletonTable } from "../../components/Skeleton";
+import { Modal } from "../../components/Modal";
 
 type SortKey =
   | "ingredient_name"
@@ -276,17 +278,18 @@ export const InventoryList: React.FC = () => {
     sectionItems: InventoryItem[],
     sort: { key: SortKey; order: SortOrder },
     onSort: (key: SortKey) => void,
+    tableLabel: string,
   ) => (
     <div className="overflow-x-auto">
       <table
         className="min-w-full divide-y divide-border"
-        aria-label="Tabla de inventario"
+        aria-label={tableLabel}
       >
         <thead className="bg-surface-alt">
           <tr>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+              className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
               onClick={() => onSort("ingredient_name")}
               aria-sort={getSortAriaSort("ingredient_name", sort)}
             >
@@ -294,7 +297,7 @@ export const InventoryList: React.FC = () => {
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+              className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
               onClick={() => onSort("current_stock")}
               aria-sort={getSortAriaSort("current_stock", sort)}
             >
@@ -302,7 +305,7 @@ export const InventoryList: React.FC = () => {
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+              className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
               onClick={() => onSort("minimum_stock")}
               aria-sort={getSortAriaSort("minimum_stock", sort)}
             >
@@ -310,7 +313,7 @@ export const InventoryList: React.FC = () => {
             </th>
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+              className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
               onClick={() => onSort("unit_cost")}
               aria-sort={getSortAriaSort("unit_cost", sort)}
             >
@@ -485,7 +488,7 @@ export const InventoryList: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+        <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
           <SkeletonTable
             rows={6}
             columns={[
@@ -498,7 +501,7 @@ export const InventoryList: React.FC = () => {
           />
         </div>
       ) : filteredItems.length === 0 ? (
-        <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+        <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
           <Empty
             icon={Package}
             title="No se encontraron ítems"
@@ -539,7 +542,7 @@ export const InventoryList: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+            <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
               {ingredients.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-text-secondary">
                   No hay insumos
@@ -551,7 +554,7 @@ export const InventoryList: React.FC = () => {
               ) : (
                 <>
                   {renderMobileSortBar(ingredientSort, setIngredientSort)}
-                  {renderTable(ingredients, ingredientSort, handleIngredientSort)}
+                  {renderTable(ingredients, ingredientSort, handleIngredientSort, "Tabla de consumibles")}
                 </>
               )}
             </div>
@@ -574,7 +577,7 @@ export const InventoryList: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+            <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
               {supplies.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-text-secondary">
                   No hay insumos por evento
@@ -586,7 +589,7 @@ export const InventoryList: React.FC = () => {
               ) : (
                 <>
                   {renderMobileSortBar(supplySort, setSupplySort)}
-                  {renderTable(supplies, supplySort, handleSupplySort)}
+                  {renderTable(supplies, supplySort, handleSupplySort, "Tabla de insumos por evento")}
                 </>
               )}
             </div>
@@ -609,7 +612,7 @@ export const InventoryList: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+            <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
               {equipment.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-text-secondary">
                   No hay equipos
@@ -621,7 +624,7 @@ export const InventoryList: React.FC = () => {
               ) : (
                 <>
                   {renderMobileSortBar(equipmentSort, setEquipmentSort)}
-                  {renderTable(equipment, equipmentSort, handleEquipmentSort)}
+                  {renderTable(equipment, equipmentSort, handleEquipmentSort, "Tabla de equipos")}
                 </>
               )}
             </div>
@@ -630,54 +633,53 @@ export const InventoryList: React.FC = () => {
       )}
 
       {/* Stock Adjustment Modal */}
-      {adjustingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card w-full max-w-sm rounded-3xl border border-border shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
-            <h2 className="text-xl font-bold text-text mb-2">Ajustar Stock</h2>
-            <p className="text-sm text-text-secondary mb-4">
+      <Modal
+        isOpen={!!adjustingItem}
+        onClose={() => setAdjustingItem(null)}
+        title="Ajustar Stock"
+        maxWidth="sm"
+      >
+        {adjustingItem && (
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
               {adjustingItem.ingredient_name} ({adjustingItem.current_stock}{" "}
               {adjustingItem.unit})
             </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-text-secondary mb-1">
-                  Cantidad a sumar/restar
-                </label>
-                <input
-                  type="number"
-                  autoFocus
-                  className="w-full bg-surface-alt border border-border rounded-xl p-3 text-text focus:ring-2 focus:ring-primary/20 outline-none"
-                  placeholder="Ej: +10 o -5"
-                  value={adjustmentValue}
-                  onChange={(e) => setAdjustmentValue(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAdjustStock();
-                    if (e.key === "Escape") setAdjustingItem(null);
-                  }}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAdjustingItem(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAdjustStock}
-                  className="flex-1 py-2.5 rounded-xl premium-gradient text-white text-sm font-semibold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                >
-                  Confirmar
-                </button>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary mb-1">
+                Cantidad a sumar/restar
+              </label>
+              <input
+                type="number"
+                autoFocus
+                className="w-full bg-surface-alt border border-border rounded-xl p-3 text-text focus:ring-2 focus:ring-primary/20 outline-none"
+                placeholder="Ej: +10 o -5"
+                value={adjustmentValue}
+                onChange={(e) => setAdjustmentValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAdjustStock();
+                }}
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setAdjustingItem(null)}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAdjustStock}
+                className="flex-1 py-2.5 rounded-xl premium-gradient text-white text-sm font-semibold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30"
+              >
+                Confirmar
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };

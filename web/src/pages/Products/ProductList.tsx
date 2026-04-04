@@ -12,6 +12,8 @@ import {
   UtensilsCrossed,
   X,
   Eye,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
@@ -21,7 +23,6 @@ import Empty from "../../components/Empty";
 import { useToast } from "../../hooks/useToast";
 import { usePagination } from "../../hooks/usePagination";
 import { Pagination } from "../../components/Pagination";
-import { ArrowUp, ArrowDown } from "lucide-react";
 import { SkeletonTable } from "../../components/Skeleton";
 
 export const ProductList: React.FC = () => {
@@ -135,7 +136,7 @@ export const ProductList: React.FC = () => {
         }}
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-black tracking-tight text-text">
+        <h1 className="text-2xl font-bold tracking-tight text-text">
           Productos
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -181,10 +182,11 @@ export const ProductList: React.FC = () => {
         <input
           id="product-search"
           type="search"
-          className="block w-full pl-10 pr-8 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-hidden focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
+          className="block w-full pl-10 pr-8 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
           placeholder="Buscar producto..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          aria-label="Buscar productos por nombre o categoría"
         />
         {searchTerm && (
           <button
@@ -219,7 +221,7 @@ export const ProductList: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+      <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
         {loading ? (
           <SkeletonTable
             rows={6}
@@ -253,12 +255,15 @@ export const ProductList: React.FC = () => {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
+            <table className="min-w-full divide-y divide-border" aria-label="Tabla de productos">
+              <caption className="sr-only">
+                Lista de productos con {totalItems} resultados. Mostrando página {currentPage} de {totalPages}.
+              </caption>
               <thead className="bg-surface-alt">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("name")}
                     aria-sort={getSortAriaSort("name")}
                   >
@@ -266,7 +271,7 @@ export const ProductList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("base_price")}
                     aria-sort={getSortAriaSort("base_price")}
                   >
@@ -274,7 +279,7 @@ export const ProductList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("category")}
                     aria-sort={getSortAriaSort("category")}
                   >
@@ -341,7 +346,7 @@ export const ProductList: React.FC = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                      <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowActionMenu items={[
                           { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/products/${product.id}`) },
                           { label: 'Editar', icon: Edit, onClick: () => navigate(`/products/${product.id}/edit`) },

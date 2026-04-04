@@ -166,7 +166,7 @@ export const EventList: React.FC = () => {
       />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-black text-text tracking-tight">
+        <h1 className="text-2xl font-bold text-text tracking-tight">
           Eventos{" "}
           {!loading && events.length > 0 && (
             <span className="text-base font-semibold text-text-secondary">
@@ -270,7 +270,7 @@ export const EventList: React.FC = () => {
         ))}
       </div>
 
-      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+      <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
         {loading ? (
           <SkeletonTable
             rows={6}
@@ -322,7 +322,7 @@ export const EventList: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("event_date")}
                     aria-sort={getSortAriaSort("event_date")}
                   >
@@ -330,13 +330,13 @@ export const EventList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary"
                   >
                     Cliente
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("service_type")}
                     aria-sort={getSortAriaSort("service_type")}
                   >
@@ -344,13 +344,13 @@ export const EventList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary"
                   >
                     Estado
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("total_amount")}
                     aria-sort={getSortAriaSort("total_amount")}
                   >

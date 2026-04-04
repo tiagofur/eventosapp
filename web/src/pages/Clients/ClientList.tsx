@@ -12,6 +12,8 @@ import {
   Download,
   Users,
   Eye,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
@@ -21,7 +23,6 @@ import Empty from "../../components/Empty";
 import { useToast } from "../../hooks/useToast";
 import { usePagination } from "../../hooks/usePagination";
 import { Pagination } from "../../components/Pagination";
-import { ArrowUp, ArrowDown } from "lucide-react";
 import { SkeletonTable } from "../../components/Skeleton";
 
 export const ClientList: React.FC = () => {
@@ -35,6 +36,7 @@ export const ClientList: React.FC = () => {
 
   useEffect(() => {
     fetchClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchClients = async () => {
@@ -124,7 +126,7 @@ export const ClientList: React.FC = () => {
         }}
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-black text-text tracking-tight">
+        <h1 className="text-2xl font-bold text-text tracking-tight">
           Clientes
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -191,7 +193,7 @@ export const ClientList: React.FC = () => {
         />
       </div>
 
-      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+      <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
         {loading ? (
           <SkeletonTable
             rows={6}
@@ -238,7 +240,7 @@ export const ClientList: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("name")}
                     aria-sort={getSortAriaSort("name")}
                   >
@@ -246,13 +248,13 @@ export const ClientList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary"
                   >
                     Contacto
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("total_events")}
                     aria-sort={getSortAriaSort("total_events")}
                   >
@@ -260,7 +262,7 @@ export const ClientList: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:bg-surface-alt/50 transition-colors"
+                    className="px-6 py-3 text-left text-xs font-semibold text-text-secondary cursor-pointer hover:bg-surface-alt/50 transition-colors"
                     onClick={() => handleSort("total_spent")}
                     aria-sort={getSortAriaSort("total_spent")}
                   >
