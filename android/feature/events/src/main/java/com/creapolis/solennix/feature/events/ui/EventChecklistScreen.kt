@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.component.EmptyState
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
-import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
 import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.extensions.asMXN
@@ -58,12 +57,9 @@ fun EventChecklistScreen(
             )
         }
     ) { padding ->
-        AdaptiveCenteredContent(
-            modifier = Modifier.padding(padding),
-            maxWidth = 700.dp
-        ) {
         Column(
             modifier = Modifier
+                .padding(padding)
                 .fillMaxSize()
         ) {
             if (uiState.isLoading) {
@@ -87,28 +83,28 @@ fun EventChecklistScreen(
                 ChecklistProgressHeader(uiState = uiState)
 
                 if (isWideScreen) {
-                    // Tablet: 2-column layout with sections side by side
+                    // Tablet: 2-column layout matching iOS
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Left column: Equipment + Stock
+                        // Left column: Equipment
                         LazyColumn(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             checklistEquipmentSection(uiState, viewModel)
-                            checklistStockSection(uiState, viewModel)
                             item { Spacer(modifier = Modifier.height(32.dp)) }
                         }
 
-                        // Right column: Purchase
+                        // Right column: Stock + Purchase
                         LazyColumn(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
+                            checklistStockSection(uiState, viewModel)
                             checklistPurchaseSection(uiState, viewModel)
                             item { Spacer(modifier = Modifier.height(32.dp)) }
                         }
@@ -127,7 +123,6 @@ fun EventChecklistScreen(
                     }
                 }
             }
-        }
         }
     }
 

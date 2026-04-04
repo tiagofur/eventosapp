@@ -44,6 +44,8 @@ interface EventRepository {
     // Direct API access (bypasses Room cache)
     suspend fun getEventsFromApi(): List<Event>
     suspend fun getEventProductsFromApi(eventId: String): List<EventProduct>
+    suspend fun getEventEquipmentFromApi(eventId: String): List<EventEquipment>
+    suspend fun getEventSuppliesFromApi(eventId: String): List<EventSupply>
 
     // Equipment and Supplies
     suspend fun getEquipmentConflicts(
@@ -175,6 +177,20 @@ class OfflineFirstEventRepository @Inject constructor(
     override suspend fun getEventProductsFromApi(eventId: String): List<EventProduct> =
         try {
             apiService.get(Endpoints.eventProducts(eventId))
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+    override suspend fun getEventEquipmentFromApi(eventId: String): List<EventEquipment> =
+        try {
+            apiService.get(Endpoints.eventEquipment(eventId))
+        } catch (_: Exception) {
+            emptyList()
+        }
+
+    override suspend fun getEventSuppliesFromApi(eventId: String): List<EventSupply> =
+        try {
+            apiService.get(Endpoints.eventSupplies(eventId))
         } catch (_: Exception) {
             emptyList()
         }

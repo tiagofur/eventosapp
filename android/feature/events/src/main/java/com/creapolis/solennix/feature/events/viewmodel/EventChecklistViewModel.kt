@@ -6,10 +6,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.EventRepository
-import com.creapolis.solennix.core.data.repository.InventoryRepository
-import com.creapolis.solennix.core.model.InventoryType
+import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.model.SupplySource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -55,7 +56,7 @@ data class EventChecklistUiState(
 class EventChecklistViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val eventRepository: EventRepository,
-    private val inventoryRepository: InventoryRepository,
+    private val productRepository: ProductRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -74,49 +75,92 @@ class EventChecklistViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                // Get event details
                 val event = eventRepository.getEvent(eventId)
                 if (event == null) {
                     _uiState.update { it.copy(isLoading = false, error = "Evento no encontrado") }
                     return@launch
                 }
 
-                // Collect all checklist items
+                // Fetch event-specific data concurrently
+                val productsDeferred = async { eventRepository.getEventProductsFromApi(eventId) }
+                val equipmentDeferred = async { eventRepository.getEventEquipmentFromApi(eventId) }
+                val suppliesDeferred = async { eventRepository.getEventSuppliesFromApi(eventId) }
+
+                val products = productsDeferred.await()
+                val equipment = equipmentDeferred.await()
+                val supplies = suppliesDeferred.await()
+
                 val checklistItems = mutableListOf<ChecklistItem>()
 
-                // Get inventory items and categorize them
-                inventoryRepository.getInventoryItems().first().forEach { item ->
-                    when (item.type) {
-                        InventoryType.EQUIPMENT -> {
-                            checklistItems.add(
-                                ChecklistItem(
-                                    id = "eq_${item.id}",
-                                    name = item.ingredientName,
-                                    quantity = 1.0,
-                                    unit = item.unit,
-                                    section = ChecklistSection.EQUIPMENT
-                                )
-                            )
-                        }
-                        InventoryType.SUPPLY, InventoryType.INGREDIENT -> {
-                            // Determine if from stock or purchase based on current stock
-                            val section = if (item.currentStock >= item.minimumStock) {
-                                ChecklistSection.STOCK
+                // 1. Equipment items from event assignments
+                for (item in equipment) {
+                    checklistItems.add(
+                        ChecklistItem(
+                            id = "eq_${item.id}",
+                            name = item.equipmentName ?: "Equipo",
+                            quantity = item.quantity.toDouble(),
+                            unit = item.unit ?: "",
+                            section = ChecklistSection.EQUIPMENT
+                        )
+                    )
+                }
+
+                // 2. Product ingredients with bringToEvent=true, aggregated by inventoryId
+                data class IngredientAgg(var name: String, var quantity: Double, var unit: String)
+                val ingredientMap = mutableMapOf<String, IngredientAgg>()
+
+                for (product in products) {
+                    try {
+                        val ingredients = productRepository.getProductIngredients(product.productId)
+                        for (ingredient in ingredients) {
+                            if (ingredient.bringToEvent != true) continue
+                            val key = ingredient.inventoryId
+                            val totalQty = ingredient.quantityRequired * product.quantity
+                            val existing = ingredientMap[key]
+                            if (existing != null) {
+                                existing.quantity += totalQty
                             } else {
-                                ChecklistSection.PURCHASE
-                            }
-                            checklistItems.add(
-                                ChecklistItem(
-                                    id = "sup_${item.id}",
-                                    name = item.ingredientName,
-                                    quantity = item.minimumStock,
-                                    unit = item.unit,
-                                    section = section,
-                                    unitCost = item.unitCost ?: 0.0
+                                ingredientMap[key] = IngredientAgg(
+                                    name = ingredient.ingredientName ?: "Ingrediente",
+                                    quantity = totalQty,
+                                    unit = ingredient.unit ?: ""
                                 )
-                            )
+                            }
                         }
+                    } catch (_: Exception) {
+                        // Skip products whose ingredients can't be fetched
                     }
+                }
+
+                for ((inventoryId, info) in ingredientMap) {
+                    checklistItems.add(
+                        ChecklistItem(
+                            id = "ing_$inventoryId",
+                            name = info.name,
+                            quantity = info.quantity,
+                            unit = info.unit,
+                            section = ChecklistSection.STOCK
+                        )
+                    )
+                }
+
+                // 3. Supply items — section determined by source field
+                for (supply in supplies) {
+                    val section = if (supply.source == SupplySource.STOCK) {
+                        ChecklistSection.STOCK
+                    } else {
+                        ChecklistSection.PURCHASE
+                    }
+                    checklistItems.add(
+                        ChecklistItem(
+                            id = "sup_${supply.id}",
+                            name = supply.supplyName ?: "Insumo",
+                            quantity = supply.quantity,
+                            unit = supply.unit ?: "",
+                            section = section,
+                            unitCost = supply.unitCost
+                        )
+                    )
                 }
 
                 _uiState.update {
