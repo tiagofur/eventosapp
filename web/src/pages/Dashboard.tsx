@@ -87,9 +87,20 @@ function getDashboardEventClientName(event: DashboardEvent) {
 }
 
 // ── Skeleton loader ──────────────────────────────────────────────
-function SkeletonKpi() {
+function SkeletonKpi({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="bg-surface border border-border rounded-xl px-4 py-3 flex items-center gap-3 animate-pulse">
+        <div className="w-7 h-7 rounded-lg bg-surface-alt shrink-0" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-2.5 bg-surface-alt rounded w-2/3" />
+          <div className="h-4 bg-surface-alt rounded w-1/3" />
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="bg-card border border-border rounded-3xl p-5 animate-pulse">
+    <div className="bg-card border border-border rounded-2xl p-5 animate-pulse">
       <div className="flex items-start gap-4">
         <div className="w-10 h-10 rounded-xl bg-surface-alt shrink-0" />
         <div className="flex-1 space-y-2 pt-1">
@@ -110,54 +121,62 @@ interface KpiCardProps {
   label: string;
   value: string;
   sub?: React.ReactNode;
+  compact?: boolean;
 }
-function KpiCard({ icon: Icon, iconBg, iconColor, label, value, sub }: KpiCardProps) {
+function KpiCard({ icon: Icon, iconBg, iconColor, label, value, sub, compact = false }: KpiCardProps) {
+  if (compact) {
+    return (
+      <div className="bg-surface border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+          <Icon className={`h-3.5 w-3.5 ${iconColor}`} aria-hidden="true" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <dt className="text-[11px] font-medium text-text-secondary leading-none mb-1 truncate">{label}</dt>
+          <dd className="text-sm font-bold text-text truncate">{value}</dd>
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="bg-card shadow-sm hover:shadow-md border border-border rounded-3xl p-5 transition-all duration-300 hover:-translate-y-0.5 flex flex-col gap-4">
+    <div className="bg-card shadow-sm hover:shadow-md border border-border rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 flex flex-col gap-4">
       <div className="flex items-start gap-4">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
           <Icon className={`h-5 w-5 ${iconColor}`} aria-hidden="true" />
         </div>
         <div className="flex-1 min-w-0">
-          <dt className="text-xs font-semibold text-text-secondary uppercase tracking-wider leading-tight mb-1">
+          <dt className="text-xs font-medium text-text-secondary leading-tight mb-1">
             {label}
           </dt>
-          <dd className="text-xl font-black text-text tracking-tight">{value}</dd>
+          <dd className="text-xl font-bold text-text tracking-tight">{value}</dd>
         </div>
       </div>
-      {sub && <div className="text-xs text-text-secondary border-t border-border pt-3">{sub}</div>}
+      {sub && <div className="text-xs text-text-tertiary border-t border-border pt-3">{sub}</div>}
     </div>
   );
 }
 
-// ── Quick Action Card ───────────────────────────────────────────
-interface QuickActionCardProps {
+// ── Quick Action Link ───────────────────────────────────────────
+interface QuickActionLinkProps {
   icon: React.ElementType;
   label: string;
-  accent: "gold" | "blue" | "orange" | "green";
+  primary?: boolean;
   onClick?: () => void;
   to?: string;
 }
 
-const QUICK_ACTION_ACCENT = {
-  gold:   { bg: "bg-primary/10",  icon: "text-primary",  border: "hover:border-primary/40" },
-  blue:   { bg: "bg-info/10",     icon: "text-info",     border: "hover:border-info/40" },
-  orange: { bg: "bg-warning/10",  icon: "text-warning",  border: "hover:border-warning/40" },
-  green:  { bg: "bg-success/10",  icon: "text-success",  border: "hover:border-success/40" },
-};
-
-function QuickActionCard({ icon: Icon, label, accent, onClick, to }: QuickActionCardProps) {
-  const a = QUICK_ACTION_ACCENT[accent];
+function QuickActionLink({ icon: Icon, label, primary = false, onClick, to }: QuickActionLinkProps) {
   const inner = (
-    <div className={`bg-card shadow-sm border border-border ${a.border} rounded-3xl p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer h-full min-h-[88px]`}>
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${a.bg}`}>
-        <Icon className={`h-5 w-5 ${a.icon}`} aria-hidden="true" />
-      </div>
-      <span className="text-xs font-semibold text-text text-center leading-tight">{label}</span>
+    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all duration-150 cursor-pointer whitespace-nowrap
+      ${primary
+        ? "bg-primary text-white border-primary hover:bg-primary-dark"
+        : "bg-card border-border text-text hover:bg-surface-alt hover:border-primary/30"
+      }`}>
+      <Icon className={`h-4 w-4 shrink-0 ${primary ? "text-white" : "text-primary"}`} aria-hidden="true" />
+      <span className="text-sm font-semibold">{label}</span>
     </div>
   );
-  if (to) return <Link to={to} className="block h-full">{inner}</Link>;
-  return <button type="button" onClick={onClick} className="block w-full h-full text-left">{inner}</button>;
+  if (to) return <Link to={to}>{inner}</Link>;
+  return <button type="button" onClick={onClick} className="text-left">{inner}</button>;
 }
 
 // ── Event Status Bar ────────────────────────────────────────────
@@ -215,16 +234,16 @@ function UpcomingEventCard({ event, onStatusChange }: {
   const navigate = useNavigate();
   const dateObj = new Date(event.event_date + "T12:00:00");
   return (
-    <div className="bg-card shadow-sm border border-border rounded-3xl p-4 flex items-center gap-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all duration-200"
       onClick={() => navigate(`/events/${event.id}/summary`)} role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/events/${event.id}/summary`); }}>
-      <div className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center shrink-0"
+      <div className="w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0"
         style={{ backgroundColor: "var(--color-primary-light)" }}>
-        <span className="text-xs font-bold uppercase text-primary leading-none">{format(dateObj, "MMM", { locale: es })}</span>
-        <span className="text-xl font-black text-primary leading-tight">{format(dateObj, "d")}</span>
+        <span className="text-[10px] font-semibold uppercase text-primary leading-none">{format(dateObj, "MMM", { locale: es })}</span>
+        <span className="text-lg font-bold text-primary leading-tight">{format(dateObj, "d")}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-text truncate">{event.clients?.name ?? "—"}</p>
+        <p className="text-sm font-semibold text-text truncate">{event.clients?.name ?? "—"}</p>
         <p className="text-xs text-text-secondary truncate mt-0.5">{event.service_type} · {event.num_people} pax</p>
       </div>
       <div onClick={(e) => e.stopPropagation()}>
@@ -238,14 +257,14 @@ function UpcomingEventCard({ event, onStatusChange }: {
 // ── Low Stock Card ──────────────────────────────────────────────
 function LowStockCard({ item }: { item: InventoryItem }) {
   return (
-    <div className="bg-card shadow-sm border border-border rounded-2xl p-4 flex items-start gap-3">
-      <div className="w-8 h-8 rounded-xl bg-error/10 flex items-center justify-center shrink-0 mt-0.5">
+    <div className="bg-surface border border-border rounded-xl p-3.5 flex items-center gap-3">
+      <div className="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center shrink-0">
         <AlertTriangle className="h-4 w-4 text-error" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-text truncate">{item.ingredient_name}</p>
         <p className="text-xs text-text-secondary mt-0.5">
-          Stock: <span className="font-bold text-error">{item.current_stock}</span>
+          <span className="font-bold text-error">{item.current_stock}</span>
           <span className="text-text-tertiary">/{item.minimum_stock}</span> {item.unit}
         </p>
       </div>
@@ -259,46 +278,46 @@ function DashboardAttentionSection({ alerts }: { alerts: DashboardAttentionAlert
   const totalAlerts = alerts.reduce((sum, alert) => sum + alert.items.length, 0);
 
   return (
-    <section className="bg-card shadow-sm border border-warning/20 rounded-3xl overflow-hidden">
+    <section className="bg-card shadow-sm border border-warning/30 rounded-2xl overflow-hidden">
       <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
         <div className="flex items-start gap-3 min-w-0">
-          <span className="w-10 h-10 rounded-2xl bg-warning/10 flex items-center justify-center shrink-0">
-            <AlertTriangle className="h-5 w-5 text-warning" aria-hidden="true" />
+          <span className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-4.5 w-4.5 text-warning" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-text">Eventos que Requieren Atención</h2>
-            <p className="text-sm text-text-secondary mt-1">
-              Eventos próximos o vencidos que necesitan seguimiento operativo o comercial.
+            <h2 className="text-sm font-semibold text-text">Requieren atención</h2>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Eventos próximos o vencidos con seguimiento pendiente.
             </p>
           </div>
         </div>
-        <span className="shrink-0 text-xs font-bold px-3 py-1 rounded-full bg-warning/10 text-warning">
+        <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning">
           {totalAlerts} alerta{totalAlerts === 1 ? "" : "s"}
         </span>
       </div>
 
-      <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="p-4 grid grid-cols-1 xl:grid-cols-3 gap-3">
         {alerts.map((alert) => {
           const styles = ATTENTION_TONE_STYLES[alert.tone];
 
           return (
-            <div key={alert.key} className={`rounded-3xl border p-4 ${styles.card}`}>
+            <div key={alert.key} className={`rounded-xl border p-4 ${styles.card}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-text">{alert.title}</p>
-                  <p className="text-xs text-text-secondary mt-1">{alert.description}</p>
+                  <p className="text-sm font-semibold text-text">{alert.title}</p>
+                  <p className="text-xs text-text-secondary mt-0.5">{alert.description}</p>
                 </div>
-                <span className={`shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${styles.badge}`}>
+                <span className={`shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-full ${styles.badge}`}>
                   {alert.items.length}
                 </span>
               </div>
 
-              <div className="mt-4 space-y-2.5">
+              <div className="mt-3 space-y-2">
                 {alert.items.slice(0, 3).map(({ event, detail }) => (
                   <Link
                     key={event.id}
                     to={`/events/${event.id}/summary`}
-                    className="block rounded-2xl border border-border bg-card px-3 py-3 hover:border-primary/30 hover:shadow-sm transition-all"
+                    className="block rounded-lg border border-border bg-card px-3 py-2.5 hover:border-primary/30 hover:shadow-sm transition-all"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -309,7 +328,7 @@ function DashboardAttentionSection({ alerts }: { alerts: DashboardAttentionAlert
                         {format(parseDashboardEventDate(event.event_date), "d MMM", { locale: es })}
                       </span>
                     </div>
-                    <p className={`text-xs font-semibold mt-2 ${styles.detail}`}>{detail}</p>
+                    <p className={`text-xs font-semibold mt-1.5 ${styles.detail}`}>{detail}</p>
                   </Link>
                 ))}
 
@@ -600,13 +619,15 @@ export const Dashboard: React.FC = () => {
     padding: "10px 14px",
   };
 
+  const currentMonthLabel = format(new Date(), "MMMM yyyy", { locale: es });
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-8">
 
       {/* ── HEADER ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-black text-text tracking-tight">Hola, {firstName} 👋</h1>
+          <h1 className="text-2xl font-bold text-text tracking-tight">Hola, {firstName}</h1>
           <p className="text-sm text-text-secondary mt-0.5 first-letter:uppercase">
             {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
@@ -615,7 +636,7 @@ export const Dashboard: React.FC = () => {
 
       {/* ── ERROR ── */}
       {error && (
-        <div className="flex items-start gap-3 bg-error/5 border border-error/30 text-error rounded-2xl p-4" role="alert">
+        <div className="flex items-start gap-3 bg-error/5 border border-error/30 text-error rounded-xl p-4" role="alert">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1 text-sm">{error}</div>
           <button
@@ -632,7 +653,6 @@ export const Dashboard: React.FC = () => {
 
       {isBasicPlan && (
         <UpgradeBanner
-          className="mb-6"
           type={!canCreateEvent ? "limit-reached" : "upsell"}
           currentUsage={eventsThisMonth}
           limit={limit}
@@ -642,96 +662,108 @@ export const Dashboard: React.FC = () => {
       {/* ── ALERTAS DE ATENCIÓN ── */}
       <DashboardAttentionSection alerts={attentionAlerts} />
 
-      {/* ── KPI CARDS ── */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {(loadingMonth || loadingClients) ? (
-          Array.from({ length: 8 }).map((_, i) => <SkeletonKpi key={i} />)
-        ) : (
-          <>
-            <KpiCard
-              icon={TrendingUp}
-              iconBg="bg-success/10"
-              iconColor="text-success"
-              label="Ventas Netas"
-              value={fmt(netSalesThisMonth)}
-              sub="Eventos confirmados y completados"
-            />
-            <KpiCard
-              icon={DollarSign}
-              iconBg="bg-primary/10"
-              iconColor="text-primary"
-              label="Cobrado (mes)"
-              value={fmt(cashCollectedThisMonth)}
-              sub="Este mes"
-            />
-            <KpiCard
-              icon={FileCheck}
-              iconBg="bg-info/10"
-              iconColor="text-info"
-              label="IVA Cobrado"
-              value={fmt(vatCollectedThisMonth)}
-              sub="Proporcional al % pagado"
-            />
-            <KpiCard
-              icon={AlertTriangle}
-              iconBg="bg-error/10"
-              iconColor="text-error"
-              label="IVA Pendiente"
-              value={fmt(vatOutstandingThisMonth)}
-              sub="Por cobrar"
-            />
-            <KpiCard
-              icon={Calendar}
-              iconBg="bg-primary/10"
-              iconColor="text-primary"
-              label="Eventos del Mes"
-              value={String(eventsThisMonthList.length)}
-              sub="Cantidad"
-            />
-            <KpiCard
-              icon={Package}
-              iconBg={lowStockCount > 0 ? "bg-error/10" : "bg-success/10"}
-              iconColor={lowStockCount > 0 ? "text-error" : "text-success"}
-              label="Stock Bajo"
-              value={lowStockCount > 0 ? `${lowStockCount} ítems bajos` : "Todo en orden"}
-              sub="Revisar inventario"
-            />
-            <KpiCard
-              icon={Users}
-              iconBg="bg-info/10"
-              iconColor="text-info"
-              label="Clientes"
-              value={String(clientCount)}
-              sub="Total"
-            />
-            <KpiCard
-              icon={FileText}
-              iconBg="bg-warning/10"
-              iconColor="text-warning"
-              label="Cotizaciones Pendientes"
-              value={String(eventsThisMonthList.filter(e => e.status === 'quoted').length)}
-              sub="Pendientes de confirmar"
-            />
-          </>
-        )}
-      </div>
+      {/* ── MÉTRICAS + ACCIONES ── */}
+      <section className="flex flex-col gap-3">
+        {/* Section label */}
+        <p className="text-xs font-semibold text-text-tertiary first-letter:uppercase">{currentMonthLabel}</p>
 
-      {/* ── QUICK ACTIONS ── */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <QuickActionCard icon={Plus} label="Nuevo Evento" accent="gold" to="/events/new" />
-        <QuickActionCard icon={Zap} label="Cotización Rápida" accent="orange" to="/cotizacion-rapida" />
-        <QuickActionCard icon={UserPlus} label="Nuevo Cliente" accent="blue" to="/clients/new" />
-        <QuickActionCard icon={Package} label="Nuevo Producto" accent="green" to="/products/new" />
-      </div>
+        {/* Primary KPIs — the 4 metrics checked every morning */}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {(loadingMonth || loadingClients) ? (
+            Array.from({ length: 4 }).map((_, i) => <SkeletonKpi key={i} />)
+          ) : (
+            <>
+              <KpiCard
+                icon={TrendingUp}
+                iconBg="bg-primary/10"
+                iconColor="text-primary"
+                label="Ventas Netas"
+                value={fmt(netSalesThisMonth)}
+                sub="Confirmados y completados"
+              />
+              <KpiCard
+                icon={DollarSign}
+                iconBg="bg-primary/10"
+                iconColor="text-primary"
+                label="Cobrado"
+                value={fmt(cashCollectedThisMonth)}
+                sub="Pagos recibidos este mes"
+              />
+              <KpiCard
+                icon={Calendar}
+                iconBg="bg-primary/10"
+                iconColor="text-primary"
+                label="Eventos"
+                value={String(eventsThisMonthList.length)}
+                sub="Este mes"
+              />
+              <KpiCard
+                icon={FileText}
+                iconBg={eventsThisMonthList.filter(e => e.status === 'quoted').length > 0 ? "bg-warning/10" : "bg-surface-alt"}
+                iconColor={eventsThisMonthList.filter(e => e.status === 'quoted').length > 0 ? "text-warning" : "text-text-tertiary"}
+                label="Cotizaciones"
+                value={String(eventsThisMonthList.filter(e => e.status === 'quoted').length)}
+                sub="Pendientes de confirmar"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Secondary KPIs — detail / supporting metrics */}
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {(loadingMonth || loadingClients) ? (
+            Array.from({ length: 4 }).map((_, i) => <SkeletonKpi key={i} compact />)
+          ) : (
+            <>
+              <KpiCard compact
+                icon={FileCheck}
+                iconBg="bg-surface-alt"
+                iconColor="text-text-secondary"
+                label="IVA Cobrado"
+                value={fmt(vatCollectedThisMonth)}
+              />
+              <KpiCard compact
+                icon={AlertTriangle}
+                iconBg={vatOutstandingThisMonth > 0 ? "bg-error/10" : "bg-surface-alt"}
+                iconColor={vatOutstandingThisMonth > 0 ? "text-error" : "text-text-secondary"}
+                label="IVA Pendiente"
+                value={fmt(vatOutstandingThisMonth)}
+              />
+              <KpiCard compact
+                icon={Package}
+                iconBg={lowStockCount > 0 ? "bg-error/10" : "bg-surface-alt"}
+                iconColor={lowStockCount > 0 ? "text-error" : "text-text-secondary"}
+                label="Stock Bajo"
+                value={lowStockCount > 0 ? `${lowStockCount} ítems` : "Sin alertas"}
+              />
+              <KpiCard compact
+                icon={Users}
+                iconBg="bg-surface-alt"
+                iconColor="text-text-secondary"
+                label="Clientes"
+                value={String(clientCount)}
+              />
+            </>
+          )}
+        </div>
+
+        {/* Quick Actions — subordinate strip, not competing cards */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          <QuickActionLink icon={Plus} label="Nuevo Evento" primary to="/events/new" />
+          <QuickActionLink icon={Zap} label="Cotización Rápida" to="/cotizacion-rapida" />
+          <QuickActionLink icon={UserPlus} label="Nuevo Cliente" to="/clients/new" />
+          <QuickActionLink icon={Package} label="Nuevo Producto" to="/products/new" />
+        </div>
+      </section>
 
       {/* ── CHARTS ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
         {/* Financial Comparison */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl p-6 flex flex-col">
+        <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-text">Comparativa Financiera</h3>
-            <span className="text-xs text-text-secondary bg-surface-alt px-3 py-1 rounded-full">Este mes</span>
+            <h3 className="text-sm font-semibold text-text">Comparativa Financiera</h3>
+            <span className="text-xs text-text-tertiary bg-surface-alt px-3 py-1 rounded-full first-letter:uppercase">{currentMonthLabel}</span>
           </div>
           <div className="h-72 w-full" role="img" aria-label="Gráfico de barras comparando ventas netas, cobrado real e IVA por cobrar">
             <ResponsiveContainer width="100%" height={288}>
@@ -762,10 +794,10 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Event Status */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl p-6 flex flex-col">
+        <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-text">Estado de Eventos</h3>
-            <span className="text-xs text-text-secondary bg-surface-alt px-3 py-1 rounded-full">Este mes</span>
+            <h3 className="text-sm font-semibold text-text">Estado de Eventos</h3>
+            <span className="text-xs text-text-tertiary bg-surface-alt px-3 py-1 rounded-full first-letter:uppercase">{currentMonthLabel}</span>
           </div>
           <EventStatusBar data={chartData} loading={loadingMonth} />
         </div>
@@ -773,10 +805,10 @@ export const Dashboard: React.FC = () => {
 
       {/* ── LOW STOCK ── */}
       {lowStockItems.length > 0 && (
-        <div className="bg-card shadow-sm border border-border rounded-3xl overflow-hidden">
+        <div className="bg-card shadow-sm border border-border rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <h3 className="text-base font-bold text-text flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-error/10 flex items-center justify-center shrink-0">
+            <h3 className="text-sm font-semibold text-text flex items-center gap-2">
+              <span className="w-6 h-6 rounded-lg bg-error/10 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-3.5 w-3.5 text-error" />
               </span>
               Inventario crítico
@@ -793,9 +825,9 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* ── UPCOMING EVENTS ── */}
-      <div className="bg-card shadow-sm border border-border rounded-3xl overflow-hidden">
+      <div className="bg-card shadow-sm border border-border rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="text-base font-bold text-text">Próximos Eventos</h3>
+          <h3 className="text-sm font-semibold text-text">Próximos Eventos</h3>
           <Link to="/calendar" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
             Ver todos <ArrowRight className="h-3.5 w-3.5" />
           </Link>

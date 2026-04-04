@@ -263,3 +263,33 @@ Estos términos deben usarse de forma consistente en toda la aplicación, UI, c�
 
 - Términos de uso: https://creapolis.dev/terms-of-use/
 - Política de privacidad: https://creapolis.dev/privacy-policy/
+
+---
+
+## Design Context
+
+### Users
+Event organizers and service professionals in LATAM (México, Argentina, and similar markets). They manage weddings, quinceañeras, corporate events, and social gatherings. Primary device: desktop. Mobile is secondary but important for quick lookups.
+
+**Emotional goals**: Feel in control of their business. Look professional to their clients. Reduce mental load. Eliminate the chaos of WhatsApp threads, spreadsheets, and paper notes.
+
+### Brand Personality
+Elegante · profesional · confiable
+
+The tone of a trusted business partner for creative professionals. Warm and composed — not cold corporate, not startup-casual. References: Honeybook, Dubsado.
+
+### Aesthetic Direction
+The existing palette is correct — preserve it:
+- **Primary**: `#C4A265` — warm gold. Use with intention, not decoration.
+- **Accent**: `#1B2A4A` — deep navy. Anchors hierarchy and dark mode.
+- **Light mode**: Warm cream/beige surfaces — inviting, not clinical.
+- **Dark mode**: Navy-tinted surfaces — rich and composed.
+
+**Anti-references**: No cyan/purple AI gradients, no glassmorphism as decoration, no generic icon+heading+text card grids, no cold enterprise SaaS aesthetic.
+
+### Design Principles
+1. **Warmth through precision** — Every pixel intentional. Gold used sparingly. Spacing generous and breathable.
+2. **Professional without sterile** — Should inspire confidence, not feel like a 2015 CRM.
+3. **Information-first hierarchy** — Complex data (clients, quotes, payments). The most important things must be immediately obvious.
+4. **Light and dark are equally first-class** — Both modes equally polished. Dark = navy-rich, not generic gray.
+5. **Typography carries the brand** — Clear scale, decisive weight contrast. No timid size differences.
