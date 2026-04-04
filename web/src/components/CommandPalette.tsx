@@ -171,7 +171,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       aria-label="Paleta de comandos"
     >
       <div
-        className="w-full max-w-lg bg-card rounded-3xl border border-border shadow-2xl overflow-hidden"
+        className="w-full max-w-lg bg-card rounded-2xl border border-border shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
@@ -196,7 +196,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
         <div ref={listRef} className="max-h-96 overflow-y-auto p-2">
           {Object.entries(groupedItems).map(([group, items]) => (
             <div key={group} className="mb-2 last:mb-0">
-              <p className="px-3 py-1.5 text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+              <p className="px-3 py-1.5 text-xs font-medium text-text-tertiary">
                 {group}
               </p>
               {items.map((item) => {

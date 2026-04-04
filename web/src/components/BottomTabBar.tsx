@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 
-const tabs = [
+const TABS = [
   { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Calendario', href: '/calendar', icon: Calendar },
   { name: 'Eventos', href: '/events', icon: CalendarCheck },
   { name: 'Clientes', href: '/clients', icon: Users },
 ];
 
-const moreItems = [
+const MORE_ITEMS = [
   { name: 'Productos', href: '/products', icon: Package },
   { name: 'Inventario', href: '/inventory', icon: Boxes },
   { name: 'Configuración', href: '/settings', icon: Settings },
@@ -34,7 +34,7 @@ export const BottomTabBar: React.FC = () => {
     location.pathname === href ||
     (href !== '/dashboard' && location.pathname.startsWith(href));
 
-  const isMoreActive = moreItems.some(
+  const isMoreActive = MORE_ITEMS.some(
     (item) => location.pathname === item.href || location.pathname.startsWith(item.href),
   );
 
@@ -52,7 +52,7 @@ export const BottomTabBar: React.FC = () => {
       {moreOpen && (
         <div className="fixed bottom-[4.5rem] left-4 right-4 z-50 bg-card rounded-2xl border border-border shadow-2xl p-2 lg:hidden">
           <div className="flex items-center justify-between px-3 py-2 mb-1">
-            <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+            <span className="text-xs font-medium text-text-secondary">
               Más opciones
             </span>
             <button
@@ -64,7 +64,7 @@ export const BottomTabBar: React.FC = () => {
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          {moreItems.map((item) => {
+          {MORE_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             return (
@@ -93,7 +93,7 @@ export const BottomTabBar: React.FC = () => {
         aria-label="Navegación principal"
       >
         <div className="flex items-center justify-around h-[4.5rem] px-2">
-          {tabs.map((tab) => {
+          {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = isActive(tab.href);
             return (

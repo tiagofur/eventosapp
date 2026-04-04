@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -75,14 +75,7 @@ export const InventoryForm: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    if (id) {
-      loadItem(id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const loadItem = async (itemId: string) => {
+  const loadItem = useCallback(async (itemId: string) => {
     try {
       setIsLoading(true);
       const item = await inventoryService.getById(itemId);
@@ -112,7 +105,13 @@ export const InventoryForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [reset]);
+
+  useEffect(() => {
+    if (id) {
+      loadItem(id);
+    }
+  }, [id, loadItem]);
 
   const onSubmit = async (data: InventoryFormData) => {
     if (!user) return;
@@ -136,9 +135,9 @@ export const InventoryForm: React.FC = () => {
         });
       }
       navigate("/inventory");
-    } catch (err: any) {
+    } catch (err: unknown) {
       logError("Error saving item", err);
-      setError(err.message || "Error al guardar el ítem");
+      setError(err instanceof Error ? err.message : "Error al guardar el ítem");
     } finally {
       setIsLoading(false);
     }
@@ -203,7 +202,7 @@ export const InventoryForm: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10">
+      <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <div

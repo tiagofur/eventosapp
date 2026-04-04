@@ -1,7 +1,17 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
-import { Eye, Pencil, RotateCcw, Lock, Bold, Italic, Underline, Plus, Save } from "lucide-react";
+import {
+  Eye,
+  Pencil,
+  RotateCcw,
+  Lock,
+  Bold,
+  Italic,
+  Underline,
+  Plus,
+  Save,
+} from "lucide-react";
 import {
   CONTRACT_TEMPLATE_PLACEHOLDERS,
   DEFAULT_CONTRACT_TEMPLATE,
@@ -12,7 +22,8 @@ import { renderFormattedReact } from "@/lib/inlineFormatting";
 
 // ─── Constants ────────────────────────────────────────────────────
 const CHIP_MARKER = "\uFEFF"; // zero-width no-break space used for chip detection
-const CHIP_CLASSES = "inline-flex items-center px-2.5 py-0.5 mx-0.5 bg-linear-to-br from-blue-100 to-violet-100 border border-blue-300 rounded-lg text-xs font-semibold font-sans text-blue-700 cursor-default select-all align-baseline leading-relaxed whitespace-nowrap transition-all hover:from-blue-200 hover:to-violet-200 hover:border-blue-400 hover:-translate-y-px hover:shadow-sm dark:from-blue-900/40 dark:to-violet-900/30 dark:border-blue-500 dark:text-blue-300 dark:hover:from-blue-900/60 dark:hover:to-violet-900/50 dark:hover:border-blue-400";
+const CHIP_CLASSES =
+  "inline-flex items-center px-2.5 py-0.5 mx-0.5 bg-linear-to-br from-blue-100 to-violet-100 border border-blue-300 rounded-lg text-xs font-semibold font-sans text-blue-700 cursor-default select-all align-baseline leading-relaxed whitespace-nowrap transition-all hover:from-blue-200 hover:to-violet-200 hover:border-blue-400 hover:-translate-y-px hover:shadow-sm dark:from-blue-900/40 dark:to-violet-900/30 dark:border-blue-500 dark:text-blue-300 dark:hover:from-blue-900/60 dark:hover:to-violet-900/50 dark:hover:border-blue-400";
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -281,10 +292,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
         { products: { name: "Iluminación" } },
         { products: { name: "Decoración Floral" } },
       ] as any,
-      payments: [
-        { amount: 15000 },
-        { amount: 7500 },
-      ],
+      payments: [{ amount: 15000 }, { amount: 7500 }],
     });
   } catch {
     previewText = template;
@@ -340,7 +348,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                 !isPreview
                   ? "bg-white dark:bg-gray-700 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text"
+                  : "text-text-secondary hover:text-text",
               )}
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -353,7 +361,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                 isPreview
                   ? "bg-white dark:bg-gray-700 text-brand-orange shadow-sm"
-                  : "text-text-secondary hover:text-text"
+                  : "text-text-secondary hover:text-text",
               )}
             >
               <Eye className="h-3.5 w-3.5" />
@@ -362,10 +370,15 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
           </div>
 
           {!isPreview && (
-            <div className={clsx("flex gap-1 bg-surface-alt dark:bg-gray-800/50 rounded-xl p-1", isBasicPlan && "opacity-50 pointer-events-none")}>
+            <div
+              className={clsx(
+                "flex gap-1 bg-surface-alt dark:bg-gray-800/50 rounded-xl p-1",
+                isBasicPlan && "opacity-50 pointer-events-none",
+              )}
+            >
               <button
                 type="button"
-                onClick={() => wrapSelectionWith('**', '**')}
+                onClick={() => wrapSelectionWith("**", "**")}
                 className="p-1.5 rounded-lg text-text-secondary hover:text-text hover:bg-white dark:hover:bg-gray-700 transition-all"
                 title="Negrita (**texto**)"
               >
@@ -373,7 +386,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => wrapSelectionWith('*', '*')}
+                onClick={() => wrapSelectionWith("*", "*")}
                 className="p-1.5 rounded-lg text-text-secondary hover:text-text hover:bg-white dark:hover:bg-gray-700 transition-all"
                 title="Cursiva (*texto*)"
               >
@@ -381,7 +394,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => wrapSelectionWith('__', '__')}
+                onClick={() => wrapSelectionWith("__", "__")}
                 className="p-1.5 rounded-lg text-text-secondary hover:text-text hover:bg-white dark:hover:bg-gray-700 transition-all"
                 title="Subrayado (__texto__)"
               >
@@ -391,7 +404,12 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
           )}
         </div>
 
-        <div className={clsx("flex gap-2", isBasicPlan && "opacity-50 pointer-events-none")}>
+        <div
+          className={clsx(
+            "flex gap-2",
+            isBasicPlan && "opacity-50 pointer-events-none",
+          )}
+        >
           <button
             type="button"
             onClick={handleReset}
@@ -413,7 +431,12 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
 
       {/* Insert Variable Button + Dropdown */}
       {!isPreview && (
-        <div className={clsx("relative", isBasicPlan && "opacity-50 pointer-events-none")}>
+        <div
+          className={clsx(
+            "relative",
+            isBasicPlan && "opacity-50 pointer-events-none",
+          )}
+        >
           <button
             type="button"
             onClick={() => {
@@ -424,7 +447,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
               "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border",
               variablePanelOpen
                 ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"
-                : "bg-surface-alt hover:bg-surface border-border text-text-secondary hover:text-text"
+                : "bg-surface-alt hover:bg-surface border-border text-text-secondary hover:text-text",
             )}
           >
             <Plus className="h-4 w-4" />
@@ -433,7 +456,7 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
 
           {variablePanelOpen && (
             <div className="absolute z-20 top-full mt-2 left-0 w-full sm:w-[480px] bg-white dark:bg-gray-800 border border-border rounded-2xl shadow-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-              <p className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-text-secondary mb-3">
                 Haz clic en una variable para insertarla en tu contrato
               </p>
               <div className="flex flex-wrap gap-2">
@@ -449,7 +472,8 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
                 ))}
               </div>
               <p className="text-[10px] text-text-secondary mt-3 italic">
-                Las variables se reemplazan automáticamente con los datos del evento al generar el contrato.
+                Las variables se reemplazan automáticamente con los datos del
+                evento al generar el contrato.
               </p>
             </div>
           )}
@@ -470,14 +494,17 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
           onKeyDown={handleKeyDown}
           className={clsx(
             "w-full min-h-[400px] bg-surface-alt border border-border rounded-2xl px-5 py-4 text-sm leading-relaxed resize-y focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none overflow-auto whitespace-pre-wrap empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 empty:before:pointer-events-none",
-            isBasicPlan && "opacity-60 cursor-not-allowed"
+            isBasicPlan && "opacity-60 cursor-not-allowed",
           )}
           data-placeholder="Escribe la plantilla de tu contrato aquí..."
         />
       ) : (
-        <div key="template-preview" className="bg-white dark:bg-gray-900 border border-border rounded-2xl p-8 min-h-[400px] font-serif text-text leading-relaxed">
+        <div
+          key="template-preview"
+          className="bg-white dark:bg-gray-900 border border-border rounded-2xl p-8 min-h-[400px] font-serif text-text leading-relaxed"
+        >
           <div className="text-center mb-8">
-            <h2 className="text-xl font-black uppercase tracking-[0.15em] text-text">
+            <h2 className="text-base font-bold text-text">
               Contrato de Servicios
             </h2>
             <div className="w-16 h-0.5 bg-brand-orange mx-auto mt-3"></div>
@@ -492,7 +519,6 @@ export const ContractTemplateEditor: React.FC<ContractTemplateEditorProps> = ({
           </div>
         </div>
       )}
-
     </div>
   );
 };

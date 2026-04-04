@@ -200,7 +200,7 @@ export const AdminDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Total Usuarios */}
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-4 w-4 text-info" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
@@ -224,7 +224,7 @@ export const AdminDashboard: React.FC = () => {
         {/* Usuarios Pagados */}
         <div
           className={clsx(
-            "rounded-3xl border p-5 shadow-sm",
+            "rounded-2xl border p-5 shadow-sm",
             !loading && parseFloat(conversionRate) >= 20
               ? "bg-primary/5 border-primary/20"
               : "bg-card border-border",
@@ -261,7 +261,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Total Eventos */}
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="h-4 w-4 text-success" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
@@ -277,7 +277,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Clientes / Productos */}
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <ShoppingBag className="h-4 w-4 text-purple-500" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
@@ -382,7 +382,7 @@ export const AdminDashboard: React.FC = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Plan Distribution Pie */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl p-6">
+        <div className="bg-card shadow-sm border border-border rounded-2xl p-6">
           <h3 className="text-base font-semibold text-text mb-4">
             Distribución de Planes
           </h3>
@@ -446,7 +446,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Signups Bar Chart */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl p-6">
+        <div className="bg-card shadow-sm border border-border rounded-2xl p-6">
           <h3 className="text-base font-semibold text-text mb-4">
             Nuevos Registros
           </h3>
@@ -500,7 +500,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Subscription Status */}
-        <div className="bg-card shadow-sm border border-border rounded-3xl p-6">
+        <div className="bg-card shadow-sm border border-border rounded-2xl p-6">
           <h3 className="text-base font-semibold text-text mb-4 flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" aria-hidden="true" />
             Suscripciones
@@ -588,7 +588,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Top Usuarios por Actividad */}
-      <div className="bg-card shadow-sm border border-border rounded-3xl p-6">
+      <div className="bg-card shadow-sm border border-border rounded-2xl p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" />
@@ -683,7 +683,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Resumen de Crecimiento */}
-      <div className="bg-card shadow-sm border border-border rounded-3xl p-6">
+      <div className="bg-card shadow-sm border border-border rounded-2xl p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
           <h3 className="text-lg font-semibold text-text flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-success" aria-hidden="true" />

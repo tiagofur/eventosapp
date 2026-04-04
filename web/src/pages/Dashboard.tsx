@@ -608,7 +608,7 @@ export const Dashboard: React.FC = () => {
         items: quotesWithoutConfirmation,
       },
     ].filter((alert) => alert.items.length > 0);
-  }, [attentionEvents, attentionPaidByEvent, fmt, loadingAttention]);
+  }, [attentionEvents, attentionPaidByEvent, loadingAttention]);
 
   const tooltipStyle = {
     borderRadius: "12px",
@@ -835,7 +835,7 @@ export const Dashboard: React.FC = () => {
         {loadingUpcoming ? (
           <div className="p-4 space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-card border border-border rounded-3xl p-4 flex items-center gap-4 animate-pulse">
+              <div key={i} className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 animate-pulse">
                 <div className="w-12 h-12 rounded-2xl bg-surface-alt shrink-0" />
                 <div className="flex-1 space-y-2"><div className="h-3.5 bg-surface-alt rounded w-1/3" /><div className="h-3 bg-surface rounded w-1/4" /></div>
                 <div className="w-16 h-6 bg-surface-alt rounded-full" />

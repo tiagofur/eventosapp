@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { adminService, AdminUser } from '@/services/adminService';
 import { logError } from '@/lib/errorHandler';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
 import clsx from 'clsx';
 import { format, parseISO, differenceInDays, isPast } from 'date-fns';
@@ -82,6 +83,7 @@ export const AdminUsers: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [gift, setGift] = useState<GiftState | null>(null);
+  const [downgradeTarget, setDowngradeTarget] = useState<AdminUser | null>(null);
   const { addToast } = useToast();
 
   const loadUsers = async () => {
@@ -126,7 +128,7 @@ export const AdminUsers: React.FC = () => {
       return;
     }
 
-    setSaving(gift.user.id);
+    setSaving(gift!.user.id);
     try {
       const expiresAt = gift!.noExpiry ? null : gift!.expiresAt;
       const updated = await adminService.upgradeUser(gift!.user.id, gift!.plan, expiresAt);
@@ -150,9 +152,14 @@ export const AdminUsers: React.FC = () => {
     }
   };
 
-  const handleDowngrade = async (user: AdminUser) => {
-    if (!window.confirm(`¿Rebajar a ${user.name} (${user.email}) al plan Basic?`)) return;
+  const handleDowngrade = (user: AdminUser) => {
+    setDowngradeTarget(user);
+  };
 
+  const handleDowngradeConfirm = async () => {
+    if (!downgradeTarget) return;
+    const user = downgradeTarget;
+    setDowngradeTarget(null);
     setSaving(user.id);
     try {
       const updated = await adminService.upgradeUser(user.id, 'basic', null);
@@ -258,10 +265,20 @@ export const AdminUsers: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={!!downgradeTarget}
+        title="Rebajar plan"
+        description={downgradeTarget ? `¿Rebajar a ${downgradeTarget.name} (${downgradeTarget.email}) al plan Basic?` : ''}
+        confirmText="Rebajar"
+        cancelText="Cancelar"
+        onConfirm={handleDowngradeConfirm}
+        onCancel={() => setDowngradeTarget(null)}
+      />
+
       {/* Gift Plan Dialog */}
       {gift && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-card rounded-3xl border border-border shadow-2xl w-full max-w-md p-6 space-y-5">
+          <div className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md p-6 space-y-5">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -428,7 +445,7 @@ export const AdminUsers: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="bg-card shadow-sm border border-border rounded-3xl p-5">
+      <div className="bg-card shadow-sm border border-border rounded-2xl p-5">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
@@ -464,7 +481,7 @@ export const AdminUsers: React.FC = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-card shadow-sm border border-border rounded-3xl overflow-hidden">
+      <div className="bg-card shadow-sm border border-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border" aria-label="Tabla de usuarios">
             <thead className="bg-surface-alt">

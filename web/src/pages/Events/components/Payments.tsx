@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { paymentService } from "../../../services/paymentService";
 import { Payment } from "../../../types/entities";
@@ -16,7 +16,6 @@ interface PaymentsProps {
   eventStatus?: string;
   onStatusChange?: (newStatus: "quoted" | "confirmed" | "completed" | "cancelled") => void;
   eventData?: any;
-  profile?: any;
   initialAmount?: number;
   autoOpenAdd?: boolean;
   onPaymentAdded?: () => void;
@@ -34,7 +33,7 @@ export const Payments: React.FC<PaymentsProps> = ({
   onPaymentAdded,
 }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [modalTitle, setModalTitle] = useState("Registrar Pago");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -75,21 +74,20 @@ export const Payments: React.FC<PaymentsProps> = ({
     setIsAdding(true);
   };
 
-  useEffect(() => {
-    loadPayments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]);
-
-  const loadPayments = async () => {
+  const loadPayments = useCallback(async () => {
     try {
       const data = await paymentService.getByEventId(eventId);
       setPayments(data || []);
     } catch (err) {
       logError("Error loading payments", err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [eventId]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
 
   const onSubmit = async (data: any) => {
     try {
@@ -152,6 +150,10 @@ export const Payments: React.FC<PaymentsProps> = ({
     }
   };
 
+  if (isLoading && payments.length === 0) {
+    return <div className="py-8 text-center text-text-secondary text-sm">Cargando pagos...</div>;
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {statusMessage && (
@@ -177,7 +179,7 @@ export const Payments: React.FC<PaymentsProps> = ({
         </div>
       )}
 
-      <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border overflow-hidden relative">
+      <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border overflow-hidden relative">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none" aria-hidden="true">
           <DollarSign className="h-32 w-32 text-primary" />
         </div>

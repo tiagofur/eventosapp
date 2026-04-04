@@ -102,7 +102,7 @@ export const OnboardingChecklist: React.FC = () => {
   ];
 
   return (
-    <div className="bg-card rounded-3xl shadow-sm border border-primary/30 overflow-hidden mb-6 relative animate-fade-in-up">
+    <div className="bg-card rounded-2xl shadow-sm border border-primary/30 overflow-hidden mb-6 relative animate-fade-in-up">
       {/* Decorative background element */}
       <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
       

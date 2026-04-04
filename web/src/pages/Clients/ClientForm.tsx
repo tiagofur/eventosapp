@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,14 +45,7 @@ export const ClientForm: React.FC = () => {
     resolver: zodResolver(clientSchema),
   });
 
-  useEffect(() => {
-    if (id) {
-      loadClient(id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const loadClient = async (clientId: string) => {
+  const loadClient = useCallback(async (clientId: string) => {
     try {
       setIsLoading(true);
       const client = await clientService.getById(clientId);
@@ -77,7 +70,13 @@ export const ClientForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [reset]);
+
+  useEffect(() => {
+    if (id) {
+      loadClient(id);
+    }
+  }, [id, loadClient]);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -134,9 +133,9 @@ export const ClientForm: React.FC = () => {
         });
       }
       navigate("/clients");
-    } catch (err: any) {
+    } catch (err: unknown) {
       logError("Error saving client", err);
-      setError(err.message || "Error al guardar el cliente");
+      setError(err instanceof Error ? err.message : "Error al guardar el cliente");
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +188,7 @@ export const ClientForm: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10">
+      <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <div className="bg-error/5 border-l-4 border-error p-4" role="alert">

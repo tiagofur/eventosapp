@@ -26,7 +26,7 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
 
   if (type === 'limit-reached') {
     return (
-      <div className={`bg-card rounded-3xl shadow-md border border-error/20 overflow-hidden relative ${className}`}>
+      <div className={`bg-card rounded-2xl shadow-md border border-error/20 overflow-hidden relative ${className}`}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-error/10 rounded-full blur-3xl -mx-20 -my-20 opacity-50 pointer-events-none"></div>
         <div className="relative p-8 flex flex-col items-center text-center">
             <div className="h-16 w-16 bg-error/10 rounded-full flex items-center justify-center mb-6" aria-hidden="true">
@@ -70,7 +70,7 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
 
   // Upsell style (e.g., to put in dashboard softly)
   return (
-    <div className={`bg-primary/5 rounded-3xl p-6 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6 ${className}`}>
+    <div className={`bg-primary/5 rounded-2xl p-6 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6 ${className}`}>
         <div className="flex items-start gap-4 flex-1">
             <div className="h-10 w-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0 mt-1" aria-hidden="true">
                 <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />

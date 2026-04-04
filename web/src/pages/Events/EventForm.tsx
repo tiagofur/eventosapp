@@ -93,6 +93,16 @@ const eventSchema = z.object({
 
 type EventFormData = z.infer<typeof eventSchema>;
 
+interface QuickQuoteState {
+  fromQuickQuote: boolean;
+  selectedProducts?: { product_id: string; quantity: number; price: number; discount: number }[];
+  extras?: { description: string; cost: number; price: number; exclude_utility: boolean; include_in_checklist: boolean }[];
+  discountType?: 'fixed' | 'percent';
+  discountValue?: number;
+  requiresInvoice?: boolean;
+  numPeople?: number;
+}
+
 const STEPS = [
   { id: 1, title: "Información General", icon: Info },
   { id: 2, title: "Productos", icon: Utensils },
@@ -107,9 +117,8 @@ export const EventForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const quickQuoteData = (location.state as any)?.fromQuickQuote
-    ? (location.state as any)
-    : null;
+  const locationState = location.state as QuickQuoteState | null;
+  const quickQuoteData = locationState?.fromQuickQuote ? locationState : null;
 
   const [activeStep, setActiveStep] = useState(1);
   const [clients, setClients] = useState<Client[]>([]);
@@ -282,7 +291,7 @@ export const EventForm: React.FC = () => {
           end_time: event.end_time || "",
           service_type: event.service_type || "",
           num_people: event.num_people || 100,
-          status: (event.status as any) || "quoted",
+          status: event.status || "quoted",
           discount: event.discount || 0,
           requires_invoice: event.requires_invoice || false,
           tax_rate: event.tax_rate || 16,
@@ -781,11 +790,10 @@ export const EventForm: React.FC = () => {
       }
 
       navigate(`/events/${eventId}/summary`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       logError("Error saving event", err);
       setError(
-        err.message ||
-          "Error al guardar el evento. Por favor intenta de nuevo.",
+        err instanceof Error ? err.message : "Error al guardar el evento. Por favor intenta de nuevo.",
       );
     } finally {
       setIsLoading(false);
@@ -990,7 +998,7 @@ export const EventForm: React.FC = () => {
             }
           }}
         >
-          <div className="bg-card shadow-xl border border-border p-6 rounded-3xl overflow-hidden min-h-[400px]">
+          <div className="bg-card shadow-xl border border-border p-6 rounded-2xl overflow-hidden min-h-[400px]">
             <div key={activeStep} className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
               {activeStep === 1 && (
                 <EventGeneralInfo

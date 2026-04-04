@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,24 +78,16 @@ export const ProductForm: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    loadDependencies();
-    if (id) {
-      loadProduct(id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const loadDependencies = async () => {
+  const loadDependencies = useCallback(async () => {
     try {
       const items = await inventoryService.getAll();
       setInventoryItems(items || []);
     } catch (err) {
       logError("Error loading inventory", err);
     }
-  };
+  }, []);
 
-  const loadProduct = async (productId: string) => {
+  const loadProduct = useCallback(async (productId: string) => {
     try {
       setIsLoading(true);
       const product = await productService.getById(productId);
@@ -139,7 +131,14 @@ export const ProductForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [reset]);
+
+  useEffect(() => {
+    loadDependencies();
+    if (id) {
+      loadProduct(id);
+    }
+  }, [id, loadDependencies, loadProduct]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -317,9 +316,9 @@ export const ProductForm: React.FC = () => {
       }
 
       navigate("/products");
-    } catch (err: any) {
+    } catch (err: unknown) {
       logError("Error saving product", err);
-      setError(err.message || "Error al guardar el producto");
+      setError(err instanceof Error ? err.message : "Error al guardar el producto");
     } finally {
       setIsLoading(false);
     }
@@ -386,7 +385,7 @@ export const ProductForm: React.FC = () => {
 
       <div className="space-y-6">
         {/* Formulario Principal */}
-        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10">
+        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10">
           <form
             id="product-form"
             onSubmit={handleSubmit(onSubmit)}
@@ -578,7 +577,7 @@ export const ProductForm: React.FC = () => {
         </div>
 
         {/* Composición / Insumos */}
-        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10 flex flex-col">
+        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
             <Layers className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
             Composición / Insumos (por unidad/persona)
@@ -707,7 +706,7 @@ export const ProductForm: React.FC = () => {
         </div>
 
         {/* Maquinaria / Equipo Necesario */}
-        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10 flex flex-col">
+        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
             <Wrench className="h-5 w-5 mr-2 text-info" aria-hidden="true" />
             Maquinaria / Equipo Necesario
@@ -812,7 +811,7 @@ export const ProductForm: React.FC = () => {
         </div>
 
         {/* Insumos por Evento */}
-        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-3xl sm:p-10 flex flex-col">
+        <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
             <Fuel className="h-5 w-5 mr-2 text-warning" aria-hidden="true" />
             Insumos por Evento (costo fijo por evento)

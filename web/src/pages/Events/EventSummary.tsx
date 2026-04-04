@@ -54,6 +54,43 @@ import { SkeletonLine } from "@/components/Skeleton";
 import clsx from "clsx";
 import { ContractTemplateError, renderContractTemplate } from "@/lib/contractTemplate";
 import { renderFormattedReact } from "@/lib/inlineFormatting";
+import type { Event, Client, User, EventExtra, EventEquipment, EventSupply, Payment, ProductIngredient } from "@/types/entities";
+
+// API response types — base entities extended with joined data from the backend
+type EventWithClient = Event & { client?: Client | null };
+
+// Matches UserProfile in pdfGenerator (User + optional billing/template fields)
+type UserProfile = User & {
+  stripe_customer_id?: string | null;
+  contract_template?: string | null;
+};
+
+interface EventProductWithDetails {
+  id: string;
+  event_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  discount: number;
+  total_price: number | null;
+  created_at: string;
+  products: { name: string; category?: string } | null;
+  cost?: number;
+}
+
+// Some API responses still return nested inventory object alongside flattened fields
+type ProductIngredientWithInventory = ProductIngredient & {
+  inventory?: { ingredient_name?: string; unit?: string; unit_cost?: number; current_stock?: number } | null;
+};
+
+interface IngredientWithStock {
+  name: string;
+  quantity: number;
+  unit: string;
+  cost?: number;
+  currentStock?: number;
+  inventory_id?: string;
+}
 
 type ViewMode = "summary" | "ingredients" | "contract" | "payments" | "photos" | "checklist";
 
@@ -62,13 +99,13 @@ export const EventSummary: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const [event, setEvent] = useState<any>(null);
-  const [products, setProducts] = useState<any[]>([]);
-  const [extras, setExtras] = useState<any[]>([]);
-  const [equipment, setEquipment] = useState<any[]>([]);
-  const [supplies, setSupplies] = useState<any[]>([]);
-  const [ingredients, setIngredients] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [event, setEvent] = useState<EventWithClient | null>(null);
+  const [products, setProducts] = useState<EventProductWithDetails[]>([]);
+  const [extras, setExtras] = useState<EventExtra[]>([]);
+  const [equipment, setEquipment] = useState<EventEquipment[]>([]);
+  const [supplies, setSupplies] = useState<EventSupply[]>([]);
+  const [ingredients, setIngredients] = useState<IngredientWithStock[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("summary");
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
@@ -86,10 +123,10 @@ export const EventSummary: React.FC = () => {
   const aggregateProductIngredients = useCallback(async (productIds: string[], productQuantities: Map<string, number>) => {
     try {
       const allProdIngredients = await productService.getIngredientsForProducts(productIds);
-      const prodIngredients = allProdIngredients.filter((ing: any) => ing.type === 'ingredient');
+      const prodIngredients = allProdIngredients.filter((ing: ProductIngredientWithInventory) => ing.type === 'ingredient');
 
-      const aggregatedIngredients: any = {};
-      prodIngredients.forEach((ing: any) => {
+      const aggregatedIngredients: Record<string, IngredientWithStock> = {};
+      prodIngredients.forEach((ing: ProductIngredientWithInventory) => {
         const key = ing.inventory_id;
         const quantity = productQuantities.get(ing.product_id) || 0;
         const ingredientName = ing.ingredient_name || ing.inventory?.ingredient_name;
@@ -149,7 +186,7 @@ export const EventSummary: React.FC = () => {
       }
 
       const productQuantities = new Map<string, number>();
-      (productsData || []).forEach((p: any) => {
+      (productsData || []).forEach((p: EventProductWithDetails) => {
         productQuantities.set(p.product_id, p.quantity || 0);
       });
       const productIds = Array.from(productQuantities.keys());
@@ -159,7 +196,7 @@ export const EventSummary: React.FC = () => {
       const clItems: typeof checklistItems = [];
 
       // Equipment
-      (equipmentData || []).forEach((eq: any) => {
+      (equipmentData || []).forEach((eq: EventEquipment) => {
         clItems.push({
           id: `eq_${eq.id}`,
           name: eq.equipment_name || "Equipo",
@@ -175,8 +212,8 @@ export const EventSummary: React.FC = () => {
           const allIngredients = await productService.getIngredientsForProducts(productIds);
           const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
           (allIngredients || [])
-            .filter((ing: any) => ing.type === "ingredient" && ing.bring_to_event)
-            .forEach((ing: any) => {
+            .filter((ing: ProductIngredientWithInventory) => ing.type === "ingredient" && ing.bring_to_event)
+            .forEach((ing: ProductIngredientWithInventory) => {
               const key = ing.inventory_id;
               const qty = productQuantities.get(ing.product_id) || 0;
               if (!aggregated[key]) {
@@ -199,7 +236,7 @@ export const EventSummary: React.FC = () => {
       }
 
       // Supplies
-      (suppliesData || []).forEach((s: any) => {
+      (suppliesData || []).forEach((s: EventSupply) => {
         clItems.push({
           id: `sup_${s.id}`,
           name: s.supply_name || "Insumo",
@@ -210,7 +247,7 @@ export const EventSummary: React.FC = () => {
       });
 
       // Extras with include_in_checklist
-      (extrasData || []).filter((e: any) => e.include_in_checklist !== false && e.description).forEach((e: any) => {
+      (extrasData || []).filter((e: EventExtra) => e.include_in_checklist !== false && e.description).forEach((e: EventExtra) => {
         clItems.push({
           id: `ext_${e.id}`,
           name: e.description,
@@ -363,13 +400,13 @@ export const EventSummary: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card rounded-3xl border border-border p-5">
+            <div key={i} className="bg-card rounded-2xl border border-border p-5">
               <SkeletonLine className="h-3 w-20 mb-2" />
               <SkeletonLine className="h-7 w-28" />
             </div>
           ))}
         </div>
-        <div className="bg-card rounded-3xl border border-border p-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
           <SkeletonLine className="h-5 w-48 mb-2" />
           <SkeletonLine className="h-3 w-64 mb-6" />
           <div className="grid grid-cols-2 gap-4">
@@ -427,7 +464,7 @@ export const EventSummary: React.FC = () => {
   try {
     contractPreview = renderContractTemplate({
       event,
-      profile: profile as any,
+      profile: profile as UserProfile | null,
       template: profile?.contract_template,
       strict: true,
       products,
@@ -490,7 +527,7 @@ export const EventSummary: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    generateBudgetPDF(event, profile as any, products, extras);
+                    generateBudgetPDF(event, profile as UserProfile | null, products, extras);
                     setActionsDropdownOpen(false);
                   }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -502,7 +539,7 @@ export const EventSummary: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    generateInvoicePDF(event, profile as any, products, extras);
+                    generateInvoicePDF(event, profile as UserProfile | null, products, extras);
                     setActionsDropdownOpen(false);
                   }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -515,13 +552,13 @@ export const EventSummary: React.FC = () => {
                   type="button"
                   onClick={() => {
                     const purchaseSupplies = supplies
-                      .filter((s: any) => s.source === 'purchase')
-                      .map((s: any) => ({
+                      .filter((s: EventSupply) => s.source === 'purchase')
+                      .map((s: EventSupply) => ({
                         name: s.supply_name || 'Insumo',
                         quantity: s.quantity,
                         unit: s.unit || 'und',
                       }));
-                    generateShoppingListPDF(event, profile as any, [...ingredients, ...purchaseSupplies]);
+                    generateShoppingListPDF(event, profile as UserProfile | null, [...ingredients, ...purchaseSupplies]);
                     setActionsDropdownOpen(false);
                   }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -534,16 +571,16 @@ export const EventSummary: React.FC = () => {
                   type="button"
                   onClick={async () => {
                     try {
-                      const productIds = products.map((p: any) => p.product_id).filter(Boolean);
+                      const productIds = products.map((p: EventProductWithDetails) => p.product_id).filter(Boolean);
                       const productQuantities = new Map<string, number>();
-                      products.forEach((p: any) => productQuantities.set(p.product_id, p.quantity || 0));
+                      products.forEach((p: EventProductWithDetails) => productQuantities.set(p.product_id, p.quantity || 0));
                       const allIngredients = productIds.length > 0
                         ? await productService.getIngredientsForProducts(productIds)
                         : [];
                       const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
                       (allIngredients || [])
-                        .filter((ing: any) => ing.type === 'ingredient' && ing.bring_to_event)
-                        .forEach((ing: any) => {
+                        .filter((ing: ProductIngredientWithInventory) => ing.type === 'ingredient' && ing.bring_to_event)
+                        .forEach((ing: ProductIngredientWithInventory) => {
                           const key = ing.inventory_id;
                           const qty = productQuantities.get(ing.product_id) || 0;
                           if (!aggregated[key]) {
@@ -552,12 +589,12 @@ export const EventSummary: React.FC = () => {
                           aggregated[key].quantity += (ing.quantity_required || 0) * qty;
                         });
                       const allEventSupplies = supplies
-                        .map((s: any) => ({
+                        .map((s: EventSupply) => ({
                           name: s.supply_name || 'Insumo',
                           quantity: s.quantity,
                           unit: s.unit || 'und',
                         }));
-                      generateChecklistPDF(event, profile as any, products, equipment, [...Object.values(aggregated), ...allEventSupplies], extras);
+                      generateChecklistPDF(event, profile as UserProfile | null, products, equipment, [...Object.values(aggregated), ...allEventSupplies], extras);
                     } catch (err) {
                       logError("Error generating checklist", err);
                       addToast("Error al generar checklist.", "error");
@@ -575,7 +612,7 @@ export const EventSummary: React.FC = () => {
                   disabled={!isDownpaymentMet}
                   onClick={() => {
                     try {
-                      generateContractPDF(event, profile as any, undefined, products, payments);
+                      generateContractPDF(event, profile as UserProfile | null, undefined, products, payments);
                     } catch (error) {
                       const message =
                         error instanceof ContractTemplateError
@@ -601,7 +638,7 @@ export const EventSummary: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      generatePaymentReportPDF(event, profile as any, payments);
+                      generatePaymentReportPDF(event, profile as UserProfile | null, payments);
                       setActionsDropdownOpen(false);
                     }}
                     className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -771,7 +808,6 @@ export const EventSummary: React.FC = () => {
           eventStatus={currentStatus}
           onStatusChange={handleStatusChange}
           eventData={event}
-          profile={profile}
           initialAmount={paymentInitialAmount}
           autoOpenAdd={autoOpenPayment}
           onPaymentAdded={async () => {
@@ -784,7 +820,7 @@ export const EventSummary: React.FC = () => {
       {viewMode === "summary" && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* KPI Cards */}
-          <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+          <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
             <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
               <div className="px-4 py-4 text-center">
                 <p className="text-2xl font-black text-primary">
@@ -814,7 +850,7 @@ export const EventSummary: React.FC = () => {
           </div>
 
           {/* Information Card */}
-          <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+          <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
             <div className="px-4 py-5 sm:px-6">
               <h3 className="text-lg leading-6 font-semibold text-text">
                 Información del Evento
@@ -894,7 +930,7 @@ export const EventSummary: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
                 <ShoppingCart className="h-5 w-5 text-primary" />
                 Productos
@@ -919,7 +955,7 @@ export const EventSummary: React.FC = () => {
                       <td className="py-4 px-1 text-right font-bold text-text">
                         $
                         {(
-                          (p.unit_price - ((p as any).discount || 0)) *
+                          (p.unit_price - (p.discount || 0)) *
                           p.quantity
                         ).toFixed(2)}
                       </td>
@@ -929,7 +965,7 @@ export const EventSummary: React.FC = () => {
               </table>
             </div>
 
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
                 <Zap className="h-5 w-5 text-primary" />
                 Extras
@@ -965,13 +1001,13 @@ export const EventSummary: React.FC = () => {
 
           {/* Supplies section */}
           {supplies.length > 0 && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border mt-8">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border mt-8">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
                 <Fuel className="h-5 w-5 text-warning" />
                 Insumos por Evento
               </h2>
               <div className="space-y-3">
-                {supplies.map((s: any) => (
+                {supplies.map((s: EventSupply) => (
                   <div key={s.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                     <div>
                       <span className="font-bold text-text">{s.supply_name || 'Insumo'}</span>
@@ -1014,13 +1050,13 @@ export const EventSummary: React.FC = () => {
 
           {/* Equipment section */}
           {equipment.length > 0 && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border mt-8">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border mt-8">
               <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
                 <Wrench className="h-5 w-5 text-primary" />
                 Equipo Asignado
               </h2>
               <div className="space-y-3">
-                {equipment.map((eq: any) => (
+                {equipment.map((eq: EventEquipment) => (
                   <div key={eq.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                     <div>
                       <span className="font-bold text-text">{eq.equipment_name || 'Equipo'}</span>
@@ -1039,7 +1075,7 @@ export const EventSummary: React.FC = () => {
           )}
 
           <div className="print:hidden">
-            <div className="bg-card shadow-lg rounded-3xl p-6 sm:p-8 border border-border overflow-hidden relative">
+            <div className="bg-card shadow-lg rounded-2xl p-6 sm:p-8 border border-border overflow-hidden relative">
               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                 <DollarSign className="h-32 w-32 text-primary" />
               </div>
@@ -1133,7 +1169,7 @@ export const EventSummary: React.FC = () => {
 
       {viewMode === "ingredients" && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+          <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
             <h1 className="text-2xl font-black text-text uppercase tracking-tight mb-2">
               Lista de Insumos
             </h1>
@@ -1143,7 +1179,7 @@ export const EventSummary: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border overflow-hidden">
+          <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border overflow-hidden">
             <table className="w-full text-sm" aria-label="Insumos necesarios para el evento">
               <caption className="sr-only">Lista de insumos con cantidades necesarias para el evento</caption>
               <thead>
@@ -1207,8 +1243,8 @@ export const EventSummary: React.FC = () => {
           </div>
 
           {/* Per-event supplies: purchase */}
-          {supplies.filter((s: any) => s.source === 'purchase').length > 0 && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border overflow-hidden">
+          {supplies.filter((s: EventSupply) => s.source === 'purchase').length > 0 && (
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border overflow-hidden">
               <h2 className="text-lg font-bold text-text mb-1">Insumos por Evento — Compra Nueva</h2>
               <p className="text-xs text-text-secondary mb-4">Estos insumos deben comprarse para el evento</p>
               <table className="w-full text-sm" aria-label="Insumos por evento de compra nueva">
@@ -1221,7 +1257,7 @@ export const EventSummary: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {supplies.filter((s: any) => s.source === 'purchase').map((s: any) => (
+                  {supplies.filter((s: EventSupply) => s.source === 'purchase').map((s: EventSupply) => (
                     <tr key={s.id} className="hover:bg-surface-alt/50 transition-colors">
                       <td className="py-3 font-medium text-text">
                         {s.supply_name || 'Insumo'}
@@ -1242,8 +1278,8 @@ export const EventSummary: React.FC = () => {
           )}
 
           {/* Per-event supplies: from stock */}
-          {supplies.filter((s: any) => s.source === 'stock').length > 0 && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border overflow-hidden">
+          {supplies.filter((s: EventSupply) => s.source === 'stock').length > 0 && (
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border overflow-hidden">
               <h2 className="text-lg font-bold text-text mb-1">Insumos por Evento — Del Stock</h2>
               <p className="text-xs text-text-secondary mb-4">Estos insumos se toman del inventario existente</p>
               <table className="w-full text-sm" aria-label="Insumos por evento del stock">
@@ -1256,7 +1292,7 @@ export const EventSummary: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {supplies.filter((s: any) => s.source === 'stock').map((s: any) => {
+                  {supplies.filter((s: EventSupply) => s.source === 'stock').map((s: EventSupply) => {
                     const needsMore = s.quantity > (s.current_stock || 0);
                     return (
                       <tr key={s.id} className="hover:bg-surface-alt/50 transition-colors">
@@ -1367,7 +1403,7 @@ export const EventSummary: React.FC = () => {
       )}
 
       {viewMode === "photos" && (
-        <div className="bg-card shadow-sm rounded-3xl border border-border p-6 print:hidden">
+        <div className="bg-card shadow-sm rounded-2xl border border-border p-6 print:hidden">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-text">Fotos del Evento</h2>
             <button
@@ -1434,7 +1470,7 @@ export const EventSummary: React.FC = () => {
       {viewMode === "checklist" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Header card */}
-          <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+          <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
             <h1 className="text-2xl font-black text-text uppercase tracking-tight mb-2">
               Checklist de Carga
             </h1>
@@ -1464,7 +1500,7 @@ export const EventSummary: React.FC = () => {
           </div>
 
           {checklistItems.length === 0 ? (
-            <div className="bg-card shadow-sm rounded-3xl border border-border p-8 text-center">
+            <div className="bg-card shadow-sm rounded-2xl border border-border p-8 text-center">
               <ClipboardList className="mx-auto h-12 w-12 text-text-secondary mb-3" aria-hidden="true" />
               <p className="text-text-secondary">No hay elementos para el checklist.</p>
               <p className="text-sm text-text-secondary mt-1">
@@ -1475,7 +1511,7 @@ export const EventSummary: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Equipment section */}
               {checklistItems.filter((i) => i.section === "equipment").length > 0 && (
-                <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+                <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
                   <h2 className="text-sm font-black text-text uppercase tracking-tight mb-4 flex items-center gap-2">
                     <Wrench className="h-4 w-4 text-primary" aria-hidden="true" />
                     Equipo
@@ -1515,7 +1551,7 @@ export const EventSummary: React.FC = () => {
 
               {/* Stock supplies section */}
               {checklistItems.filter((i) => i.section === "stock").length > 0 && (
-                <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+                <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
                   <h2 className="text-sm font-black text-text uppercase tracking-tight mb-4 flex items-center gap-2">
                     <Package className="h-4 w-4 text-primary" aria-hidden="true" />
                     Insumos de Almacén
@@ -1555,7 +1591,7 @@ export const EventSummary: React.FC = () => {
 
               {/* Purchase supplies section */}
               {checklistItems.filter((i) => i.section === "purchase").length > 0 && (
-                <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+                <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
                   <h2 className="text-sm font-black text-text uppercase tracking-tight mb-4 flex items-center gap-2">
                     <ShoppingCart className="h-4 w-4 text-warning" aria-hidden="true" />
                     Insumos a Comprar
@@ -1595,7 +1631,7 @@ export const EventSummary: React.FC = () => {
 
               {/* Extras section */}
               {checklistItems.filter((i) => i.section === "extra").length > 0 && (
-                <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+                <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
                   <h2 className="text-sm font-black text-text uppercase tracking-tight mb-4 flex items-center gap-2">
                     <Zap className="h-4 w-4 text-primary" aria-hidden="true" />
                     Extras

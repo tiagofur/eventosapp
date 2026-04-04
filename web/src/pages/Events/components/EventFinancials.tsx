@@ -149,7 +149,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
           </div>
         </div>
 
-        <div className="bg-surface-alt p-6 rounded-3xl shadow-sm border border-border">
+        <div className="bg-surface-alt p-6 rounded-2xl shadow-sm border border-border">
           <h4 className="text-lg font-medium text-text mb-4">Resumen de Costos</h4>
 
           <div className="space-y-3 text-sm">

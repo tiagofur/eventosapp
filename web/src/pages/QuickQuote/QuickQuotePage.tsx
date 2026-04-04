@@ -557,7 +557,7 @@ export const QuickQuotePage: React.FC = () => {
 
           {/* Right: Financial summary (sticky) */}
           <div className="lg:col-span-2">
-            <div className="lg:sticky lg:top-24 bg-surface-alt p-6 rounded-3xl shadow-sm border border-border">
+            <div className="lg:sticky lg:top-24 bg-surface-alt p-6 rounded-2xl shadow-sm border border-border">
               <h4 className="text-lg font-medium text-text mb-4">Resumen</h4>
 
               <div className="space-y-3 text-sm">

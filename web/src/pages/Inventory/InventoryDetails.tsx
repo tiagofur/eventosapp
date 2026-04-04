@@ -198,17 +198,17 @@ export const InventoryDetails: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-card rounded-3xl border border-border p-5">
+            <div key={i} className="bg-card rounded-2xl border border-border p-5">
               <div className="h-3 w-20 rounded-md bg-surface-alt animate-pulse mb-3" />
               <div className="h-8 w-16 rounded-md bg-surface-alt animate-pulse" />
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-card rounded-3xl border border-border p-6">
+          <div className="bg-card rounded-2xl border border-border p-6">
             <SkeletonCard rows={4} />
           </div>
-          <div className="bg-card rounded-3xl border border-border p-6">
+          <div className="bg-card rounded-2xl border border-border p-6">
             <SkeletonCard rows={3} />
           </div>
         </div>
@@ -221,6 +221,7 @@ export const InventoryDetails: React.FC = () => {
       <div className="text-center p-8">
         <p className="text-error">{error || "Ítem de inventario no encontrado"}</p>
         <button
+          type="button"
           onClick={() => navigate("/inventory")}
           className="mt-4 text-primary hover:underline"
         >
@@ -348,13 +349,14 @@ export const InventoryDetails: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => navigate("/inventory")}
             className="p-2 rounded-full hover:bg-surface-alt text-text-secondary transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-text">
+            <h1 className="text-2xl font-bold tracking-tight text-text">
               {item.ingredient_name}
             </h1>
             <span
@@ -373,6 +375,7 @@ export const InventoryDetails: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={openAdjustModal}
             className="inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
           >
@@ -387,6 +390,7 @@ export const InventoryDetails: React.FC = () => {
             Editar
           </Link>
           <button
+            type="button"
             onClick={() => setConfirmDeleteOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-error/20 rounded-xl bg-error/5 text-sm font-medium text-error hover:bg-error/10 transition-colors"
           >
@@ -400,7 +404,7 @@ export const InventoryDetails: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div
           className={clsx(
-            "rounded-3xl border p-5 shadow-sm",
+            "rounded-2xl border p-5 shadow-sm",
             isLowStock ? "bg-error/5 border-error/30" : "bg-card border-border",
           )}
         >
@@ -419,7 +423,7 @@ export const InventoryDetails: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="h-4 w-4 text-text-secondary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">Stock Mínimo</p>
@@ -428,7 +432,7 @@ export const InventoryDetails: React.FC = () => {
           <p className="text-xs text-text-secondary mt-1">{item.unit}</p>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-primary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">Costo Unitario</p>
@@ -439,7 +443,7 @@ export const InventoryDetails: React.FC = () => {
           <p className="text-xs text-text-secondary mt-1">por {item.unit}</p>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <PackageCheck className="h-4 w-4 text-primary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">Valor en Stock</p>
@@ -457,7 +461,7 @@ export const InventoryDetails: React.FC = () => {
       {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Demand forecast */}
-        <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
             <Calendar className="h-5 w-5 text-primary" />
             <h2 className="text-sm font-semibold text-text">Demanda por Fecha</h2>
@@ -561,7 +565,7 @@ export const InventoryDetails: React.FC = () => {
           {!demandLoading && (
             <div
               className={clsx(
-                "rounded-3xl border p-5 shadow-sm",
+                "rounded-2xl border p-5 shadow-sm",
                 demand7Days > 0 && stockAfter7Days < 0
                   ? "bg-error/5 border-error/30"
                   : demand7Days > 0 && stockAfter7Days < item.minimum_stock
@@ -645,7 +649,7 @@ export const InventoryDetails: React.FC = () => {
           )}
 
           {/* Stock health bars */}
-          <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+          <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
             <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4">
               Nivel de Stock
             </h3>

@@ -138,7 +138,7 @@ export const ClientDetails: React.FC = () => {
               {client.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <h1 className="text-2xl font-black tracking-tight text-text">
+          <h1 className="text-2xl font-bold tracking-tight text-text">
             {client.name}
           </h1>
         </div>
@@ -163,7 +163,7 @@ export const ClientDetails: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+      <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
         <div className="px-4 py-5 sm:px-6">
           <h3 className="text-lg leading-6 font-semibold text-text">
             Información del Cliente
@@ -277,7 +277,7 @@ export const ClientDetails: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card shadow-sm overflow-hidden rounded-3xl border border-border">
+      <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
         <div className="px-4 py-5 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg leading-6 font-semibold text-text">
@@ -315,7 +315,7 @@ export const ClientDetails: React.FC = () => {
                   <tr>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary "
                     >
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" aria-hidden="true" />{" "}
@@ -324,13 +324,13 @@ export const ClientDetails: React.FC = () => {
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary "
                     >
                       Servicio
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary "
                     >
                       <span className="flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" aria-hidden="true" />{" "}
@@ -339,13 +339,13 @@ export const ClientDetails: React.FC = () => {
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary "
                     >
                       Estado
                     </th>
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                      className="px-6 py-3 text-left text-xs font-medium text-text-secondary "
                     >
                       <span className="flex items-center gap-1">
                         <DollarSign

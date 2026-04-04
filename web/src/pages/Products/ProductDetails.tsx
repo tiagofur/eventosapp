@@ -150,17 +150,17 @@ export const ProductDetails: React.FC = () => {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-card rounded-3xl border border-border p-5"
+              className="bg-card rounded-2xl border border-border p-5"
             >
               <div className="h-3 w-20 rounded-md bg-surface-alt animate-pulse mb-3" />
               <div className="h-8 w-16 rounded-md bg-surface-alt animate-pulse" />
             </div>
           ))}
         </div>
-        <div className="bg-card rounded-3xl border border-border p-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
           <SkeletonCard rows={3} />
         </div>
-        <div className="bg-card rounded-3xl border border-border p-6">
+        <div className="bg-card rounded-2xl border border-border p-6">
           <SkeletonCard rows={4} />
         </div>
       </div>
@@ -172,6 +172,7 @@ export const ProductDetails: React.FC = () => {
       <div className="text-center p-8">
         <p className="text-error">{error || "Producto no encontrado"}</p>
         <button
+          type="button"
           onClick={() => navigate("/products")}
           className="mt-4 text-primary hover:underline"
         >
@@ -227,13 +228,14 @@ export const ProductDetails: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
+            type="button"
             onClick={() => navigate("/products")}
             className="p-2 rounded-full hover:bg-surface-alt text-text-secondary transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-text">
+            <h1 className="text-2xl font-bold tracking-tight text-text">
               {product.name}
             </h1>
             <span className="px-2.5 py-0.5 mt-1 inline-flex text-xs font-semibold rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -250,6 +252,7 @@ export const ProductDetails: React.FC = () => {
             Editar
           </Link>
           <button
+            type="button"
             onClick={() => setConfirmDeleteOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-error/20 rounded-xl bg-error/5 text-sm font-medium text-error hover:bg-error/10 transition-colors"
           >
@@ -261,7 +264,7 @@ export const ProductDetails: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-primary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
@@ -277,7 +280,7 @@ export const ProductDetails: React.FC = () => {
           <p className="text-xs text-text-secondary mt-1">por unidad</p>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4 text-text-secondary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
@@ -292,7 +295,7 @@ export const ProductDetails: React.FC = () => {
 
         <div
           className={clsx(
-            "rounded-3xl border p-5 shadow-sm",
+            "rounded-2xl border p-5 shadow-sm",
             margin >= 50
               ? "bg-success/5 border-success/20"
               : margin >= 20
@@ -330,7 +333,7 @@ export const ProductDetails: React.FC = () => {
           <p className="text-xs text-text-secondary mt-1">utilidad estimada</p>
         </div>
 
-        <div className="bg-card rounded-3xl border border-border p-5 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="h-4 w-4 text-primary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
@@ -352,7 +355,7 @@ export const ProductDetails: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column: image + general info */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
             {product.image_url && (
               <img
                 src={product.image_url}
@@ -416,7 +419,7 @@ export const ProductDetails: React.FC = () => {
           {!demandLoading && (
             <div
               className={clsx(
-                "rounded-3xl border p-5 shadow-sm",
+                "rounded-2xl border p-5 shadow-sm",
                 demand7Days > 0
                   ? "bg-primary/5 border-primary/20"
                   : demandForecast.length > 0
@@ -478,7 +481,7 @@ export const ProductDetails: React.FC = () => {
         {/* Right 2 columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Demand by date */}
-          <div className="bg-card rounded-3xl border border-border p-6 shadow-sm">
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
               <Calendar className="h-5 w-5 text-primary" />
               <h2 className="text-sm font-semibold text-text">
@@ -619,7 +622,7 @@ export const ProductDetails: React.FC = () => {
           </div>
 
           {/* Composición / Insumos */}
-          <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Layers className="h-5 w-5 text-primary" />
@@ -708,7 +711,7 @@ export const ProductDetails: React.FC = () => {
 
           {/* Insumos por Evento */}
           {ingredients.filter((i: any) => i.type === "supply").length > 0 && (
-            <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
               <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Fuel className="h-5 w-5 text-warning" />
@@ -788,7 +791,7 @@ export const ProductDetails: React.FC = () => {
           {/* Maquinaria / Equipo Necesario */}
           {ingredients.filter((i: any) => i.type === "equipment").length >
             0 && (
-            <div className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
               <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Wrench className="h-5 w-5 text-info" />

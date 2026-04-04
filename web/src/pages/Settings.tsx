@@ -34,7 +34,7 @@ const formatSubDate = (dateStr?: string) => {
   } catch { return null; }
 };
 
-const subStatusLabel: Record<string, { text: string; color: string }> = {
+const SUB_STATUS_LABEL: Record<string, { text: string; color: string }> = {
   active: { text: "Activa", color: "text-success bg-success/10" },
   past_due: { text: "Pago pendiente", color: "text-warning bg-warning/10" },
   canceled: { text: "Cancelada", color: "text-error bg-error/5" },
@@ -77,7 +77,7 @@ export const Settings: React.FC = () => {
   );
   const initialTab = searchParams.get("tab") === "subscription" ? "subscription" : "profile";
   const [activeTab, setActiveTab] = useState<"profile" | "business" | "subscription" | "contracts">(initialTab);
-  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -187,7 +187,7 @@ export const Settings: React.FC = () => {
       addToast("Las contraseñas no coinciden", "error");
       return;
     }
-    setIsSendingPasswordReset(true);
+    setIsChangingPassword(true);
     try {
       await api.post("/auth/change-password", {
         current_password: currentPassword,
@@ -204,7 +204,7 @@ export const Settings: React.FC = () => {
         : "Error al cambiar la contraseña";
       addToast(msg, "error");
     } finally {
-      setIsSendingPasswordReset(false);
+      setIsChangingPassword(false);
     }
   };
 
@@ -229,7 +229,7 @@ export const Settings: React.FC = () => {
       {/* ── HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-text">
+          <h1 className="text-2xl font-bold tracking-tight text-text">
             Configuración
           </h1>
           <p className="text-sm text-text-secondary mt-1">
@@ -269,7 +269,7 @@ export const Settings: React.FC = () => {
         {/* ── CONTENT AREA ── */}
         <div className="w-full">
           {activeTab === "profile" && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
                 <h3 className="text-lg font-bold text-text mb-1">
                   Perfil de Usuario
@@ -281,11 +281,11 @@ export const Settings: React.FC = () => {
 
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Nombre</label>
+                  <label className="text-xs font-medium text-text-secondary">Nombre</label>
                   <p className="text-lg font-bold text-text">{profile?.name}</p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Email</label>
+                  <label className="text-xs font-medium text-text-secondary">Email</label>
                   <p className="text-lg font-bold text-text">{profile?.email}</p>
                 </div>
               </div>
@@ -327,10 +327,10 @@ export const Settings: React.FC = () => {
                     <div className="flex gap-3">
                       <button
                         onClick={handleChangePassword}
-                        disabled={isSendingPasswordReset}
+                        disabled={isChangingPassword}
                         className="bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-50"
                       >
-                        {isSendingPasswordReset ? "Guardando..." : "Guardar"}
+                        {isChangingPassword ? "Guardando..." : "Guardar"}
                       </button>
                       <button
                         onClick={() => {
@@ -375,7 +375,7 @@ export const Settings: React.FC = () => {
           )}
 
           {activeTab === "business" && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
                 <h3 className="text-lg font-bold text-text mb-1">
                   Identidad de Negocio
@@ -387,7 +387,7 @@ export const Settings: React.FC = () => {
 
               {/* Business Name */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Nombre Comercial</label>
+                <label className="text-xs font-medium text-text-secondary">Nombre Comercial</label>
                 {isEditingBusiness ? (
                   <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
                     <input
@@ -429,8 +429,8 @@ export const Settings: React.FC = () => {
 
               {/* Logo Upload */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Logo de Marca</label>
-                <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-surface-alt/30 rounded-3xl border-2 border-dashed border-border hover:border-primary/50 transition-all text-center sm:text-left">
+                <label className="text-xs font-medium text-text-secondary">Logo de Marca</label>
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-surface-alt/30 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-all text-center sm:text-left">
                   <div className="relative h-24 w-24 shrink-0 bg-card rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
                     {profile?.logo_url ? (
                       <img src={getAssetUrl(profile.logo_url)} alt="Logo" className="max-w-full max-h-full object-contain" />
@@ -456,7 +456,7 @@ export const Settings: React.FC = () => {
 
               {/* Show Business Name in PDFs */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">PDFs</label>
+                <label className="text-xs font-medium text-text-secondary">PDFs</label>
                 <div className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border">
                   <div>
                     <p className="font-bold text-text">Mostrar nombre en PDFs</p>
@@ -485,7 +485,7 @@ export const Settings: React.FC = () => {
 
               {/* Brand Color */}
               <div className="space-y-4">
-                <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Color de Marca</label>
+                <label className="text-xs font-medium text-text-secondary">Color de Marca</label>
                 <div className="flex items-center gap-4">
                   <input
                     type="color"
@@ -506,7 +506,7 @@ export const Settings: React.FC = () => {
           )}
 
           {activeTab === "contracts" && (
-            <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 space-y-8 border border-border">
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
                 <h3 className="text-lg font-bold text-text mb-1">
                   Valores Predeterminados
@@ -519,7 +519,7 @@ export const Settings: React.FC = () => {
               <div className="space-y-8">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Anticipo Sugerido</label>
+                    <label className="text-xs font-medium text-text-secondary">Anticipo Sugerido</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -531,7 +531,7 @@ export const Settings: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Días para cancelar</label>
+                    <label className="text-xs font-medium text-text-secondary">Días para cancelar</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -543,7 +543,7 @@ export const Settings: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-text-secondary uppercase tracking-wider">Reembolso</label>
+                    <label className="text-xs font-medium text-text-secondary">Reembolso</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -568,10 +568,10 @@ export const Settings: React.FC = () => {
 
           {activeTab === "subscription" && (
             <div className="space-y-6">
-              <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border relative overflow-hidden">
+              <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                   <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 bg-surface-alt px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-text-secondary">
+                    <div className="inline-flex items-center gap-2 bg-surface-alt px-3 py-1 rounded-full text-xs font-medium text-text-secondary">
                       Plan Actual
                     </div>
                     <h2 className="text-4xl font-bold tracking-tight capitalize text-text">
@@ -587,7 +587,7 @@ export const Settings: React.FC = () => {
                     {subStatus?.subscription && (
                       <div className="flex flex-wrap items-center gap-3 pt-2">
                         {(() => {
-                          const info = subStatusLabel[subStatus.subscription!.status] || { text: subStatus.subscription!.status, color: "text-text-secondary bg-surface-alt" };
+                          const info = SUB_STATUS_LABEL[subStatus.subscription!.status] || { text: subStatus.subscription!.status, color: "text-text-secondary bg-surface-alt" };
                           return (
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${info.color}`}>
                               {info.text}
@@ -636,7 +636,7 @@ export const Settings: React.FC = () => {
               </div>
 
               {/* Limits / Usage section */}
-              <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+              <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
                 <h3 className="text-lg font-bold text-text mb-6">Uso de este mes</h3>
                 <div className="grid sm:grid-cols-2 gap-8">
                   <div className="space-y-3">
@@ -674,7 +674,7 @@ export const Settings: React.FC = () => {
         </div>
 
         {/* ── LEGAL LINKS ── */}
-        <div className="bg-card shadow-sm rounded-3xl p-6 sm:p-8 border border-border">
+        <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
           <h3 className="text-lg font-bold text-text mb-1">
             Informacion Legal
           </h3>

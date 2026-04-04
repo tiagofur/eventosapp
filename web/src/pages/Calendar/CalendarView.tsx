@@ -324,7 +324,7 @@ export const CalendarView: React.FC = () => {
       >
         {isFetching && (
           <div
-            className="absolute inset-0 flex items-center justify-center bg-card/70 z-10 rounded-3xl"
+            className="absolute inset-0 flex items-center justify-center bg-card/70 z-10 rounded-2xl"
             role="status"
             aria-label="Cargando eventos..."
           >
@@ -333,7 +333,7 @@ export const CalendarView: React.FC = () => {
         )}
 
         {/* Calendar Card */}
-        <div className="bg-card shadow-sm rounded-3xl p-4 sm:p-6 xl:w-fit xl:shrink-0 border border-border transition-colors">
+        <div className="bg-card shadow-sm rounded-2xl p-4 sm:p-6 xl:w-fit xl:shrink-0 border border-border transition-colors">
           <style>{`
           .rdp-root {
               --rdp-cell-size: 45px;
@@ -455,7 +455,7 @@ export const CalendarView: React.FC = () => {
         </div>
 
         {/* Events for selected day */}
-        <div className="bg-card shadow-sm rounded-3xl p-6 xl:flex-1 xl:min-w-0 border border-border flex flex-col transition-colors">
+        <div className="bg-card shadow-sm rounded-2xl p-6 xl:flex-1 xl:min-w-0 border border-border flex flex-col transition-colors">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-text">
               Eventos del{" "}
@@ -563,7 +563,7 @@ export const CalendarView: React.FC = () => {
                         </p>
                       </div>
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                        className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-semibold shrink-0 ${
                           event.status === "confirmed"
                             ? "bg-status-confirmed/10 text-status-confirmed"
                             : event.status === "completed"
