@@ -22,7 +22,7 @@ interface PaymentsProps {
   userId: string;
   eventStatus?: string;
   onStatusChange?: (newStatus: "quoted" | "confirmed" | "completed" | "cancelled") => void;
-  eventData?: { deposit_percent?: number | null; [key: string]: unknown };
+  eventData?: { deposit_percent?: number | null };
   initialAmount?: number;
   autoOpenAdd?: boolean;
   onPaymentAdded?: () => void;

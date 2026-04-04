@@ -129,8 +129,8 @@ export const EventSummary: React.FC = () => {
       prodIngredients.forEach((ing: ProductIngredientWithInventory) => {
         const key = ing.inventory_id;
         const quantity = productQuantities.get(ing.product_id) || 0;
-        const ingredientName = ing.ingredient_name || ing.inventory?.ingredient_name;
-        const unit = ing.unit || ing.inventory?.unit;
+        const ingredientName = ing.ingredient_name ?? ing.inventory?.ingredient_name ?? '';
+        const unit = ing.unit ?? ing.inventory?.unit ?? '';
         const unitCost = ing.unit_cost ?? ing.inventory?.unit_cost ?? 0;
         const currentStock = ing.inventory?.current_stock ?? 0;
 
@@ -443,7 +443,7 @@ export const EventSummary: React.FC = () => {
     );
   }
 
-  const totalProductCost = ingredients.reduce((sum, i) => sum + i.cost, 0);
+  const totalProductCost = ingredients.reduce((sum, i) => sum + (i.cost ?? 0), 0);
   const totalExtrasCost = extras.reduce((sum, e) => sum + e.cost, 0);
   const totalCost = totalProductCost + totalExtrasCost;
   const totalCharged = getEventTotalCharged(event);
@@ -807,7 +807,7 @@ export const EventSummary: React.FC = () => {
           userId={user.id}
           eventStatus={currentStatus}
           onStatusChange={handleStatusChange}
-          eventData={event as unknown as { deposit_percent?: number | null; [key: string]: unknown }}
+          eventData={{ deposit_percent: event.deposit_percent }}
           initialAmount={paymentInitialAmount}
           autoOpenAdd={autoOpenPayment}
           onPaymentAdded={async () => {
@@ -1042,7 +1042,7 @@ export const EventSummary: React.FC = () => {
               <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
                 <span className="text-sm text-text-secondary">Costo total insumos</span>
                 <span className="text-lg font-bold text-warning">
-                  ${supplies.reduce((sum: number, s: any) => sum + (s.exclude_cost ? 0 : s.quantity * (s.unit_cost || 0)), 0).toFixed(2)}
+                  ${supplies.reduce((sum: number, s: EventSupply) => sum + (s.exclude_cost ? 0 : s.quantity * (s.unit_cost || 0)), 0).toFixed(2)}
                 </span>
               </div>
             </div>

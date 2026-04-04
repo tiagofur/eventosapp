@@ -23,7 +23,6 @@ import {
   Utensils,
   PlusCircle,
   Package,
-  Calculator,
 } from "lucide-react";
 import { logError } from "@/lib/errorHandler";
 import { Breadcrumb } from "@/components/Breadcrumb";
@@ -44,6 +43,7 @@ import {
   EventExtra,
   EventEquipment as EventEquipmentEntity,
   EventSupply,
+  ProductIngredient,
 } from "@/types/entities";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { unavailableDatesService } from "@/services/unavailableDatesService";
@@ -424,8 +424,8 @@ export const EventForm: React.FC = () => {
             const ingredients = await productService.getIngredients(productId);
             const cost =
               ingredients
-                ?.filter((ing: any) => ing.type === "ingredient")
-                .reduce((sum, ing: any) => {
+                ?.filter((ing: ProductIngredient) => ing.type === "ingredient")
+                .reduce((sum: number, ing: ProductIngredient) => {
                   const unitCost = ing.unit_cost ?? 0;
                   return sum + ing.quantity_required * unitCost;
                 }, 0) || 0;
@@ -511,7 +511,7 @@ export const EventForm: React.FC = () => {
     setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleProductChange = (index: number, field: string, value: any) => {
+  const handleProductChange = (index: number, field: string, value: string | number | boolean) => {
     setSelectedProducts((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
@@ -537,7 +537,7 @@ export const EventForm: React.FC = () => {
     setExtras((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleExtraChange = (index: number, field: string, value: any) => {
+  const handleExtraChange = (index: number, field: string, value: string | number | boolean) => {
     setExtras((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
@@ -980,7 +980,7 @@ export const EventForm: React.FC = () => {
                 {Object.entries(errors).map(([key, err]) => (
                   <li key={key} className="text-xs text-error/80 flex items-center">
                     <span className="mr-2 opacity-50">●</span>
-                    {(err as any).message}
+                    {(err as { message?: string })?.message}
                   </li>
                 ))}
               </ul>
@@ -1006,15 +1006,15 @@ export const EventForm: React.FC = () => {
             <div key={activeStep} className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
               {activeStep === 1 && (
                 <EventGeneralInfo
-                  clients={clients as any}
+                  clients={clients}
                   clientIdValue={clientIdValue}
-                  onClientCreated={handleClientCreated as any}
+                  onClientCreated={handleClientCreated}
                   unavailableDates={unavailableDates}
                 />
               )}
               {activeStep === 2 && (
                 <EventProducts
-                  products={products as any}
+                  products={products}
                   selectedProducts={selectedProducts}
                   productUnitCosts={productUnitCosts}
                   onAddProduct={handleAddProduct}
@@ -1056,7 +1056,7 @@ export const EventForm: React.FC = () => {
               )}
               {activeStep === 5 && (
                 <EventFinancials
-                  selectedProducts={selectedProducts as any}
+                  selectedProducts={selectedProducts}
                   extras={extras}
                   productUnitCosts={productUnitCosts}
                   supplyCost={selectedSupplies.reduce(

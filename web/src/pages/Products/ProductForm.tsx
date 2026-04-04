@@ -17,7 +17,7 @@ import {
   Camera,
   X,
 } from "lucide-react";
-import { InventoryItem } from "../../types/entities";
+import { InventoryItem, ProductIngredient } from "../../types/entities";
 import { logError } from "../../lib/errorHandler";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
@@ -59,7 +59,7 @@ export const ProductForm: React.FC = () => {
       bring_to_event: boolean;
       unit_cost: number;
       unit: string;
-      _type: "ingredient" | "equipment" | "supply";
+      itemType: "ingredient" | "equipment" | "supply";
     }[]
   >([]);
 
@@ -109,14 +109,14 @@ export const ProductForm: React.FC = () => {
       const ingredients = await productService.getIngredients(productId);
       if (ingredients) {
         setRecipeIngredients(
-          ingredients.map((i: any) => ({
+          ingredients.map((i: ProductIngredient) => ({
             inventory_id: i.inventory_id,
             quantity_required: i.quantity_required,
             capacity: i.capacity ?? null,
             bring_to_event: i.bring_to_event ?? false,
             unit_cost: i.unit_cost || 0,
             unit: i.unit || "",
-            _type:
+            itemType:
               i.type === "equipment"
                 ? ("equipment" as const)
                 : i.type === "supply"
@@ -182,7 +182,7 @@ export const ProductForm: React.FC = () => {
         bring_to_event: false,
         unit_cost: 0,
         unit: "",
-        _type: "ingredient",
+        itemType: "ingredient",
       },
     ]);
   };
@@ -197,7 +197,7 @@ export const ProductForm: React.FC = () => {
         bring_to_event: false,
         unit_cost: 0,
         unit: "",
-        _type: "equipment",
+        itemType: "equipment",
       },
     ]);
   };
@@ -212,7 +212,7 @@ export const ProductForm: React.FC = () => {
         bring_to_event: true,
         unit_cost: 0,
         unit: "",
-        _type: "supply",
+        itemType: "supply",
       },
     ]);
   };
@@ -226,7 +226,7 @@ export const ProductForm: React.FC = () => {
   const handleIngredientChange = (
     index: number,
     field: "inventory_id" | "quantity_required" | "capacity" | "bring_to_event",
-    value: any,
+    value: string | number | boolean | null,
   ) => {
     const newIngredients = [...recipeIngredients];
     newIngredients[index] = { ...newIngredients[index], [field]: value };
@@ -244,13 +244,13 @@ export const ProductForm: React.FC = () => {
 
   const calculateTotalCost = () => {
     return recipeIngredients
-      .filter((item) => item._type === "ingredient")
+      .filter((item) => item.itemType === "ingredient")
       .reduce((sum, item) => sum + item.quantity_required * item.unit_cost, 0);
   };
 
   const calculatePerEventCost = () => {
     return recipeIngredients
-      .filter((item) => item._type === "supply")
+      .filter((item) => item.itemType === "supply")
       .reduce((sum, item) => sum + item.quantity_required * item.unit_cost, 0);
   };
 
@@ -266,15 +266,15 @@ export const ProductForm: React.FC = () => {
 
   const ingredientEntries = recipeIngredients
     .map((item, idx) => ({ item, originalIndex: idx }))
-    .filter(({ item }) => item._type === "ingredient");
+    .filter(({ item }) => item.itemType === "ingredient");
 
   const equipmentEntries = recipeIngredients
     .map((item, idx) => ({ item, originalIndex: idx }))
-    .filter(({ item }) => item._type === "equipment");
+    .filter(({ item }) => item.itemType === "equipment");
 
   const supplyEntries = recipeIngredients
     .map((item, idx) => ({ item, originalIndex: idx }))
-    .filter(({ item }) => item._type === "supply");
+    .filter(({ item }) => item.itemType === "supply");
 
   const onSubmit = async (data: ProductFormData) => {
     if (!user) return;
@@ -309,7 +309,7 @@ export const ProductForm: React.FC = () => {
         const ingredientsToSave = recipeIngredients.map((i) => ({
           inventoryId: i.inventory_id,
           quantityRequired: i.quantity_required,
-          capacity: i._type === "equipment" ? (i.capacity ?? null) : null,
+          capacity: i.itemType === "equipment" ? (i.capacity ?? null) : null,
           bringToEvent: i.bring_to_event,
         }));
         await productService.updateIngredients(productId, ingredientsToSave);
