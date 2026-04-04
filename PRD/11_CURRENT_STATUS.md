@@ -770,3 +770,4 @@ Refactors planificados para lograr paridad total entre las 6 plataformas (iPhone
 | ~~Calendario: BlockedDatesSheet iOS~~ | ✅ | Implementado con CRUD completo | 0h | ✅ |
 | ~~Web: Fotos de evento~~ | ✅ | Tab de fotos con galeria, upload, lightbox y eliminacion | 0h | ✅ |
 | ~~Web: Checklist interactivo~~ | ✅ | Tab de checklist con secciones, checkboxes y progreso | 0h | ✅ |
+| ~~Android: Checklist mostraba todo el inventario~~ | ✅ | Corregido para mostrar solo items del evento (equipo, insumos, ingredientes). Layout tablet ajustado | 0h | ✅ |
