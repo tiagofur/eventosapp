@@ -1,10 +1,36 @@
+---
+tags:
+  - prd
+  - arquitectura
+  - ios
+  - swiftui
+  - solennix
+aliases:
+  - Arquitectura iOS
+  - iOS Architecture
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+platform: iOS
+---
+
 # Arquitectura Tecnica: Solennix iOS
 
-**Fecha:** Marzo 2026
-**Plataformas:** iOS 17+ / iPadOS 17+ / macOS 14+ (Designed for iPad)
-**Lenguaje:** Swift 5.9+
-**Framework UI:** SwiftUI
-**Arquitectura:** MVVM con @Observable
+> [!info] Stack Principal
+> **Fecha:** Marzo 2026
+> **Plataformas:** iOS 17+ / iPadOS 17+ / macOS 14+ (Designed for iPad)
+> **Lenguaje:** Swift 5.9+
+> **Framework UI:** SwiftUI
+> **Arquitectura:** MVVM con @Observable
+
+> [!tip] Documentos relacionados
+> - [[PRD MOC]] — Indice general del PRD
+> - [[01_PRODUCT_VISION]] — Vision del producto
+> - [[02_FEATURES]] — Features y tabla de paridad
+> - [[06_TECHNICAL_ARCHITECTURE_ANDROID]] — Arquitectura Android
+> - [[07_TECHNICAL_ARCHITECTURE_BACKEND]] — Arquitectura Backend
+> - [[08_TECHNICAL_ARCHITECTURE_WEB]] — Arquitectura Web
+> - [[11_CURRENT_STATUS]] — Estado actual de implementacion
 
 ---
 
@@ -32,11 +58,12 @@
 
 ### Decisiones clave
 
-- **Sin dependencias SPM externas:** Todos los paquetes son locales (SolennixCore, SolennixNetwork, SolennixDesign, SolennixFeatures). Cero dependencias de terceros para maximo control y tiempos de compilacion minimos.
-- **@Observable sobre TCA:** Se eligio la macro nativa `@Observable` (iOS 17) sobre The Composable Architecture. TCA agrega complejidad innecesaria para una app CRUD centrada en formularios. `@Observable` ofrece reactividad nativa sin boilerplate.
-- **Actor-based networking:** `APIClient` es un `actor` de Swift, garantizando seguridad de hilos sin locks manuales ni `DispatchQueue`.
-- **SwiftData solo para cache:** SwiftData se usa exclusivamente para cache offline (no como fuente de verdad). La fuente de verdad es siempre el backend via API REST.
-- **XcodeGen:** El archivo `project.yml` genera el `.xcodeproj`, eliminando conflictos de merge en el archivo de proyecto y facilitando la gestion de targets.
+> [!note] Decisiones de arquitectura
+> - **Sin dependencias SPM externas:** Todos los paquetes son locales (SolennixCore, SolennixNetwork, SolennixDesign, SolennixFeatures). Cero dependencias de terceros para maximo control y tiempos de compilacion minimos.
+> - **@Observable sobre TCA:** Se eligio la macro nativa `@Observable` (iOS 17) sobre The Composable Architecture. TCA agrega complejidad innecesaria para una app CRUD centrada en formularios. `@Observable` ofrece reactividad nativa sin boilerplate.
+> - **Actor-based networking:** `APIClient` es un `actor` de Swift, garantizando seguridad de hilos sin locks manuales ni `DispatchQueue`.
+> - **SwiftData solo para cache:** SwiftData se usa exclusivamente para cache offline (no como fuente de verdad). La fuente de verdad es siempre el backend via API REST.
+> - **XcodeGen:** El archivo `project.yml` genera el `.xcodeproj`, eliminando conflictos de merge en el archivo de proyecto y facilitando la gestion de targets.
 
 ---
 
@@ -44,30 +71,27 @@
 
 ### Por que MVVM con @Observable
 
-MVVM fue elegido sobre TCA, VIPER y Clean Architecture por las siguientes razones:
-
-1. **Simplicidad nativa** -- `@Observable` (iOS 17) elimina la necesidad de `ObservableObject`, `@Published` y `objectWillChange`. El compilador genera la observacion automaticamente.
-2. **DI via @Environment** -- Inyeccion de dependencias nativa de SwiftUI sin contenedores externos.
-3. **Menor boilerplate** -- Sin reducers, actions, effects ni stores. Ideal para una app centrada en CRUD y formularios.
-4. **Curva de aprendizaje minima** -- Patron estandar de la industria, facil de mantener y escalar.
-5. **Compatibilidad total** -- Funciona con SwiftUI, SwiftData, WidgetKit y todas las APIs de Apple sin adaptadores.
+> [!abstract] Patron arquitectonico: MVVM + @Observable
+> MVVM fue elegido sobre TCA, VIPER y Clean Architecture por las siguientes razones:
+>
+> 1. **Simplicidad nativa** -- `@Observable` (iOS 17) elimina la necesidad de `ObservableObject`, `@Published` y `objectWillChange`. El compilador genera la observacion automaticamente.
+> 2. **DI via @Environment** -- Inyeccion de dependencias nativa de SwiftUI sin contenedores externos.
+> 3. **Menor boilerplate** -- Sin reducers, actions, effects ni stores. Ideal para una app centrada en CRUD y formularios.
+> 4. **Curva de aprendizaje minima** -- Patron estandar de la industria, facil de mantener y escalar.
+> 5. **Compatibilidad total** -- Funciona con SwiftUI, SwiftData, WidgetKit y todas las APIs de Apple sin adaptadores.
 
 ### Patron fundamental
 
-```
-Vista (SwiftUI)
-    |
-    | observa propiedades @Observable
-    v
-ViewModel (@Observable class)
-    |
-    | async/await
-    v
-APIClient (actor)
-    |
-    | URLSession
-    v
-Backend (Go REST API)
+```mermaid
+flowchart TD
+    A["Vista (SwiftUI)"] -->|"observa propiedades @Observable"| B["ViewModel (@Observable class)"]
+    B -->|"async/await"| C["APIClient (actor)"]
+    C -->|"URLSession"| D["Backend (Go REST API)"]
+
+    style A fill:#C4A265,color:#1B2A4A,stroke:#1B2A4A
+    style B fill:#1B2A4A,color:#C4A265,stroke:#C4A265
+    style C fill:#1B2A4A,color:#C4A265,stroke:#C4A265
+    style D fill:#C4A265,color:#1B2A4A,stroke:#1B2A4A
 ```
 
 ### Ejemplo representativo
@@ -221,6 +245,30 @@ ios/
 ## 4. Paquetes SPM
 
 Todos los paquetes son locales (no remotos), definidos en `project.yml` y resueltos como dependencias del workspace.
+
+```mermaid
+graph TD
+    APP["Solennix App"] --> FEATURES["SolennixFeatures"]
+    APP --> DESIGN["SolennixDesign"]
+    APP --> NETWORK["SolennixNetwork"]
+    APP --> CORE["SolennixCore"]
+
+    FEATURES --> DESIGN
+    FEATURES --> NETWORK
+    FEATURES --> CORE
+
+    NETWORK --> CORE
+    DESIGN --> CORE
+
+    WIDGETS["SolennixWidgetExtension"] --> CORE
+
+    style APP fill:#C4A265,color:#1B2A4A,stroke:#1B2A4A
+    style FEATURES fill:#1B2A4A,color:#C4A265,stroke:#C4A265
+    style DESIGN fill:#1B2A4A,color:#C4A265,stroke:#C4A265
+    style NETWORK fill:#1B2A4A,color:#C4A265,stroke:#C4A265
+    style CORE fill:#1B2A4A,color:#C4A265,stroke:#C4A265
+    style WIDGETS fill:#C4A265,color:#1B2A4A,stroke:#1B2A4A
+```
 
 ### SolennixCore
 
@@ -464,6 +512,25 @@ if let token = keychainHelper.readString(for: KeychainHelper.Keys.accessToken) {
 
 ### Manejo de 401 (Token Refresh)
 
+```mermaid
+sequenceDiagram
+    participant VM as ViewModel
+    participant API as APIClient (actor)
+    participant KC as Keychain
+    participant BE as Backend
+
+    VM->>API: request (con token)
+    API->>BE: HTTP request
+    BE-->>API: 401 Unauthorized
+    API->>KC: lee refresh token
+    API->>BE: POST /auth/refresh
+    BE-->>API: nuevo access + refresh token
+    API->>KC: almacena nuevos tokens
+    API->>BE: retry request original
+    BE-->>API: 200 OK
+    API-->>VM: datos decodificados
+```
+
 1. Si un request recibe 401 y NO es un retry, se intenta refresh del token.
 2. `refreshTask` coalece multiples intentos concurrentes en un solo refresh.
 3. Si el refresh tiene exito, se reconstruye el request con el nuevo token y se reintenta.
@@ -537,11 +604,12 @@ Los tokens (access + refresh) se almacenan en **Keychain** con `kSecAttrAccessib
 
 ### Resolucion del ciclo de dependencias
 
-`AuthManager` y `APIClient` tienen una dependencia circular:
-- `APIClient` necesita `AuthManager` para token refresh.
-- `AuthManager` necesita `APIClient` para hacer requests.
-
-**Solucion:** `APIClient` lee tokens directamente de `KeychainHelper` (no via `AuthManager`). Ambos se inicializan independientemente y se conectan despues:
+> [!note] Ciclo AuthManager <-> APIClient
+> `AuthManager` y `APIClient` tienen una dependencia circular:
+> - `APIClient` necesita `AuthManager` para token refresh.
+> - `AuthManager` necesita `APIClient` para hacer requests.
+>
+> **Solucion:** `APIClient` lee tokens directamente de `KeychainHelper` (no via `AuthManager`). Ambos se inicializan independientemente y se conectan despues.
 
 ```swift
 let client = APIClient(baseURL: baseURL, keychainHelper: keychain)
@@ -688,7 +756,8 @@ Implementada con `ActivityKit` para eventos en curso. Usa `SolennixEventAttribut
 
 ### SwiftData como cache
 
-SwiftData se utiliza exclusivamente como **cache local** para soportar modo offline. La fuente de verdad es siempre el backend.
+> [!abstract] Estrategia de persistencia
+> SwiftData se utiliza exclusivamente como **cache local** para soportar modo offline. La fuente de verdad es siempre el backend via API REST ([[07_TECHNICAL_ARCHITECTURE_BACKEND]]).
 
 ### Modelos de cache
 
@@ -834,59 +903,55 @@ Los ViewModels son facilmente testeables gracias a la inyeccion del `APIClient` 
 
 ## 14. Gotchas y Decisiones Tecnicas
 
-### @Observable sobre TCA
+> [!note] @Observable sobre TCA
+> **Decision:** Usar `@Observable` (macro nativa iOS 17) en lugar de The Composable Architecture (TCA).
+>
+> **Razon:** Solennix es fundamentalmente una app CRUD con formularios multi-paso. No tiene estados complejos tipo maquina de estados (como un temporizador). TCA agrega boilerplate significativo (reducers, actions, effects, stores) sin beneficio proporcional para este tipo de app.
 
-**Decision:** Usar `@Observable` (macro nativa iOS 17) en lugar de The Composable Architecture (TCA).
+> [!note] Actor-based APIClient
+> **Decision:** `APIClient` es un `actor`, no una clase.
+>
+> **Razon:** Multiples ViewModels hacen requests concurrentes. El `actor` garantiza acceso serial al `refreshTask` (para coalescencia de token refresh) sin locks manuales. Ademas, `actor` comunica al compilador la intencion de seguridad de hilos.
+>
+> **Implicacion:** No puede conformar a `@Observable` (los actores no lo soportan), por lo que se inyecta via `EnvironmentKey` tradicional en lugar de `@Environment(APIClient.self)`.
 
-**Razon:** Solennix es fundamentalmente una app CRUD con formularios multi-paso. No tiene estados complejos tipo maquina de estados (como un temporizador). TCA agrega boilerplate significativo (reducers, actions, effects, stores) sin beneficio proporcional para este tipo de app.
+> [!note] SwiftData solo para cache (no para persistencia primaria)
+> **Decision:** SwiftData almacena copies de los datos del backend para soporte offline, NO es la fuente de verdad.
+>
+> **Razon:** La fuente de verdad es la API REST (Go backend). Usar SwiftData como fuente primaria requeriria resolver conflictos de sincronizacion, versionado de esquema, y merge strategies -- complejidad innecesaria cuando el backend ya maneja todo esto.
 
-### Actor-based APIClient
+> [!note] XcodeGen para gestion del proyecto
+> **Decision:** Usar `project.yml` + XcodeGen en lugar de mantener `.xcodeproj` manualmente.
+>
+> **Razon:** El archivo `.xcodeproj` es un XML complejo propenso a conflictos de merge. Con XcodeGen, el `project.yml` es legible, mergeable, y el `.xcodeproj` se regenera deterministicamente.
+>
+> **Targets definidos:**
+> - `Solennix` (app principal, incluye SolennixIntents como source)
+> - `SolennixWidgetExtension` (widgets + live activity, extension de app)
 
-**Decision:** `APIClient` es un `actor`, no una clase.
+> [!note] Sin dependencias SPM externas
+> **Decision:** Cero paquetes remotos. Todo es local.
+>
+> **Razon:** Maximo control sobre el codigo, tiempos de build minimos, sin riesgo de breaking changes de terceros, sin latencia de resolucion de paquetes.
 
-**Razon:** Multiples ViewModels hacen requests concurrentes. El `actor` garantiza acceso serial al `refreshTask` (para coalescencia de token refresh) sin locks manuales. Ademas, `actor` comunica al compilador la intencion de seguridad de hilos.
+> [!note] Resolucion del ciclo AuthManager <-> APIClient
+> **Decision:** `APIClient` lee tokens directamente de `KeychainHelper` (no de `AuthManager`). Ambos se inicializan independientemente y se conectan despues via `setAuthManager()`.
+>
+> **Razon:** Evita un ciclo de dependencias en init que requeriria un patron como lazy initialization o un service locator.
 
-**Implicacion:** No puede conformar a `@Observable` (los actores no lo soportan), por lo que se inyecta via `EnvironmentKey` tradicional en lugar de `@Environment(APIClient.self)`.
+> [!note] Environment-based DI
+> **Decision:** Todos los servicios globales se inyectan via `@Environment`:
+> - `@Environment(AuthManager.self)` -- macro-based (tipo @Observable)
+> - `@Environment(\.apiClient)` -- key-based (actor, no puede ser @Observable)
+> - `@Environment(NetworkMonitor.self)` -- macro-based
+>
+> **Razon:** Es el patron nativo de SwiftUI. No requiere contenedores DI externos ni singletons globales.
 
-### SwiftData solo para cache (no para persistencia primaria)
+> [!note] Formulario de eventos multi-paso
+> **Decision:** El formulario de creacion/edicion de eventos tiene 5 pasos (stepper), todos manejados por un unico `EventFormViewModel`.
+>
+> **Razon:** Un solo ViewModel para todo el formulario simplifica la gestion del estado y permite calculos cruzados (subtotal, descuento, impuesto, total, deposito). Dividirlo en multiples ViewModels requeriria sincronizacion compleja entre ellos.
 
-**Decision:** SwiftData almacena copies de los datos del backend para soporte offline, NO es la fuente de verdad.
+---
 
-**Razon:** La fuente de verdad es la API REST (Go backend). Usar SwiftData como fuente primaria requeriria resolver conflictos de sincronizacion, versionado de esquema, y merge strategies -- complejidad innecesaria cuando el backend ya maneja todo esto.
-
-### XcodeGen para gestion del proyecto
-
-**Decision:** Usar `project.yml` + XcodeGen en lugar de mantener `.xcodeproj` manualmente.
-
-**Razon:** El archivo `.xcodeproj` es un XML complejo propenso a conflictos de merge. Con XcodeGen, el `project.yml` es legible, mergeable, y el `.xcodeproj` se regenera deterministicamente.
-
-**Targets definidos:**
-- `Solennix` (app principal, incluye SolennixIntents como source)
-- `SolennixWidgetExtension` (widgets + live activity, extension de app)
-
-### Sin dependencias SPM externas
-
-**Decision:** Cero paquetes remotos. Todo es local.
-
-**Razon:** Maximo control sobre el codigo, tiempos de build minimos, sin riesgo de breaking changes de terceros, sin latencia de resolucion de paquetes.
-
-### Resolucion del ciclo AuthManager <-> APIClient
-
-**Decision:** `APIClient` lee tokens directamente de `KeychainHelper` (no de `AuthManager`). Ambos se inicializan independientemente y se conectan despues via `setAuthManager()`.
-
-**Razon:** Evita un ciclo de dependencias en init que requeriria un patron como lazy initialization o un service locator.
-
-### Environment-based DI
-
-**Decision:** Todos los servicios globales se inyectan via `@Environment`:
-- `@Environment(AuthManager.self)` -- macro-based (tipo @Observable)
-- `@Environment(\.apiClient)` -- key-based (actor, no puede ser @Observable)
-- `@Environment(NetworkMonitor.self)` -- macro-based
-
-**Razon:** Es el patron nativo de SwiftUI. No requiere contenedores DI externos ni singletons globales.
-
-### Formulario de eventos multi-paso
-
-**Decision:** El formulario de creacion/edicion de eventos tiene 5 pasos (stepper), todos manejados por un unico `EventFormViewModel`.
-
-**Razon:** Un solo ViewModel para todo el formulario simplifica la gestion del estado y permite calculos cruzados (subtotal, descuento, impuesto, total, deposito). Dividirlo en multiples ViewModels requeriria sincronizacion compleja entre ellos.
+#prd #arquitectura #ios #swiftui #solennix

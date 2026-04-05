@@ -6,33 +6,19 @@
       {
         "id": "3ac5b57f6e88823c",
         "type": "tabs",
-        "dimension": 52.28690228690228,
         "children": [
           {
             "id": "0302da688f7bf542",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Web/Arquitectura General.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "Nueva pestaña"
-            }
-          }
-        ]
-      },
-      {
-        "id": "ce4cb70d82ca272f",
-        "type": "tabs",
-        "dimension": 47.71309771309771,
-        "children": [
-          {
-            "id": "2b74588de39e3fe1",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Vista gráfica"
+              "title": "Arquitectura General"
             }
           }
         ]
@@ -92,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 245.5
   },
   "right": {
     "id": "ef91fa7f4513fdfe",
@@ -108,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Web/Arquitectura General.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -117,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Enlaces entrantes"
+              "title": "Enlaces entrantes de Arquitectura General"
             }
           },
           {
@@ -126,11 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Web/Arquitectura General.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Enlaces salientes"
+              "title": "Enlaces salientes de Arquitectura General"
             }
           },
           {
@@ -168,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Bienvenido.md",
+                "file": "Web/Arquitectura General.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Esquema de Bienvenido"
+              "title": "Esquema de Arquitectura General"
             }
           }
         ]
@@ -195,14 +183,40 @@
       "bases:Crear nueva base": false
     }
   },
-  "active": "f4868cbf69c738e0",
+  "active": "0302da688f7bf542",
   "lastOpenFiles": [
+    "Web/Roadmap Web.md",
+    "Web/Performance.md",
+    "Web/Accesibilidad.md",
+    "Web/Testing.md",
+    "PRD/PRD MOC.md",
+    "Web/Sistema de Tipos.md",
+    "Web/Hooks Personalizados.md",
+    "Web/Componentes Compartidos.md",
+    "Web/Sistema de PDFs.md",
+    "Web/Capa de Servicios.md",
+    "Web/Módulo Admin.md",
+    "Web/Web MOC.md",
+    "Web/Routing y Guards.md",
+    "Web/Módulo Productos.md",
+    "Web/Módulo Pagos.md",
+    "Web/Módulo Inventario.md",
+    "Web/Módulo Eventos.md",
+    "Web/Módulo Clientes.md",
+    "Web/Módulo Calendario.md",
+    "Web/Manejo de Estado.md",
+    "Web/Design System.md",
+    "Web/Autenticación.md",
+    "Web/Arquitectura General.md",
+    "PRD/01_PRODUCT_VISION.md",
+    "PRD/10_COLLABORATION_GUIDE.md",
+    "PRD/11_CURRENT_STATUS.md",
+    "PRD",
     "Backend",
     "General",
     "Paridad",
     "iOS",
     "Android",
-    "Web",
-    "Bienvenido.md"
+    "Web"
   ]
 }

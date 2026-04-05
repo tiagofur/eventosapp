@@ -1,15 +1,35 @@
+---
+tags:
+  - prd
+  - estado
+  - paridad
+  - solennix
+aliases:
+  - Estado Actual
+  - Current Status
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+---
+
 # Estado Actual del Proyecto — Solennix
 
 **Fecha:** Abril 2026
 **Version:** 1.1
 
+> [!tip] Documentos relacionados
+> [[PRD MOC]] · [[01_PRODUCT_VISION]] · [[02_FEATURES]] · [[04_MONETIZATION]] · [[09_ROADMAP]]
+
 ---
 
 ## 1. Estado General
 
+> [!success] Plataformas funcionales
+> Backend y Web estan operativos. iOS y Android en desarrollo activo con features principales implementadas.
+
 | Plataforma | Estado | Notas |
 |------------|--------|-------|
-| Backend (Go) | Funcional ✅ | API completa, 27 migraciones, auth multi-proveedor, Stripe, RevenueCat + sync bidireccional |
+| Backend (Go) | Funcional ✅ | API completa, 29 migraciones, auth multi-proveedor, Stripe, RevenueCat + sync bidireccional |
 | Web (React) | Funcional ✅ | Todas las paginas principales, panel admin, cotizacion rapida |
 | iOS (SwiftUI) | En desarrollo 🔄 | Features principales + widgets (4 tipos) + Live Activity + 7 generadores PDF |
 | Android (Jetpack Compose) | En desarrollo 🔄 | Features principales, arquitectura modular multi-feature, 8 generadores PDF, RevenueCat billing |
@@ -17,6 +37,9 @@
 ---
 
 ## 2. Backend — Implementado
+
+> [!abstract] Resumen
+> API REST completa en Go con autenticacion multi-proveedor, CRUD de todas las entidades, suscripciones bidireccionales (Stripe + RevenueCat), panel admin y 29 migraciones. Ver [[07_TECHNICAL_ARCHITECTURE_BACKEND]] para detalles de arquitectura.
 
 ### Autenticacion y Usuarios
 - ✅ Registro de usuario (`POST /api/auth/register`)
@@ -93,7 +116,7 @@
 - ✅ AdminOnly (verificacion de rol)
 - ✅ Rate Limiting (configurable por grupo de rutas)
 
-### Migraciones (26 total)
+### Migraciones (29 total)
 - ✅ 001: Tabla de usuarios
 - ✅ 002: Tabla de clientes
 - ✅ 003: Tabla de eventos
@@ -116,8 +139,13 @@
 - ✅ 024: Excluir costo en suministros de evento
 - ✅ 025: IDs OAuth de usuario
 - ✅ 026: Device tokens
+- ✅ 027-029: Migraciones adicionales
 
 ### Pendiente Backend
+
+> [!danger] Brechas criticas del backend
+> Push notifications y notificaciones email son P1. Device tokens se almacenan pero no se envian notificaciones.
+
 - ⬜ Push notifications (device tokens almacenados pero sin envio implementado)
 - ⬜ Notificaciones por email (solo reset de contrasena implementado)
 - ⬜ Verificacion de recibos de App Store / Play Store
@@ -125,6 +153,9 @@
 ---
 
 ## 3. Web — Implementado
+
+> [!abstract] Resumen
+> Aplicacion React completa con todas las paginas principales, panel admin, cotizacion rapida, y checklist interactivo. Ver [[08_TECHNICAL_ARCHITECTURE_WEB]] para detalles de arquitectura.
 
 ### Paginas Publicas
 - ✅ Landing page
@@ -200,6 +231,9 @@
 ---
 
 ## 4. iOS — Implementado
+
+> [!abstract] Resumen
+> App SwiftUI con MVVM, SPM packages, 4 tipos de widgets, Live Activity, 7 generadores PDF, Spotlight indexing y RevenueCat. Ver [[05_TECHNICAL_ARCHITECTURE_IOS]] para detalles de arquitectura.
 
 ### Autenticacion
 - ✅ Login (LoginView)
@@ -326,18 +360,26 @@
 - ✅ PlanLimitsManager (verificacion de limites por plan)
 
 ### Pendiente iOS
+
+> [!warning] Items pendientes iOS
+
 | Item | Prioridad | Notas |
 |------|-----------|-------|
 | Push notifications | P1 | Device tokens se registran pero backend no envia. Falta manejo de notificaciones entrantes |
-| ~~Contract preview interactivo~~ | ✅ | EventContractPreviewView implementado con gating de anticipo y campos faltantes |
-| ~~StoreKit 2 flujo de compra completo~~ | ✅ | Reemplazado por RevenueCat SDK — flujo completo implementado |
-| ~~Feature gating enforcement~~ | ✅ | PlanLimitsManager implementado y wired en vistas principales |
-| ~~Apple Sign-In en UI~~ | ✅ | Wired AppleSignInService a LoginView y RegisterView |
-| ~~Google Sign-In en UI~~ | ✅ | GoogleSignIn SDK integrado con GoogleSignInService |
+
+> [!note] Items completados iOS
+> - ~~Contract preview interactivo~~ — EventContractPreviewView implementado con gating de anticipo y campos faltantes
+> - ~~StoreKit 2 flujo de compra completo~~ — Reemplazado por RevenueCat SDK — flujo completo implementado
+> - ~~Feature gating enforcement~~ — PlanLimitsManager implementado y wired en vistas principales
+> - ~~Apple Sign-In en UI~~ — Wired AppleSignInService a LoginView y RegisterView
+> - ~~Google Sign-In en UI~~ — GoogleSignIn SDK integrado con GoogleSignInService
 
 ---
 
 ## 5. Android — Implementado
+
+> [!abstract] Resumen
+> App Jetpack Compose con MVVM, Hilt DI, arquitectura multi-module, 8 generadores PDF, RevenueCat billing y Glance widget. Ver [[06_TECHNICAL_ARCHITECTURE_ANDROID]] para detalles de arquitectura.
 
 ### Autenticacion
 - ✅ Login (LoginScreen)
@@ -449,24 +491,32 @@
 - ✅ Arquitectura modular multi-feature
 
 ### Pendiente Android
+
+> [!warning] Items pendientes Android
+
 | Item | Prioridad | Notas |
 |------|-----------|-------|
-| ~~Widgets (Glance)~~ | ✅ | QuickActionsWidget implementado con eventos del dia + acciones rapidas |
-| ~~Generacion de PDF~~ | ✅ | 8 generadores implementados: Budget, Contract, Shopping, Checklist, PaymentReport, Invoice, Equipment, QuickQuote |
-| ~~Play Billing~~ | ✅ | Implementado via RevenueCat SDK |
-| ~~Google Sign-In mock~~ | ✅ | Reemplazado mock con Credential Manager real |
-| ~~RevenueCat sync en register/Google~~ | ✅ | Agregado logInWith despues de register y Google sign-in |
 | Push notifications (FCM) | P1 | SolennixMessagingService esta comentado. Device tokens se registran pero backend no envia |
-| ~~Contract preview interactivo~~ | ✅ | EventContractPreviewScreen implementado con gating de anticipo y campos faltantes |
 | Deep linking completo | P2 | Parcial |
 | Navigation Rail (tablets) | P2 | Parcialmente implementado via AdaptiveNavigationRailLayout — falta completar refactor de sidebar |
 | Live Activity equivalente (notificacion persistente) | P2 | No implementado |
-| ~~Cotizacion rapida (Quick Quote)~~ | ✅ | QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator |
-| ~~Feature gating enforcement~~ | ✅ | PlanLimitsManager wired into EventForm, ClientForm, ProductForm + UpgradePlanDialog |
+
+> [!note] Items completados Android
+> - ~~Widgets (Glance)~~ — QuickActionsWidget implementado con eventos del dia + acciones rapidas
+> - ~~Generacion de PDF~~ — 8 generadores implementados: Budget, Contract, Shopping, Checklist, PaymentReport, Invoice, Equipment, QuickQuote
+> - ~~Play Billing~~ — Implementado via RevenueCat SDK
+> - ~~Google Sign-In mock~~ — Reemplazado mock con Credential Manager real
+> - ~~RevenueCat sync en register/Google~~ — Agregado logInWith despues de register y Google sign-in
+> - ~~Contract preview interactivo~~ — EventContractPreviewScreen implementado con gating de anticipo y campos faltantes
+> - ~~Cotizacion rapida (Quick Quote)~~ — QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator
+> - ~~Feature gating enforcement~~ — PlanLimitsManager wired into EventForm, ClientForm, ProductForm + UpgradePlanDialog
 
 ---
 
 ## 6. Tabla de Paridad Detallada
+
+> [!abstract] Referencia de paridad
+> Esta seccion documenta el estado feature-por-feature en todas las plataformas. Ver [[02_FEATURES]] para la definicion completa de cada feature y [[04_MONETIZATION]] para el gating por plan.
 
 ### Eventos
 
@@ -646,14 +696,16 @@
 
 ## 7. Stack Actual
 
+> [!abstract] Versiones actualizadas a Abril 2026
+
 ### Backend
 
 | Capa | Tecnologia | Version | Notas |
 |------|-----------|---------|-------|
-| Lenguaje | Go | 1.21+ | |
+| Lenguaje | Go | 1.24.7 | |
 | Router | chi | v5 | |
 | Base de datos | PostgreSQL | 15+ | pgx/v5 driver |
-| Migraciones | Custom (embed.FS) | 26 migraciones | Auto-apply on startup |
+| Migraciones | Custom (embed.FS) | 29 migraciones | Auto-apply on startup |
 | Pagos | Stripe | API actual | Checkout Sessions + Webhooks |
 | Suscripciones | RevenueCat SDK (iOS/Android) + Stripe (Web) | Webhooks bidireccionales | Cross-platform: compra en cualquier plataforma reconocida en todas |
 
@@ -661,10 +713,10 @@
 
 | Capa | Tecnologia | Version | Notas |
 |------|-----------|---------|-------|
-| Framework | React | 18+ | |
-| Routing | React Router | v6 | |
+| Framework | React | 19 | |
+| Routing | React Router | 7.13 | |
 | Lenguaje | TypeScript | | |
-| Estado | Context API | | AuthContext, ThemeContext |
+| Estado | Context API (primary) + Zustand (available) | | AuthContext, ThemeContext. Zustand disponible para estado complejo |
 | Build | Vite | | |
 
 ### iOS
@@ -686,7 +738,7 @@
 
 | Capa | Tecnologia | Version | Notas |
 |------|-----------|---------|-------|
-| Lenguaje | Kotlin | 2.0+ | |
+| Lenguaje | Kotlin | 2.0.21 | |
 | UI | Jetpack Compose + Material 3 | | |
 | Arquitectura | MVVM | | ViewModel por feature |
 | DI | Hilt | | |
@@ -730,6 +782,8 @@ Refactors planificados para lograr paridad total entre las 6 plataformas (iPhone
 
 ### 8.3 Refactor de Calendario (CALENDAR_REFACTOR_PLAN.md)
 
+> [!warning] Pendiente implementacion
+
 **Estado:** Planificado — pendiente implementacion.
 
 | Cambio | iOS | Android | Web | Descripcion |
@@ -746,28 +800,38 @@ Refactors planificados para lograr paridad total entre las 6 plataformas (iPhone
 
 ## 9. Resumen de Brechas Criticas (Abril 2026)
 
+> [!danger] Brechas P1 — Requieren atencion inmediata
+> - **Push notifications**: Tokens registrados pero backend NO envia. Sin engagement ni recordatorios (iOS, Android, Backend)
+> - **Notificaciones email**: Solo reset de contrasena; sin recordatorios de eventos/pagos (Backend)
+
 | Brecha | Plataformas Afectadas | Impacto | Esfuerzo Estimado | Prioridad |
 |--------|----------------------|---------|-------------------|-----------|
 | Push notifications no implementadas | iOS, Android, Backend | Tokens registrados pero backend NO envia. Sin engagement ni recordatorios | 15-20h | P1 |
-| ~~Contract preview interactivo en mobile~~ | ✅ | Implementado en iOS y Android con gating de anticipo + deteccion de campos faltantes | 0h | ✅ |
 | Notificaciones email limitadas | Backend | Solo reset de contrasena; sin recordatorios de eventos/pagos | 10-15h | P1 |
 | Deep linking incompleto en Android | Android | Navegacion desde URLs externas limitada | 4-6h | P2 |
 | Live Activity equivalente en Android | Android | Sin notificacion persistente durante eventos | 6-8h | P2 |
 | Refactor Calendario: Toolbar simplificado | iOS, Android, Web | Toolbar pendiente: solo "Gestionar Bloqueos" + "Hoy" | 2-4h | P2 |
 | Web: Calendar right-click bloqueo | Web | Falta right-click para bloqueo rapido de fechas | 2-3h | P2 |
-| ~~Web: Defaults de contrato en settings~~ | ✅ | Settings.tsx tiene ContractTemplateEditor con validacion de tokens | 0h | ✅ |
 | Panel admin solo en web | iOS, Android | Administracion solo desde navegador | ➖ | P3 (aceptable) |
-| ~~Feature gating no enforced~~ | ✅ | PlanLimitsManager implementado en iOS y Android. Web parcial | 0h | ✅ |
-| ~~Play Billing no implementado~~ | ✅ | Implementado via RevenueCat SDK | 0h | ✅ |
-| ~~Generacion de PDF falta en Android~~ | ✅ | 8 generadores implementados con PdfDocument API | 0h | ✅ |
-| ~~Widgets falta en Android~~ | ✅ | QuickActionsWidget implementado (Glance) | 0h | ✅ |
-| ~~StoreKit 2 flujo incompleto~~ | ✅ | Reemplazado por RevenueCat SDK | 0h | ✅ |
-| ~~Google/Apple Sign-In sin UI~~ | ✅ | Implementado en todas las plataformas | 0h | ✅ |
-| ~~Cotizacion rapida falta en Android~~ | ✅ | QuickQuoteScreen completo | 0h | ✅ |
-| ~~Fotos de evento falta en Android~~ | ✅ | EventPhotosScreen implementado con galeria/upload/lightbox | 0h | ✅ |
-| ~~Dashboard: Alertas de Atencion~~ | ✅ | Implementado en las 3 plataformas | 0h | ✅ |
-| ~~Dashboard: Quick Actions 4→2~~ | ✅ | Ya son 2 en las 3 plataformas | 0h | ✅ |
-| ~~Calendario: BlockedDatesSheet iOS~~ | ✅ | Implementado con CRUD completo | 0h | ✅ |
-| ~~Web: Fotos de evento~~ | ✅ | Tab de fotos con galeria, upload, lightbox y eliminacion | 0h | ✅ |
-| ~~Web: Checklist interactivo~~ | ✅ | Tab de checklist con secciones, checkboxes y progreso | 0h | ✅ |
-| ~~Android: Checklist mostraba todo el inventario~~ | ✅ | Corregido para mostrar solo items del evento (equipo, insumos, ingredientes). Layout tablet ajustado | 0h | ✅ |
+
+> [!note] Brechas resueltas
+> - ~~Contract preview interactivo en mobile~~ — Implementado en iOS y Android con gating de anticipo + deteccion de campos faltantes
+> - ~~Web: Defaults de contrato en settings~~ — Settings.tsx tiene ContractTemplateEditor con validacion de tokens
+> - ~~Feature gating no enforced~~ — PlanLimitsManager implementado en iOS y Android. Web parcial
+> - ~~Play Billing no implementado~~ — Implementado via RevenueCat SDK
+> - ~~Generacion de PDF falta en Android~~ — 8 generadores implementados con PdfDocument API
+> - ~~Widgets falta en Android~~ — QuickActionsWidget implementado (Glance)
+> - ~~StoreKit 2 flujo incompleto~~ — Reemplazado por RevenueCat SDK
+> - ~~Google/Apple Sign-In sin UI~~ — Implementado en todas las plataformas
+> - ~~Cotizacion rapida falta en Android~~ — QuickQuoteScreen completo
+> - ~~Fotos de evento falta en Android~~ — EventPhotosScreen implementado con galeria/upload/lightbox
+> - ~~Dashboard: Alertas de Atencion~~ — Implementado en las 3 plataformas
+> - ~~Dashboard: Quick Actions 4→2~~ — Ya son 2 en las 3 plataformas
+> - ~~Calendario: BlockedDatesSheet iOS~~ — Implementado con CRUD completo
+> - ~~Web: Fotos de evento~~ — Tab de fotos con galeria, upload, lightbox y eliminacion
+> - ~~Web: Checklist interactivo~~ — Tab de checklist con secciones, checkboxes y progreso
+> - ~~Android: Checklist mostraba todo el inventario~~ — Corregido para mostrar solo items del evento (equipo, insumos, ingredientes). Layout tablet ajustado
+
+---
+
+#prd #estado #paridad #solennix

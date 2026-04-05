@@ -1,12 +1,34 @@
+---
+tags:
+  - prd
+  - arquitectura
+  - android
+  - compose
+  - solennix
+aliases:
+  - Arquitectura Android
+  - Android Architecture
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+platform: Android
+---
+
 # Arquitectura Técnica — Android
 
 **Versión:** 1.0
 **Fecha:** 2026-03-20
 **Plataforma:** Android (teléfono/tablet)
 
+> [!tip] Documentos relacionados
+> [[PRD MOC]] · [[01_PRODUCT_VISION]] · [[02_FEATURES]] · [[05_TECHNICAL_ARCHITECTURE_IOS]] · [[07_TECHNICAL_ARCHITECTURE_BACKEND]] · [[08_TECHNICAL_ARCHITECTURE_WEB]] · [[11_CURRENT_STATUS]]
+
 ---
 
 ## 1. Stack Tecnológico
+
+> [!info] Stack principal
+> **Kotlin 2.0** + **Jetpack Compose** (Material 3) + **Hilt** + **Ktor Client** + **Room** — orientado a offline-first con arquitectura multi-módulo MVVM.
 
 | Capa | Tecnología | Versión | Justificación |
 |------|------------|---------|---------------|
@@ -41,35 +63,30 @@
 
 ### Patrón General
 
-El proyecto utiliza **MVVM (Model-View-ViewModel)** con arquitectura multi-módulo. Cada pantalla tiene su ViewModel inyectado con Hilt, y la UI observa el estado de forma reactiva.
+> [!abstract] Resumen de arquitectura
+> El proyecto utiliza **MVVM (Model-View-ViewModel)** con arquitectura multi-módulo. Cada pantalla tiene su ViewModel inyectado con Hilt, y la UI observa el estado de forma reactiva.
 
-```
-┌─────────────────────────────────────────────────┐
-│                     UI Layer                     │
-│  Jetpack Compose Screens (feature/)             │
-│  Observan StateFlow / mutableStateOf            │
-└───────────────────┬─────────────────────────────┘
-                    │ collect / events
-┌───────────────────▼─────────────────────────────┐
-│                  ViewModel Layer                 │
-│  ViewModel por pantalla (@HiltViewModel)        │
-│  Expone StateFlow<T> + mutableStateOf           │
-│  Procesa eventos del usuario                    │
-└───────────────────┬─────────────────────────────┘
-                    │ suspend calls
-┌───────────────────▼─────────────────────────────┐
-│                Repository Layer                  │
-│  OfflineFirst*Repository (core:data)            │
-│  Combina fuente remota (API) + local (Room)     │
-│  Expone Flow<List<T>>                           │
-└───────────────────┬─────────────────────────────┘
-                    │ implementaciones
-┌───────────────────▼─────────────────────────────┐
-│                  Data Layer                      │
-│  Room DAOs + Entities (core:database)           │
-│  Ktor ApiService (core:network)                 │
-│  DataStore (preferencias)                       │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph UI["UI Layer"]
+        A["Jetpack Compose Screens (feature/)<br/>Observan StateFlow / mutableStateOf"]
+    end
+
+    subgraph VM["ViewModel Layer"]
+        B["ViewModel por pantalla (@HiltViewModel)<br/>Expone StateFlow + mutableStateOf<br/>Procesa eventos del usuario"]
+    end
+
+    subgraph REPO["Repository Layer"]
+        C["OfflineFirst*Repository (core:data)<br/>Combina fuente remota (API) + local (Room)<br/>Expone Flow&lt;List&lt;T&gt;&gt;"]
+    end
+
+    subgraph DATA["Data Layer"]
+        D["Room DAOs + Entities (core:database)<br/>Ktor ApiService (core:network)<br/>DataStore (preferencias)"]
+    end
+
+    A -- "collect / events" --> B
+    B -- "suspend calls" --> C
+    C -- "implementaciones" --> D
 ```
 
 ### Principios
@@ -520,9 +537,8 @@ class KtorClient @Inject constructor(
 }
 ```
 
-### Decisión: Bearer Auth Manual vs Plugin Auth
-
-Se usa un `createClientPlugin("BearerAuth")` manual en lugar del plugin `Auth` de Ktor porque el plugin nativo cachea tokens y no detecta tokens almacenados después del login en la misma sesión. El plugin manual lee el token fresco del storage en cada request, garantizando que las llamadas post-login funcionen correctamente.
+> [!note] Decisión: Bearer Auth Manual vs Plugin Auth
+> Se usa un `createClientPlugin("BearerAuth")` manual en lugar del plugin `Auth` de Ktor porque el plugin nativo cachea tokens y no detecta tokens almacenados después del login en la misma sesión. El plugin manual lee el token fresco del storage en cada request, garantizando que las llamadas post-login funcionen correctamente.
 
 ### ApiService
 
@@ -543,23 +559,29 @@ apiService.delete(Endpoints.event(id))
 
 `MainNavHost.kt` implementa una máquina de estados basada en `AuthManager.AuthState`:
 
-```
-┌─────────────┐    restoreSession()    ┌──────────────────┐
-│   Unknown    │ ─────────────────────► │  Unauthenticated │
-│  (loading)   │                        │  (AuthNavHost)   │
-└──────┬──────┘                        └────────┬─────────┘
-       │                                        │ login success
-       │ token found                            ▼
-       │                               ┌──────────────────┐
-       ├──────────────────────────────► │ BiometricLocked  │
-       │                               │ (BiometricGate)  │
-       │                               └────────┬─────────┘
-       │                                        │ biometric success
-       │                                        ▼
-       └──────────────────────────────► ┌──────────────────┐
-                                        │  Authenticated   │
-                                        │ (Main App)       │
-                                        └──────────────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> Unknown
+    Unknown --> Unauthenticated : restoreSession() — no token
+    Unknown --> BiometricLocked : restoreSession() — token found
+    Unknown --> Authenticated : restoreSession() — token found, no biometric
+    Unauthenticated --> Authenticated : login success
+    Unauthenticated --> BiometricLocked : login success + biometric enabled
+    BiometricLocked --> Authenticated : biometric success
+    Authenticated --> Unauthenticated : logout
+
+    state Unknown {
+        [*] : Loading...
+    }
+    state Unauthenticated {
+        [*] : AuthNavHost
+    }
+    state BiometricLocked {
+        [*] : BiometricGate
+    }
+    state Authenticated {
+        [*] : Main App
+    }
 ```
 
 ### Layouts Adaptativos
@@ -708,18 +730,19 @@ data class EventSupply(
 
 ### Organización de Módulos
 
-```
-@HiltAndroidApp
-SolennixApp.kt                          # Application class
+```mermaid
+graph TD
+    APP["@HiltAndroidApp<br/>SolennixApp.kt"] --> MA["@AndroidEntryPoint<br/>MainActivity.kt"]
 
-@AndroidEntryPoint
-MainActivity.kt                         # Single Activity
+    subgraph Modules["Hilt Modules"]
+        NM["core:network/di/<br/>NetworkModule.kt<br/>@Provides: KtorClient,<br/>ApiService, AuthManager"]
+        DM["core:database/di/<br/>DatabaseModule.kt<br/>@Provides: SolennixDatabase, *Dao"]
+        DAM["core:data/di/<br/>DataModule.kt<br/>@Binds: *Repository → OfflineFirst*<br/>@Provides: PlanLimitsManager,<br/>AppSearchIndexer"]
+    end
 
-Módulos Hilt:
-├── core:network/di/NetworkModule.kt    # @Provides: KtorClient, ApiService, AuthManager
-├── core:database/di/DatabaseModule.kt  # @Provides: SolennixDatabase, *Dao
-└── core:data/di/DataModule.kt          # @Binds: *Repository interfaces → OfflineFirst* impls
-                                         # @Provides: PlanLimitsManager, AppSearchIndexer
+    MA --> NM
+    MA --> DM
+    MA --> DAM
 ```
 
 ### Patrón de Inyección
@@ -793,62 +816,56 @@ object DatabaseModule {
 
 ## 11. Gotchas y Decisiones Técnicas
 
-### 11.1 Ktor sobre Retrofit
+> [!note] Ktor sobre Retrofit
+> **Decisión**: Usar Ktor Client en lugar de Retrofit.
+>
+> **Razón**: Ktor es Kotlin-first, soporta Kotlinx Serialization nativamente sin adaptadores adicionales, y permite plugins custom (como el bearer auth manual). Además, comparte el mismo ecosistema de serialización con el backend (JSON).
 
-**Decisión**: Usar Ktor Client en lugar de Retrofit.
+> [!note] Bearer Auth Manual vs Plugin Nativo
+> **Decisión**: Plugin custom `createClientPlugin("BearerAuth")` en lugar del plugin `Auth` de Ktor.
+>
+> **Razón**: El plugin `Auth` de Ktor cachea tokens internamente y no detecta tokens almacenados después del login dentro de la misma instancia del HttpClient. El plugin manual lee el token fresco del `AuthManager` en cada request, garantizando que las llamadas post-login funcionen sin necesidad de recrear el cliente.
 
-**Razón**: Ktor es Kotlin-first, soporta Kotlinx Serialization nativamente sin adaptadores adicionales, y permite plugins custom (como el bearer auth manual). Además, comparte el mismo ecosistema de serialización con el backend (JSON).
+> [!note] Arquitectura Multi-Módulo
+> **Decisión**: 5 módulos core + 9 módulos feature + app + widget.
+>
+> **Razón**: Tiempos de build incrementales más rápidos, separación de concerns clara, y prevención de dependencias circulares. Cada feature module solo depende de los core modules que necesita.
 
-### 11.2 Bearer Auth Manual vs Plugin Nativo
+> [!note] Hilt sobre Koin
+> **Decisión**: Hilt (Dagger) en lugar de Koin.
+>
+> **Razón**: Validación en tiempo de compilación (KSP), rendimiento superior en runtime (sin reflexión), integración nativa con ViewModel (`@HiltViewModel`), WorkManager (`@HiltWorker`), y Navigation Compose (`hiltViewModel()`). El soporte multi-módulo es también más robusto.
 
-**Decisión**: Plugin custom `createClientPlugin("BearerAuth")` en lugar del plugin `Auth` de Ktor.
+> [!note] Compose-First (Sin Views XML)
+> **Decisión**: Toda la UI en Jetpack Compose, sin XML layouts.
+>
+> **Razón**: Desarrollo más rápido, mejor testabilidad, integración nativa con el state management de los ViewModels (StateFlow + collectAsState), y soporte para layouts adaptativos con `WindowWidthSizeClass`.
 
-**Razón**: El plugin `Auth` de Ktor cachea tokens internamente y no detecta tokens almacenados después del login dentro de la misma instancia del HttpClient. El plugin manual lee el token fresco del `AuthManager` en cada request, garantizando que las llamadas post-login funcionen sin necesidad de recrear el cliente.
+> [!note] FragmentActivity como Base
+> **Decisión**: `MainActivity` extiende `FragmentActivity` en lugar de `ComponentActivity`.
+>
+> **Razón**: Requerido por la API de Biometric Prompt (`androidx.biometric`), que necesita `FragmentActivity` para mostrar el diálogo biométrico.
 
-### 11.3 Arquitectura Multi-Módulo
+> [!note] Estado de Formulario con mutableStateOf
+> **Decisión**: Los ViewModels de formularios usan `mutableStateOf` (Compose State) para campos individuales en lugar de un solo `StateFlow<FormState>`.
+>
+> **Razón**: Simplifica la recomposición granular — cada campo solo recompone su propio composable. Para listas y datos asíncronos se mantiene `StateFlow` con `collectAsStateWithLifecycle()`.
 
-**Decisión**: 5 módulos core + 9 módulos feature + app + widget.
+> [!note] Room como Cache (No Source of Truth)
+> **Decisión**: Room actúa como cache offline, no como fuente de verdad.
+>
+> **Razón**: La fuente de verdad es el backend Go. Los repositorios `OfflineFirst*` intentan la API primero, cachean en Room, y exponen el cache via `Flow<List<T>>` para reactividad instantánea. Esto permite funcionar offline pero siempre prioriza datos frescos cuando hay conectividad.
 
-**Razón**: Tiempos de build incrementales más rápidos, separación de concerns clara, y prevención de dependencias circulares. Cada feature module solo depende de los core modules que necesita.
+> [!note] Generación de PDFs Nativa
+> **Decisión**: Generación de PDFs usando Android Canvas/PDF nativo, sin librerías de terceros.
+>
+> **Razón**: Menor tamaño de APK, sin dependencias externas, control total sobre el layout. Los PDFs generados incluyen: cotizaciones, contratos, facturas, checklists, listas de equipo, listas de compras, y reportes de pagos.
 
-### 11.4 Hilt sobre Koin
+> [!note] Deep Links con Esquema Custom
+> **Decisión**: Esquema `solennix://` para deep links.
+>
+> **Razón**: Permite navegación directa desde widgets (Glance), notificaciones, y enlaces compartidos sin necesidad de App Links verificados. Procesados en `MainActivity.onNewIntent()`.
 
-**Decisión**: Hilt (Dagger) en lugar de Koin.
+---
 
-**Razón**: Validación en tiempo de compilación (KSP), rendimiento superior en runtime (sin reflexión), integración nativa con ViewModel (`@HiltViewModel`), WorkManager (`@HiltWorker`), y Navigation Compose (`hiltViewModel()`). El soporte multi-módulo es también más robusto.
-
-### 11.5 Compose-First (Sin Views XML)
-
-**Decisión**: Toda la UI en Jetpack Compose, sin XML layouts.
-
-**Razón**: Desarrollo más rápido, mejor testabilidad, integración nativa con el state management de los ViewModels (StateFlow + collectAsState), y soporte para layouts adaptativos con `WindowWidthSizeClass`.
-
-### 11.6 FragmentActivity como Base
-
-**Decisión**: `MainActivity` extiende `FragmentActivity` en lugar de `ComponentActivity`.
-
-**Razón**: Requerido por la API de Biometric Prompt (`androidx.biometric`), que necesita `FragmentActivity` para mostrar el diálogo biométrico.
-
-### 11.7 Estado de Formulario con mutableStateOf
-
-**Decisión**: Los ViewModels de formularios usan `mutableStateOf` (Compose State) para campos individuales en lugar de un solo `StateFlow<FormState>`.
-
-**Razón**: Simplifica la recomposición granular — cada campo solo recompone su propio composable. Para listas y datos asíncronos se mantiene `StateFlow` con `collectAsStateWithLifecycle()`.
-
-### 11.8 Room como Cache (No Source of Truth)
-
-**Decisión**: Room actúa como cache offline, no como fuente de verdad.
-
-**Razón**: La fuente de verdad es el backend Go. Los repositorios `OfflineFirst*` intentan la API primero, cachean en Room, y exponen el cache via `Flow<List<T>>` para reactividad instantánea. Esto permite funcionar offline pero siempre prioriza datos frescos cuando hay conectividad.
-
-### 11.9 Generación de PDFs Nativa
-
-**Decisión**: Generación de PDFs usando Android Canvas/PDF nativo, sin librerías de terceros.
-
-**Razón**: Menor tamaño de APK, sin dependencias externas, control total sobre el layout. Los PDFs generados incluyen: cotizaciones, contratos, facturas, checklists, listas de equipo, listas de compras, y reportes de pagos.
-
-### 11.10 Deep Links con Esquema Custom
-
-**Decisión**: Esquema `solennix://` para deep links.
-
-**Razón**: Permite navegación directa desde widgets (Glance), notificaciones, y enlaces compartidos sin necesidad de App Links verificados. Procesados en `MainActivity.onNewIntent()`.
+#prd #arquitectura #android #compose #solennix

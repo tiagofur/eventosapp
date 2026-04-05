@@ -1,3 +1,18 @@
+---
+tags:
+  - prd
+  - monetizacion
+  - stripe
+  - revenuecat
+  - solennix
+aliases:
+  - Monetización
+  - Monetization
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+---
+
 # Monetizacion — Solennix (iOS + Android + Web)
 
 **Version:** 1.0
@@ -5,11 +20,17 @@
 **Alcance:** Documento unificado de monetizacion para todas las plataformas
 **Audiencia objetivo:** Organizadores de eventos en LATAM
 
+> [!tip] Documentos relacionados
+> - [[01_PRODUCT_VISION]] — Vision del producto y mercado objetivo
+> - [[02_FEATURES]] — Features completas con tabla de paridad cross-platform
+> - [[11_CURRENT_STATUS]] — Estado actual de implementacion y brechas
+
 ---
 
 ## 1. Modelo de Negocio
 
-**Freemium con suscripcion.** El mismo modelo aplica en todas las plataformas (iOS, Android, Web).
+> [!info] Modelo general
+> **Freemium con suscripcion.** El mismo modelo aplica en todas las plataformas (iOS, Android, Web).
 
 El usuario obtiene una experiencia funcional y util en el tier gratuito — suficiente para organizar eventos pequenos y validar el valor de la app — pero con limitaciones estrategicas en volumen y features avanzados que motivan la conversion a Premium. No se busca frustrar al usuario, sino demostrar que Solennix escala con su negocio.
 
@@ -21,7 +42,8 @@ El usuario obtiene una experiencia funcional y util en el tier gratuito — sufi
 
 ## 2. Tier BASICO (Gratuito)
 
-El plan `basic` es el tier por defecto asignado a todos los usuarios al registrarse.
+> [!abstract] Plan Basico
+> El plan `basic` es el tier por defecto asignado a todos los usuarios al registrarse. Ofrece funcionalidad suficiente para validar el valor de Solennix con eventos reales.
 
 | Feature | Limite Basico | Justificacion |
 |---------|---------------|---------------|
@@ -42,7 +64,8 @@ El plan `basic` es el tier por defecto asignado a todos los usuarios al registra
 
 ## 3. Tier PREMIUM
 
-El plan `premium` desbloquea todas las funcionalidades y elimina todas las restricciones.
+> [!abstract] Plan Premium
+> El plan `premium` desbloquea todas las funcionalidades y elimina todas las restricciones. Es el tier recomendado para organizadores profesionales.
 
 | Feature | Premium |
 |---------|---------|
@@ -69,7 +92,8 @@ En el backend, el plan `pro` funciona como equivalente a `premium`. Ambos desblo
 
 El backend acepta ambos valores. La logica de gating trata `pro` y `premium` como equivalentes.
 
-> **Nota tecnica:** El handler de admin (`PUT /api/admin/users/{id}/upgrade`) acepta `basic`, `pro` y `premium` como planes validos. Los webhooks de Stripe y RevenueCat asignan el plan `pro` al usuario al activar una suscripcion.
+> [!note] Nota tecnica
+> El handler de admin (`PUT /api/admin/users/{id}/upgrade`) acepta `basic`, `pro` y `premium` como planes validos. Los webhooks de Stripe y RevenueCat asignan el plan `pro` al usuario al activar una suscripcion.
 
 ---
 
@@ -107,7 +131,8 @@ Los precios estan definidos en MXN y orientados al mercado latinoamericano.
 | Anual | **$1,499 MXN/ano** | $2,499 MXN/ano | 40% vs precio anterior |
 | Equivalente mensual (anual) | ~$125 MXN/mes | — | 16% vs mensual |
 
-> **Nota:** Los precios de lanzamiento ($149/mes y $1,499/ano) son temporales. Los precios regulares seran $199/mes y $2,499/ano.
+> [!note] Precios de lanzamiento
+> Los precios de lanzamiento ($149/mes y $1,499/ano) son temporales. Los precios regulares seran $199/mes y $2,499/ano.
 
 ### iOS (StoreKit 2)
 
@@ -125,7 +150,8 @@ Los precios en iOS son configurados en App Store Connect y se adaptan automatica
 | Mensual | **$9.99 USD/mes** | $9.99 | — |
 | Anual | **$79.99 USD/ano** | $6.67 | 33% |
 
-> **Nota:** Precios globales aun no configurados. Se implementaran cuando se expanda fuera de LATAM.
+> [!note] Expansion global
+> Precios globales aun no configurados. Se implementaran cuando se expanda fuera de LATAM.
 
 ### Justificacion de precios
 
@@ -157,17 +183,24 @@ com.solennix.premium.monthly   → Suscripcion mensual
 com.solennix.premium.yearly    → Suscripcion anual
 ```
 
-### 7.2 Android (Google Play Billing — Pendiente)
+> [!tip] Arquitectura iOS
+> Ver [[05_TECHNICAL_ARCHITECTURE_IOS]] para detalles de la arquitectura de paquetes SPM y el flujo de `SubscriptionManager`.
 
-| Aspecto | Estado |
-|---------|--------|
-| Framework | Google Play Billing Library — **NO implementado** |
-| SubscriptionManager | No existe |
-| Paywall | No existe |
-| Feature gating | No implementado |
-| Verificacion | No implementada |
+### 7.2 Android (Google Play Billing via RevenueCat)
 
-> **Prioridad:** Implementar despues de que iOS este completamente funcional. Se usara Google Play Billing Library 7+ con verificacion server-side via el backend Go.
+| Aspecto | Detalle |
+|---------|---------|
+| Framework | RevenueCat SDK (wraps Google Play Billing Library) |
+| Pantallas | `SubscriptionScreen` (gestion de suscripcion), `PricingScreen` (paywall con planes) |
+| Feature gating | Implementado via estado de suscripcion de RevenueCat |
+| Verificacion | Server-side via RevenueCat webhooks al backend Go |
+| Sync con backend | RevenueCat webhooks → `POST /api/subscriptions/webhook/revenuecat` |
+
+> [!note] Estado de implementacion Android
+> RevenueCat SDK esta integrado en el modulo Android. Las pantallas `SubscriptionScreen` y `PricingScreen` existen y manejan el flujo de compra a traves de RevenueCat, que internamente usa Google Play Billing. La verificacion server-side se realiza via webhooks de RevenueCat al backend.
+
+> [!tip] Arquitectura Android
+> Ver [[06_TECHNICAL_ARCHITECTURE_ANDROID]] para detalles de la arquitectura multi-module y la integracion de RevenueCat.
 
 ### 7.3 Web (Stripe)
 
@@ -182,6 +215,9 @@ com.solennix.premium.yearly    → Suscripcion anual
 | URLs de redireccion | Success: `/dashboard?session_id={ID}`, Cancel: `/pricing` |
 | Precio configurado | Via `STRIPE_PRO_PRICE_ID` (variable de entorno) |
 
+> [!tip] Arquitectura Web
+> Ver [[08_TECHNICAL_ARCHITECTURE_WEB]] para detalles de la arquitectura React/TypeScript y la integracion con Stripe.
+
 ### 7.4 Backend (Go)
 
 **Endpoints de suscripcion:**
@@ -195,6 +231,9 @@ com.solennix.premium.yearly    → Suscripcion anual
 | `POST` | `/api/subscriptions/webhook/revenuecat` | Webhook de RevenueCat (verificado por Authorization header) | No (secret) |
 | `POST` | `/api/subscriptions/debug-upgrade` | Upgrade debug (solo dev, solo admin) | Si + Admin |
 | `POST` | `/api/subscriptions/debug-downgrade` | Downgrade debug (solo dev, solo admin) | Si + Admin |
+
+> [!tip] Arquitectura Backend
+> Ver [[07_TECHNICAL_ARCHITECTURE_BACKEND]] para detalles del repository pattern y middleware de autenticacion.
 
 **Modelo de datos — Subscription:**
 
@@ -312,7 +351,49 @@ static let catalogLimit = 20          // Productos + items de inventario
 
 ## 9. Flujos de Compra
 
-### 9.1 Flujo de compra — iOS (StoreKit 2)
+### 9.1 Diagrama de flujo de suscripcion (cross-platform)
+
+```mermaid
+flowchart TD
+    subgraph iOS["iOS (StoreKit 2)"]
+        A1[Usuario toca Upgrade] --> A2[PricingView carga productos]
+        A2 --> A3[StoreKit dialogo de pago]
+        A3 --> A4[Verificacion criptografica local]
+        A4 --> A5[transaction.finish]
+    end
+
+    subgraph Android["Android (RevenueCat)"]
+        B1[Usuario toca Upgrade] --> B2[PricingScreen muestra planes]
+        B2 --> B3[RevenueCat inicia compra]
+        B3 --> B4[Google Play Billing dialogo]
+        B4 --> B5[RevenueCat confirma]
+    end
+
+    subgraph Web["Web (Stripe)"]
+        C1[Usuario toca Comenzar] --> C2[POST /checkout-session]
+        C2 --> C3[Redirect a Stripe Checkout]
+        C3 --> C4[Pago completado]
+        C4 --> C5[Redirect a /dashboard]
+    end
+
+    subgraph Backend["Backend (Go)"]
+        D1[Webhook recibido] --> D2{Proveedor?}
+        D2 -->|Stripe| D3[Verificar Stripe-Signature]
+        D2 -->|RevenueCat| D4[Verificar Authorization header]
+        D2 -->|Apple| D5[Verificar recibo StoreKit]
+        D3 --> D6[Actualizar plan usuario]
+        D4 --> D6
+        D5 --> D6
+        D6 --> D7[Crear/actualizar Subscription]
+        D7 --> D8[Usuario = pro]
+    end
+
+    A5 -.->|Sync pendiente| D1
+    B5 -->|RevenueCat webhook| D1
+    C4 -->|Stripe webhook| D1
+```
+
+### 9.2 Flujo de compra — iOS (StoreKit 2)
 
 ```
  1. Usuario toca feature Premium o boton "Actualizar a Premium"
@@ -329,7 +410,23 @@ static let catalogLimit = 20          // Productos + items de inventario
 12. UI se actualiza inmediatamente — features Premium desbloqueadas
 ```
 
-### 9.2 Flujo de compra — Web (Stripe)
+### 9.3 Flujo de compra — Android (RevenueCat)
+
+```
+ 1. Usuario toca feature Premium o boton "Actualizar a Premium"
+ 2. Se navega a PricingScreen
+ 3. PricingScreen carga ofertas de RevenueCat
+ 4. Se muestran planes con precios reales de Google Play (localizados)
+ 5. Usuario selecciona plan (Mensual / Anual)
+ 6. RevenueCat SDK inicia la compra via Google Play Billing
+ 7. Google Play muestra dialogo de pago nativo
+ 8. RevenueCat confirma la transaccion y actualiza estado local
+ 9. RevenueCat envia webhook al backend
+10. Backend actualiza plan del usuario a 'pro'
+11. UI se actualiza — features Premium desbloqueadas
+```
+
+### 9.4 Flujo de compra — Web (Stripe)
 
 ```
  1. Usuario visita /pricing o toca "Comenzar ahora"
@@ -344,7 +441,7 @@ static let catalogLimit = 20          // Productos + items de inventario
 10. Frontend detecta el cambio de plan y actualiza la UI
 ```
 
-### 9.3 Flujo de restauracion
+### 9.5 Flujo de restauracion
 
 **iOS:**
 ```
@@ -355,6 +452,15 @@ static let catalogLimit = 20          // Productos + items de inventario
 5. UI se actualiza
 ```
 
+**Android:**
+```
+1. Usuario toca "Restaurar compras" en PricingScreen
+2. RevenueCat SDK verifica entitlements activos con su servidor
+3. Si hay suscripcion activa → estado Premium restaurado
+4. RevenueCat notifica al backend via webhook si es necesario
+5. UI se actualiza
+```
+
 **Web:**
 ```
 1. El estado del plan se obtiene de GET /api/subscriptions/status
@@ -362,24 +468,25 @@ static let catalogLimit = 20          // Productos + items de inventario
 3. No hay flujo de "restauracion" manual — el backend es la fuente de verdad
 ```
 
-### 9.4 Flujo de expiracion / cancelacion
+### 9.6 Flujo de expiracion / cancelacion
 
 ```
-1. Usuario cancela suscripcion (via App Store / Stripe Customer Portal)
+1. Usuario cancela suscripcion (via App Store / Google Play / Stripe Customer Portal)
 2. La suscripcion se mantiene activa hasta el final del periodo pagado
 3. Al expirar:
    - Stripe: webhook customer.subscription.deleted → backend downgrade a 'basic'
    - iOS: Transaction.updates detecta cambio → isPremium = false
+   - Android: RevenueCat detecta expiracion → webhook EXPIRATION → backend downgrade a 'basic'
    - RevenueCat: webhook EXPIRATION / CANCELLATION → backend downgrade a 'basic'
 4. El usuario conserva todos sus datos pero no puede crear nuevos items si excede los limites del plan Basico
 ```
 
-### 9.5 Elementos de la Paywall (PricingView)
+### 9.7 Elementos de la Paywall (PricingView)
 
 - Plan actual del usuario con badge visual
 - Tarjeta del plan Basico con features incluidas
 - Tarjeta del plan Premium con badge "Recomendado"
-- Precios reales del App Store (localizados por region)
+- Precios reales del App Store / Google Play / Stripe (localizados por region)
 - Boton de compra mensual y anual con loading state
 - Tabla comparativa de funciones (Basico vs Premium)
 - Boton "Restaurar compras"
@@ -415,7 +522,7 @@ static let catalogLimit = 20          // Productos + items de inventario
 | Metrica | Herramienta |
 |---------|-------------|
 | Conversion por plan (mensual/anual) | Backend analytics |
-| Revenue por plataforma (iOS/Web) | App Store Connect / Stripe Dashboard |
+| Revenue por plataforma (iOS/Android/Web) | App Store Connect / Google Play Console / Stripe Dashboard |
 | Paywall view-to-purchase rate | In-app analytics |
 | Feature mas intentada por usuarios Basico (trigger de conversion) | In-app analytics |
 | Tiempo promedio Basico → Premium | Backend analytics |
@@ -426,6 +533,9 @@ static let catalogLimit = 20          // Productos + items de inventario
 ---
 
 ## 11. Problemas Actuales y Brechas
+
+> [!warning] Brechas criticas
+> Las siguientes secciones documentan problemas conocidos que deben resolverse antes del lanzamiento. Ver [[11_CURRENT_STATUS]] para el estado general del proyecto.
 
 ### 11.1 iOS — Features anunciadas como Premium pero NO gateadas
 
@@ -440,19 +550,23 @@ static let catalogLimit = 20          // Productos + items de inventario
 
 ### 11.2 iOS — Discrepancia de plan enum
 
-El modelo `Plan` en iOS (`SolennixCore/Models/User.swift`) solo define `basic` y `premium`, pero el backend puede enviar `pro`. Si el backend responde con `plan: "pro"`, el decode fallara o se interpretara incorrectamente.
+> [!warning] Bug potencial
+> El modelo `Plan` en iOS (`SolennixCore/Models/User.swift`) solo define `basic` y `premium`, pero el backend puede enviar `pro`. Si el backend responde con `plan: "pro"`, el decode fallara o se interpretara incorrectamente.
 
 **Accion requerida:** Agregar `case pro` al enum `Plan` en iOS, o mapear `pro` → `premium` en el decoder.
 
-### 11.3 Android — Sin monetizacion implementada
+### 11.3 Android — Gating parcial
+
+> [!note] Estado actualizado
+> RevenueCat SDK esta integrado y las pantallas de suscripcion (`SubscriptionScreen`, `PricingScreen`) existen. Sin embargo, el feature gating en la UI (limites de eventos, clientes, catalogo) aun requiere implementacion completa.
 
 | Componente | Estado |
 |------------|--------|
-| Google Play Billing | No implementado |
-| SubscriptionManager | No existe |
-| Paywall screen | No existe |
-| Feature gating UI | No existe |
-| PlanLimitsManager equivalente | No existe |
+| Google Play Billing (via RevenueCat) | Implementado |
+| SubscriptionScreen | Implementado |
+| PricingScreen (Paywall) | Implementado |
+| Feature gating UI (limites) | Pendiente — no existe PlanLimitsManager equivalente |
+| Indicadores de limites en UI | Pendiente |
 
 ### 11.4 Web — Gating parcial
 
@@ -465,7 +579,8 @@ El modelo `Plan` en iOS (`SolennixCore/Models/User.swift`) solo define `basic` y
 
 ### 11.5 Backend — Sin enforcement server-side
 
-Actualmente el backend **no rechaza** operaciones de creacion basado en el plan del usuario. Todo el enforcement se hace del lado del cliente (iOS `PlanLimitsManager`). Esto significa que:
+> [!warning] Riesgo de seguridad
+> Actualmente el backend **no rechaza** operaciones de creacion basado en el plan del usuario. Todo el enforcement se hace del lado del cliente (iOS `PlanLimitsManager`). Esto significa que:
 
 - Un usuario podria bypassear los limites usando la API directamente
 - El web no tiene enforcement ya que no tiene PlanLimitsManager equivalente
@@ -477,6 +592,10 @@ Actualmente el backend **no rechaza** operaciones de creacion basado en el plan 
 |------------|------------------------------|-----------------|
 | iOS (StoreKit) | Configurado en App Store Connect (verificar) | $199 MXN/mes, equivalente anual |
 | Web (Stripe) | Depende de `STRIPE_PRO_PRICE_ID` | $149 MXN/mes (lanzamiento), $199 MXN/mes (regular) |
-| Android | No implementado | $199 MXN/mes equivalente |
+| Android (RevenueCat) | Configurado via Google Play Console / RevenueCat | $199 MXN/mes equivalente |
 
-**Accion requerida:** Verificar y alinear precios entre todas las plataformas. El precio de lanzamiento en web ($149/mes) debe coincidir con lo configurado en App Store Connect para iOS.
+**Accion requerida:** Verificar y alinear precios entre todas las plataformas. El precio de lanzamiento en web ($149/mes) debe coincidir con lo configurado en App Store Connect para iOS y Google Play Console para Android.
+
+---
+
+#prd #monetizacion #stripe #revenuecat #solennix

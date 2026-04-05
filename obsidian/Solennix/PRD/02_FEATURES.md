@@ -1,3 +1,17 @@
+---
+tags:
+  - prd
+  - features
+  - paridad
+  - solennix
+aliases:
+  - Catálogo de Features
+  - Features
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+---
+
 # Solennix — Documento Unificado de Features
 
 **Version:** 1.1
@@ -6,9 +20,17 @@
 **Autor:** Tiago David + Claude Code
 **Estado:** Borrador
 
+> [!tip] Documentos relacionados
+> - [[01_PRODUCT_VISION|Visión]] — Objetivos, usuarios objetivo, propuesta de valor
+> - [[04_MONETIZATION|Monetización]] — Tiers, precios y feature gating
+> - [[11_CURRENT_STATUS|Estado Actual]] — Progreso de implementación y brechas
+
 ---
 
 ## Convenciones de Etiquetas
+
+> [!info] Leyenda de etiquetas y estados
+> Estas etiquetas se usan consistentemente en todo el documento para indicar alcance de plataforma y estado de implementación.
 
 | Etiqueta | Significado |
 |----------|-------------|
@@ -30,11 +52,35 @@
 
 ---
 
+## Ciclo de Vida de un Evento
+
+```mermaid
+stateDiagram-v2
+    [*] --> Cotizado: Crear evento
+    Cotizado --> Confirmado: Cliente acepta
+    Cotizado --> Cancelado: Cliente o organizador cancela
+    Confirmado --> Completado: Evento realizado
+    Confirmado --> Cancelado: Cancelación
+    Completado --> [*]
+    Cancelado --> [*]
+
+    state Cotizado {
+        [*] --> FormularioMultiPaso
+        FormularioMultiPaso --> Productos
+        Productos --> Extras
+        Extras --> EquipoInsumos
+        EquipoInsumos --> FinanzasRevision
+    }
+```
+
+---
+
 ## P0 — Must-Have (Obligatorio)
 
 ### 1. Gestion de Eventos [Todas]
 
-El modulo central de Solennix. Permite a organizadores de eventos crear, cotizar, confirmar y gestionar eventos completos con productos, equipo, insumos, precios y galeria de fotos.
+> [!abstract] Resumen
+> El modulo central de Solennix. Permite a organizadores de eventos crear, cotizar, confirmar y gestionar eventos completos con productos, equipo, insumos, precios y galeria de fotos.
 
 #### Formulario multi-paso
 
@@ -48,10 +94,10 @@ El formulario de creacion/edicion de eventos esta dividido en pasos para reducir
 | 4 | Equipo e Insumos | Equipo asignado con deteccion de conflictos + insumos con fuente (stock/compra) y opcion de excluir costo | [Todas] |
 | 5 | Finanzas y Revision | Subtotal, descuento global (% o fijo), IVA, total, deposito, condiciones de cancelacion, notas | [Todas] |
 
-**Notas por plataforma:**
-- **[iOS]**: `EventFormView` con SwiftUI, navegacion por `TabView` o stepper. Steps en `EventFormSteps/Step1GeneralView.swift` a `Step5FinancesView.swift`.
-- **[Android]**: `EventFormScreen.kt` con Jetpack Compose, formulario multi-paso con `HorizontalPager` o stepper manual.
-- **[Web]**: Componentes separados: `EventGeneralInfo.tsx`, `EventProducts.tsx`, `EventExtras.tsx`, `EventEquipment.tsx`, `EventSupplies.tsx`, `EventFinancials.tsx`, `Payments.tsx`.
+> [!note] Notas por plataforma
+> - **[iOS]**: `EventFormView` con SwiftUI, navegacion por `TabView` o stepper. Steps en `EventFormSteps/Step1GeneralView.swift` a `Step5FinancesView.swift`.
+> - **[Android]**: `EventFormScreen.kt` con Jetpack Compose, formulario multi-paso con `HorizontalPager` o stepper manual.
+> - **[Web]**: Componentes separados: `EventGeneralInfo.tsx`, `EventProducts.tsx`, `EventExtras.tsx`, `EventEquipment.tsx`, `EventSupplies.tsx`, `EventFinancials.tsx`, `Payments.tsx`.
 
 #### Estados del evento
 
@@ -93,13 +139,20 @@ Basado en los productos seleccionados y sus recetas (ingredientes), el sistema s
 - **Insumos sugeridos**: `GET/POST /api/events/supplies/suggestions` — suma `quantity_required` de todos los productos que usan ese insumo.
 - Los insumos incluyen `unit_cost` para estimar costos de compra.
 
-**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado)
+**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado) — ver [[04_MONETIZATION|Monetización]]
+
+> [!tip] Documentos relacionados
+> - [[05_TECHNICAL_ARCHITECTURE_IOS|Arq. iOS]] — Estructura de paquetes SPM para eventos
+> - [[06_TECHNICAL_ARCHITECTURE_ANDROID|Arq. Android]] — Módulo feature/event
+> - [[08_TECHNICAL_ARCHITECTURE_WEB|Arq. Web]] — Componentes de evento en React
+> - [[07_TECHNICAL_ARCHITECTURE_BACKEND|Arq. Backend]] — Handlers y repositorios de eventos
 
 ---
 
 ### 2. Gestion de Clientes [Todas]
 
-CRUD completo de clientes con informacion de contacto y metricas acumuladas.
+> [!abstract] Resumen
+> CRUD completo de clientes con informacion de contacto y metricas acumuladas.
 
 #### Campos del cliente
 
@@ -139,13 +192,14 @@ CRUD completo de clientes con informacion de contacto y metricas acumuladas.
 - `PUT /api/clients/{id}` — actualizar
 - `DELETE /api/clients/{id}` — eliminar
 
-**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado)
+**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
 ### 3. Catalogo de Productos [Todas]
 
-Gestion del catalogo de productos/servicios que el organizador ofrece en sus eventos.
+> [!abstract] Resumen
+> Gestion del catalogo de productos/servicios que el organizador ofrece en sus eventos.
 
 #### Campos del producto
 
@@ -180,13 +234,14 @@ Cada producto puede tener una receta que vincula items del inventario como ingre
 - **[Android]**: `ProductListScreen`, `ProductDetailScreen`, `ProductFormScreen`
 - **[Web]**: `ProductList`, `ProductForm`, `ProductDetails`
 
-**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado)
+**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
 ### 4. Inventario [Todas]
 
-Gestion de equipos e insumos necesarios para los eventos.
+> [!abstract] Resumen
+> Gestion de equipos e insumos necesarios para los eventos.
 
 #### Campos del item de inventario
 
@@ -219,13 +274,14 @@ Gestion de equipos e insumos necesarios para los eventos.
 - **[Android]**: `InventoryListScreen`, `InventoryDetailScreen`, `InventoryFormScreen`
 - **[Web]**: `InventoryList`, `InventoryForm`, `InventoryDetails`
 
-**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado)
+**Tier:** FREE (hasta limite de plan) / BASIC / PRO (ilimitado) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
 ### 5. Calendario [Todas]
 
-Vista mensual de eventos enfocada en visualizacion y gestion de disponibilidad. El Calendario NO incluye vista de lista de eventos — esa funcionalidad vive en la seccion Eventos (ver seccion 1).
+> [!abstract] Resumen
+> Vista mensual de eventos enfocada en visualizacion y gestion de disponibilidad. El Calendario NO incluye vista de lista de eventos — esa funcionalidad vive en la seccion Eventos (ver seccion 1).
 
 #### Funcionalidades
 
@@ -291,7 +347,8 @@ Vista mensual de eventos enfocada en visualizacion y gestion de disponibilidad. 
 
 ### 6. Autenticacion [Todas]
 
-Sistema completo de autenticacion con multiples proveedores y gestion segura de sesiones.
+> [!abstract] Resumen
+> Sistema completo de autenticacion con multiples proveedores y gestion segura de sesiones.
 
 #### Metodos de autenticacion
 
@@ -328,11 +385,17 @@ Sistema completo de autenticacion con multiples proveedores y gestion segura de 
 
 **Tier:** FREE
 
+> [!tip] Documentos relacionados
+> - [[07_TECHNICAL_ARCHITECTURE_BACKEND|Arq. Backend]] — Middleware de auth, JWT, rate limiting
+> - [[05_TECHNICAL_ARCHITECTURE_IOS|Arq. iOS]] — AuthManager en SolennixNetwork
+> - [[08_TECHNICAL_ARCHITECTURE_WEB|Arq. Web]] — AuthContext y stores de autenticación
+
 ---
 
 ### 7. Dashboard [Todas]
 
-Pantalla principal con KPIs del negocio, alertas de eventos que requieren atencion, acciones rapidas y resumen visual. El orden de secciones prioriza lo urgente.
+> [!abstract] Resumen
+> Pantalla principal con KPIs del negocio, alertas de eventos que requieren atencion, acciones rapidas y resumen visual. El orden de secciones prioriza lo urgente.
 
 #### Orden de secciones (scroll vertical)
 
@@ -409,7 +472,8 @@ Cada alerta muestra: nombre del evento, fecha, razon (badge), monto pendiente. T
 
 ### 8. Pagos y Finanzas [Todas]
 
-Sistema de registro de pagos parciales y totales para eventos, con multiples metodos de pago y checkout online via Stripe.
+> [!abstract] Resumen
+> Sistema de registro de pagos parciales y totales para eventos, con multiples metodos de pago y checkout online via Stripe.
 
 #### Campos del pago
 
@@ -443,7 +507,7 @@ Sistema de registro de pagos parciales y totales para eventos, con multiples met
 - `PUT /api/payments/{id}` — actualizar pago
 - `DELETE /api/payments/{id}` — eliminar pago
 
-**Tier:** FREE (registro manual) / PRO (checkout Stripe)
+**Tier:** FREE (registro manual) / PRO (checkout Stripe) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
@@ -451,7 +515,8 @@ Sistema de registro de pagos parciales y totales para eventos, con multiples met
 
 ### 9. Generacion de PDFs [Mobile]
 
-Generacion de documentos PDF desde el detalle del evento. Implementado nativamente en iOS y Android (no en Web actualmente — Web usa `pdfGenerator.ts` con libreria JS).
+> [!abstract] Resumen
+> Generacion de documentos PDF desde el detalle del evento. Implementado nativamente en iOS y Android (no en Web actualmente — Web usa `pdfGenerator.ts` con libreria JS).
 
 #### Tipos de PDF
 
@@ -471,7 +536,7 @@ Generacion de documentos PDF desde el detalle del evento. Implementado nativamen
 
 **[Web]**: `pdfGenerator.ts` genera PDFs usando libreria JavaScript (cotizacion, contrato, presupuesto, reporte de pagos). Soporte para formato inline con `inlineFormatting.ts`.
 
-**Tier:** FREE (cotizacion) / PRO (todos los tipos)
+**Tier:** FREE (cotizacion) / PRO (todos los tipos) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
@@ -525,7 +590,7 @@ Widgets para la pantalla de inicio del iPhone/iPad y Android.
 
 **[Web]**: No aplica.
 
-**Tier:** FREE (eventos proximos) / PRO (KPIs, interactivo, lock screen)
+**Tier:** FREE (eventos proximos) / PRO (KPIs, interactivo, lock screen) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
@@ -540,13 +605,14 @@ Dynamic Island y pantalla de bloqueo para seguimiento en tiempo real de eventos 
 
 **[Android]**: No implementado. **[Web]**: No aplica.
 
-**Tier:** PRO
+**Tier:** PRO — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
 ### 14. Suscripciones y Billing [Todas]
 
-Sistema de suscripciones multi-proveedor con gestion de planes.
+> [!abstract] Resumen
+> Sistema de suscripciones multi-proveedor con gestion de planes.
 
 #### Planes
 
@@ -585,6 +651,9 @@ Sistema de suscripciones multi-proveedor con gestion de planes.
 - **[Web]**: `UpgradeBanner` — banner que invita a actualizar cuando se alcanzan limites.
 
 **Tier:** N/A (es el sistema de monetizacion)
+
+> [!tip] Documentos relacionados
+> - [[04_MONETIZATION|Monetización]] — Detalles completos de precios, tiers y feature gating
 
 ---
 
@@ -652,7 +721,8 @@ Navegacion profunda a pantallas especificas mediante URL schemes e integracion c
 
 ### 18b. Arquitectura de Navegacion Unificada [Todas]
 
-Principio fundamental: **Navegacion = Secciones (sustantivos)**, no acciones. Las acciones de creacion viven en FABs y botones contextuales.
+> [!abstract] Resumen
+> Principio fundamental: **Navegacion = Secciones (sustantivos)**, no acciones. Las acciones de creacion viven en FABs y botones contextuales.
 
 #### Bottom Tab Bar (Phones: iPhone, Android Phone, Web Mobile <1024px)
 
@@ -739,19 +809,18 @@ Personalizacion del perfil comercial del organizador de eventos.
 - **[Android]**: `BusinessSettingsScreen`, `ContractDefaultsScreen`, `EditProfileScreen`, `ChangePasswordScreen`
 - **[Web]**: `Settings`
 
-**Tier:** FREE (basico) / PRO (logo, color de marca, plantilla de contrato)
+**Tier:** FREE (basico) / PRO (logo, color de marca, plantilla de contrato) — ver [[04_MONETIZATION|Monetización]]
 
 ---
 
 ### 20. Registro de Dispositivos (Push Notifications) [Backend]
 
-Infraestructura backend para notificaciones push.
+> [!warning] Infraestructura lista, envio activo pendiente
+> La infraestructura de backend para push notifications esta implementada. El envio activo de notificaciones push esta pendiente de implementacion.
 
 - `POST /api/devices/register` — registra token de dispositivo (iOS/Android/Web).
 - `POST /api/devices/unregister` — elimina registro.
 - Modelo `DeviceToken`: almacena `token`, `platform` (ios/android/web).
-
-**Nota:** La infraestructura de backend esta implementada. El envio activo de notificaciones push esta pendiente.
 
 **Tier:** FREE
 
@@ -772,6 +841,9 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 
 ## P2 — Futuro
 
+> [!warning] Funcionalidades planificadas — no implementadas
+> Las siguientes features estan en el roadmap pero aun no han sido implementadas (salvo las marcadas como completadas).
+
 ### Funcionalidades planificadas
 
 | Feature | Descripcion | Prioridad |
@@ -790,18 +862,22 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 | Deep Linking en Android | URL schemes y navegacion profunda equivalente a iOS | Baja |
 | Live Activity equivalente Android | Notificacion persistente de evento activo | Baja |
 
+> [!tip] Documentos relacionados
+> - [[09_ROADMAP|Roadmap]] — Timeline y estimaciones para todas las plataformas
+> - [[11_CURRENT_STATUS|Estado Actual]] — Progreso de implementación detallado
+
 ---
 
 ## Tabla de Paridad Cross-Platform
 
-### Leyenda
-
-| Simbolo | Significado |
-|---------|-------------|
-| ✅ | Implementado |
-| 🔄 | En progreso |
-| ⬜ | Pendiente |
-| ➖ | No aplica |
+> [!info] Leyenda
+>
+> | Simbolo | Significado |
+> |---------|-------------|
+> | ✅ | Implementado |
+> | 🔄 | En progreso |
+> | ⬜ | Pendiente |
+> | ➖ | No aplica |
 
 ### Eventos
 
@@ -1000,3 +1076,11 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 | Push Notifications (registro) | ✅ | ✅ | ✅ | ✅ | Registro de tokens implementado |
 | Push Notifications (envio) | ⬜ | ⬜ | ⬜ | ⬜ | Infraestructura lista, envio pendiente |
 | About / Privacy / Terms | ✅ | ✅ | ✅ | ➖ | Paginas legales |
+
+> [!tip] Documentos relacionados
+> - [[11_CURRENT_STATUS|Estado Actual]] — Detalle completo de brechas y progreso por plataforma
+> - [[05_TECHNICAL_ARCHITECTURE_IOS|Arq. iOS]] | [[06_TECHNICAL_ARCHITECTURE_ANDROID|Arq. Android]] | [[08_TECHNICAL_ARCHITECTURE_WEB|Arq. Web]] | [[07_TECHNICAL_ARCHITECTURE_BACKEND|Arq. Backend]]
+
+---
+
+#prd #features #paridad #solennix

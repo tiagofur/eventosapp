@@ -1,27 +1,50 @@
-# Arquitectura Técnica — Backend API
+---
+tags:
+  - prd
+  - arquitectura
+  - backend
+  - go
+  - postgresql
+  - solennix
+aliases:
+  - Arquitectura Backend
+  - Backend Architecture
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+platform: Backend
+---
 
-**Versión:** 1.0
+# Arquitectura Tecnica — Backend API
+
+> [!tip] Documentos relacionados
+> [[PRD MOC]] | [[01_PRODUCT_VISION]] | [[02_FEATURES]] | [[05_TECHNICAL_ARCHITECTURE_IOS]] | [[06_TECHNICAL_ARCHITECTURE_ANDROID]] | [[08_TECHNICAL_ARCHITECTURE_WEB]] | [[11_CURRENT_STATUS]] | [[04_MONETIZATION]]
+
+**Version:** 1.0
 **Fecha:** 2026-03-20
 **Plataforma:** Go REST API + PostgreSQL
 
 ---
 
-## 1. Stack Tecnológico
+## 1. Stack Tecnologico
 
-| Componente | Tecnología | Versión | Rol |
+> [!info] Stack principal
+> **Go 1.24** + **Chi router** + **PostgreSQL 15** + **pgx driver** — sin ORM, queries SQL directas con connection pooling nativo.
+
+| Componente | Tecnologia | Version | Rol |
 |------------|------------|---------|-----|
-| **Lenguaje** | Go | 1.24.7 | Rendimiento, concurrencia nativa, binario estático |
+| **Lenguaje** | Go | 1.24.7 | Rendimiento, concurrencia nativa, binario estatico |
 | **Router HTTP** | Chi (`go-chi/chi/v5`) | 5.2.5 | Router ligero y compatible con `net/http`, middleware composable |
 | **Base de datos** | PostgreSQL | 15 (Alpine) | Base de datos relacional principal, JSONB para datos flexibles |
 | **Driver DB** | pgx (`jackc/pgx/v5`) | 5.8.0 | Driver nativo PostgreSQL con connection pooling (`pgxpool`) |
-| **Autenticación** | golang-jwt (`golang-jwt/jwt/v5`) | 5.3.1 | Generación y validación de tokens JWT (HS256) |
-| **Pagos** | Stripe (`stripe/stripe-go/v81`) | 81.4.0 | Checkout sessions, webhooks, portal de facturación |
-| **Email** | Resend (`resend/resend-go/v3`) | 3.1.1 | Emails transaccionales (recuperación de contraseña) |
-| **Hashing** | bcrypt (`golang.org/x/crypto`) | 0.48.0 | Hash seguro de contraseñas con cost factor configurable |
-| **UUIDs** | google/uuid | 1.6.0 | Identificadores únicos para todas las entidades |
-| **Configuración** | godotenv (`joho/godotenv`) | 1.5.1 | Carga de variables de entorno desde archivo `.env` |
-| **Imágenes** | golang.org/x/image | 0.36.0 | Redimensionamiento de imágenes para thumbnails |
-| **Testing** | testify (`stretchr/testify`) | 1.11.1 | Assertions y mocks para tests unitarios e integración |
+| **Autenticacion** | golang-jwt (`golang-jwt/jwt/v5`) | 5.3.1 | Generacion y validacion de tokens JWT (HS256) |
+| **Pagos** | Stripe (`stripe/stripe-go/v81`) | 81.4.0 | Checkout sessions, webhooks, portal de facturacion |
+| **Email** | Resend (`resend/resend-go/v3`) | 3.1.1 | Emails transaccionales (recuperacion de contrasena) |
+| **Hashing** | bcrypt (`golang.org/x/crypto`) | 0.48.0 | Hash seguro de contrasenas con cost factor configurable |
+| **UUIDs** | google/uuid | 1.6.0 | Identificadores unicos para todas las entidades |
+| **Configuracion** | godotenv (`joho/godotenv`) | 1.5.1 | Carga de variables de entorno desde archivo `.env` |
+| **Imagenes** | golang.org/x/image | 0.36.0 | Redimensionamiento de imagenes para thumbnails |
+| **Testing** | testify (`stretchr/testify`) | 1.11.1 | Assertions y mocks para tests unitarios e integracion |
 | **Contenedor** | Docker (multi-stage) | Alpine | Build y despliegue en contenedor ligero |
 | **Logging** | log/slog (stdlib) | — | Logging estructurado nativo de Go |
 
@@ -29,57 +52,38 @@
 
 ## 2. Arquitectura
 
-### Patrón General
+### Patron General
 
-El backend sigue una **arquitectura en capas** inspirada en Clean Architecture, con inyección de dependencias vía constructores y propagación de contexto a través de toda la cadena.
+> [!abstract] Arquitectura en capas
+> El backend sigue una **arquitectura en capas** inspirada en Clean Architecture, con inyeccion de dependencias via constructores y propagacion de contexto a traves de toda la cadena.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        HTTP Request                             │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                     Router (Chi)                                │
-│  Definición de rutas, agrupación por dominio                    │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                    Middleware Stack                              │
-│  Recovery → CORS → Security Headers → Logger → Auth → RateLimit│
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                      Handlers                                   │
-│  Decodificación HTTP, validación, respuesta JSON                │
-│  AuthHandler, CRUDHandler, SubscriptionHandler, etc.            │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                      Services                                   │
-│  Lógica de negocio: AuthService, EmailService                   │
-│  JWT, hashing, envío de emails                                  │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                     Repository                                  │
-│  Acceso a datos: UserRepo, EventRepo, ClientRepo, etc.          │
-│  Queries SQL directas con pgx (sin ORM)                         │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────────────┐
-│                    PostgreSQL                                   │
-│  pgxpool connection pool (20 max, 2 min)                        │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["HTTP Request"] --> B["Router (Chi)<br/>Definicion de rutas, agrupacion por dominio"]
+    B --> C["Middleware Stack<br/>Recovery → CORS → Security Headers → Logger → Auth → RateLimit"]
+    C --> D["Handlers<br/>Decodificacion HTTP, validacion, respuesta JSON<br/>AuthHandler, CRUDHandler, SubscriptionHandler, etc."]
+    D --> E["Services<br/>Logica de negocio: AuthService, EmailService<br/>JWT, hashing, envio de emails"]
+    E --> F["Repository<br/>Acceso a datos: UserRepo, EventRepo, ClientRepo, etc.<br/>Queries SQL directas con pgx (sin ORM)"]
+    F --> G["PostgreSQL<br/>pgxpool connection pool (20 max, 2 min)"]
+
+    style A fill:#1B2A4A,color:#fff
+    style B fill:#2a3f6a,color:#fff
+    style C fill:#2a3f6a,color:#fff
+    style D fill:#2a3f6a,color:#fff
+    style E fill:#2a3f6a,color:#fff
+    style F fill:#2a3f6a,color:#fff
+    style G fill:#C4A265,color:#1B2A4A
 ```
 
 ### Principios
 
-- **Sin ORM**: Queries SQL directas con `pgx` para control total y rendimiento
-- **Inyección de dependencias**: Todos los componentes reciben dependencias vía constructor (`NewXxxHandler(repo, service)`)
-- **Propagación de contexto**: `context.Context` se propaga desde el handler hasta el repositorio para cancelación y timeouts
-- **Interfaces para testing**: Los handlers dependen de interfaces (e.g., `FullUserRepository`, `AdminUserRepo`), facilitando mocks en tests
-- **Manejo de errores explícito**: Go idiomático — sin excepciones, retorno explícito de `error`
-- **Graceful shutdown**: El servidor captura `SIGTERM`/`SIGINT` y drena conexiones activas antes de cerrar
+> [!note] Decisiones de diseno clave
+> - **Sin ORM**: Queries SQL directas con `pgx` para control total y rendimiento
+> - **Inyeccion de dependencias**: Todos los componentes reciben dependencias via constructor (`NewXxxHandler(repo, service)`)
+> - **Propagacion de contexto**: `context.Context` se propaga desde el handler hasta el repositorio para cancelacion y timeouts
+> - **Interfaces para testing**: Los handlers dependen de interfaces (e.g., `FullUserRepository`, `AdminUserRepo`), facilitando mocks en tests
+> - **Manejo de errores explicito**: Go idiomatico — sin excepciones, retorno explicito de `error`
+> - **Graceful shutdown**: El servidor captura `SIGTERM`/`SIGINT` y drena conexiones activas antes de cerrar
 
 ---
 
@@ -93,29 +97,29 @@ backend/
 │
 ├── internal/
 │   ├── config/
-│   │   ├── config.go                  # Carga de configuración desde variables de entorno (.env)
-│   │   └── config_test.go             # Tests de configuración
+│   │   ├── config.go                  # Carga de configuracion desde variables de entorno (.env)
+│   │   └── config_test.go             # Tests de configuracion
 │   │
 │   ├── database/
-│   │   ├── database.go                # Conexión a PostgreSQL con pgxpool (pool configurado)
-│   │   ├── database_test.go           # Tests de conexión
+│   │   ├── database.go                # Conexion a PostgreSQL con pgxpool (pool configurado)
+│   │   ├── database_test.go           # Tests de conexion
 │   │   ├── migrate.go                 # Sistema de migraciones con go:embed
 │   │   ├── migrate_test.go            # Tests de migraciones
-│   │   └── migrations/                # Archivos SQL de migración (026 migraciones)
+│   │   └── migrations/                # Archivos SQL de migracion (029 migraciones)
 │   │       ├── 001_create_users.up.sql
 │   │       ├── 001_create_users.down.sql
 │   │       ├── ...
-│   │       └── 026_create_device_tokens.up.sql
+│   │       └── 029_make_password_hash_nullable.up.sql
 │   │
 │   ├── handlers/
 │   │   ├── auth_handler.go            # Registro, login, logout, OAuth, password reset
 │   │   ├── crud_handler.go            # CRUD para clients, events, products, inventory, payments
 │   │   ├── subscription_handler.go    # Stripe checkout, webhooks, RevenueCat
-│   │   ├── search_handler.go          # Búsqueda global multi-entidad
-│   │   ├── event_payment_handler.go   # Pagos de eventos vía Stripe
-│   │   ├── upload_handler.go          # Subida de imágenes con thumbnails
-│   │   ├── admin_handler.go           # Panel de administración (stats, usuarios)
-│   │   ├── unavailable_date_handler.go # Gestión de fechas no disponibles
+│   │   ├── search_handler.go          # Busqueda global multi-entidad
+│   │   ├── event_payment_handler.go   # Pagos de eventos via Stripe
+│   │   ├── upload_handler.go          # Subida de imagenes con thumbnails
+│   │   ├── admin_handler.go           # Panel de administracion (stats, usuarios)
+│   │   ├── unavailable_date_handler.go # Gestion de fechas no disponibles
 │   │   ├── device_handler.go          # Registro de dispositivos para push notifications
 │   │   ├── contract_template.go       # Plantilla de contratos por defecto
 │   │   ├── stripe_service.go          # Interfaz del servicio Stripe
@@ -126,12 +130,12 @@ backend/
 │   │   └── *_test.go                  # Tests unitarios por handler (mocks incluidos)
 │   │
 │   ├── middleware/
-│   │   ├── auth.go                    # Validación JWT (cookie httpOnly + header Authorization)
-│   │   ├── admin.go                   # Verificación de rol admin
-│   │   ├── cors.go                    # CORS con orígenes configurables
+│   │   ├── auth.go                    # Validacion JWT (cookie httpOnly + header Authorization)
+│   │   ├── admin.go                   # Verificacion de rol admin
+│   │   ├── cors.go                    # CORS con origenes configurables
 │   │   ├── logging.go                 # Logger de requests (slog estructurado)
 │   │   ├── ratelimit.go              # Rate limiting por IP con ventana deslizante
-│   │   ├── recovery.go               # Recuperación de panics con stack trace
+│   │   ├── recovery.go               # Recuperacion de panics con stack trace
 │   │   ├── security.go               # Headers de seguridad OWASP
 │   │   └── *_test.go                  # Tests unitarios por middleware
 │   │
@@ -146,25 +150,25 @@ backend/
 │   │   ├── inventory_repo.go          # Queries de inventario
 │   │   ├── payment_repo.go            # Queries de pagos
 │   │   ├── subscription_repo.go       # Queries de suscripciones
-│   │   ├── admin_repo.go              # Queries de administración + expiración de planes gifted
+│   │   ├── admin_repo.go              # Queries de administracion + expiracion de planes gifted
 │   │   ├── unavailable_date_repo.go   # Queries de fechas no disponibles
 │   │   ├── device_repo.go             # Queries de tokens de dispositivos
-│   │   └── *_test.go                  # Tests de integración con DB real
+│   │   └── *_test.go                  # Tests de integracion con DB real
 │   │
 │   ├── router/
-│   │   ├── router.go                  # Definición completa de rutas con Chi
-│   │   ├── router_test.go             # Tests de configuración de rutas
-│   │   ├── router_api_integration_test.go # Tests de integración API
+│   │   ├── router.go                  # Definicion completa de rutas con Chi
+│   │   ├── router_test.go             # Tests de configuracion de rutas
+│   │   ├── router_api_integration_test.go # Tests de integracion API
 │   │   └── testdata/                  # Datos de prueba para tests
 │   │
 │   └── services/
-│       ├── auth_service.go            # JWT (generación, validación), bcrypt (hash, verify)
+│       ├── auth_service.go            # JWT (generacion, validacion), bcrypt (hash, verify)
 │       ├── auth_service_test.go       # Tests del servicio de auth
-│       ├── email_service.go           # Envío de emails con Resend (templates HTML)
+│       ├── email_service.go           # Envio de emails con Resend (templates HTML)
 │       ├── email_service_test.go      # Tests del servicio de email
 │       └── revenuecat_service.go      # Sync Stripe↔RevenueCat (grant/revoke entitlements)
 │
-├── go.mod                             # Dependencias del módulo Go
+├── go.mod                             # Dependencias del modulo Go
 ├── go.sum                             # Checksums de dependencias
 ├── Dockerfile                         # Multi-stage build (golang:alpine → alpine)
 └── docker-compose.yml                 # PostgreSQL 15 local para desarrollo
@@ -174,15 +178,15 @@ backend/
 
 ## 4. Modelos de Datos
 
-Todos los modelos se definen en `internal/models/models.go`. Cada struct usa tags `json` para serialización y `json:"-"` para campos sensibles.
+Todos los modelos se definen en `internal/models/models.go`. Cada struct usa tags `json` para serializacion y `json:"-"` para campos sensibles.
 
 ### 4.1 Usuarios
 
 #### `User`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
-| `Email` | `string` | `email` | Email del usuario (único) |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
+| `Email` | `string` | `email` | Email del usuario (unico) |
 | `PasswordHash` | `string` | `-` | Hash bcrypt (nunca se expone en JSON) |
 | `Name` | `string` | `name` | Nombre del usuario |
 | `BusinessName` | `*string` | `business_name` | Nombre de la empresa (opcional) |
@@ -190,19 +194,19 @@ Todos los modelos se definen en `internal/models/models.go`. Cada struct usa tag
 | `BrandColor` | `*string` | `brand_color` | Color de marca personalizado (opcional) |
 | `ShowBusinessNameInPdf` | `*bool` | `show_business_name_in_pdf` | Mostrar nombre de empresa en PDFs |
 | `DefaultDepositPercent` | `*float64` | `default_deposit_percent` | Porcentaje de anticipo por defecto |
-| `DefaultCancellationDays` | `*float64` | `default_cancellation_days` | Días de cancelación por defecto |
+| `DefaultCancellationDays` | `*float64` | `default_cancellation_days` | Dias de cancelacion por defecto |
 | `DefaultRefundPercent` | `*float64` | `default_refund_percent` | Porcentaje de reembolso por defecto |
 | `ContractTemplate` | `*string` | `contract_template` | Plantilla HTML de contratos |
-| `Plan` | `string` | `plan` | Plan de suscripción (`basic` / `pro`) |
+| `Plan` | `string` | `plan` | Plan de suscripcion (`basic` / `pro`) |
 | `Role` | `string` | `role` | Rol del usuario (`user` / `admin`) |
 | `StripeCustomerID` | `*string` | `stripe_customer_id` | ID de cliente en Stripe |
 | `GoogleUserID` | `*string` | `google_user_id` | ID de usuario Google OAuth |
 | `AppleUserID` | `*string` | `apple_user_id` | ID de usuario Apple Sign In |
-| `PlanExpiresAt` | `*time.Time` | `plan_expires_at` | Expiración del plan (para planes gifted) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de última actualización |
+| `PlanExpiresAt` | `*time.Time` | `plan_expires_at` | Expiracion del plan (para planes gifted) |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de ultima actualizacion |
 
-#### Requests de Autenticación (definidas en `auth_handler.go`)
+#### Requests de Autenticacion (definidas en `auth_handler.go`)
 - `registerRequest` — `email`, `password`, `name`
 - `loginRequest` — `email`, `password`
 - `forgotPasswordRequest` — `email`
@@ -210,16 +214,16 @@ Todos los modelos se definen en `internal/models/models.go`. Cada struct usa tag
 ### 4.2 Eventos
 
 #### `Event`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario del evento |
 | `ClientID` | `uuid.UUID` | `client_id` | Cliente asociado |
 | `EventDate` | `string` | `event_date` | Fecha del evento (`YYYY-MM-DD`) |
 | `StartTime` | `*string` | `start_time` | Hora de inicio (opcional) |
 | `EndTime` | `*string` | `end_time` | Hora de fin (opcional) |
 | `ServiceType` | `string` | `service_type` | Tipo de servicio |
-| `NumPeople` | `int` | `num_people` | Número de personas |
+| `NumPeople` | `int` | `num_people` | Numero de personas |
 | `Status` | `string` | `status` | Estado del evento |
 | `Discount` | `float64` | `discount` | Monto/porcentaje de descuento |
 | `DiscountType` | `string` | `discount_type` | Tipo: `percent` o `fixed` |
@@ -227,128 +231,128 @@ Todos los modelos se definen en `internal/models/models.go`. Cada struct usa tag
 | `TaxRate` | `float64` | `tax_rate` | Tasa de impuesto |
 | `TaxAmount` | `float64` | `tax_amount` | Monto de impuesto |
 | `TotalAmount` | `float64` | `total_amount` | Total del evento |
-| `Location` | `*string` | `location` | Ubicación (opcional) |
+| `Location` | `*string` | `location` | Ubicacion (opcional) |
 | `City` | `*string` | `city` | Ciudad (opcional) |
 | `DepositPercent` | `*float64` | `deposit_percent` | Porcentaje de anticipo |
-| `CancellationDays` | `*float64` | `cancellation_days` | Días para cancelación |
+| `CancellationDays` | `*float64` | `cancellation_days` | Dias para cancelacion |
 | `RefundPercent` | `*float64` | `refund_percent` | Porcentaje de reembolso |
 | `Notes` | `*string` | `notes` | Notas (opcional) |
 | `Photos` | `*string` | `photos` | URLs de fotos (JSONB como string) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualización |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualizacion |
 | `Client` | `*Client` | `client` | Datos del cliente (joined, opcional) |
 
 #### `EventProduct`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `EventID` | `uuid.UUID` | `event_id` | Evento asociado |
 | `ProductID` | `uuid.UUID` | `product_id` | Producto asociado |
 | `Quantity` | `float64` | `quantity` | Cantidad |
 | `UnitPrice` | `float64` | `unit_price` | Precio unitario |
 | `Discount` | `float64` | `discount` | Descuento |
 | `TotalPrice` | `float64` | `total_price` | Precio total (columna generada en DB) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 | `ProductName` | `*string` | `product_name` | Nombre del producto (joined) |
 
 #### `EventExtra`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `EventID` | `uuid.UUID` | `event_id` | Evento asociado |
-| `Description` | `string` | `description` | Descripción del extra |
+| `Description` | `string` | `description` | Descripcion del extra |
 | `Cost` | `float64` | `cost` | Costo del extra |
 | `Price` | `float64` | `price` | Precio al cliente |
-| `ExcludeUtility` | `bool` | `exclude_utility` | Excluir del cálculo de utilidad |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `ExcludeUtility` | `bool` | `exclude_utility` | Excluir del calculo de utilidad |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 
 #### `EventEquipment`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `EventID` | `uuid.UUID` | `event_id` | Evento asociado |
 | `InventoryID` | `uuid.UUID` | `inventory_id` | Equipo del inventario |
 | `Quantity` | `int` | `quantity` | Cantidad asignada |
 | `Notes` | `*string` | `notes` | Notas (opcional) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 | `EquipmentName` | `*string` | `equipment_name` | Nombre del equipo (joined) |
 | `Unit` | `*string` | `unit` | Unidad de medida (joined) |
 | `CurrentStock` | `*float64` | `current_stock` | Stock actual (joined) |
 
 #### `EventSupply`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `EventID` | `uuid.UUID` | `event_id` | Evento asociado |
 | `InventoryID` | `uuid.UUID` | `inventory_id` | Insumo del inventario |
 | `Quantity` | `float64` | `quantity` | Cantidad |
 | `UnitCost` | `float64` | `unit_cost` | Costo unitario |
 | `Source` | `string` | `source` | Origen: `stock` o `purchase` |
 | `ExcludeCost` | `bool` | `exclude_cost` | Excluir del total del evento |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 | `SupplyName` | `*string` | `supply_name` | Nombre del insumo (joined) |
 | `Unit` | `*string` | `unit` | Unidad (joined) |
 | `CurrentStock` | `*float64` | `current_stock` | Stock actual (joined) |
 
 #### `EventPhoto`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `URL` | `string` | `url` | URL de la imagen |
 | `ThumbnailURL` | `*string` | `thumbnail_url` | URL del thumbnail (opcional) |
-| `Caption` | `*string` | `caption` | Título/descripción (opcional) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `Caption` | `*string` | `caption` | Titulo/descripcion (opcional) |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 
 #### Modelos auxiliares de eventos
-- `EquipmentSuggestion` — Sugerencia automática de equipo con `SuggestedQty` calculado: `ceil(product_qty / capacity)`
-- `EquipmentConflict` — Conflicto detectado cuando el mismo equipo está asignado a eventos en la misma fecha
+- `EquipmentSuggestion` — Sugerencia automatica de equipo con `SuggestedQty` calculado: `ceil(product_qty / capacity)`
+- `EquipmentConflict` — Conflicto detectado cuando el mismo equipo esta asignado a eventos en la misma fecha
 - `SupplySuggestion` — Sugerencia de insumos con cantidad fija por evento (no escalada por cantidad de producto)
 
 ### 4.3 Clientes
 
 #### `Client`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario |
 | `Name` | `string` | `name` | Nombre del cliente |
-| `Phone` | `string` | `phone` | Teléfono |
+| `Phone` | `string` | `phone` | Telefono |
 | `Email` | `*string` | `email` | Email (opcional) |
-| `Address` | `*string` | `address` | Dirección (opcional) |
+| `Address` | `*string` | `address` | Direccion (opcional) |
 | `City` | `*string` | `city` | Ciudad (opcional) |
 | `Notes` | `*string` | `notes` | Notas (opcional) |
 | `PhotoURL` | `*string` | `photo_url` | Foto del cliente (opcional) |
 | `TotalEvents` | `int` | `total_events` | Total de eventos (calculado) |
 | `TotalSpent` | `float64` | `total_spent` | Total gastado (calculado) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualización |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualizacion |
 
 ### 4.4 Productos
 
 #### `Product`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario |
 | `Name` | `string` | `name` | Nombre del producto |
-| `Category` | `string` | `category` | Categoría |
+| `Category` | `string` | `category` | Categoria |
 | `BasePrice` | `float64` | `base_price` | Precio base |
 | `Recipe` | `*string` | `recipe` | Receta (JSONB como string) |
 | `ImageURL` | `*string` | `image_url` | URL de imagen (opcional) |
 | `IsActive` | `bool` | `is_active` | Activo/inactivo |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualización |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualizacion |
 
 #### `ProductIngredient`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `ProductID` | `uuid.UUID` | `product_id` | Producto asociado |
 | `InventoryID` | `uuid.UUID` | `inventory_id` | Item del inventario |
 | `QuantityRequired` | `float64` | `quantity_required` | Cantidad requerida |
 | `Capacity` | `*float64` | `capacity` | Capacidad por pieza (solo equipo): `ceil(event_qty / capacity)` |
 | `BringToEvent` | `bool` | `bring_to_event` | Transportar al evento |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 | `IngredientName` | `*string` | `ingredient_name` | Nombre del ingrediente (joined) |
 | `Unit` | `*string` | `unit` | Unidad de medida (joined) |
 | `UnitCost` | `*float64` | `unit_cost` | Costo unitario (joined) |
@@ -357,119 +361,120 @@ Todos los modelos se definen en `internal/models/models.go`. Cada struct usa tag
 ### 4.5 Inventario
 
 #### `InventoryItem`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario |
 | `IngredientName` | `string` | `ingredient_name` | Nombre del ingrediente/equipo |
 | `CurrentStock` | `float64` | `current_stock` | Stock actual |
-| `MinimumStock` | `float64` | `minimum_stock` | Stock mínimo (alerta) |
+| `MinimumStock` | `float64` | `minimum_stock` | Stock minimo (alerta) |
 | `Unit` | `string` | `unit` | Unidad de medida |
 | `UnitCost` | `*float64` | `unit_cost` | Costo unitario (opcional) |
 | `Type` | `string` | `type` | Tipo: `ingredient`, `equipment`, `supply` |
-| `LastUpdated` | `time.Time` | `last_updated` | Última actualización |
+| `LastUpdated` | `time.Time` | `last_updated` | Ultima actualizacion |
 
 ### 4.6 Pagos
 
 #### `Payment`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `EventID` | `uuid.UUID` | `event_id` | Evento asociado |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario |
 | `Amount` | `float64` | `amount` | Monto del pago |
 | `PaymentDate` | `string` | `payment_date` | Fecha del pago (`YYYY-MM-DD`) |
-| `PaymentMethod` | `string` | `payment_method` | Método de pago |
+| `PaymentMethod` | `string` | `payment_method` | Metodo de pago |
 | `Notes` | `*string` | `notes` | Notas (opcional) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
 
 ### 4.7 Suscripciones
 
 #### `Subscription`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Usuario suscrito |
 | `Provider` | `string` | `provider` | Proveedor: `stripe`, `apple`, `google` |
-| `ProviderSubID` | `*string` | `provider_subscription_id` | ID de suscripción del proveedor |
+| `ProviderSubID` | `*string` | `provider_subscription_id` | ID de suscripcion del proveedor |
 | `RevenueCatAppUserID` | `*string` | `revenuecat_app_user_id` | App User ID de RevenueCat |
 | `Plan` | `string` | `plan` | Plan: `basic` o `pro` |
 | `Status` | `string` | `status` | Estado: `active`, `past_due`, `canceled`, `trialing` |
-| `CurrentPeriodStart` | `*time.Time` | `current_period_start` | Inicio del período actual |
-| `CurrentPeriodEnd` | `*time.Time` | `current_period_end` | Fin del período actual |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualización |
+| `CurrentPeriodStart` | `*time.Time` | `current_period_start` | Inicio del periodo actual |
+| `CurrentPeriodEnd` | `*time.Time` | `current_period_end` | Fin del periodo actual |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualizacion |
 
 ### 4.8 Otros
 
 #### `UnavailableDate`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario |
 | `StartDate` | `string` | `start_date` | Fecha de inicio (`YYYY-MM-DD`) |
 | `EndDate` | `string` | `end_date` | Fecha de fin (`YYYY-MM-DD`) |
-| `Reason` | `*string` | `reason` | Razón (opcional) |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualización |
+| `Reason` | `*string` | `reason` | Razon (opcional) |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualizacion |
 
 #### `DeviceToken`
-| Campo | Tipo | JSON | Descripción |
+| Campo | Tipo | JSON | Descripcion |
 |-------|------|------|-------------|
-| `ID` | `uuid.UUID` | `id` | Identificador único |
+| `ID` | `uuid.UUID` | `id` | Identificador unico |
 | `UserID` | `uuid.UUID` | `user_id` | Propietario |
 | `Token` | `string` | `token` | Token del dispositivo |
 | `Platform` | `string` | `platform` | Plataforma: `ios`, `android`, `web` |
-| `CreatedAt` | `time.Time` | `created_at` | Fecha de creación |
-| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualización |
+| `CreatedAt` | `time.Time` | `created_at` | Fecha de creacion |
+| `UpdatedAt` | `time.Time` | `updated_at` | Fecha de actualizacion |
 
 ---
 
 ## 5. Base de Datos (PostgreSQL)
 
-### 5.1 Conexión
+### 5.1 Conexion
 
-La conexión se establece mediante `pgxpool.Pool` con la siguiente configuración:
+La conexion se establece mediante `pgxpool.Pool` con la siguiente configuracion:
 
-| Parámetro | Valor | Descripción |
+| Parametro | Valor | Descripcion |
 |-----------|-------|-------------|
-| `MaxConns` | 20 | Conexiones máximas en el pool |
-| `MinConns` | 2 | Conexiones mínimas mantenidas |
-| `MaxConnLifetime` | 30 min | Vida máxima de una conexión |
-| `MaxConnIdleTime` | 5 min | Tiempo máximo inactivo antes de cerrar |
-| `ConnectTimeout` | 10 seg | Timeout para la conexión inicial |
+| `MaxConns` | 20 | Conexiones maximas en el pool |
+| `MinConns` | 2 | Conexiones minimas mantenidas |
+| `MaxConnLifetime` | 30 min | Vida maxima de una conexion |
+| `MaxConnIdleTime` | 5 min | Tiempo maximo inactivo antes de cerrar |
+| `ConnectTimeout` | 10 seg | Timeout para la conexion inicial |
 
 El pool se inicializa en `database.Connect()` y se verifica con un `Ping()` antes de retornar.
 
 ### 5.2 Sistema de Migraciones
 
-El sistema de migraciones es **custom** (sin herramientas externas como `golang-migrate`):
-
-1. **Embedido**: Los archivos SQL se incluyen en el binario usando `go:embed migrations/*.up.sql`
-2. **Tabla de control**: `schema_migrations` almacena las versiones aplicadas con timestamp
-3. **Ejecución automática**: Se ejecutan al iniciar el servidor (`database.Migrate(pool)`)
-4. **Transaccional**: Cada migración se ejecuta en una transacción; si falla, hace rollback
-5. **Idempotente**: Solo aplica migraciones que no están en `schema_migrations`
-6. **Nomenclatura**: `{NNN}_{descripcion}.up.sql` / `{NNN}_{descripcion}.down.sql`
+> [!note] Migraciones custom con go:embed
+> El sistema de migraciones es **custom** (sin herramientas externas como `golang-migrate`):
+>
+> 1. **Embedido**: Los archivos SQL se incluyen en el binario usando `go:embed migrations/*.up.sql`
+> 2. **Tabla de control**: `schema_migrations` almacena las versiones aplicadas con timestamp
+> 3. **Ejecucion automatica**: Se ejecutan al iniciar el servidor (`database.Migrate(pool)`)
+> 4. **Transaccional**: Cada migracion se ejecuta en una transaccion; si falla, hace rollback
+> 5. **Idempotente**: Solo aplica migraciones que no estan en `schema_migrations`
+> 6. **Nomenclatura**: `{NNN}_{descripcion}.up.sql` / `{NNN}_{descripcion}.down.sql`
 
 ### 5.3 Migraciones
 
-| # | Archivo | Propósito |
+| # | Archivo | Proposito |
 |---|---------|-----------|
 | 001 | `create_users` | Tabla principal de usuarios |
 | 002 | `create_clients` | Tabla de clientes (`user_id` FK) |
 | 003 | `create_events` | Tabla de eventos con todos los campos financieros |
 | 004 | `create_products` | Tabla de productos/servicios |
 | 005 | `create_inventory` | Tabla de inventario (ingredientes, equipo, insumos) |
-| 006 | `create_junction_tables` | Tablas de unión: `event_products`, `event_extras`, `product_ingredients` |
+| 006 | `create_junction_tables` | Tablas de union: `event_products`, `event_extras`, `product_ingredients` |
 | 007 | `create_payments_subscriptions` | Tablas de pagos y suscripciones |
 | 008 | `add_client_logo` | Campo `logo_url` en clientes |
-| 009 | `move_logo` | Migración de logo de clients a users |
+| 009 | `move_logo` | Migracion de logo de clients a users |
 | 010 | `add_user_brand_color` | Campo `brand_color` en usuarios |
 | 011 | `add_show_business_name` | Campo `show_business_name_in_pdf` |
-| 012 | `extend_subscriptions` | Campos adicionales de suscripción (provider, RevenueCat) |
-| 013 | `fix_plan_constraint` | Corrección de constraint de plan |
-| 014 | `add_indexes_and_cascade` | Índices de rendimiento + CASCADE en FKs |
+| 012 | `extend_subscriptions` | Campos adicionales de suscripcion (provider, RevenueCat) |
+| 013 | `fix_plan_constraint` | Correccion de constraint de plan |
+| 014 | `add_indexes_and_cascade` | Indices de rendimiento + CASCADE en FKs |
 | 015 | `add_image_fields` | Campos de imagen en productos |
 | 016 | `create_event_equipment` | Tabla `event_equipment` |
 | 017 | `add_contract_template_to_users` | Campo `contract_template` en usuarios |
@@ -483,31 +488,39 @@ El sistema de migraciones es **custom** (sin herramientas externas como `golang-
 | 024 | `add_exclude_cost_to_event_supplies` | Campo `exclude_cost` en `event_supplies` |
 | 025 | `add_oauth_user_ids` | Campos `google_user_id` y `apple_user_id` |
 | 026 | `create_device_tokens` | Tabla de tokens de dispositivo para push |
+| 027 | `add_subscription_provider_unique` | Constraint unico por proveedor de suscripcion |
+| 028 | `add_include_in_checklist` | Campo `include_in_checklist` para productos |
+| 029 | `make_password_hash_nullable` | Hash de contrasena nullable (soporte OAuth-only) |
 
 ### 5.4 Relaciones Principales
 
+```mermaid
+erDiagram
+    users ||--o{ clients : "1:N"
+    users ||--o{ events : "1:N"
+    users ||--o{ products : "1:N"
+    users ||--o{ inventory_items : "1:N"
+    users ||--o{ payments : "1:N"
+    users ||--o{ subscriptions : "1:N"
+    users ||--o{ unavailable_dates : "1:N"
+    users ||--o{ device_tokens : "1:N"
+
+    clients ||--o{ events : "1:N"
+
+    events ||--o{ event_products : "1:N"
+    event_products }o--|| products : "N:1"
+    events ||--o{ event_extras : "1:N"
+    events ||--o{ event_equipment : "1:N"
+    event_equipment }o--|| inventory_items : "N:1"
+    events ||--o{ event_supplies : "1:N"
+    event_supplies }o--|| inventory_items : "N:1"
+    events ||--o{ payments : "1:N"
+
+    products ||--o{ product_ingredients : "1:N"
+    product_ingredients }o--|| inventory_items : "N:1"
 ```
-users ──1:N──> clients
-users ──1:N──> events
-users ──1:N──> products
-users ──1:N──> inventory_items
-users ──1:N──> payments
-users ──1:N──> subscriptions
-users ──1:N──> unavailable_dates
-users ──1:N──> device_tokens
 
-clients ──1:N──> events
-
-events ──1:N──> event_products ──N:1──> products
-events ──1:N──> event_extras
-events ──1:N──> event_equipment ──N:1──> inventory_items
-events ──1:N──> event_supplies ──N:1──> inventory_items
-events ──1:N──> payments
-
-products ──1:N──> product_ingredients ──N:1──> inventory_items
-```
-
-Todas las entidades principales se filtran por `user_id` (multi-tenant por usuario). Los CASCADE DELETE se aplican en las tablas de unión para mantener integridad referencial.
+Todas las entidades principales se filtran por `user_id` (multi-tenant por usuario). Los CASCADE DELETE se aplican en las tablas de union para mantener integridad referencial.
 
 ---
 
@@ -515,54 +528,54 @@ Todas las entidades principales se filtran por `user_id` (multi-tenant por usuar
 
 ### 6.1 Health Check
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/health` | inline | Retorna `{"status":"ok"}` |
 
-### 6.2 Rutas Públicas — Autenticación
+### 6.2 Rutas Publicas — Autenticacion
 
 Rate limit: **10 requests/minuto** por IP.
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `POST` | `/api/auth/register` | `AuthHandler.Register` | Registro de nuevo usuario |
 | `POST` | `/api/auth/login` | `AuthHandler.Login` | Login con email/password |
 | `POST` | `/api/auth/logout` | `AuthHandler.Logout` | Logout (limpia cookie httpOnly) |
 | `POST` | `/api/auth/refresh` | `AuthHandler.RefreshToken` | Renovar access token con refresh token |
-| `POST` | `/api/auth/forgot-password` | `AuthHandler.ForgotPassword` | Solicitar email de recuperación |
-| `POST` | `/api/auth/reset-password` | `AuthHandler.ResetPassword` | Restablecer contraseña con token |
+| `POST` | `/api/auth/forgot-password` | `AuthHandler.ForgotPassword` | Solicitar email de recuperacion |
+| `POST` | `/api/auth/reset-password` | `AuthHandler.ResetPassword` | Restablecer contrasena con token |
 | `POST` | `/api/auth/google` | `AuthHandler.GoogleSignIn` | Login/registro con Google OAuth |
 | `POST` | `/api/auth/apple` | `AuthHandler.AppleSignIn` | Login/registro con Apple Sign In |
 
 ### 6.3 Rutas Protegidas — Auth (requiere JWT)
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/auth/me` | `AuthHandler.Me` | Obtener perfil del usuario actual |
-| `POST` | `/api/auth/change-password` | `AuthHandler.ChangePassword` | Cambiar contraseña |
+| `POST` | `/api/auth/change-password` | `AuthHandler.ChangePassword` | Cambiar contrasena |
 
-### 6.4 Rutas Públicas — Webhooks
+### 6.4 Rutas Publicas — Webhooks
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `POST` | `/api/subscriptions/webhook/stripe` | `SubscriptionHandler.StripeWebhook` | Webhook de Stripe (verificado por firma) |
 | `POST` | `/api/subscriptions/webhook/revenuecat` | `SubscriptionHandler.RevenueCatWebhook` | Webhook de RevenueCat (verificado por header) |
 
-### 6.5 Rutas Públicas — Archivos
+### 6.5 Rutas Publicas — Archivos
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
-| `GET` | `/api/uploads/*` | `http.FileServer` | Servir archivos subidos (cache 1 año) |
+| `GET` | `/api/uploads/*` | `http.FileServer` | Servir archivos subidos (cache 1 ano) |
 
 ### 6.6 Rutas Protegidas — Usuarios
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `PUT` | `/api/users/me` | `AuthHandler.UpdateProfile` | Actualizar perfil del usuario |
 
 ### 6.7 Rutas Protegidas — Clientes
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/clients` | `CRUDHandler.ListClients` | Listar clientes del usuario |
 | `POST` | `/api/clients` | `CRUDHandler.CreateClient` | Crear cliente |
@@ -572,10 +585,10 @@ Rate limit: **10 requests/minuto** por IP.
 
 ### 6.8 Rutas Protegidas — Eventos
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/events` | `CRUDHandler.ListEvents` | Listar eventos del usuario |
-| `GET` | `/api/events/upcoming` | `CRUDHandler.GetUpcomingEvents` | Eventos próximos |
+| `GET` | `/api/events/upcoming` | `CRUDHandler.GetUpcomingEvents` | Eventos proximos |
 | `POST` | `/api/events` | `CRUDHandler.CreateEvent` | Crear evento |
 | `GET` | `/api/events/{id}` | `CRUDHandler.GetEvent` | Obtener evento con datos del cliente |
 | `PUT` | `/api/events/{id}` | `CRUDHandler.UpdateEvent` | Actualizar evento |
@@ -594,16 +607,16 @@ Rate limit: **10 requests/minuto** por IP.
 | `POST` | `/api/events/equipment/suggestions` | `CRUDHandler.GetEquipmentSuggestions` | Sugerencias de equipo (POST para web) |
 | `GET` | `/api/events/supplies/suggestions` | `CRUDHandler.GetSupplySuggestionsGET` | Sugerencias de insumos (GET para mobile) |
 | `POST` | `/api/events/supplies/suggestions` | `CRUDHandler.GetSupplySuggestions` | Sugerencias de insumos (POST para web) |
-| `POST` | `/api/events/{id}/checkout-session` | `EventPaymentHandler.CreateEventCheckoutSession` | Crear sesión de pago Stripe para evento |
+| `POST` | `/api/events/{id}/checkout-session` | `EventPaymentHandler.CreateEventCheckoutSession` | Crear sesion de pago Stripe para evento |
 | `GET` | `/api/events/{id}/payment-session` | `EventPaymentHandler.HandleEventPaymentSuccess` | Manejar retorno exitoso de pago Stripe |
 
 ### 6.9 Rutas Protegidas — Productos
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/products` | `CRUDHandler.ListProducts` | Listar productos |
 | `POST` | `/api/products` | `CRUDHandler.CreateProduct` | Crear producto |
-| `POST` | `/api/products/ingredients/batch` | `CRUDHandler.GetBatchProductIngredients` | Obtener ingredientes de múltiples productos |
+| `POST` | `/api/products/ingredients/batch` | `CRUDHandler.GetBatchProductIngredients` | Obtener ingredientes de multiples productos |
 | `GET` | `/api/products/{id}` | `CUDHandler.GetProduct` | Obtener producto |
 | `PUT` | `/api/products/{id}` | `CRUDHandler.UpdateProduct` | Actualizar producto |
 | `DELETE` | `/api/products/{id}` | `CRUDHandler.DeleteProduct` | Eliminar producto |
@@ -612,7 +625,7 @@ Rate limit: **10 requests/minuto** por IP.
 
 ### 6.10 Rutas Protegidas — Inventario
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/inventory` | `CRUDHandler.ListInventory` | Listar items del inventario |
 | `POST` | `/api/inventory` | `CRUDHandler.CreateInventoryItem` | Crear item de inventario |
@@ -622,7 +635,7 @@ Rate limit: **10 requests/minuto** por IP.
 
 ### 6.11 Rutas Protegidas — Pagos
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/payments` | `CRUDHandler.ListPayments` | Listar pagos |
 | `POST` | `/api/payments` | `CRUDHandler.CreatePayment` | Registrar pago |
@@ -631,7 +644,7 @@ Rate limit: **10 requests/minuto** por IP.
 
 ### 6.12 Rutas Protegidas — Fechas No Disponibles
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `GET` | `/api/unavailable-dates` | `UnavailableDateHandler.GetUnavailableDates` | Listar fechas bloqueadas |
 | `POST` | `/api/unavailable-dates` | `UnavailableDateHandler.CreateUnavailableDate` | Crear fecha no disponible |
@@ -639,52 +652,53 @@ Rate limit: **10 requests/minuto** por IP.
 
 ### 6.13 Rutas Protegidas — Dispositivos
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `POST` | `/api/devices/register` | `DeviceHandler.RegisterDevice` | Registrar token para push notifications |
 | `POST` | `/api/devices/unregister` | `DeviceHandler.UnregisterDevice` | Desregistrar dispositivo |
 
 ### 6.14 Rutas Protegidas — Suscripciones
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
-| `GET` | `/api/subscriptions/status` | `SubscriptionHandler.GetSubscriptionStatus` | Estado de la suscripción |
-| `POST` | `/api/subscriptions/checkout-session` | `SubscriptionHandler.CreateCheckoutSession` | Crear sesión de checkout Stripe |
-| `POST` | `/api/subscriptions/portal-session` | `SubscriptionHandler.CreatePortalSession` | Crear sesión del portal de facturación |
+| `GET` | `/api/subscriptions/status` | `SubscriptionHandler.GetSubscriptionStatus` | Estado de la suscripcion |
+| `POST` | `/api/subscriptions/checkout-session` | `SubscriptionHandler.CreateCheckoutSession` | Crear sesion de checkout Stripe |
+| `POST` | `/api/subscriptions/portal-session` | `SubscriptionHandler.CreatePortalSession` | Crear sesion del portal de facturacion |
 
-### 6.15 Rutas Protegidas — Búsqueda
+### 6.15 Rutas Protegidas — Busqueda
 
 Rate limit: **30 requests/minuto** por IP.
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
-| `GET` | `/api/search` | `SearchHandler.SearchAll` | Búsqueda global en clientes, productos, inventario y eventos |
+| `GET` | `/api/search` | `SearchHandler.SearchAll` | Busqueda global en clientes, productos, inventario y eventos |
 
 ### 6.16 Rutas de Uploads
 
 Rate limit: **5 requests/minuto** por IP.
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
-| `POST` | `/api/uploads/image` | `UploadHandler.UploadImage` | Subir imagen (genera thumbnail). Límite por plan: 50 basic / 200 pro |
+| `POST` | `/api/uploads/image` | `UploadHandler.UploadImage` | Subir imagen (genera thumbnail). Limite por plan: 50 basic / 200 pro |
 
 ### 6.17 Rutas Admin
 
 Requieren: JWT + rol `admin`. Rate limit: **30 requests/minuto**.
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
-| `GET` | `/api/admin/stats` | `AdminHandler.GetStats` | Estadísticas globales de la plataforma |
+| `GET` | `/api/admin/stats` | `AdminHandler.GetStats` | Estadisticas globales de la plataforma |
 | `GET` | `/api/admin/users` | `AdminHandler.ListUsers` | Listar todos los usuarios |
-| `GET` | `/api/admin/users/{id}` | `AdminHandler.GetUser` | Obtener usuario específico |
+| `GET` | `/api/admin/users/{id}` | `AdminHandler.GetUser` | Obtener usuario especifico |
 | `PUT` | `/api/admin/users/{id}/upgrade` | `AdminHandler.UpgradeUser` | Upgrade/downgrade de plan de usuario |
 | `GET` | `/api/admin/subscriptions` | `AdminHandler.GetSubscriptions` | Listar todas las suscripciones |
 
 ### 6.18 Rutas Debug (Admin Only)
 
-Solo disponibles en entornos de desarrollo. Requieren JWT + rol `admin`.
+> [!warning] Solo desarrollo
+> Solo disponibles en entornos de desarrollo. Requieren JWT + rol `admin`.
 
-| Método | Ruta | Handler | Descripción |
+| Metodo | Ruta | Handler | Descripcion |
 |--------|------|---------|-------------|
 | `POST` | `/api/subscriptions/debug-upgrade` | `SubscriptionHandler.DebugUpgrade` | Upgrade manual de plan (solo dev) |
 | `POST` | `/api/subscriptions/debug-downgrade` | `SubscriptionHandler.DebugDowngrade` | Downgrade manual de plan (solo dev) |
@@ -693,7 +707,21 @@ Solo disponibles en entornos de desarrollo. Requieren JWT + rol `admin`.
 
 ## 7. Middleware Stack
 
-El orden de los middleware es intencional — Recovery debe ser el primero para capturar panics en cualquier middleware posterior.
+> [!abstract] Cadena de middleware
+> El orden de los middleware es intencional — Recovery debe ser el primero para capturar panics en cualquier middleware posterior.
+
+```mermaid
+graph LR
+    A["Recovery"] --> B["CORS"]
+    B --> C["Security Headers"]
+    C --> D["Logger"]
+    D --> E["Auth"]
+    E --> F["RateLimit"]
+    F --> G["Handler"]
+
+    style A fill:#C4A265,color:#1B2A4A,stroke:#1B2A4A
+    style G fill:#1B2A4A,color:#fff
+```
 
 ### 7.1 Recovery (Global)
 
@@ -708,10 +736,10 @@ El orden de los middleware es intencional — Recovery debe ser el primero para 
 
 **Archivo:** `middleware/cors.go`
 
-- Orígenes permitidos configurables vía `CORS_ALLOWED_ORIGINS`
-- Verifica el header `Origin` contra un set de orígenes permitidos
+- Origenes permitidos configurables via `CORS_ALLOWED_ORIGINS`
+- Verifica el header `Origin` contra un set de origenes permitidos
 - Headers permitidos: `Accept`, `Content-Type`, `Authorization`
-- Métodos permitidos: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH`
+- Metodos permitidos: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH`
 - Responde preflight (`OPTIONS`) con `204 No Content`
 - `Access-Control-Allow-Credentials: true` para cookies httpOnly
 - `Access-Control-Max-Age: 3600` (1 hora de cache del preflight)
@@ -722,7 +750,7 @@ El orden de los middleware es intencional — Recovery debe ser el primero para 
 
 Implementa headers de seguridad OWASP:
 
-| Header | Valor | Protección |
+| Header | Valor | Proteccion |
 |--------|-------|------------|
 | `X-Content-Type-Options` | `nosniff` | Previene MIME sniffing |
 | `X-Frame-Options` | `DENY` | Previene clickjacking |
@@ -745,7 +773,7 @@ Implementa headers de seguridad OWASP:
 
 **Archivo:** `middleware/auth.go`
 
-Flujo de validación:
+Flujo de validacion:
 1. Busca token en cookie `auth_token` (prioridad, seguro)
 2. Fallback a header `Authorization: Bearer {token}` (para API clients/mobile)
 3. Si no hay token: HTTP 401 `"Authentication required"`
@@ -759,16 +787,16 @@ Flujo de validación:
 **Archivo:** `middleware/ratelimit.go`
 
 - **Algoritmo**: Ventana fija por IP (fixed window counter)
-- **Extracción de IP**: `RemoteAddr` por defecto; `X-Forwarded-For` solo si `TrustProxy = true`
+- **Extraccion de IP**: `RemoteAddr` por defecto; `X-Forwarded-For` solo si `TrustProxy = true`
 - **Limpieza**: Goroutine de fondo cada 5 minutos elimina entradas expiradas
 - **Stop function**: `RateLimitStopFunc` para shutdown limpio
 
-Límites configurados:
+Limites configurados:
 
-| Grupo de rutas | Límite | Ventana |
+| Grupo de rutas | Limite | Ventana |
 |----------------|--------|---------|
 | Auth (login, register, etc.) | 10 requests | 1 minuto |
-| Uploads (subida de imágenes) | 5 requests | 1 minuto |
+| Uploads (subida de imagenes) | 5 requests | 1 minuto |
 | Search | 30 requests | 1 minuto |
 | Admin | 30 requests | 1 minuto |
 
@@ -785,40 +813,40 @@ Respuesta cuando se excede: HTTP 429 con header `Retry-After`.
 
 ---
 
-## 8. Autenticación y Seguridad
+## 8. Autenticacion y Seguridad
 
-### 8.1 JWT — Generación y Validación
+### 8.1 JWT — Generacion y Validacion
 
 **Archivo:** `services/auth_service.go`
 
 El sistema usa **tres tipos de token**, todos firmados con HS256:
 
-| Tipo | Subject | Duración | Uso |
+| Tipo | Subject | Duracion | Uso |
 |------|---------|----------|-----|
 | Access Token | `access` | Configurable (default 24h) | Autenticar requests a la API |
-| Refresh Token | `refresh` | 7 días | Renovar access tokens sin re-login |
-| Reset Token | `password-reset` | 1 hora | Restablecer contraseña |
+| Refresh Token | `refresh` | 7 dias | Renovar access tokens sin re-login |
+| Reset Token | `password-reset` | 1 hora | Restablecer contrasena |
 
 **Claims del token** (`TokenClaims`):
 - `user_id` — UUID del usuario
 - `email` — Email del usuario
-- `exp` — Expiración
-- `iat` — Fecha de emisión
+- `exp` — Expiracion
+- `iat` — Fecha de emision
 - `iss` — `"solennix-backend"`
 - `sub` — Tipo de token
 
-**Validación estricta por tipo**: `ValidateToken()` rechaza tokens refresh y reset. `ValidateRefreshToken()` solo acepta subject `refresh`. `ValidateResetToken()` solo acepta subject `password-reset`.
+**Validacion estricta por tipo**: `ValidateToken()` rechaza tokens refresh y reset. `ValidateRefreshToken()` solo acepta subject `refresh`. `ValidateResetToken()` solo acepta subject `password-reset`.
 
 ### 8.2 Password Hashing
 
 - **Algoritmo**: bcrypt con `bcrypt.DefaultCost` (10)
-- `HashPassword()` — genera hash al registrar o cambiar contraseña
-- `CheckPassword()` — compara contraseña plana con hash almacenado
+- `HashPassword()` — genera hash al registrar o cambiar contrasena
+- `CheckPassword()` — compara contrasena plana con hash almacenado
 - El campo `PasswordHash` tiene tag `json:"-"` para nunca exponerse en JSON
 
 ### 8.3 Token Refresh
 
-1. El cliente envía su refresh token a `POST /api/auth/refresh`
+1. El cliente envia su refresh token a `POST /api/auth/refresh`
 2. El servidor valida que sea un token tipo `refresh` (no access, no reset)
 3. Genera un nuevo `TokenPair` (access + refresh)
 4. Retorna ambos tokens al cliente
@@ -839,9 +867,9 @@ El sistema usa **tres tipos de token**, todos firmados con HS256:
 
 - Rate limiting en endpoints sensibles (auth, uploads)
 - Security headers OWASP en todas las respuestas
-- CORS restringido a orígenes específicos
-- `TrustProxy` configurable para despliegues detrás de reverse proxy
-- Todas las queries usan parámetros (`$1`, `$2`) para prevenir SQL injection
+- CORS restringido a origenes especificos
+- `TrustProxy` configurable para despliegues detras de reverse proxy
+- Todas las queries usan parametros (`$1`, `$2`) para prevenir SQL injection
 - Multi-tenant: todas las queries filtran por `user_id`
 
 ---
@@ -852,12 +880,12 @@ El sistema usa **tres tipos de token**, todos firmados con HS256:
 
 **Archivos:** `handlers/subscription_handler.go`, `handlers/event_payment_handler.go`, `handlers/stripe_service.go`
 
-| Funcionalidad | Endpoint | Descripción |
+| Funcionalidad | Endpoint | Descripcion |
 |---------------|----------|-------------|
-| Checkout Session (suscripción) | `POST /api/subscriptions/checkout-session` | Crea una sesión de Stripe Checkout para upgrade a plan Pro |
-| Checkout Session (evento) | `POST /api/events/{id}/checkout-session` | Crea una sesión de pago para un evento específico |
-| Customer Portal | `POST /api/subscriptions/portal-session` | Redirige al portal de facturación de Stripe |
-| Webhook | `POST /api/subscriptions/webhook/stripe` | Procesa eventos de Stripe (suscripción creada, cancelada, etc.) |
+| Checkout Session (suscripcion) | `POST /api/subscriptions/checkout-session` | Crea una sesion de Stripe Checkout para upgrade a plan Pro |
+| Checkout Session (evento) | `POST /api/events/{id}/checkout-session` | Crea una sesion de pago para un evento especifico |
+| Customer Portal | `POST /api/subscriptions/portal-session` | Redirige al portal de facturacion de Stripe |
+| Webhook | `POST /api/subscriptions/webhook/stripe` | Procesa eventos de Stripe (suscripcion creada, cancelada, etc.) |
 
 **Variables de entorno requeridas:**
 - `STRIPE_SECRET_KEY`
@@ -870,7 +898,7 @@ El sistema usa **tres tipos de token**, todos firmados con HS256:
 **Archivos:** `handlers/subscription_handler.go`, `services/revenuecat_service.go`
 
 - `POST /api/subscriptions/webhook/revenuecat` — Procesa webhooks v2 de RevenueCat (verificado por header `REVENUECAT_WEBHOOK_SECRET`)
-- `RevenueCatService` — Sync bidireccional Stripe ↔ RevenueCat via REST API v1:
+- `RevenueCatService` — Sync bidireccional Stripe <-> RevenueCat via REST API v1:
   - `GrantPromotionalEntitlement` — Cuando un usuario compra por Stripe (web), se le otorga el entitlement `pro_access` en RevenueCat para que iOS/Android lo vean
   - `RevokePromotionalEntitlement` — Cuando se cancela/elimina la suscripcion Stripe, se revoca el entitlement en RevenueCat
 - **Variables de entorno:** `REVENUECAT_WEBHOOK_SECRET`, `REVENUECAT_API_KEY` (secret key para server-to-server)
@@ -879,10 +907,10 @@ El sistema usa **tres tipos de token**, todos firmados con HS256:
 
 **Archivo:** `services/email_service.go`
 
-- Único uso actual: **email de recuperación de contraseña**
-- Template HTML en español con branding de Solennix
+- Unico uso actual: **email de recuperacion de contrasena**
+- Template HTML en espanol con branding de Solennix
 - El enlace de reset apunta a `{FRONTEND_URL}/reset-password?token={token}`
-- Si `RESEND_API_KEY` no está configurado, el email no se envía (warning en log)
+- Si `RESEND_API_KEY` no esta configurado, el email no se envia (warning en log)
 
 **Variables de entorno:**
 - `RESEND_API_KEY`
@@ -895,13 +923,16 @@ El sistema usa **tres tipos de token**, todos firmados con HS256:
 
 - Almacenamiento local en disco (`UPLOAD_DIR`, default `./uploads`)
 - Archivos organizados por usuario: `{uploadDir}/{userID}/{filename}`
-- Genera thumbnails automáticamente al subir imágenes
+- Genera thumbnails automaticamente al subir imagenes
 - Acepta JPEG y PNG
-- Servidos estáticamente en `GET /api/uploads/*` con cache de 1 año
+- Servidos estaticamente en `GET /api/uploads/*` con cache de 1 ano
 
-**Límites por plan:**
+> [!warning] Limitacion conocida
+> El almacenamiento local no funciona en deploys multi-instancia sin volumen compartido. Migrar a S3/Cloud Storage es un cambio futuro planificado.
 
-| Plan | Uploads máximos |
+**Limites por plan:**
+
+| Plan | Uploads maximos |
 |------|----------------|
 | Basic | 50 |
 | Pro | 200 |
@@ -918,11 +949,11 @@ El proyecto tiene tests en todas las capas:
 |------|----------|---------|
 | Config | `config_test.go` | Variables de entorno, defaults |
 | Middleware | `auth_test.go`, `cors_test.go`, `recovery_test.go`, `security_test.go`, `ratelimit_test.go`, `admin_test.go`, `logging_test.go` | Comportamiento de cada middleware |
-| Handlers | `auth_handler_test.go`, `crud_handler_test.go`, `crud_handler_success_test.go`, `crud_handler_error_test.go`, `crud_payment_test.go`, `subscription_handler_test.go`, `event_payment_handler_test.go`, `upload_handler_test.go`, `search_handler_test.go`, `helpers_test.go`, `validation_test.go`, `contract_template_test.go` | Mocks de repos, validación de HTTP responses |
+| Handlers | `auth_handler_test.go`, `crud_handler_test.go`, `crud_handler_success_test.go`, `crud_handler_error_test.go`, `crud_payment_test.go`, `subscription_handler_test.go`, `event_payment_handler_test.go`, `upload_handler_test.go`, `search_handler_test.go`, `helpers_test.go`, `validation_test.go`, `contract_template_test.go` | Mocks de repos, validacion de HTTP responses |
 | Services | `auth_service_test.go`, `email_service_test.go` | JWT, bcrypt, templates de email |
-| Repository | `repository_integration_test.go`, `repository_error_test.go` | Tests de integración con DB real |
-| Router | `router_test.go`, `router_api_integration_test.go` | Rutas registradas, integración API |
-| Database | `database_test.go`, `migrate_test.go` | Conexión, sistema de migraciones |
+| Repository | `repository_integration_test.go`, `repository_error_test.go` | Tests de integracion con DB real |
+| Router | `router_test.go`, `router_api_integration_test.go` | Rutas registradas, integracion API |
+| Database | `database_test.go`, `migrate_test.go` | Conexion, sistema de migraciones |
 
 ### 10.2 Herramientas
 
@@ -930,7 +961,7 @@ El proyecto tiene tests en todas las capas:
 - **Mocks**: Definidos en `handlers/mocks_test.go` — implementan las interfaces de repositorio
 - **httptest**: `httptest.NewRecorder()` para simular HTTP requests sin servidor real
 
-### 10.3 Ejecución
+### 10.3 Ejecucion
 
 ```bash
 # Todos los tests
@@ -939,10 +970,10 @@ cd backend && go test ./...
 # Tests con verbose
 go test ./... -v
 
-# Tests de un paquete específico
+# Tests de un paquete especifico
 go test ./internal/handlers/ -v
 
-# Tests de integración (requieren DB)
+# Tests de integracion (requieren DB)
 go test ./internal/repository/ -v
 ```
 
@@ -954,7 +985,7 @@ go test ./internal/repository/ -v
 
 **Dockerfile** (multi-stage build):
 
-1. **Stage builder** (`golang:1.25-alpine`): Descarga dependencias, compila binario estático
+1. **Stage builder** (`golang:1.25-alpine`): Descarga dependencias, compila binario estatico
 2. **Stage final** (`alpine:latest`): Solo el binario + certificados CA
 
 ```bash
@@ -983,23 +1014,23 @@ services:
 
 ### 11.3 Variables de Entorno
 
-| Variable | Requerida | Default | Descripción |
+| Variable | Requerida | Default | Descripcion |
 |----------|-----------|---------|-------------|
-| `DATABASE_URL` | Si | — | URL de conexión PostgreSQL |
+| `DATABASE_URL` | Si | — | URL de conexion PostgreSQL |
 | `JWT_SECRET` | Si | — | Secreto para firmar JWTs |
 | `PORT` | No | `8080` | Puerto del servidor HTTP |
 | `ENVIRONMENT` | No | `development` | Entorno (`development` / `production`) |
-| `JWT_EXPIRY_HOURS` | No | `24` | Horas de expiración del access token |
-| `CORS_ALLOWED_ORIGINS` | No | `http://localhost:5173` | Orígenes CORS (separados por coma) |
+| `JWT_EXPIRY_HOURS` | No | `24` | Horas de expiracion del access token |
+| `CORS_ALLOWED_ORIGINS` | No | `http://localhost:5173` | Origenes CORS (separados por coma) |
 | `RESEND_API_KEY` | No | — | API key de Resend para emails |
-| `RESEND_FROM_EMAIL` | No | `Solennix <noreply@solennix.com>` | Dirección de envío de emails |
+| `RESEND_FROM_EMAIL` | No | `Solennix <noreply@solennix.com>` | Direccion de envio de emails |
 | `FRONTEND_URL` | No | `http://localhost:5173` | URL del frontend (para links en emails) |
 | `STRIPE_SECRET_KEY` | No | — | Secret key de Stripe |
 | `STRIPE_WEBHOOK_SECRET` | No | — | Secreto para verificar webhooks de Stripe |
 | `STRIPE_PRO_PRICE_ID` | No | — | Price ID del plan Pro en Stripe |
-| `STRIPE_PORTAL_CONFIG_ID` | No | — | Config ID del portal de facturación |
+| `STRIPE_PORTAL_CONFIG_ID` | No | — | Config ID del portal de facturacion |
 | `REVENUECAT_WEBHOOK_SECRET` | No | — | Secreto para webhooks de RevenueCat |
-| `REVENUECAT_API_KEY` | No | — | Secret API key de RevenueCat para sync Stripe→RC |
+| `REVENUECAT_API_KEY` | No | — | Secret API key de RevenueCat para sync Stripe->RC |
 | `UPLOAD_DIR` | No | `./uploads` | Directorio de uploads |
 | `BOOTSTRAP_ADMIN_EMAIL` | No | — | Email a promover a admin al iniciar |
 | `TRUST_PROXY` | No | `false` | Confiar en `X-Forwarded-For` |
@@ -1021,93 +1052,89 @@ El servidor captura senales `SIGINT` y `SIGTERM`:
 
 ### 11.6 Background Jobs
 
-| Job | Frecuencia | Descripción |
+| Job | Frecuencia | Descripcion |
 |-----|------------|-------------|
 | Expire Gifted Plans | Cada 1 hora | Revierte planes gifted expirados a `basic` |
 
 ---
 
-## 12. Gotchas y Decisiones Técnicas
+## 12. Gotchas y Decisiones Tecnicas
 
 ### 12.1 pgx sobre GORM
 
-**Decision**: Usar `pgx` directamente en lugar de un ORM como GORM.
-
-**Razones:**
-- Control total sobre las queries SQL (JOINs complejos, columnas generadas, JSONB)
-- Mejor rendimiento al eliminar la capa de abstracción del ORM
-- `pgxpool` provee connection pooling nativo eficiente
-- El driver nativo de PostgreSQL soporta tipos avanzados (UUID, JSONB, arrays)
-- Más idiomático en Go (explícito > implícito)
+> [!note] Decision: pgx directo sin ORM
+> **Razones:**
+> - Control total sobre las queries SQL (JOINs complejos, columnas generadas, JSONB)
+> - Mejor rendimiento al eliminar la capa de abstraccion del ORM
+> - `pgxpool` provee connection pooling nativo eficiente
+> - El driver nativo de PostgreSQL soporta tipos avanzados (UUID, JSONB, arrays)
+> - Mas idiomatico en Go (explicito > implicito)
 
 ### 12.2 Chi sobre Gin/Echo
 
-**Decision**: Usar Chi como router HTTP.
-
-**Razones:**
-- Totalmente compatible con `net/http` (handlers estándar de Go)
-- Middleware composable con la firma estándar `func(http.Handler) http.Handler`
-- Sin dependencias externas pesadas
-- Enrutamiento basado en radix tree (rendimiento similar a Gin)
-- Integración natural con el ecosistema estándar de Go
+> [!note] Decision: Chi como router HTTP
+> **Razones:**
+> - Totalmente compatible con `net/http` (handlers estandar de Go)
+> - Middleware composable con la firma estandar `func(http.Handler) http.Handler`
+> - Sin dependencias externas pesadas
+> - Enrutamiento basado en radix tree (rendimiento similar a Gin)
+> - Integracion natural con el ecosistema estandar de Go
 
 ### 12.3 Migraciones Embebidas
 
-**Decision**: Sistema de migraciones propio con `go:embed` en lugar de herramientas como `golang-migrate` o `goose`.
-
-**Razones:**
-- Las migraciones se incluyen en el binario compilado (no hay archivos externos que gestionar)
-- Ejecución automática al arrancar el servidor
-- Control total sobre el proceso (transacciones por migración, rollback automático)
-- Sin dependencias adicionales
-- Simple de mantener: solo archivos `.up.sql` y `.down.sql` numerados
+> [!note] Decision: Sistema de migraciones propio con go:embed
+> **Razones:**
+> - Las migraciones se incluyen en el binario compilado (no hay archivos externos que gestionar)
+> - Ejecucion automatica al arrancar el servidor
+> - Control total sobre el proceso (transacciones por migracion, rollback automatico)
+> - Sin dependencias adicionales
+> - Simple de mantener: solo archivos `.up.sql` y `.down.sql` numerados
 
 ### 12.4 slog sobre zerolog/zap
 
-**Decision**: Usar `log/slog` (stdlib) en lugar de librerías de logging de terceros.
-
-**Razones:**
-- Incluido en la biblioteca estándar desde Go 1.21
-- Logging estructurado nativo (key-value pairs)
-- Sin dependencias externas
-- Rendimiento suficiente para la carga actual
-- API estable garantizada por el equipo de Go
+> [!note] Decision: log/slog (stdlib) para logging
+> **Razones:**
+> - Incluido en la biblioteca estandar desde Go 1.21
+> - Logging estructurado nativo (key-value pairs)
+> - Sin dependencias externas
+> - Rendimiento suficiente para la carga actual
+> - API estable garantizada por el equipo de Go
 
 ### 12.5 JWT en Cookie httpOnly + Header
 
-**Decision**: Soportar ambos mecanismos de autenticación.
-
-**Razones:**
-- Cookie httpOnly es más seguro para la web (no accesible desde JavaScript)
-- Header `Authorization: Bearer` es estándar para clientes móviles (iOS/Android)
-- La prioridad es cookie > header para máxima seguridad en web
+> [!note] Decision: Soportar ambos mecanismos de autenticacion
+> **Razones:**
+> - Cookie httpOnly es mas seguro para la web (no accesible desde JavaScript)
+> - Header `Authorization: Bearer` es estandar para clientes moviles (iOS/Android)
+> - La prioridad es cookie > header para maxima seguridad en web
 
 ### 12.6 Multi-tenant por user_id
 
-**Decision**: Filtrar todas las queries por `user_id` en lugar de una arquitectura multi-database.
-
-**Razones:**
-- Simplicidad de implementación y despliegue
-- Una sola base de datos para todos los usuarios
-- Cada usuario solo accede a sus propios datos
-- Los índices incluyen `user_id` para rendimiento
+> [!note] Decision: Filtrar por user_id en lugar de multi-database
+> **Razones:**
+> - Simplicidad de implementacion y despliegue
+> - Una sola base de datos para todos los usuarios
+> - Cada usuario solo accede a sus propios datos
+> - Los indices incluyen `user_id` para rendimiento
 
 ### 12.7 Almacenamiento Local de Uploads
 
-**Decision**: Almacenar archivos en disco local en lugar de S3/Cloud Storage.
-
-**Razones:**
-- Simplicidad para MVP
-- Sin costos adicionales de almacenamiento en la nube
-- Servidos directamente por el servidor Go con `http.FileServer`
-- **Limitación conocida**: No funciona en deploys multi-instancia sin volumen compartido. Migrar a S3/Cloud Storage es un cambio futuro planificado.
+> [!note] Decision: Almacenamiento en disco local (MVP)
+> **Razones:**
+> - Simplicidad para MVP
+> - Sin costos adicionales de almacenamiento en la nube
+> - Servidos directamente por el servidor Go con `http.FileServer`
+> - **Limitacion conocida**: No funciona en deploys multi-instancia sin volumen compartido. Migrar a S3/Cloud Storage es un cambio futuro planificado.
 
 ### 12.8 Fechas como Strings
 
-**Decision**: Las fechas de eventos, pagos y fechas no disponibles se almacenan como `string` (`YYYY-MM-DD`) en los modelos Go.
+> [!note] Decision: Fechas como string (YYYY-MM-DD) en modelos Go
+> **Razones:**
+> - PostgreSQL almacena como tipo `DATE`
+> - Evita problemas de timezone al transportar entre servidor y clientes moviles
+> - Formato consistente y predecible en JSON
+> - Los clientes (iOS, Android, web) parsean el string directamente
 
-**Razones:**
-- PostgreSQL almacena como tipo `DATE`
-- Evita problemas de timezone al transportar entre servidor y clientes móviles
-- Formato consistente y predecible en JSON
-- Los clientes (iOS, Android, web) parsean el string directamente
+---
+
+#prd #arquitectura #backend #go #postgresql #solennix

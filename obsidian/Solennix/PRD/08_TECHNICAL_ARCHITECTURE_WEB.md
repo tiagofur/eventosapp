@@ -1,12 +1,40 @@
+---
+tags:
+  - prd
+  - arquitectura
+  - web
+  - react
+  - typescript
+  - solennix
+aliases:
+  - Arquitectura Web
+  - Web Architecture
+date: 2026-03-20
+updated: 2026-04-04
+status: active
+platform: Web
+---
+
 # Arquitectura Tecnica — Web (SPA)
+
+> [!tip] Para documentacion detallada de cada modulo web, ver [[Web MOC]]
 
 **Version:** 1.0
 **Fecha:** 2026-03-20
 **Plataforma:** Web (navegadores modernos: Chrome, Firefox, Safari, Edge)
 
+> [!abstract] Resumen
+> SPA construida con **React 19 + TypeScript** sobre **Vite**, con **Tailwind CSS** para estilos, **Zustand** para estado global, y **zod + react-hook-form** para formularios tipados. Arquitectura por capas: Pages → Hooks/Contexts → Services → Backend API (Go). Ver tambien [[07_TECHNICAL_ARCHITECTURE_BACKEND]] para la contraparte del servidor.
+
+**Documentos relacionados:** [[PRD MOC]] · [[01_PRODUCT_VISION]] · [[02_FEATURES]] · [[11_CURRENT_STATUS]]
+**Arquitecturas hermanas:** [[05_TECHNICAL_ARCHITECTURE_IOS]] · [[06_TECHNICAL_ARCHITECTURE_ANDROID]] · [[07_TECHNICAL_ARCHITECTURE_BACKEND]]
+
 ---
 
 ## 1. Stack Tecnologico
+
+> [!info] Stack principal
+> React 19.2 · TypeScript ~5.9.3 · Vite 7.3.1 · Tailwind CSS 4.2.0 · Zustand 5.0.11
 
 | Capa | Tecnologia | Version | Justificacion |
 |------|------------|---------|---------------|
@@ -36,41 +64,45 @@
 
 ### Patron General
 
-El proyecto web es una **SPA (Single Page Application)** con enrutamiento del lado del cliente. Sigue un patron de arquitectura por capas donde las paginas consumen contextos/hooks que a su vez utilizan servicios para comunicarse con el backend API.
+> [!abstract] Arquitectura por capas
+> El proyecto web es una **SPA (Single Page Application)** con enrutamiento del lado del cliente. Sigue un patron de arquitectura por capas donde las paginas consumen contextos/hooks que a su vez utilizan servicios para comunicarse con el backend API.
 
-```
-┌─────────────────────────────────────────────────┐
-│                   Capa de UI                     │
-│  Pages (pages/) + Components (components/)      │
-│  React 19 + Tailwind CSS + lucide-react         │
-└───────────────────┬─────────────────────────────┘
-                    │ useContext / hooks
-┌───────────────────▼─────────────────────────────┐
-│              Capa de Estado                      │
-│  Contexts (AuthContext, ThemeContext)            │
-│  Hooks (usePlanLimits, usePagination, useToast) │
-│  Zustand stores (estado global complejo)        │
-└───────────────────┬─────────────────────────────┘
-                    │ llamadas async
-┌───────────────────▼─────────────────────────────┐
-│              Capa de Servicios                   │
-│  Services (services/) — CRUD por entidad        │
-│  API client (lib/api.ts) — fetch wrapper tipado │
-└───────────────────┬─────────────────────────────┘
-                    │ HTTP (REST JSON)
-┌───────────────────▼─────────────────────────────┐
-│              Backend API (Go)                    │
-│  REST endpoints en /api/v1/*                    │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph UI["Capa de UI"]
+        Pages["Pages (pages/)"]
+        Components["Components (components/)"]
+        Stack1["React 19 + Tailwind CSS + lucide-react"]
+    end
+
+    subgraph State["Capa de Estado"]
+        Contexts["Contexts (AuthContext, ThemeContext)"]
+        Hooks["Hooks (usePlanLimits, usePagination, useToast)"]
+        Stores["Zustand stores (estado global complejo)"]
+    end
+
+    subgraph Services["Capa de Servicios"]
+        ServiceLayer["Services (services/) — CRUD por entidad"]
+        ApiClient["API client (lib/api.ts) — fetch wrapper tipado"]
+    end
+
+    subgraph Backend["Backend API (Go)"]
+        REST["REST endpoints en /api/v1/*"]
+    end
+
+    UI -->|"useContext / hooks"| State
+    State -->|"llamadas async"| Services
+    Services -->|"HTTP (REST JSON)"| Backend
 ```
 
 ### Principios
 
-- **Composicion de componentes**: paginas compuestas por componentes reutilizables, cada uno con responsabilidad unica
-- **Capa de API tipada**: todos los servicios usan el cliente API generico (`api.get<T>`, `api.post<T>`) con tipos TypeScript
-- **Validacion con zod**: schemas definidos una vez, usados para validacion de formularios Y para inferir tipos TypeScript
-- **Separacion de responsabilidades**: pages no hacen fetch directamente — delegan a services; components no manejan estado global — usan contexts/hooks
-- **Rutas protegidas**: `ProtectedRoute` verifica autenticacion, `AdminRoute` verifica rol de administrador
+> [!note] Decisiones de diseno
+> - **Composicion de componentes**: paginas compuestas por componentes reutilizables, cada uno con responsabilidad unica
+> - **Capa de API tipada**: todos los servicios usan el cliente API generico (`api.get<T>`, `api.post<T>`) con tipos TypeScript
+> - **Validacion con zod**: schemas definidos una vez, usados para validacion de formularios Y para inferir tipos TypeScript
+> - **Separacion de responsabilidades**: pages no hacen fetch directamente — delegan a services; components no manejan estado global — usan contexts/hooks
+> - **Rutas protegidas**: `ProtectedRoute` verifica autenticacion, `AdminRoute` verifica rol de administrador
 
 ---
 
@@ -239,6 +271,9 @@ Todas envueltas en `<ProtectedRoute>` + `<Layout>` (sidebar, header, Outlet).
 | `/settings` | `Settings` | Configuracion de perfil, negocio, contrato |
 | `/pricing` | `Pricing` | Planes y precios (fuera del Layout principal) |
 
+> [!tip] Planes y monetizacion
+> La ruta `/pricing` muestra los tiers FREE/PRO definidos en [[04_MONETIZATION]]. Los limites del plan se verifican via el hook `usePlanLimits`.
+
 ### Rutas de Administrador (requieren rol admin)
 
 Envueltas adicionalmente en `<AdminRoute>`.
@@ -275,13 +310,13 @@ Cada servicio encapsula las llamadas HTTP a un grupo de endpoints del backend. T
 
 ### Cliente API (`lib/api.ts`)
 
-El cliente API centralizado proporciona:
-
-- **Wrapper tipado sobre `fetch`**: metodos `get<T>`, `post<T>`, `put<T>`, `delete<T>` con genericos TypeScript
-- **Autenticacion automatica**: adjunta el token JWT desde `localStorage` en el header `Authorization: Bearer`
-- **Refresh de token**: intercepta respuestas 401, intenta renovar con el refresh token, y reintenta la peticion original
-- **Logout automatico**: si el refresh falla, emite evento `auth:logout` para limpiar el estado
-- **Base URL configurable**: apunta al backend Go (`/api/v1/`)
+> [!note] Cliente HTTP centralizado
+> El cliente API centralizado proporciona:
+> - **Wrapper tipado sobre `fetch`**: metodos `get<T>`, `post<T>`, `put<T>`, `delete<T>` con genericos TypeScript
+> - **Autenticacion automatica**: adjunta el token JWT desde `localStorage` en el header `Authorization: Bearer`
+> - **Refresh de token**: intercepta respuestas 401, intenta renovar con el refresh token, y reintenta la peticion original
+> - **Logout automatico**: si el refresh falla, emite evento `auth:logout` para limpiar el estado
+> - **Base URL configurable**: apunta al backend Go (`/api/v1/`)
 
 ---
 
@@ -289,21 +324,18 @@ El cliente API centralizado proporciona:
 
 ### Flujo de Autenticacion
 
-```
-┌──────────┐     POST /auth/login      ┌──────────┐
-│  Login   │ ───────────────────────►   │ Backend  │
-│  Page    │   { email, password }      │   API    │
-└──────────┘                            └────┬─────┘
-                                             │
-                                    { token, refresh_token, user }
-                                             │
-┌──────────────────────────────────────────▼─────────────────┐
-│                     AuthContext                              │
-│  - Guarda tokens en localStorage                           │
-│  - Expone user, loading, signOut, updateProfile            │
-│  - Al montar: llama GET /auth/me para verificar sesion     │
-│  - Escucha evento 'auth:logout' del api client             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant Login as Login Page
+    participant API as Backend API
+    participant Auth as AuthContext
+
+    Login->>API: POST /auth/login { email, password }
+    API-->>Auth: { token, refresh_token, user }
+    Note over Auth: Guarda tokens en localStorage
+    Note over Auth: Expone user, loading, signOut, updateProfile
+    Note over Auth: Al montar: GET /auth/me para verificar sesion
+    Note over Auth: Escucha evento 'auth:logout' del api client
 ```
 
 ### Componentes de Proteccion
@@ -344,7 +376,8 @@ interface User {
 
 ### Patron: react-hook-form + zod
 
-Todos los formularios siguen un patron consistente:
+> [!note] Patron de formularios
+> Todos los formularios siguen un patron consistente: schema zod para validacion + react-hook-form para estado del formulario. El tipo TypeScript se infiere automaticamente del schema.
 
 #### 1. Definicion del Schema (zod)
 
@@ -481,18 +514,12 @@ El proyecto utiliza **Tailwind CSS 4.2** como framework de estilos con enfoque u
 
 ### Estrategia de Testing
 
-```
-┌──────────────────────────────────────┐
-│          Playwright (E2E)            │
-│  Flujos completos del usuario        │
-│  Multi-navegador (Chrome, FF, WK)   │
-└──────────────┬───────────────────────┘
-               │
-┌──────────────▼───────────────────────┐
-│     Vitest + Testing Library         │
-│  Componentes, hooks, servicios       │
-│  MSW para mocking de API            │
-└──────────────────────────────────────┘
+```mermaid
+graph TD
+    E2E["Playwright (E2E)<br/>Flujos completos del usuario<br/>Multi-navegador (Chrome, FF, WK)"]
+    Unit["Vitest + Testing Library<br/>Componentes, hooks, servicios<br/>MSW para mocking de API"]
+
+    E2E --> Unit
 ```
 
 ### Tests Unitarios (Vitest)
@@ -594,6 +621,9 @@ EXPOSE 80
 
 ### Decisiones Clave
 
+> [!note] Decisiones tecnicas fundamentales
+> Estas decisiones definen el stack y patron del proyecto web. Cada una fue evaluada contra alternativas concretas.
+
 | Decision | Alternativa Descartada | Justificacion |
 |----------|----------------------|---------------|
 | **Zustand** para estado global | Redux Toolkit, Jotai | Minimalista, zero boilerplate, no requiere Provider wrapper, API simple con hooks. Redux es excesivo para esta escala; Context API causa re-renders innecesarios para estado frecuente |
@@ -608,6 +638,9 @@ EXPOSE 80
 
 ### Gotchas Conocidos
 
+> [!warning] Gotchas a tener en cuenta
+> Puntos que requieren atencion o tienen migraciones planificadas.
+
 | Gotcha | Detalle |
 |--------|---------|
 | **Strict mode deshabilitado** | `tsconfig.json` tiene `strict: false`. Planificado habilitarlo progresivamente para detectar mas errores en compilacion |
@@ -616,3 +649,16 @@ EXPOSE 80
 | **Token en localStorage** | Vulnerable a XSS. Mitigado con CSP headers y sanitizacion de inputs. Plan futuro: migrar a httpOnly cookies |
 | **react-dev-locator** | Plugin de Babel solo en desarrollo para localizar componentes en el editor. Se desactiva automaticamente en produccion |
 | **@react-pdf/renderer** | Presente en dependencias pero el generador principal usa jsPDF. Posible migracion futura para PDFs mas complejos con layout React |
+
+---
+
+> [!tip] Documentos relacionados
+> - [[PRD MOC]] — Indice general del PRD
+> - [[Web MOC]] — Detalle de cada modulo web
+> - [[07_TECHNICAL_ARCHITECTURE_BACKEND]] — Arquitectura del backend Go
+> - [[05_TECHNICAL_ARCHITECTURE_IOS]] — Arquitectura iOS (SwiftUI)
+> - [[06_TECHNICAL_ARCHITECTURE_ANDROID]] — Arquitectura Android (Compose)
+> - [[02_FEATURES]] — Features y tabla de paridad cross-platform
+> - [[11_CURRENT_STATUS]] — Estado actual de implementacion
+
+#prd #arquitectura #web #react #typescript #solennix
