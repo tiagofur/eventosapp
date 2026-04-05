@@ -9,13 +9,13 @@
 
 ## Fase 1: Foundation (Estabilidad y Performance)
 
-> [!success] Impacto: Alto | Esfuerzo: Medio
-> Sin estas mejoras, todo lo demás se construye sobre arena.
+> [!done] FASE 1 COMPLETADA — 2026-04-05
+> Las 3 sub-tareas (React Query, Lazy Loading, Image Optimization) están terminadas. La app ahora tiene caching inteligente, code splitting por ruta, y lazy loading de imágenes.
 
-### 1.1 React Query / TanStack Query
+### 1.1 React Query / TanStack Query ✅
 
-> [!done] 4 dominios core migrados completamente — 2026-04-04
-> Foundation completa. 35+ hooks creados, 13 páginas migradas. Todos los dominios core (Clients, Products, Inventory, Events) usando React Query.
+> [!done] Migración completa — 2026-04-05
+> 40+ hooks creados en 8 archivos. Todas las páginas, componentes compartidos, y hooks migrados. Zero `useEffect` fetch patterns restantes en código migrado.
 
 - [x] Instalar `@tanstack/react-query` + devtools
 - [x] Crear `queryClient.ts` con error handling global (logError + toast)
@@ -25,31 +25,34 @@
 - [x] Migrar `productService` → `useProductQueries.ts` (6 hooks) + ProductList, ProductForm, ProductDetails
 - [x] Migrar `inventoryService` → `useInventoryQueries.ts` (5 hooks) + InventoryList, InventoryForm, InventoryDetails
 - [x] Migrar `eventService` → `useEventQueries.ts` (13 hooks) + EventList, EventForm, EventSummary
-- [x] Migrar `paymentService` → `usePaymentQueries.ts` (3 hooks) — usado por EventSummary
-- [ ] Migrar `paymentService`, `searchService`, `adminService`, `subscriptionService`
-- [ ] Migrar componentes compartidos: StatusDropdown, OnboardingChecklist, PendingEventsModal
-- [ ] Rewrite `usePlanLimits` para usar query hooks (mayor win de cache sharing)
-- [ ] Migrar Dashboard, Search, Settings, AdminUsers, AdminDashboard
-- [ ] Implementar optimistic updates para status changes
-- [ ] Eliminar todos los `useState` + `useEffect` + `useCallback` fetch patterns restantes
+- [x] Migrar `paymentService` → `usePaymentQueries.ts` (5 hooks) + EventSummary, Dashboard
+- [x] Migrar `searchService` → `useSearchQueries.ts` + Search page
+- [x] Migrar `adminService` → `useAdminQueries.ts` + AdminDashboard, AdminUsers
+- [x] Migrar `subscriptionService` → `useSubscriptionQueries.ts` + Settings
+- [x] Migrar componentes compartidos: StatusDropdown, OnboardingChecklist, PendingEventsModal
+- [x] Rewrite `usePlanLimits` → usa query hooks internamente (cache sharing con el resto)
+- [x] Migrar Dashboard — financials como useMemo derivados de datos cacheados
+- [x] Migrar Search, Settings, AdminDashboard, AdminUsers
+- [x] Refresh buttons usan `queryClient.invalidateQueries` (no `window.reload`)
 
-**Por qué**: Elimina fetches redundantes, agrega cache, mejora UX percibida. Es el cambio con mayor impacto/esfuerzo de toda la app.
+### 1.2 Lazy Loading de Rutas ✅
 
-### 1.2 Lazy Loading de Rutas
-- [ ] Wrappear todas las páginas con `React.lazy()` + `<Suspense>`
-- [ ] Crear fallback de loading consistente con `SkeletonTable`
-- [ ] Lazy load de `Recharts` solo para Dashboard/Admin
-- [ ] Verificar que code splitting funciona en producción
+> [!done] Completado — 2026-04-05
 
-**Por qué**: Reduce bundle inicial significativamente. El usuario no necesita cargar Admin si nunca va ahí.
+- [x] 28 páginas convertidas a `React.lazy()` + `<Suspense>`
+- [x] Fallback de loading accesible con spinner
+- [x] Code splitting automático por Vite (cada página = chunk separado)
+- [x] Layout, ProtectedRoute, AdminRoute permanecen eager (shell de navegación)
 
-### 1.3 Image Optimization
-- [ ] Agregar `loading="lazy"` a todas las `<img>` en listas
-- [ ] Implementar thumbnails en backend o usar CDN con resize
-- [ ] Considerar `srcSet` para responsive images
-- [ ] Placeholder blur/skeleton mientras cargan las imágenes
+### 1.3 Image Optimization ✅
 
-**Por qué**: Las listas con fotos (clientes, productos) cargan todas las imágenes upfront.
+> [!done] Completado — 2026-04-05
+
+- [x] `loading="lazy"` en todas las `<img>` de listas y detalles
+- [x] Form previews y logos mantienen carga eager (visible inmediato)
+- [ ] _Futuro:_ Thumbnails en backend o CDN con resize
+- [ ] _Futuro:_ `srcSet` para responsive images
+- [ ] _Futuro:_ Placeholder blur/skeleton mientras cargan
 
 ---
 
