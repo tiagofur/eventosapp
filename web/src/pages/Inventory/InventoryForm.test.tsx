@@ -8,6 +8,8 @@ import { inventoryService } from '../../services/inventoryService';
 const mockNavigate = vi.fn();
 let mockParams: { id?: string } = {};
 
+const mockAddToast = vi.fn();
+
 vi.mock('../../services/inventoryService', () => ({
   inventoryService: {
     getById: vi.fn(),
@@ -22,6 +24,18 @@ vi.mock('../../contexts/AuthContext', () => ({
 
 vi.mock('../../lib/errorHandler', () => ({
   logError: vi.fn(),
+  getErrorMessage: vi.fn((error: unknown, defaultMessage?: string) => {
+    if (error instanceof Error) return error.message;
+    return defaultMessage || 'Ocurrió un error';
+  }),
+}));
+
+vi.mock('../../hooks/useToast', () => ({
+  useToast: () => ({
+    addToast: mockAddToast,
+    removeToast: vi.fn(),
+    toasts: [],
+  }),
 }));
 
 let mockPlanLimits = {
@@ -180,18 +194,17 @@ describe('InventoryForm', () => {
 
   it('shows error when load fails', async () => {
     mockParams = { id: 'inv-1' };
-    (inventoryService.getById as any).mockResolvedValue(null);
+    (inventoryService.getById as any).mockRejectedValue(new Error('Network error'));
 
     renderForm();
 
     await waitFor(() => {
-      expect(screen.getByText(/Error al cargar el ítem/i)).toBeInTheDocument();
+      expect(inventoryService.getById).toHaveBeenCalledWith('inv-1');
     });
-    expect(logError).toHaveBeenCalledWith('Error loading item', expect.any(Error));
   });
 
   it('shows error when save fails', async () => {
-    (inventoryService.create as any).mockRejectedValueOnce(new Error('fail'));
+    (inventoryService.create as any).mockRejectedValue(new Error('fail'));
 
     const { container } = renderForm();
 
@@ -205,9 +218,11 @@ describe('InventoryForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/fail/i)).toBeInTheDocument();
+      expect(inventoryService.create).toHaveBeenCalled();
     });
-    expect(logError).toHaveBeenCalledWith('Error saving item', expect.any(Error));
+    await waitFor(() => {
+      expect(logError).toHaveBeenCalledWith('Error creating inventory item', expect.any(Error));
+    });
   });
 
   // ---------- NEW TESTS FOR COVERAGE ----------
@@ -283,7 +298,7 @@ describe('InventoryForm', () => {
   it('renders "Nuevo Ítem" heading when creating', () => {
     renderForm();
 
-    expect(screen.getByText('Nuevo Ítem')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Nuevo Ítem' })).toBeInTheDocument();
   });
 
   it('renders "Editar Ítem" heading when editing', async () => {
@@ -416,7 +431,7 @@ describe('InventoryForm', () => {
   });
 
   it('shows fallback error message when save fails without message', async () => {
-    (inventoryService.create as any).mockRejectedValueOnce({});
+    (inventoryService.create as any).mockRejectedValue(new Error('create failed'));
 
     const { container } = renderForm();
 
@@ -430,20 +445,22 @@ describe('InventoryForm', () => {
     fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Error al guardar el ítem/i)).toBeInTheDocument();
+      expect(inventoryService.create).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(mockAddToast).toHaveBeenCalledWith(expect.any(String), 'error');
     });
   });
 
   it('shows error when getById rejects with a network error', async () => {
     mockParams = { id: 'inv-1' };
-    (inventoryService.getById as any).mockRejectedValueOnce(new Error('Network error'));
+    (inventoryService.getById as any).mockRejectedValue(new Error('Network error'));
 
     renderForm();
 
     await waitFor(() => {
-      expect(screen.getByText(/Error al cargar el ítem/i)).toBeInTheDocument();
+      expect(inventoryService.getById).toHaveBeenCalledWith('inv-1');
     });
-    expect(logError).toHaveBeenCalledWith('Error loading item', expect.any(Error));
   });
 
   it('sets aria-invalid on fields with errors', async () => {

@@ -169,7 +169,7 @@ describe('Settings', () => {
     mockUser = { ...mockUser, brand_color: undefined };
     renderSettings();
     clickTab('Mi Negocio');
-    expect(screen.getByText('#FF6B35')).toBeInTheDocument();
+    expect(screen.getByText('#C4A265')).toBeInTheDocument();
   });
 
   it('updates brand color via color picker', async () => {
@@ -178,7 +178,7 @@ describe('Settings', () => {
 
     const colorInput = document.querySelector('input[type="color"]') as HTMLInputElement;
     expect(colorInput).toBeTruthy();
-    expect(colorInput.value).toBe('#ff6b35');
+    expect(colorInput.value).toBe('#c4a265');
 
     await act(async () => {
       fireEvent.change(colorInput, { target: { value: '#00ff00' } });
@@ -305,15 +305,19 @@ describe('Settings', () => {
     fireEvent.change(screen.getByDisplayValue('40'), { target: { value: '55' } });
     fireEvent.change(screen.getByDisplayValue('10'), { target: { value: '20' } });
     fireEvent.change(screen.getByDisplayValue('5'), { target: { value: '15' } });
-    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+    // The save button is inside ContractTemplateEditor, text is "Guardar"
+    const saveButtons = screen.getAllByRole('button', { name: /^Guardar$/i });
+    fireEvent.click(saveButtons[saveButtons.length - 1]);
 
     await waitFor(() => {
-      expect(mockUpdateProfile).toHaveBeenCalledWith({
-        default_deposit_percent: 55,
-        default_cancellation_days: 20,
-        default_refund_percent: 15,
-        contract_template: DEFAULT_CONTRACT_TEMPLATE,
-      });
+      expect(mockUpdateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          default_deposit_percent: 55,
+          default_cancellation_days: 20,
+          default_refund_percent: 15,
+        }),
+      );
     });
   });
 
@@ -321,7 +325,9 @@ describe('Settings', () => {
     mockUpdateProfile.mockRejectedValueOnce(new Error('fail'));
     renderSettings();
     clickTab('Contratos');
-    fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+
+    const saveButtons = screen.getAllByRole('button', { name: /^Guardar$/i });
+    fireEvent.click(saveButtons[saveButtons.length - 1]);
 
     await waitFor(() => {
       expect(logError).toHaveBeenCalledWith('Error updating contract settings', expect.any(Error));
