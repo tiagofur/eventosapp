@@ -465,7 +465,7 @@ describe('EventSummary', () => {
 
     // Financial summary labels - check for key financial terms
     expect(screen.getByText(/Venta Neta/i)).toBeInTheDocument();
-    expect(screen.getByText(/IVA/i)).toBeInTheDocument();
+    expect(screen.getByText(/Requiere factura.*IVA/i)).toBeInTheDocument();
     expect(screen.getByText(/Utilidad Neta/i)).toBeInTheDocument();
     expect(screen.getByText(/Pendiente/i)).toBeInTheDocument();
 
