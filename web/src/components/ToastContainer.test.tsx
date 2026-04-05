@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@tests/customRender';
 import userEvent from '@testing-library/user-event';
-import { act } from '@testing-library/react';
+import { act } from '@tests/customRender';
 import { ToastContainer } from './ToastContainer';
 import { useToast } from '../hooks/useToast';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@tests/customRender';
 import { AdminUsers } from './AdminUsers';
 import { adminService, AdminUser } from '@/services/adminService';
 import { MemoryRouter } from 'react-router-dom';

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@tests/customRender';
 import { MemoryRouter } from 'react-router-dom';
 import { ClientList } from './ClientList';
 import { clientService } from '../../services/clientService';

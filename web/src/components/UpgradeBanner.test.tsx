@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@tests/customRender';
 import { MemoryRouter } from 'react-router-dom';
 import { UpgradeBanner } from './UpgradeBanner';
 

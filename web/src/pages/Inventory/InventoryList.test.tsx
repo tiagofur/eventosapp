@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@tests/customRender';
 import { MemoryRouter } from 'react-router-dom';
 import { InventoryList } from './InventoryList';
 import { inventoryService } from '../../services/inventoryService';
@@ -9,11 +9,21 @@ vi.mock('../../services/inventoryService', () => ({
   inventoryService: {
     getAll: vi.fn(),
     delete: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
 vi.mock('../../lib/errorHandler', () => ({
   logError: vi.fn(),
+  getErrorMessage: vi.fn((_err: unknown, fallback: string) => fallback || 'Error'),
+}));
+
+vi.mock('../../hooks/useToast', () => ({
+  useToast: () => ({
+    addToast: vi.fn(),
+    removeToast: vi.fn(),
+    toasts: [],
+  }),
 }));
 
 const renderList = () =>

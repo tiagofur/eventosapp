@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@tests/customRender';
 import userEvent from '@testing-library/user-event';
 import { Pricing } from './Pricing';
 

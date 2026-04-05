@@ -1,5 +1,5 @@
 import React, { useEffect, act } from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@tests/customRender';
 import { MemoryRouter } from 'react-router-dom';
 import { EventForm } from './EventForm';
 import { eventService } from '../../services/eventService';

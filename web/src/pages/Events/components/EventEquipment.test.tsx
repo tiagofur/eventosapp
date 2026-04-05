@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@tests/customRender';
 import { EventEquipment } from './EventEquipment';
 import { EquipmentConflict, EquipmentSuggestion, InventoryItem } from '../../../types/entities';
 
@@ -428,9 +428,9 @@ describe('EventEquipment', () => {
       conflicts,
     });
 
-    // The card container should have the amber border class
+    // The card container should have the warning border class
     const card = screen.getByText('Conflicto').closest('.bg-surface-alt');
-    expect(card?.className).toContain('border-amber-400');
+    expect(card?.className).toContain('border-warning/60');
   });
 
   it('applies default border to equipment card without conflicts', () => {

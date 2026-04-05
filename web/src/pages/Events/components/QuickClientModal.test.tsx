@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@tests/customRender';
 import userEvent from '@testing-library/user-event';
 import { QuickClientModal } from './QuickClientModal';
 import { clientService } from '../../../services/clientService';

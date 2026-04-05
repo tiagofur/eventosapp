@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@tests/customRender';
 import { FormProvider, useForm } from 'react-hook-form';
 import { EventProducts } from './EventProducts';
 

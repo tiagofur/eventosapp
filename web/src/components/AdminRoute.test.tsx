@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@tests/customRender';
 import { AdminRoute } from './AdminRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
