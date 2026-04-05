@@ -6,6 +6,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.android.junit5)
 }
 
 android {
@@ -31,6 +32,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -41,8 +47,17 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+    implementation(libs.androidx.room.paging)
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // Testing
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

@@ -14,7 +14,17 @@ import com.creapolis.solennix.core.model.EquipmentConflict
 import com.creapolis.solennix.core.model.EquipmentSuggestion
 import com.creapolis.solennix.core.model.SupplySuggestion
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.Endpoints
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
@@ -24,6 +34,7 @@ import javax.inject.Singleton
 
 interface EventRepository {
     fun getEvents(): Flow<List<Event>>
+    fun getEventsPaging(query: String = "", status: String? = null): Flow<PagingData<Event>>
     fun getUpcomingEvents(limit: Int = 5): Flow<List<Event>>
     suspend fun getEvent(id: String): Event?
     suspend fun syncEvents()
@@ -79,6 +90,17 @@ class OfflineFirstEventRepository @Inject constructor(
 
     override fun getEvents(): Flow<List<Event>> =
         eventDao.getEvents().map { it.map { entity -> entity.asExternalModel() } }
+
+    override fun getEventsPaging(query: String, status: String?): Flow<PagingData<Event>> =
+        Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                enablePlaceholders = true
+            ),
+            pagingSourceFactory = { eventDao.getEventsPaging(query, status) }
+        ).flow.map { pagingData ->
+            pagingData.map { it.asExternalModel() }
+        }
 
     override fun getUpcomingEvents(limit: Int): Flow<List<Event>> =
         eventDao.getUpcomingEvents(limit).map { it.map { entity -> entity.asExternalModel() } }

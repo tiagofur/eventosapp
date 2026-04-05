@@ -28,6 +28,18 @@ class KtorClient @Inject constructor(
                 coerceInputValues = true
             })
         }
+        
+        install(HttpRequestRetry) {
+            maxRetries = 3
+            retryIf { _, response ->
+                !response.status.isSuccess() && response.status.value >= 500
+            }
+            retryOnExceptionIf { _, cause ->
+                cause is java.net.ConnectException || cause is java.net.SocketTimeoutException
+            }
+            exponentialDelay()
+        }
+
         // Ktor's built-in Auth plugin handles:
         // 1. loadTokens: reads fresh tokens from EncryptedSharedPreferences
         // 2. refreshTokens: on 401, checks if tokens changed (e.g. after login)

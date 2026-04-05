@@ -18,6 +18,9 @@ import com.creapolis.solennix.core.model.Payment
 import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import com.creapolis.solennix.core.network.EventDayNotificationManager

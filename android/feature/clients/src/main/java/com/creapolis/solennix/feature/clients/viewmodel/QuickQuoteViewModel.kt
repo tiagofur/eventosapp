@@ -12,6 +12,9 @@ import com.creapolis.solennix.core.model.InventoryType
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.model.ProductIngredient
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import com.creapolis.solennix.feature.clients.pdf.QuickQuotePdfGenerator

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.android.junit5)
 }
 
 android {
@@ -32,6 +33,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -44,8 +50,18 @@ dependencies {
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.paging.common)
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    // Testing
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
 }

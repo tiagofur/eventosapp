@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.KtorClient
 import com.creapolis.solennix.core.network.NetworkMonitor

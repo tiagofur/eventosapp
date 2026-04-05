@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.android.junit5)
 }
 
 android {
@@ -38,18 +39,23 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
     implementation(project(":core:model"))
 
     // Ktor
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.json)
-    implementation(libs.ktor.client.auth)
-    implementation(libs.ktor.client.logging)
+    api(libs.ktor.client.core)
+    api(libs.ktor.client.okhttp)
+    api(libs.ktor.client.content.negotiation)
+    api(libs.ktor.serialization.json)
+    api(libs.ktor.client.auth)
+    api(libs.ktor.client.logging)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -61,4 +67,13 @@ dependencies {
 
     // DataStore
     implementation(libs.datastore.preferences)
+
+    // Testing
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
 }

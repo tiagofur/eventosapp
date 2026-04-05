@@ -54,8 +54,12 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.navigation.compose)
-    
-    // Coil for photos
+
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
+
+    // Hilt
+
     implementation(libs.coil.compose)
     
     // Window Manager for Foldables

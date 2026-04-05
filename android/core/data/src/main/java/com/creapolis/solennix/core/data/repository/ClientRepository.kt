@@ -6,6 +6,12 @@ import com.creapolis.solennix.core.database.entity.asEntity
 import com.creapolis.solennix.core.database.entity.asExternalModel
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.network.ApiService
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
+import com.creapolis.solennix.core.network.get
+import com.creapolis.solennix.core.network.post
+import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.Endpoints
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

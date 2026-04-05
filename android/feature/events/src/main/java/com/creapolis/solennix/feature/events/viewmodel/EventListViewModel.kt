@@ -12,6 +12,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 
 data class EventListUiState(
     val events: List<Event> = emptyList(),
@@ -20,6 +22,7 @@ data class EventListUiState(
     val selectedStatus: EventStatus? = null,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
+    val error: String? = null,
     val statusFilters: List<EventStatusFilter> = emptyList()
 )
 
@@ -38,48 +41,48 @@ class EventListViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedStatus = MutableStateFlow<EventStatus?>(null)
     private val _isRefreshing = MutableStateFlow(false)
+    private val _error = MutableStateFlow<String?>(null)
+
+    val pagedEvents: Flow<PagingData<Event>> = combine(
+        _searchQuery.debounce(300),
+        _selectedStatus
+    ) { query, status ->
+        query to status
+    }.flatMapLatest { (query, status) ->
+        eventRepository.getEventsPaging(query, status?.name)
+    }.cachedIn(viewModelScope)
 
     val uiState: StateFlow<EventListUiState> = combine(
         eventRepository.getEvents(),
         clientRepository.getClients(),
-        _searchQuery,
-        _selectedStatus,
-        _isRefreshing
-    ) { events, clients, searchQuery, selectedStatus, refreshing ->
+        combine(_searchQuery, _selectedStatus, _isRefreshing, _error) { query, status, refreshing, error ->
+            FilterState(query, status, refreshing, error)
+        }
+    ) { events, clients, filters ->
         val clientMap = clients.associateBy { it.id }
-
         val statusFilters = buildStatusFilters(events)
 
-        val statusFiltered = if (selectedStatus != null) {
-            events.filter { it.status == selectedStatus }
-        } else {
-            events
-        }
-
-        val filtered = if (searchQuery.isBlank()) {
-            statusFiltered
-        } else {
-            statusFiltered.filter { event ->
-                event.serviceType.contains(searchQuery, ignoreCase = true) ||
-                clientMap[event.clientId]?.name?.contains(searchQuery, ignoreCase = true) == true ||
-                event.location?.contains(searchQuery, ignoreCase = true) == true ||
-                event.city?.contains(searchQuery, ignoreCase = true) == true
-            }
-        }
-
         EventListUiState(
-            events = filtered.sortedByDescending { it.eventDate },
+            events = events,
             clientMap = clientMap,
-            searchQuery = searchQuery,
-            selectedStatus = selectedStatus,
+            searchQuery = filters.query,
+            selectedStatus = filters.status,
             isLoading = false,
-            isRefreshing = refreshing,
+            isRefreshing = filters.refreshing,
+            error = filters.error,
             statusFilters = statusFilters
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = EventListUiState(isLoading = true)
+    )
+
+    private data class FilterState(
+        val query: String,
+        val status: EventStatus?,
+        val refreshing: Boolean,
+        val error: String?
     )
 
     private fun buildStatusFilters(events: List<Event>): List<EventStatusFilter> {
@@ -121,7 +124,7 @@ class EventListViewModel @Inject constructor(
             val clientName = (state.clientMap[event.clientId]?.name ?: "").escapeCsv()
             val status = (statusLabels[event.status] ?: event.status.name).escapeCsv()
             val total = event.totalAmount.asMXN().escapeCsv()
-            val paid = "" // Payment info not available in Event model
+            val paid = ""
             val location = (event.location ?: "").escapeCsv()
             sb.appendLine("$name,$date,$clientName,$status,$total,$paid,$location")
         }
@@ -131,15 +134,20 @@ class EventListViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
+            _error.value = null
             try {
                 eventRepository.syncEvents()
                 clientRepository.syncClients()
             } catch (e: Exception) {
-                // Network sync errors are non-fatal
+                _error.value = e.message ?: "Ocurrió un error al sincronizar"
             } finally {
                 _isRefreshing.value = false
             }
         }
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }
 

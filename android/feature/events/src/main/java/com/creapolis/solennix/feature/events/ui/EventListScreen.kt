@@ -17,6 +17,8 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,6 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.creapolis.solennix.core.designsystem.component.EmptyState
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.StatusBadge
@@ -72,9 +77,26 @@ fun EventListScreen(
     showBackButton: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val pagedEvents = viewModel.pagedEvents.collectAsLazyPagingItems()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            val result = snackbarHostState.showSnackbar(
+                message = it,
+                actionLabel = "Reintentar",
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.refresh()
+            }
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SolennixTopAppBar(
                 title = { Text("Eventos") },
@@ -169,14 +191,18 @@ fun EventListScreen(
                     }
                 }
 
-                if (uiState.isLoading) {
+                val isLoading = pagedEvents.loadState.refresh is LoadState.Loading
+                val isError = pagedEvents.loadState.refresh is LoadState.Error
+                val isEmpty = pagedEvents.itemCount == 0 && !isLoading
+
+                if (isLoading && pagedEvents.itemCount == 0) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator(color = SolennixTheme.colors.primary)
                     }
-                } else if (uiState.events.isEmpty()) {
+                } else if (isEmpty) {
                     EmptyState(
                         icon = Icons.Default.EventBusy,
                         title = if (uiState.searchQuery.isNotEmpty()) "Sin resultados" else "Sin eventos",
@@ -189,23 +215,33 @@ fun EventListScreen(
                     AdaptiveCardGrid(
                         contentPadding = PaddingValues(vertical = 8.dp),
                         gridContent = {
-                            items(uiState.events, key = { it.id }) { event ->
-                                val client = uiState.clientMap[event.clientId]
-                                EventListItem(
-                                    event = event,
-                                    clientName = client?.name,
-                                    onClick = { onEventClick(event.id) }
-                                )
+                            items(
+                                count = pagedEvents.itemCount,
+                                key = pagedEvents.itemKey { it.id }
+                            ) { index ->
+                                pagedEvents[index]?.let { event ->
+                                    val client = uiState.clientMap[event.clientId]
+                                    EventListItem(
+                                        event = event,
+                                        clientName = client?.name,
+                                        onClick = { onEventClick(event.id) }
+                                    )
+                                }
                             }
                         },
                         listContent = {
-                            items(uiState.events, key = { it.id }) { event ->
-                                val client = uiState.clientMap[event.clientId]
-                                EventListItem(
-                                    event = event,
-                                    clientName = client?.name,
-                                    onClick = { onEventClick(event.id) }
-                                )
+                            items(
+                                count = pagedEvents.itemCount,
+                                key = pagedEvents.itemKey { it.id }
+                            ) { index ->
+                                pagedEvents[index]?.let { event ->
+                                    val client = uiState.clientMap[event.clientId]
+                                    EventListItem(
+                                        event = event,
+                                        clientName = client?.name,
+                                        onClick = { onEventClick(event.id) }
+                                    )
+                                }
                             }
                         }
                     )
@@ -221,8 +257,10 @@ private fun EventListItem(
     clientName: String?,
     onClick: () -> Unit
 ) {
-    val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
-    val eventDate = parseFlexibleDate(event.eventDate)?.format(dateFormatter) ?: event.eventDate
+    val eventDate = remember(event.eventDate) {
+        val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
+        parseFlexibleDate(event.eventDate)?.format(dateFormatter) ?: event.eventDate
+    }
 
     Card(
         onClick = onClick,
