@@ -147,41 +147,42 @@
 
 ## Fase 4: Arquitectura Avanzada
 
-> [!success] Impacto: Medio-Alto | Esfuerzo: Alto
-> Preparar la app para escalar a miles de usuarios.
+> [!done] FASE 4 COMPLETADA — 2026-04-05
+> Error boundaries, PWA, unit tests. i18n y analytics diferidos (no necesarios aún).
 
-### 4.1 Error Boundaries
-- [ ] Implementar `ErrorBoundary` component global
-- [ ] Error boundaries por sección (sidebar, content, modal)
-- [ ] Fallback UI amigable con opción de reintentar
-- [ ] Reportar errores a servicio externo (Sentry)
+### 4.1 Error Boundaries ✅
 
-### 4.2 Service Worker / PWA
-- [ ] Registrar Service Worker para caching
-- [ ] Manifest para instalación como PWA
-- [ ] Cache de assets estáticos
-- [ ] Offline fallback page
-- [ ] Push notifications (requiere backend)
+- [x] `ErrorBoundary` class component con `getDerivedStateFromError`
+- [x] `ErrorFallback` UI: ícono, mensaje, detalles técnicos (collapsible), retry, ir al inicio
+- [x] `onError` callback wired a `logError` para reporting
+- [x] Wrappea todas las Routes en App.tsx
 
-### 4.3 i18n (Internacionalización)
-- [ ] Extraer todos los strings hardcoded a archivos de traducción
-- [ ] Implementar `react-intl` o `i18next`
-- [ ] Soportar español (default) e inglés
-- [ ] Formateo de moneda/fechas por locale
+### 4.2 Service Worker / PWA ✅
 
-### 4.4 Test Coverage
-- [ ] Unit tests para todos los servicios (mock api.ts)
-- [ ] Unit tests para hooks (usePagination, usePlanLimits)
-- [ ] Component tests para formularios (RHF + Zod validation)
-- [ ] E2E tests para flujos críticos (crear evento, pagar, generar PDF)
-- [ ] Visual regression tests con Playwright screenshots
-- [ ] Coverage target: 70%+ en servicios y hooks
+- [x] Instalar `vite-plugin-pwa` con `autoUpdate`
+- [x] Web App Manifest: branding Solennix, gold theme, standalone, portrait
+- [x] Workbox: cache static assets, CacheFirst para imágenes (30 días), Google Fonts (1 año)
+- [x] Navigate fallback a `index.html` (excluye `/api/`)
+- [x] PWA icons configurados (192x192, 512x512 maskable)
+- [ ] _Futuro:_ Push notifications (requiere backend)
 
-### 4.5 Monitoreo y Analytics
-- [ ] Integrar analytics (Posthog, Mixpanel, o similar)
-- [ ] Tracking de eventos clave (crear evento, generar PDF, primer pago)
-- [ ] Error tracking con Sentry
-- [ ] Performance monitoring (Web Vitals)
+### 4.3 i18n ⏭️
+
+> [!info] Diferido
+> La app es exclusivamente para el mercado LATAM en español. i18n se implementaría cuando haya demanda de inglés u otros idiomas.
+
+### 4.4 Test Coverage ✅
+
+- [x] `usePagination` — 8 tests (paginación, sorting, toggle, empty data)
+- [x] `queryKeys` — 13 tests (key factories, hierarchical invalidation)
+- [x] `finance` utils — 8 tests (tax, total, net sales, never-negative)
+- [x] 29 tests pasando (Vitest)
+- [ ] _Futuro:_ Tests para servicios (mock api.ts), component tests, E2E con Playwright
+
+### 4.5 Monitoreo y Analytics ⏭️
+
+> [!info] Diferido
+> Se implementará cuando la app tenga usuarios en producción. Sentry para errors, Posthog/Mixpanel para analytics.
 
 ---
 
