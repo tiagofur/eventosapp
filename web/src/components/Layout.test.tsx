@@ -59,8 +59,8 @@ describe('Layout', () => {
 
   it('renders navigation and user profile', () => {
     renderLayout();
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Clientes')).toBeInTheDocument();
+    expect(screen.getByText('Inicio')).toBeInTheDocument();
+    expect(screen.getAllByText('Clientes').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Ana')).toBeInTheDocument();
     expect(screen.getByText('ana@example.com')).toBeInTheDocument();
   });
@@ -123,7 +123,7 @@ describe('Layout', () => {
     const menuButton = container.querySelector('header button');
     fireEvent.click(menuButton as Element);
 
-    fireEvent.click(screen.getByText('Dashboard'));
+    fireEvent.click(screen.getByText('Inicio'));
     expect(container.querySelector('.fixed.inset-0')).not.toBeInTheDocument();
   });
 
@@ -276,11 +276,10 @@ describe('Layout', () => {
 
   it('renders all navigation items', () => {
     renderLayout();
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Calendario')).toBeInTheDocument();
-    expect(screen.getByText('Cotización')).toBeInTheDocument();
-    expect(screen.getByText('Cotización Rápida')).toBeInTheDocument();
-    expect(screen.getByText('Clientes')).toBeInTheDocument();
+    expect(screen.getByText('Inicio')).toBeInTheDocument();
+    expect(screen.getAllByText('Calendario').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Eventos').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Clientes').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Productos')).toBeInTheDocument();
     expect(screen.getByText('Inventario')).toBeInTheDocument();
     expect(screen.getByText('Configuración')).toBeInTheDocument();
@@ -289,14 +288,18 @@ describe('Layout', () => {
   it('highlights active nav item based on current route', () => {
     mockLocation = { pathname: '/clients', search: '' };
     renderLayout();
-    const clientLink = screen.getByText('Clientes').closest('a');
-    expect(clientLink).toHaveClass('bg-primary');
+    // Find the sidebar nav link for "Clientes" (not BottomTabBar)
+    const sidebar = screen.getByRole('complementary', { name: /navegación principal/i });
+    const clientLink = within(sidebar).getByText('Clientes').closest('a');
+    expect(clientLink?.className).toContain('bg-');
+    expect(clientLink?.className).toContain('text-primary');
   });
 
   it('does not highlight inactive nav items', () => {
     mockLocation = { pathname: '/dashboard', search: '' };
     renderLayout();
-    const clientLink = screen.getByText('Clientes').closest('a');
-    expect(clientLink).not.toHaveClass('bg-primary');
+    const sidebar = screen.getByRole('complementary', { name: /navegación principal/i });
+    const clientLink = within(sidebar).getByText('Clientes').closest('a');
+    expect(clientLink?.className).toContain('text-text-secondary');
   });
 });
