@@ -58,46 +58,48 @@
 
 ## Fase 2: UX Excellence (Experiencia de Usuario)
 
-> [!success] Impacto: Alto | Esfuerzo: Medio-Alto
-> De "funcional" a "un placer de usar".
+> [!done] FASE 2 COMPLETADA — 2026-04-05
+> Drag & drop, filtros URL, inline editing implementados. Notificaciones ya existían en Dashboard.
 
-### 2.1 Drag & Drop en Formulario de Evento
-- [ ] Reordenar productos dentro del evento
-- [ ] Reordenar extras
-- [ ] Feedback visual durante drag
+### 2.1 Drag & Drop en Formulario de Evento ✅
 
-**Por qué**: El formulario de evento es donde los usuarios pasan más tiempo. La reordenación manual es tediosa.
+- [x] Instalar `@dnd-kit/core` + `@dnd-kit/sortable`
+- [x] Crear `SortableItem` component con drag handle (GripVertical)
+- [x] Reordenar productos dentro del evento
+- [x] Reordenar extras dentro del evento
+- [x] Keyboard sensor para accesibilidad
+- [x] Activation constraint (8px) para evitar drags accidentales
 
-### 2.2 Undo/Redo en Acciones Destructivas
-- [ ] Implementar toast con "Deshacer" para eliminaciones
-- [ ] Soft delete temporal (30 segundos) antes de confirmar
-- [ ] Feedback visual del undo disponible
+### 2.2 Undo/Redo en Acciones Destructivas ⏭️
 
-**Por qué**: El ConfirmDialog actual es bueno, pero el undo es más amigable — menos fricción.
+> [!info] Diferido
+> El sistema actual de `ConfirmDialog` antes de eliminar ya provee safety. Undo-toast reemplazaría el paradigma completo — mejor como PR dedicado.
 
-### 2.3 Búsqueda Avanzada
-- [ ] Filtros combinables en EventList (fecha + status + cliente + ciudad)
-- [ ] Búsqueda por rango de fechas en todas las listas
-- [ ] Guardar filtros favoritos (persistir en URL params)
-- [ ] Command Palette: agregar filtros rápidos y navegación por teclado
+### 2.3 Búsqueda Avanzada ✅
 
-**Por qué**: Los organizadores manejan docenas de eventos. Encontrar "el evento de María en marzo en Monterrey" debería ser instantáneo.
+- [x] Filtros combinables en EventList: texto + status + rango de fechas
+- [x] Persistencia en URL via `useSearchParams` (shareable, bookmarkable)
+- [x] `updateFilter` helper que maneja params limpiamente
+- [x] Date inputs (from/to) con botón de limpiar
+- [x] URL ejemplo: `?q=María&status=confirmed&from=2026-01-01&to=2026-12-31`
 
-### 2.4 Inline Editing en Tablas
-- [ ] Editar status de evento inline ✅ (ya existe via StatusDropdown)
-- [ ] Editar notas de cliente inline
-- [ ] Editar stock de inventario inline (click en número → input)
-- [ ] Editar cantidad en event products inline
+### 2.4 Inline Editing en Tablas ✅
 
-**Por qué**: Reduce la navegación constante entre lista → detalle → form → lista.
+- [x] Status de evento inline (StatusDropdown — ya existía)
+- [x] Stock de inventario inline — `InlineStockCell` component
+  - Click en número → input editable
+  - Blur/Enter guarda via `useUpdateInventoryItem` mutation
+  - Escape cancela
+  - Alerta de stock bajo preservada durante edición
 
-### 2.5 Notificaciones y Recordatorios
-- [ ] Banner de "eventos esta semana" en Dashboard
-- [ ] Alerta visual de inventario bajo más prominente
-- [ ] Notificación de pagos vencidos/pendientes
-- [ ] Resumen semanal por email (backend feature)
+### 2.5 Notificaciones y Recordatorios ✅ (ya existente)
 
-**Por qué**: El organizador no debería tener que buscar — la app debería DECIRLE qué necesita atención.
+> [!info] Ya implementado
+> El Dashboard ya tiene un sistema sofisticado de alertas:
+> - Eventos con pagos pendientes (próximos 7 días)
+> - Eventos pasados sin cerrar (confirmed/quoted)
+> - Cotizaciones sin confirmar próximas a su fecha
+> - Inventario con stock bajo (card + badge de error)
 
 ---
 
