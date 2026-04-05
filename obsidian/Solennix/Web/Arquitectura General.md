@@ -17,6 +17,7 @@
 | Build Tool | Vite | 7.3 |
 | Routing | React Router | 7.13 |
 | Forms | React Hook Form + Zod | 7.71 / 4.3 |
+| Server State | TanStack React Query | 5.96 |
 | Estado Global | Zustand | 5.0 |
 | Gráficos | Recharts | 3.7 |
 | PDFs | jsPDF + autoTable | 4.2 |

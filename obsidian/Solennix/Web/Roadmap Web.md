@@ -13,13 +13,27 @@
 > Sin estas mejoras, todo lo demás se construye sobre arena.
 
 ### 1.1 React Query / TanStack Query
-- [ ] Instalar `@tanstack/react-query`
-- [ ] Migrar `eventService` calls a `useQuery` / `useMutation`
-- [ ] Migrar `clientService`, `productService`, `inventoryService`
-- [ ] Migrar `paymentService`, `searchService`
-- [ ] Configurar `staleTime`, `gcTime`, `refetchOnWindowFocus`
+
+> [!done] Fundación completada — 2026-04-04
+> Instalación, QueryClient, queryKeys, provider, devtools, y dominio Clientes migrado completo.
+
+- [x] Instalar `@tanstack/react-query` + devtools
+- [x] Crear `queryClient.ts` con error handling global (logError + toast)
+- [x] Crear `queryKeys.ts` — key factory centralizada para todos los dominios
+- [x] Wiring `QueryClientProvider` + `ReactQueryDevtools` en `App.tsx`
+- [x] Migrar `clientService` → `useClientQueries.ts` (6 hooks)
+- [x] Migrar `ClientList.tsx` → `useClients()` + `useDeleteClient()`
+- [x] Migrar `ClientForm.tsx` → `useClient()` + create/update mutations
+- [x] Migrar `ClientDetails.tsx` → queries paralelos + delete mutation
+- [ ] Migrar `productService` → `useProductQueries.ts` + ProductList, ProductForm, ProductDetails
+- [ ] Migrar `inventoryService` → `useInventoryQueries.ts` + InventoryList, InventoryForm, InventoryDetails
+- [ ] Migrar `eventService` (completar) → EventList, EventForm, EventSummary
+- [ ] Migrar `paymentService`, `searchService`, `adminService`, `subscriptionService`
+- [ ] Migrar componentes compartidos: StatusDropdown, OnboardingChecklist, PendingEventsModal
+- [ ] Rewrite `usePlanLimits` para usar query hooks (mayor win de cache sharing)
+- [ ] Migrar Dashboard, Search, Settings, AdminUsers, AdminDashboard
 - [ ] Implementar optimistic updates para status changes
-- [ ] Eliminar `useState` + `useEffect` + `useCallback` pattern manual en list pages
+- [ ] Eliminar todos los `useState` + `useEffect` + `useCallback` fetch patterns restantes
 
 **Por qué**: Elimina fetches redundantes, agrega cache, mejora UX percibida. Es el cambio con mayor impacto/esfuerzo de toda la app.
 

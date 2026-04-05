@@ -100,14 +100,21 @@ Formularios que usan RHF+Zod:
 - ProductForm, InventoryForm
 - Settings (password change)
 
-### 5. Server State (Local)
+### 5. Server State (TanStack React Query — migración en progreso)
 
-> [!warning] Sin React Query
-> La app NO usa React Query/TanStack Query. Los datos del servidor se manejan con `useState` + `useCallback` + `useEffect`. Esto significa:
-> - No hay cache automático
-> - No hay refetch en foco
-> - No hay deduplicación de requests
-> - Cada página hace su propio fetch al montar
+> [!success] Migración iniciada — 2026-04-04
+> TanStack React Query v5 instalado. Dominio de **Clientes completamente migrado**. Los demás dominios se migran progresivamente — el patrón manual (`useState` + `useCallback`) convive con React Query hasta completar la migración.
+
+**Beneficios ya activos** (dominio Clientes):
+- Cache automático (staleTime: 2min, gcTime: 10min)
+- Refetch en window focus
+- Deduplicación de requests
+- Error handling global via QueryCache/MutationCache
+- Back-navigation instantánea (datos cacheados)
+
+**Estructura**: `hooks/queries/queryKeys.ts` + `useClientQueries.ts`, `useEventQueries.ts` (skeleton), etc.
+
+**Dominios pendientes**: Products, Inventory, Events, Payments, Search, Admin, Dashboard, Settings
 
 Patrón típico:
 ```typescript
