@@ -264,10 +264,10 @@ gantt
 - [x] `loading="lazy"` en todas las `<img>` de listas — **Fase 1.3**
 - [x] `prefers-reduced-motion` media query global — **Fase 3.1**
 - [x] Error boundary básico wrapeando `<Routes>` — **Fase 4.1**
-- [ ] Skip-to-content link en Layout
-- [ ] `React.memo()` en componentes de tabla pesados (RowActionMenu, StatusDropdown)
-- [ ] Verificar y corregir contraste WCAG en dark mode para `text-text-secondary`
-- [ ] Agregar `rel="noopener noreferrer"` a links externos
+- [x] Skip-to-content link en Layout — **Quick Win**
+- [x] `rel="noopener noreferrer"` en links externos — **Ya existía**
+- [ ] `React.memo()` en componentes de tabla pesados — marginal con React Query
+- [ ] Verificar contraste WCAG en dark mode — requiere auditoría visual
 
 ---
 
