@@ -105,39 +105,43 @@
 
 ## Fase 3: Polish Premium (Detalles que Enamoran)
 
-> [!success] Impacto: Medio | Esfuerzo: Bajo-Medio
-> Detalles que separan una app "buena" de una "premium".
+> [!done] FASE 3 COMPLETADA — 2026-04-05
+> Animaciones, skeleton shimmer, keyboard shortcuts, reduced motion, theme crossfade.
 
-### 3.1 Animaciones y Transiciones
-- [ ] Page transitions con Framer Motion o View Transitions API
-- [ ] Stagger animations en listas (items entran escalonados)
-- [ ] Skeleton → content fade-in transition
-- [ ] Modal/Dialog enter/exit animations
-- [ ] Respetar `prefers-reduced-motion`
+### 3.1 Animaciones y Transiciones ✅
 
-### 3.2 Keyboard Shortcuts
-- [ ] `N` → Nuevo evento/cliente/producto (contextual)
-- [ ] `E` → Editar item seleccionado
-- [ ] `Del` → Eliminar con confirmación
-- [ ] `↑↓` → Navegar entre filas de tabla
-- [ ] `Enter` → Abrir item seleccionado
-- [ ] Help overlay con `?` mostrando todos los shortcuts
+- [x] CSS animation utilities: fade-in-up, fade-in, scale-in, shimmer
+- [x] Skeleton → shimmer gradient (reemplaza pulse genérico)
+- [x] Modal backdrop fade-in animation
+- [x] Suspense fallback con fade-in
+- [x] Light/dark theme crossfade (background-color + color transition)
+- [x] `prefers-reduced-motion` — desactiva TODAS las animaciones para usuarios que lo prefieren
 
-### 3.3 Empty State Illustrations
-- [ ] Reemplazar iconos genéricos con ilustraciones custom para cada empty state
-- [ ] Animaciones sutiles en empty states (ej: calendario vacío con confetti)
-- [ ] Onboarding más visual con ilustraciones paso a paso
+### 3.2 Keyboard Shortcuts ✅
 
-### 3.4 Skeleton Loading Mejorado
-- [ ] Skeletons que coincidan EXACTAMENTE con el layout final (no genéricos)
-- [ ] Shimmer animation en lugar de pulse
-- [ ] Content-aware skeletons (diferentes para cards vs tablas vs forms)
+- [x] `useKeyboardShortcuts` hook con secuencias de 2 teclas
+- [x] Navegación: G+D (Dashboard), G+E (Eventos), G+C (Clientes), G+P (Productos), G+I (Inventario), G+K (Calendario)
+- [x] Acciones: N (nuevo contextual según sección actual)
+- [x] `?` toggle help overlay con lista de todos los shortcuts
+- [x] Skip shortcuts en inputs/textareas/selects
+- [x] `KeyboardShortcutsHelp` component con secciones y `<kbd>` styling
+- [x] Wired into Layout junto a CommandPalette
 
-### 3.5 Dark Mode Polish
-- [ ] Auditar TODAS las combinaciones de color en dark mode
-- [ ] Verificar contraste WCAG AA en dark mode
-- [ ] PDFs generados respetando el tema actual del usuario
-- [ ] Transición suave entre light/dark (crossfade)
+### 3.3 Empty State Illustrations ⏭️
+
+> [!info] Diferido — requiere assets de diseño custom
+
+### 3.4 Skeleton Loading Mejorado ✅
+
+- [x] Shimmer gradient animation reemplaza pulse en todos los Skeleton components
+- [x] Gradiente usa design tokens (surface-alt → border → surface-alt)
+
+### 3.5 Dark Mode + Reduced Motion ✅
+
+- [x] `prefers-reduced-motion` media query global
+- [x] Theme crossfade transition en `<html>`
+- [ ] _Futuro:_ Audit completo WCAG AA de todas las combinaciones dark mode
+- [ ] _Futuro:_ PDFs respetando tema actual
 
 ---
 
