@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { eventService } from "@/services/eventService";
 import { productService } from "@/services/productService";
@@ -50,14 +50,18 @@ import { getEventTotalCharged, getEventTaxAmount, getEventNetSales } from "@/lib
 import { Payments } from "./components/Payments";
 import { StatusDropdown, EventStatus } from "@/components/StatusDropdown";
 import { SkeletonLine } from "@/components/Skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { useEvent, useEventProducts, useEventExtras, useEventEquipment, useEventSupplies, useDeleteEvent } from "@/hooks/queries/useEventQueries";
+import { usePaymentsByEvent } from "@/hooks/queries/usePaymentQueries";
+import { queryKeys } from "@/hooks/queries/queryKeys";
 
 import clsx from "clsx";
 import { ContractTemplateError, renderContractTemplate } from "@/lib/contractTemplate";
 import { renderFormattedReact } from "@/lib/inlineFormatting";
 import type { Event, Client, User, EventExtra, EventEquipment, EventSupply, Payment, ProductIngredient } from "@/types/entities";
 
-// API response types — base entities extended with joined data from the backend
-type EventWithClient = Event & { client?: Client | null };
+// API response types — backend returns `clients` (plural, Supabase join naming)
+type EventWithClient = Event & { clients?: Client | null };
 
 // Matches UserProfile in pdfGenerator (User + optional billing/template fields)
 type UserProfile = User & {
@@ -99,18 +103,24 @@ export const EventSummary: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const [event, setEvent] = useState<EventWithClient | null>(null);
-  const [products, setProducts] = useState<EventProductWithDetails[]>([]);
-  const [extras, setExtras] = useState<EventExtra[]>([]);
-  const [equipment, setEquipment] = useState<EventEquipment[]>([]);
-  const [supplies, setSupplies] = useState<EventSupply[]>([]);
-  const [ingredients, setIngredients] = useState<IngredientWithStock[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { addToast } = useToast();
+
+  // ── 6 parallel queries via React Query ──
+  const { data: eventRaw = null, isLoading: eventLoading } = useEvent(id);
+  const event = eventRaw as EventWithClient | null;
+  const { data: products = [], isLoading: productsLoading } = useEventProducts(id);
+  const { data: extras = [] } = useEventExtras(id);
+  const { data: equipment = [] } = useEventEquipment(id);
+  const { data: supplies = [] } = useEventSupplies(id);
+  const { data: payments = [] } = usePaymentsByEvent(id);
+  const deleteEventMutation = useDeleteEvent();
+
+  const loading = eventLoading || productsLoading;
+
+  // ── Local UI state ──
   const [viewMode, setViewMode] = useState<ViewMode>("summary");
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const { addToast } = useToast();
   const [eventPhotos, setEventPhotos] = useState<string[]>([]);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null);
@@ -120,168 +130,110 @@ export const EventSummary: React.FC = () => {
   const [checklistItems, setChecklistItems] = useState<{ id: string; name: string; quantity: number; unit: string; section: "equipment" | "stock" | "purchase" | "extra" }[]>([]);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
-  const aggregateProductIngredients = useCallback(async (productIds: string[], productQuantities: Map<string, number>) => {
-    try {
-      const allProdIngredients = await productService.getIngredientsForProducts(productIds);
-      const prodIngredients = allProdIngredients.filter((ing: ProductIngredientWithInventory) => ing.type === 'ingredient');
+  // ── Derived: product quantities map (stable via sorted JSON key) ──
+  const productIdsSorted = useMemo(
+    () => (products as EventProductWithDetails[]).map((p) => p.product_id).sort(),
+    [products],
+  );
 
-      const aggregatedIngredients: Record<string, IngredientWithStock> = {};
-      prodIngredients.forEach((ing: ProductIngredientWithInventory) => {
-        const key = ing.inventory_id;
-        const quantity = productQuantities.get(ing.product_id) || 0;
-        const ingredientName = ing.ingredient_name ?? ing.inventory?.ingredient_name ?? '';
-        const unit = ing.unit ?? ing.inventory?.unit ?? '';
-        const unitCost = ing.unit_cost ?? ing.inventory?.unit_cost ?? 0;
-        const currentStock = ing.inventory?.current_stock ?? 0;
+  const productQuantities = useMemo(() => {
+    const map = new Map<string, number>();
+    (products as EventProductWithDetails[]).forEach((p) => {
+      map.set(p.product_id, p.quantity || 0);
+    });
+    return map;
+  }, [products]);
 
-        if (!aggregatedIngredients[key]) {
-          aggregatedIngredients[key] = {
-            name: ingredientName,
-            unit,
-            quantity: 0,
-            cost: 0,
-            currentStock,
-          };
-        }
-        aggregatedIngredients[key].quantity += ing.quantity_required * quantity;
-        aggregatedIngredients[key].cost += ing.quantity_required * quantity * unitCost;
-      });
+  // ── Dependent query: fetch all ingredients for event products ──
+  const { data: allProdIngredients = [] } = useQuery({
+    queryKey: queryKeys.products.ingredientsBatch(productIdsSorted),
+    queryFn: () => productService.getIngredientsForProducts(productIdsSorted),
+    enabled: productIdsSorted.length > 0,
+  });
 
-      setIngredients(Object.values(aggregatedIngredients));
-    } catch (error) {
-      logError("Error aggregating ingredients", error);
-    }
-  }, []);
+  // ── Derived: aggregated ingredients (pure computation, no fetch) ──
+  const ingredients = useMemo(() => {
+    const prodIngredients = allProdIngredients.filter(
+      (ing: ProductIngredientWithInventory) => ing.type === 'ingredient',
+    );
+    const aggregated: Record<string, IngredientWithStock> = {};
+    prodIngredients.forEach((ing: ProductIngredientWithInventory) => {
+      const key = ing.inventory_id;
+      const quantity = productQuantities.get(ing.product_id) || 0;
+      const ingredientName = ing.ingredient_name ?? ing.inventory?.ingredient_name ?? '';
+      const unit = ing.unit ?? ing.inventory?.unit ?? '';
+      const unitCost = ing.unit_cost ?? ing.inventory?.unit_cost ?? 0;
+      const currentStock = ing.inventory?.current_stock ?? 0;
 
-  const loadData = useCallback(async (eventId: string) => {
-    try {
-      setLoading(true);
-      const [eventData, productsData, extrasData, paymentsData, equipmentData, suppliesData] =
-        await Promise.all([
-          eventService.getById(eventId),
-          eventService.getProducts(eventId),
-          eventService.getExtras(eventId),
-          paymentService.getByEventId(eventId),
-          eventService.getEquipment(eventId),
-          eventService.getSupplies(eventId),
-        ]);
+      if (!aggregated[key]) {
+        aggregated[key] = { name: ingredientName, unit, quantity: 0, cost: 0, currentStock };
+      }
+      aggregated[key].quantity += ing.quantity_required * quantity;
+      aggregated[key].cost += ing.quantity_required * quantity * unitCost;
+    });
+    return Object.values(aggregated);
+  }, [allProdIngredients, productQuantities]);
 
-      setEvent(eventData);
-      setProducts(productsData || []);
-      setExtras(extrasData || []);
-      setPayments(paymentsData || []);
-      setEquipment(equipmentData || []);
-      setSupplies(suppliesData || []);
-
-      // Parse photos JSONB
-      if (eventData.photos) {
-        try {
-          const parsed = typeof eventData.photos === 'string' ? JSON.parse(eventData.photos) : eventData.photos;
-          setEventPhotos(Array.isArray(parsed) ? parsed : []);
-        } catch {
-          setEventPhotos([]);
-        }
-      } else {
+  // ── Parse photos from event data ──
+  useEffect(() => {
+    if (event?.photos) {
+      try {
+        const parsed = typeof event.photos === 'string' ? JSON.parse(event.photos) : event.photos;
+        setEventPhotos(Array.isArray(parsed) ? parsed : []);
+      } catch {
         setEventPhotos([]);
       }
-
-      const productQuantities = new Map<string, number>();
-      (productsData || []).forEach((p: EventProductWithDetails) => {
-        productQuantities.set(p.product_id, p.quantity || 0);
-      });
-      const productIds = Array.from(productQuantities.keys());
-      await aggregateProductIngredients(productIds, productQuantities);
-
-      // Build checklist items from equipment, ingredients (bring_to_event), supplies, and extras
-      const clItems: typeof checklistItems = [];
-
-      // Equipment
-      (equipmentData || []).forEach((eq: EventEquipment) => {
-        clItems.push({
-          id: `eq_${eq.id}`,
-          name: eq.equipment_name || "Equipo",
-          quantity: eq.quantity || 1,
-          unit: eq.unit || "pza",
-          section: "equipment",
-        });
-      });
-
-      // Product ingredients with bring_to_event
-      try {
-        if (productIds.length > 0) {
-          const allIngredients = await productService.getIngredientsForProducts(productIds);
-          const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
-          (allIngredients || [])
-            .filter((ing: ProductIngredientWithInventory) => ing.type === "ingredient" && ing.bring_to_event)
-            .forEach((ing: ProductIngredientWithInventory) => {
-              const key = ing.inventory_id;
-              const qty = productQuantities.get(ing.product_id) || 0;
-              if (!aggregated[key]) {
-                aggregated[key] = { name: ing.ingredient_name || "Insumo", unit: ing.unit || "", quantity: 0 };
-              }
-              aggregated[key].quantity += (ing.quantity_required || 0) * qty;
-            });
-          Object.entries(aggregated).forEach(([invId, info]) => {
-            clItems.push({
-              id: `ing_${invId}`,
-              name: info.name,
-              quantity: info.quantity,
-              unit: info.unit,
-              section: "stock",
-            });
-          });
-        }
-      } catch {
-        // Skip ingredient aggregation on error
-      }
-
-      // Supplies
-      (suppliesData || []).forEach((s: EventSupply) => {
-        clItems.push({
-          id: `sup_${s.id}`,
-          name: s.supply_name || "Insumo",
-          quantity: s.quantity || 1,
-          unit: s.unit || "und",
-          section: s.source === "stock" ? "stock" : "purchase",
-        });
-      });
-
-      // Extras with include_in_checklist
-      (extrasData || []).filter((e: EventExtra) => e.include_in_checklist !== false && e.description).forEach((e: EventExtra) => {
-        clItems.push({
-          id: `ext_${e.id}`,
-          name: e.description,
-          quantity: 1,
-          unit: "pza",
-          section: "extra",
-        });
-      });
-
-      setChecklistItems(clItems);
-
-      // Restore checked state from localStorage
-      const savedChecked = localStorage.getItem(`event_checklist_${eventId}`);
-      if (savedChecked) {
-        try {
-          setCheckedIds(new Set(JSON.parse(savedChecked)));
-        } catch {
-          setCheckedIds(new Set());
-        }
-      } else {
-        setCheckedIds(new Set());
-      }
-    } catch (error) {
-      logError("Error loading summary", error);
-    } finally {
-      setLoading(false);
+    } else {
+      setEventPhotos([]);
     }
-  }, [aggregateProductIngredients]);
+  }, [event?.photos]);
 
+  // ── Build checklist items from cached query data (no additional fetches) ──
   useEffect(() => {
-    if (id) {
-      loadData(id);
+    if (!event) return;
+    const clItems: typeof checklistItems = [];
+
+    // Equipment
+    (equipment as EventEquipment[]).forEach((eq) => {
+      clItems.push({ id: `eq_${eq.id}`, name: eq.equipment_name || "Equipo", quantity: eq.quantity || 1, unit: eq.unit || "pza", section: "equipment" });
+    });
+
+    // Product ingredients with bring_to_event (from already-cached allProdIngredients)
+    const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
+    (allProdIngredients || [])
+      .filter((ing: ProductIngredientWithInventory) => ing.type === "ingredient" && ing.bring_to_event)
+      .forEach((ing: ProductIngredientWithInventory) => {
+        const key = ing.inventory_id;
+        const qty = productQuantities.get(ing.product_id) || 0;
+        if (!aggregated[key]) {
+          aggregated[key] = { name: ing.ingredient_name || "Insumo", unit: ing.unit || "", quantity: 0 };
+        }
+        aggregated[key].quantity += (ing.quantity_required || 0) * qty;
+      });
+    Object.entries(aggregated).forEach(([invId, info]) => {
+      clItems.push({ id: `ing_${invId}`, name: info.name, quantity: info.quantity, unit: info.unit, section: "stock" });
+    });
+
+    // Supplies
+    (supplies as EventSupply[]).forEach((s) => {
+      clItems.push({ id: `sup_${s.id}`, name: s.supply_name || "Insumo", quantity: s.quantity || 1, unit: s.unit || "und", section: s.source === "stock" ? "stock" : "purchase" });
+    });
+
+    // Extras with include_in_checklist
+    (extras as EventExtra[]).filter((e) => e.include_in_checklist !== false && e.description).forEach((e) => {
+      clItems.push({ id: `ext_${e.id}`, name: e.description, quantity: 1, unit: "pza", section: "extra" });
+    });
+
+    setChecklistItems(clItems);
+
+    // Restore checked state from localStorage
+    const savedChecked = localStorage.getItem(`event_checklist_${id}`);
+    if (savedChecked) {
+      try { setCheckedIds(new Set(JSON.parse(savedChecked))); } catch { setCheckedIds(new Set()); }
+    } else {
+      setCheckedIds(new Set());
     }
-  }, [id, loadData]);
+  }, [event, equipment, supplies, extras, allProdIngredients, productQuantities, id]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -294,9 +246,7 @@ export const EventSummary: React.FC = () => {
     return () => document.removeEventListener("click", handleClickOutside);
   }, [actionsDropdownOpen]);
 
-  const handleStatusChange = (newStatus: EventStatus) => {
-    setEvent((prev: EventWithClient | null) => prev ? { ...prev, status: newStatus } : prev);
-  };
+  // StatusDropdown handles its own API call; onStatusChange is optional
 
   const toggleChecklistItem = useCallback((itemId: string) => {
     setCheckedIds((prev) => {
@@ -313,18 +263,12 @@ export const EventSummary: React.FC = () => {
 
   const checklistProgress = checklistItems.length > 0 ? checkedIds.size / checklistItems.length : 0;
 
-  const handleDeleteEvent = async () => {
+  const handleDeleteEvent = () => {
     if (!id) return;
-    try {
-      await eventService.delete(id);
-      addToast("Evento eliminado correctamente.", "success");
-      navigate("/dashboard");
-    } catch (error) {
-      logError("Error deleting event", error);
-      addToast("Error al eliminar el evento.", "error");
-    } finally {
-      setConfirmDeleteOpen(false);
-    }
+    deleteEventMutation.mutate(id, {
+      onSuccess: () => navigate("/dashboard"),
+      onSettled: () => setConfirmDeleteOpen(false),
+    });
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -480,7 +424,7 @@ export const EventSummary: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-8 py-8 transition-colors">
-      <Breadcrumb items={[{ label: 'Eventos', href: '/events' }, { label: `${event.client?.name || ''} — ${event?.service_type || 'Evento'}` }]} />
+      <Breadcrumb items={[{ label: 'Eventos', href: '/events' }, { label: `${event.clients?.name || ''} — ${event?.service_type || 'Evento'}` }]} />
 
       {/* Header: Back + Title + StatusDropdown + Actions */}
       <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -501,7 +445,7 @@ export const EventSummary: React.FC = () => {
               <StatusDropdown
                 eventId={id}
                 currentStatus={currentStatus}
-                onStatusChange={handleStatusChange}
+                onStatusChange={() => {}}
               />
             </div>
           )}
@@ -806,13 +750,14 @@ export const EventSummary: React.FC = () => {
           totalAmount={event.total_amount}
           userId={user.id}
           eventStatus={currentStatus}
-          onStatusChange={handleStatusChange}
+          onStatusChange={() => {}}
           eventData={{ deposit_percent: event.deposit_percent }}
           initialAmount={paymentInitialAmount}
           autoOpenAdd={autoOpenPayment}
-          onPaymentAdded={async () => {
-            const paymentsData = await paymentService.getByEventId(id);
-            setPayments(paymentsData || []);
+          onPaymentAdded={() => {
+            import("@/lib/queryClient").then(({ queryClient: qc }) => {
+              qc.invalidateQueries({ queryKey: queryKeys.payments.byEvent(id!) });
+            });
           }}
         />
       )}
@@ -878,15 +823,15 @@ export const EventSummary: React.FC = () => {
                     <Users className="h-3.5 w-3.5" /> Cliente
                   </dt>
                   <dd className="mt-1 font-bold text-text">
-                    {event.client?.id ? (
-                      <Link to={`/clients/${event.client.id}`} className="text-primary hover:text-primary-dark transition-colors">
-                        {event.client.name}
+                    {event.clients?.id ? (
+                      <Link to={`/clients/${event.clients.id}`} className="text-primary hover:text-primary-dark transition-colors">
+                        {event.clients.name}
                       </Link>
                     ) : (
-                      event.client?.name || "Sin cliente"
+                      event.clients?.name || "Sin cliente"
                     )}
-                    {event.client?.phone && (
-                      <span className="text-sm text-text-secondary ml-2">• {event.client.phone}</span>
+                    {event.clients?.phone && (
+                      <span className="text-sm text-text-secondary ml-2">• {event.clients.phone}</span>
                     )}
                   </dd>
                 </div>
@@ -1392,7 +1337,7 @@ export const EventSummary: React.FC = () => {
               </p>
             </div>
             <div className="text-center border-t border-border pt-4">
-              <p className="font-bold">{event.client?.name}</p>
+              <p className="font-bold">{event.clients?.name}</p>
               <p className="text-sm text-text-secondary mt-1">
                 Firma de EL CLIENTE
               </p>
