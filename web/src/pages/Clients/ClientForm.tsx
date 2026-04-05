@@ -14,7 +14,7 @@ import { UpgradeBanner } from "../../components/UpgradeBanner";
 const clientSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   phone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  email: z.string().email("Email inválido. Usa el formato: nombre@dominio.com").optional().or(z.literal("")),
   address: z.string().optional(),
   city: z.string().optional(),
   notes: z.string().optional(),

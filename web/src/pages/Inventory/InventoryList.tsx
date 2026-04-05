@@ -388,9 +388,9 @@ export const InventoryList: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmOpen}
-        title="Eliminar ítem"
-        description="Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        title="Eliminar ítem de inventario"
+        description="Se eliminará el ítem y su historial de stock. Si está asignado a eventos, esas asignaciones también se eliminarán. Esta acción no se puede deshacer."
+        confirmText="Eliminar permanentemente"
         cancelText="Cancelar"
         onConfirm={confirmDelete}
         onCancel={() => {
@@ -503,10 +503,10 @@ export const InventoryList: React.FC = () => {
         <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
           <Empty
             icon={Package}
-            title="No se encontraron ítems"
+            title="Sin ítems en el inventario"
             description={
               searchTerm || showLowStockOnly
-                ? "Intenta ajustar los filtros de búsqueda."
+                ? showLowStockOnly ? "No hay ítems con stock bajo. ¡Tu inventario está en orden!" : "No hay ítems que coincidan. Prueba con otro nombre o tipo."
                 : "Comienza agregando tu primer ítem al inventario."
             }
             action={

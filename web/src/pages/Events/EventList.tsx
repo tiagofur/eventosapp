@@ -61,7 +61,7 @@ export const EventList: React.FC = () => {
       setEvents(data || []);
     } catch (error) {
       logError("Error fetching events", error);
-      addToast("Error al cargar los eventos.", "error");
+      addToast("Error al cargar los eventos. Verifica tu conexión y recarga la página.", "error");
     } finally {
       setLoading(false);
     }
@@ -155,8 +155,8 @@ export const EventList: React.FC = () => {
       <ConfirmDialog
         open={confirmOpen}
         title="Eliminar evento"
-        description="Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        description="Se eliminarán todos los datos del evento, incluyendo pagos y archivos. Esta acción no se puede deshacer."
+        confirmText="Eliminar permanentemente"
         cancelText="Cancelar"
         onConfirm={confirmDelete}
         onCancel={() => {
@@ -205,7 +205,7 @@ export const EventList: React.FC = () => {
               aria-label="Exportar eventos a CSV"
             >
               <Download className="h-4 w-4 mr-2" aria-hidden="true" />
-              CSV
+              Exportar CSV
             </button>
           )}
           <Link
@@ -293,7 +293,7 @@ export const EventList: React.FC = () => {
             }
             description={
               searchTerm || statusFilter !== "all"
-                ? "Intenta ajustar los términos de búsqueda o el filtro de estado."
+                ? "No hay eventos que coincidan. Prueba con otro estado o borrando el texto de búsqueda."
                 : "Comienza creando tu primer evento."
             }
             action={

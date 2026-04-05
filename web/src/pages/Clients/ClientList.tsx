@@ -116,8 +116,8 @@ export const ClientList: React.FC = () => {
       <ConfirmDialog
         open={confirmOpen}
         title="Eliminar cliente"
-        description="Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        description="Se eliminará el cliente y todos sus datos. Los eventos existentes quedarán sin cliente asignado. Esta acción no se puede deshacer."
+        confirmText="Eliminar permanentemente"
         cancelText="Cancelar"
         onConfirm={confirmDelete}
         onCancel={() => {
@@ -211,7 +211,7 @@ export const ClientList: React.FC = () => {
             title="No se encontraron clientes"
             description={
               searchTerm
-                ? "Intenta ajustar los términos de búsqueda."
+                ? "No hay clientes que coincidan. Prueba con otro nombre, teléfono o ciudad."
                 : "Comienza agregando tu primer cliente."
             }
             action={

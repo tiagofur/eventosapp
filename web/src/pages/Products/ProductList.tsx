@@ -126,8 +126,8 @@ export const ProductList: React.FC = () => {
       <ConfirmDialog
         open={confirmOpen}
         title="Eliminar producto"
-        description="Esta acción no se puede deshacer."
-        confirmText="Eliminar"
+        description="Se eliminará el producto y su receta. No se puede usar en nuevas cotizaciones. Esta acción no se puede deshacer."
+        confirmText="Eliminar permanentemente"
         cancelText="Cancelar"
         onConfirm={confirmDelete}
         onCancel={() => {
@@ -235,10 +235,10 @@ export const ProductList: React.FC = () => {
         ) : filteredProducts.length === 0 ? (
           <Empty
             icon={UtensilsCrossed}
-            title="No hay productos"
+            title="Sin productos registrados"
             description={
               searchTerm || selectedCategory
-                ? "No se encontraron productos con ese criterio."
+                ? "No hay productos que coincidan. Prueba con otra categoría o borrando el texto de búsqueda."
                 : "Comienza agregando tu primer producto."
             }
             action={
