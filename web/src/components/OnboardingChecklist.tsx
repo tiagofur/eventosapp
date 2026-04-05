@@ -1,75 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { clientService } from '../services/clientService';
-import { productService } from '../services/productService';
-import { eventService } from '../services/eventService';
 import { CheckCircle2, Circle, X, Users, Package, CalendarPlus, ChevronRight } from 'lucide-react';
-import { logError } from '../lib/errorHandler';
+import { useClients } from '../hooks/queries/useClientQueries';
+import { useProducts } from '../hooks/queries/useProductQueries';
+import { useEvents } from '../hooks/queries/useEventQueries';
 
 export const OnboardingChecklist: React.FC = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
-  const [progress, setProgress] = useState(0);
-  
-  const [hasClient, setHasClient] = useState(false);
-  const [hasProduct, setHasProduct] = useState(false);
-  const [hasEvent, setHasEvent] = useState(false);
+  const { data: clients = [], isLoading: clientsLoading } = useClients();
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: events = [], isLoading: eventsLoading } = useEvents();
+  const [dismissed, setDismissed] = useState(false);
 
+  const loading = clientsLoading || productsLoading || eventsLoading;
+
+  const hideKey = user ? `hideOnboarding_${user.id}` : '';
+  const isHidden = dismissed || (hideKey && localStorage.getItem(hideKey) === 'true');
+
+  const hasClient = clients.length > 0;
+  const hasProduct = products.length > 0;
+  const hasEvent = events.length > 0;
+
+  let completed = 0;
+  if (hasClient) completed++;
+  if (hasProduct) completed++;
+  if (hasEvent) completed++;
+  const progress = Math.round((completed / 3) * 100);
+
+  // Auto-hide when all complete
   useEffect(() => {
-    if (!user) return;
-    
-    const hideKey = `hideOnboarding_${user.id}`;
-    if (localStorage.getItem(hideKey) === 'true') {
-      setLoading(false);
-      return;
+    if (completed === 3 && hideKey) {
+      localStorage.setItem(hideKey, 'true');
     }
+  }, [completed, hideKey]);
 
-    const checkStatus = async () => {
-      try {
-        const [clients, products, events] = await Promise.all([
-          clientService.getAll(),
-          productService.getAll(),
-          eventService.getAll()
-        ]);
-
-        const clientExists = (clients || []).length > 0;
-        const productExists = (products || []).length > 0;
-        const eventExists = (events || []).length > 0;
-
-        setHasClient(clientExists);
-        setHasProduct(productExists);
-        setHasEvent(eventExists);
-
-        let completed = 0;
-        if (clientExists) completed++;
-        if (productExists) completed++;
-        if (eventExists) completed++;
-
-        setProgress(Math.round((completed / 3) * 100));
-        
-        // Show only if not 100% complete
-        if (completed < 3) {
-          setIsVisible(true);
-        } else {
-          // If 100% complete, auto-hide forever
-          localStorage.setItem(hideKey, 'true');
-        }
-      } catch (error) {
-        logError("Error checking onboarding status", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkStatus();
-  }, [user]);
+  const isVisible = !isHidden && completed < 3;
 
   const handleDismiss = () => {
     if (!user) return;
     localStorage.setItem(`hideOnboarding_${user.id}`, 'true');
-    setIsVisible(false);
+    setDismissed(true);
   };
 
   if (loading || !isVisible) return null;

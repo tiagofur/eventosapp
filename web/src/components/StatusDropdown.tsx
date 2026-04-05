@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
-import { eventService } from '../services/eventService';
-import { useToast } from '../hooks/useToast';
-import { logError } from '../lib/errorHandler';
+import { useUpdateEventStatus } from '../hooks/queries/useEventQueries';
 
 export type EventStatus = 'quoted' | 'confirmed' | 'completed' | 'cancelled';
 
@@ -28,11 +26,11 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
   onStatusChange,
 }) => {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const updateStatus = useUpdateEventStatus();
+  const loading = updateStatus.isPending;
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0, openUp: false });
-  const { addToast } = useToast();
 
   const cfg = STATUS_CONFIG[currentStatus] ?? STATUS_CONFIG.quoted;
 
@@ -84,25 +82,13 @@ export const StatusDropdown: React.FC<StatusDropdownProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, close]);
 
-  const handleSelect = async (newStatus: EventStatus) => {
+  const handleSelect = (newStatus: EventStatus) => {
     if (newStatus === currentStatus || loading) return;
-
-    setLoading(true);
     setOpen(false);
-
-    try {
-      await eventService.update(eventId, { status: newStatus });
-      onStatusChange?.(newStatus);
-      addToast(
-        `Estado actualizado a "${STATUS_CONFIG[newStatus].label}"`,
-        'success',
-      );
-    } catch (err) {
-      logError('Error updating event status', err);
-      addToast('Error al actualizar el estado del evento.', 'error');
-    } finally {
-      setLoading(false);
-    }
+    updateStatus.mutate(
+      { id: eventId, status: newStatus },
+      { onSuccess: () => onStatusChange?.(newStatus) },
+    );
   };
 
   const dropdownContent = open

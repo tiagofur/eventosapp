@@ -1,70 +1,33 @@
-import React, { useEffect, useState } from "react";
-import { eventService } from "../services/eventService";
-import { Event } from "../types/entities";
-import { logError } from "../lib/errorHandler";
+import React, { useMemo, useState } from "react";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Modal } from "./Modal";
-
-type EventWithClient = Event & {
-  client?: { name: string } | null;
-};
+import { useEvents, useUpdateEventStatus } from "../hooks/queries/useEventQueries";
 
 export const PendingEventsModal: React.FC = () => {
-  const [pendingEvents, setPendingEvents] = useState<EventWithClient[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const { data: allEvents = [], isLoading: loading } = useEvents();
+  const updateStatus = useUpdateEventStatus();
+  const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    const fetchPendingEvents = async () => {
-      try {
-        setLoading(true);
-        const data = await eventService.getAll();
+  const pendingEvents = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return allEvents.filter((e) => {
+      if (e.status !== "confirmed") return false;
+      const eventDate = new Date(e.event_date + "T00:00:00");
+      return eventDate < today;
+    });
+  }, [allEvents]);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+  const isOpen = !dismissed && pendingEvents.length > 0;
+  const updatingId = updateStatus.isPending ? (updateStatus.variables?.id ?? null) : null;
 
-        const pastConfirmed = (data || []).filter((e) => {
-          if (e.status !== "confirmed") return false;
-          const eventDate = new Date(e.event_date + "T00:00:00");
-          return eventDate < today;
-        });
-
-        if (pastConfirmed.length > 0) {
-          setPendingEvents(pastConfirmed);
-          setIsOpen(true);
-        }
-      } catch (err) {
-        logError("Error loading pending events", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPendingEvents();
-  }, []);
-
-  const handleUpdateStatus = async (
+  const handleUpdateStatus = (
     eventId: string,
     newStatus: "completed" | "cancelled",
   ) => {
-    try {
-      setUpdatingId(eventId);
-      await eventService.update(eventId, { status: newStatus });
-      setPendingEvents((prev) => {
-        const updated = prev.filter((e) => e.id !== eventId);
-        if (updated.length === 0) {
-          setIsOpen(false);
-        }
-        return updated;
-      });
-    } catch (err) {
-      logError(`Error updating event ${eventId}`, err);
-    } finally {
-      setUpdatingId(null);
-    }
+    updateStatus.mutate({ id: eventId, status: newStatus });
   };
 
   if (loading || pendingEvents.length === 0) return null;
@@ -72,7 +35,7 @@ export const PendingEventsModal: React.FC = () => {
   return (
     <Modal
       isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
+      onClose={() => setDismissed(true)}
       title="Eventos Pendientes de Cierre"
       maxWidth="lg"
       titleId="modal-title"
@@ -96,7 +59,7 @@ export const PendingEventsModal: React.FC = () => {
             >
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-text truncate group-hover:text-primary transition-colors">
-                  {event.client?.name || "Sin Cliente"}
+                  {event.clients?.name || "Sin Cliente"}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-sm text-text-secondary">
@@ -119,7 +82,7 @@ export const PendingEventsModal: React.FC = () => {
                   onClick={() => handleUpdateStatus(event.id, "completed")}
                   disabled={updatingId === event.id}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-success text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-sm shadow-success/20 disabled:opacity-50"
-                  aria-label={`Marcar evento como completado: ${event.client?.name || "Sin Cliente"} - ${event.service_type}`}
+                  aria-label={`Marcar evento como completado: ${event.clients?.name || "Sin Cliente"} - ${event.service_type}`}
                 >
                   <CheckCircle className="h-4 w-4 mr-2" aria-hidden="true" />
                   Completar
@@ -129,7 +92,7 @@ export const PendingEventsModal: React.FC = () => {
                   onClick={() => handleUpdateStatus(event.id, "cancelled")}
                   disabled={updatingId === event.id}
                   className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-error/10 text-error border border-error/20 text-sm font-bold rounded-xl hover:bg-error/20 transition-colors disabled:opacity-50"
-                  aria-label={`Marcar evento como cancelado: ${event.client?.name || "Sin Cliente"} - ${event.service_type}`}
+                  aria-label={`Marcar evento como cancelado: ${event.clients?.name || "Sin Cliente"} - ${event.service_type}`}
                 >
                   <XCircle className="h-4 w-4 mr-2" aria-hidden="true" />
                   Cancelar
@@ -143,7 +106,7 @@ export const PendingEventsModal: React.FC = () => {
           <button
             type="button"
             className="px-6 py-2.5 rounded-xl bg-surface-alt text-text-secondary font-bold hover:bg-surface transition-colors"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setDismissed(true)}
           >
             Cerrar por ahora
           </button>
