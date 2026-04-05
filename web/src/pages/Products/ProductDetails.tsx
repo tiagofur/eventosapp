@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { productService } from "../../services/productService";
 import { eventService } from "../../services/eventService";
-import { Product } from "../../types/entities";
 import {
   ArrowLeft,
   Edit,
@@ -21,10 +19,10 @@ import {
 } from "lucide-react";
 import { logError } from "../../lib/errorHandler";
 import { Breadcrumb } from "../../components/Breadcrumb";
-import { useToast } from "../../hooks/useToast";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { SkeletonCard } from "../../components/Skeleton";
 import clsx from "clsx";
+import { useProduct, useProductIngredients, useDeleteProduct } from "../../hooks/queries/useProductQueries";
 
 type DemandEntry = {
   date: string;
@@ -37,38 +35,21 @@ type DemandEntry = {
 export const ProductDetails: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [ingredients, setIngredients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: product, isLoading: productLoading, error: productError } = useProduct(id);
+  const { data: ingredients = [] } = useProductIngredients(id);
+  const deleteProductMutation = useDeleteProduct();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [demandForecast, setDemandForecast] = useState<DemandEntry[]>([]);
   const [demandLoading, setDemandLoading] = useState(false);
-  const { addToast } = useToast();
+
+  const loading = productLoading;
+  const error = productError ? "Error al cargar los datos del producto." : null;
 
   useEffect(() => {
-    if (id) {
-      loadProduct(id);
+    if (id && product) {
+      loadDemandForecast(id);
     }
-  }, [id]);
-
-  const loadProduct = async (productId: string) => {
-    try {
-      setLoading(true);
-      const [productData, ingredientsData] = await Promise.all([
-        productService.getById(productId),
-        productService.getIngredients(productId),
-      ]);
-      setProduct(productData);
-      setIngredients(ingredientsData || []);
-      loadDemandForecast(productId);
-    } catch (err) {
-      logError("Error fetching product details", err);
-      setError("Error al cargar los datos del producto.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, product]);
 
   const loadDemandForecast = async (productId: string) => {
     try {
@@ -122,18 +103,12 @@ export const ProductDetails: React.FC = () => {
     }
   };
 
-  const handleDeleteProduct = async () => {
+  const handleDeleteProduct = () => {
     if (!id) return;
-    try {
-      await productService.delete(id);
-      addToast("Producto eliminado correctamente.", "success");
-      navigate("/products");
-    } catch (error) {
-      logError("Error deleting product", error);
-      addToast("Error al eliminar el producto.", "error");
-    } finally {
-      setConfirmDeleteOpen(false);
-    }
+    deleteProductMutation.mutate(id, {
+      onSuccess: () => navigate("/products"),
+      onSettled: () => setConfirmDeleteOpen(false),
+    });
   };
 
   if (loading) {

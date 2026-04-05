@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { productService } from "../../services/productService";
 import { Product } from "../../types/entities";
 import {
   Plus,
@@ -18,59 +17,32 @@ import {
 import { RowActionMenu } from "../../components/RowActionMenu";
 import { exportToCsv } from "../../lib/exportCsv";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { logError } from "../../lib/errorHandler";
 import Empty from "../../components/Empty";
-import { useToast } from "../../hooks/useToast";
 import { usePagination } from "../../hooks/usePagination";
 import { Pagination } from "../../components/Pagination";
 import { SkeletonTable } from "../../components/Skeleton";
+import { useProducts, useDeleteProduct } from "../../hooks/queries/useProductQueries";
 
 export const ProductList: React.FC = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: products = [], isLoading: loading } = useProducts();
+  const deleteProduct = useDeleteProduct();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const { addToast } = useToast();
-
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await productService.getAll();
-      setProducts(data || []);
-    } catch (error) {
-      logError("Error fetching products", error);
-      addToast("Error al cargar los productos. Verifica tu conexión y recarga la página.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [addToast]);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
 
   const requestDelete = (id: string) => {
     setPendingDeleteId(id);
     setConfirmOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!pendingDeleteId) return;
     const id = pendingDeleteId;
     setConfirmOpen(false);
     setPendingDeleteId(null);
-
-    try {
-      await productService.delete(id);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      addToast("Producto eliminado correctamente.", "success");
-    } catch (error) {
-      logError("Error deleting product", error);
-      addToast("Error al eliminar el producto.", "error");
-    }
+    deleteProduct.mutate(id);
   };
 
   const categories = useMemo(() => {

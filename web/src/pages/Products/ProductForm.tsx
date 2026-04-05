@@ -1,10 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { productService } from "../../services/productService";
-import { inventoryService } from "../../services/inventoryService";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   ArrowLeft,
@@ -17,11 +15,13 @@ import {
   Camera,
   X,
 } from "lucide-react";
-import { InventoryItem, ProductIngredient } from "../../types/entities";
+import { ProductIngredient } from "../../types/entities";
 import { logError } from "../../lib/errorHandler";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
+import { useProduct, useProductIngredients, useCreateProduct, useUpdateProduct, useUploadProductImage } from "../../hooks/queries/useProductQueries";
+import { useInventoryItems } from "../../hooks/queries/useInventoryQueries";
 
 const productSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -35,12 +35,10 @@ export const ProductForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -50,7 +48,15 @@ export const ProductForm: React.FC = () => {
     loading: limitsLoading,
   } = usePlanLimits();
 
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const { data: inventoryItems = [] } = useInventoryItems();
+  const { data: existingProduct, isLoading: isLoadingProduct } = useProduct(id);
+  const { data: existingIngredients } = useProductIngredients(id);
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const uploadImage = useUploadProductImage();
+
+  const isLoading = isLoadingProduct || createProduct.isPending || updateProduct.isPending;
+
   const [recipeIngredients, setRecipeIngredients] = useState<
     {
       inventory_id: string;
@@ -78,69 +84,43 @@ export const ProductForm: React.FC = () => {
     },
   });
 
-  const loadDependencies = useCallback(async () => {
-    try {
-      const items = await inventoryService.getAll();
-      setInventoryItems(items || []);
-    } catch (err) {
-      logError("Error loading inventory", err);
-    }
-  }, []);
-
-  const loadProduct = useCallback(async (productId: string) => {
-    try {
-      setIsLoading(true);
-      const product = await productService.getById(productId);
-      if (!product) {
-        throw new Error("Producto no encontrado");
-      }
+  useEffect(() => {
+    if (existingProduct) {
       reset({
-        name: product.name || "",
-        category: product.category || "",
-        base_price: product.base_price || 0,
+        name: existingProduct.name || "",
+        category: existingProduct.category || "",
+        base_price: existingProduct.base_price || 0,
       });
-      setIsActive(product.is_active ?? true);
-      if (product.image_url) {
-        setImageUrl(product.image_url);
-        setImagePreview(product.image_url);
+      setIsActive(existingProduct.is_active ?? true);
+      if (existingProduct.image_url) {
+        setImageUrl(existingProduct.image_url);
+        setImagePreview(existingProduct.image_url);
       }
-
-      // Load recipe ingredients
-      const ingredients = await productService.getIngredients(productId);
-      if (ingredients) {
-        setRecipeIngredients(
-          ingredients.map((i: ProductIngredient) => ({
-            inventory_id: i.inventory_id,
-            quantity_required: i.quantity_required,
-            capacity: i.capacity ?? null,
-            bring_to_event: i.bring_to_event ?? false,
-            unit_cost: i.unit_cost || 0,
-            unit: i.unit || "",
-            itemType:
-              i.type === "equipment"
-                ? ("equipment" as const)
-                : i.type === "supply"
-                  ? ("supply" as const)
-                  : ("ingredient" as const),
-          })),
-        );
-      }
-    } catch (err) {
-      logError("Error loading product", err);
-      setError("Error al cargar el producto");
-    } finally {
-      setIsLoading(false);
     }
-  }, [reset]);
+  }, [existingProduct, reset]);
 
   useEffect(() => {
-    loadDependencies();
-    if (id) {
-      loadProduct(id);
+    if (existingIngredients) {
+      setRecipeIngredients(
+        existingIngredients.map((i: ProductIngredient) => ({
+          inventory_id: i.inventory_id,
+          quantity_required: i.quantity_required,
+          capacity: i.capacity ?? null,
+          bring_to_event: i.bring_to_event ?? false,
+          unit_cost: i.unit_cost || 0,
+          unit: i.unit || "",
+          itemType:
+            i.type === "equipment"
+              ? ("equipment" as const)
+              : i.type === "supply"
+                ? ("supply" as const)
+                : ("ingredient" as const),
+        })),
+      );
     }
-  }, [id, loadDependencies, loadProduct]);
+  }, [existingIngredients]);
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -153,17 +133,14 @@ export const ProductForm: React.FC = () => {
     reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
 
-    try {
-      setIsUploadingImage(true);
-      const result = await productService.uploadImage(file);
-      setImageUrl(result.url);
-    } catch (err) {
-      logError("Error uploading product image", err);
-      setError("Error al subir la imagen.");
-      setImagePreview(imageUrl);
-    } finally {
-      setIsUploadingImage(false);
-    }
+    uploadImage.mutate(file, {
+      onSuccess: (result) => setImageUrl(result.url),
+      onError: (err) => {
+        logError("Error uploading product image", err);
+        setError("Error al subir la imagen.");
+        setImagePreview(imageUrl);
+      },
+    });
   };
 
   const removeImage = () => {
@@ -276,51 +253,34 @@ export const ProductForm: React.FC = () => {
     .map((item, idx) => ({ item, originalIndex: idx }))
     .filter(({ item }) => item.itemType === "supply");
 
-  const onSubmit = async (data: ProductFormData) => {
+  const onSubmit = (data: ProductFormData) => {
     if (!user) return;
-
-    setIsLoading(true);
     setError(null);
 
-    try {
-      let productId = id;
+    const ingredientsToSave = recipeIngredients.map((i) => ({
+      inventoryId: i.inventory_id,
+      quantityRequired: i.quantity_required,
+      capacity: i.itemType === "equipment" ? (i.capacity ?? null) : null,
+      bringToEvent: i.bring_to_event,
+    }));
 
-      if (id) {
-        await productService.update(id, {
-          ...data,
-          image_url: imageUrl || null,
-          is_active: isActive,
-        });
-      } else {
-        const newProduct = await productService.create({
-          ...data,
-          user_id: user.id,
-          image_url: imageUrl || null,
-          is_active: isActive,
-          recipe: null,
-        });
-        if (!newProduct) {
-          throw new Error("Error al crear el producto");
-        }
-        productId = newProduct.id;
-      }
-
-      if (productId) {
-        const ingredientsToSave = recipeIngredients.map((i) => ({
-          inventoryId: i.inventory_id,
-          quantityRequired: i.quantity_required,
-          capacity: i.itemType === "equipment" ? (i.capacity ?? null) : null,
-          bringToEvent: i.bring_to_event,
-        }));
-        await productService.updateIngredients(productId, ingredientsToSave);
-      }
-
-      navigate("/products");
-    } catch (err: unknown) {
-      logError("Error saving product", err);
-      setError(err instanceof Error ? err.message : "Error al guardar el producto");
-    } finally {
-      setIsLoading(false);
+    if (id) {
+      updateProduct.mutate(
+        {
+          id,
+          product: { ...data, image_url: imageUrl || null, is_active: isActive },
+          ingredients: ingredientsToSave,
+        },
+        { onSuccess: () => navigate("/products") },
+      );
+    } else {
+      createProduct.mutate(
+        {
+          product: { ...data, user_id: user.id, image_url: imageUrl || null, is_active: isActive, recipe: null },
+          ingredients: ingredientsToSave,
+        },
+        { onSuccess: () => navigate("/products") },
+      );
     }
   };
 
@@ -430,7 +390,7 @@ export const ProductForm: React.FC = () => {
                         aria-hidden="true"
                       />
                     )}
-                    {isUploadingImage && (
+                    {uploadImage.isPending && (
                       <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
                       </div>
