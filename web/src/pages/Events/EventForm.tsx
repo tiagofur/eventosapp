@@ -9,7 +9,6 @@ import { useForm, FormProvider, useWatch, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { eventService } from "@/services/eventService";
-import { clientService } from "@/services/clientService";
 import { productService } from "@/services/productService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -32,8 +31,11 @@ import { EventExtras } from "./components/EventExtras";
 import { EventFinancials } from "./components/EventFinancials";
 import { EventEquipment } from "./components/EventEquipment";
 import { EventSupplies } from "./components/EventSupplies";
-import { inventoryService } from "@/services/inventoryService";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { useClients } from "@/hooks/queries/useClientQueries";
+import { useProducts } from "@/hooks/queries/useProductQueries";
+import { useInventoryItems } from "@/hooks/queries/useInventoryQueries";
+import { useEvent, useEventProducts, useEventExtras, useEventEquipment, useEventSupplies } from "@/hooks/queries/useEventQueries";
 import {
   EquipmentConflict,
   EquipmentSuggestion,
@@ -125,11 +127,16 @@ export const EventForm: React.FC = () => {
   const quickQuoteData = locationState?.fromQuickQuote ? locationState : null;
 
   const [activeStep, setActiveStep] = useState(1);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStepLoading, setIsStepLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Dropdown data via React Query (cached, shared)
+  const { data: clientsRaw = [] } = useClients();
+  const { data: productsRaw = [] } = useProducts();
+  const { data: inventoryData = [] } = useInventoryItems();
+  const clients = clientsRaw as Client[];
+  const products = productsRaw as Product[];
 
   // Plan Limits
   const {
@@ -167,10 +174,11 @@ export const EventForm: React.FC = () => {
     "percent",
   );
 
+  // Derived inventory subsets from cached data
+  const equipmentInventory = inventoryData.filter((i) => i.type === "equipment");
+  const supplyInventory = inventoryData.filter((i) => i.type === "supply");
+
   // Equipment state
-  const [equipmentInventory, setEquipmentInventory] = useState<InventoryItem[]>(
-    [],
-  );
   const [selectedEquipment, setSelectedEquipment] = useState<
     { inventory_id: string; quantity: number; notes: string }[]
   >([]);
@@ -182,7 +190,6 @@ export const EventForm: React.FC = () => {
   >([]);
 
   // Supply state
-  const [supplyInventory, setSupplyInventory] = useState<InventoryItem[]>([]);
   const [selectedSupplies, setSelectedSupplies] = useState<
     {
       inventory_id: string;
@@ -240,37 +247,20 @@ export const EventForm: React.FC = () => {
   const startTimeValue = useWatch({ control, name: "start_time" });
   const endTimeValue = useWatch({ control, name: "end_time" });
 
-  // --- Effects ---
+  // --- Load edit-mode data via React Query ---
+  const { data: existingEvent } = useEvent(id);
+  const { data: existingEventProducts } = useEventProducts(id);
+  const { data: existingEventExtras } = useEventExtras(id);
+  const { data: existingEventEquipment } = useEventEquipment(id);
+  const { data: existingEventSupplies } = useEventSupplies(id);
 
+  // Load unavailable dates (kept as direct call — small, calendar-specific)
   useEffect(() => {
-    const loadDependencies = async () => {
-      try {
-        const [clientsData, productsData, inventoryData] = await Promise.all([
-          clientService.getAll(),
-          productService.getAll(),
-          inventoryService.getAll(),
-        ]);
-        setClients((clientsData as Client[]) || []);
-        setProducts((productsData as Product[]) || []);
-        const allInventory = (inventoryData as InventoryItem[]) || [];
-        setEquipmentInventory(
-          allInventory.filter((i) => i.type === "equipment"),
-        );
-        setSupplyInventory(allInventory.filter((i) => i.type === "supply"));
-
-        // Load unavailable dates
-        const endOfNextYear = new Date();
-        endOfNextYear.setFullYear(endOfNextYear.getFullYear() + 1);
-        const dates = await unavailableDatesService.getDates(
-          "2020-01-01",
-          endOfNextYear.toISOString().split("T")[0],
-        );
-        setUnavailableDates(dates);
-      } catch (err) {
-        logError("Error loading dependencies", err);
-      }
-    };
-    loadDependencies();
+    const endOfNextYear = new Date();
+    endOfNextYear.setFullYear(endOfNextYear.getFullYear() + 1);
+    unavailableDatesService.getDates("2020-01-01", endOfNextYear.toISOString().split("T")[0])
+      .then(setUnavailableDates)
+      .catch((err) => logError("Error loading unavailable dates", err));
   }, []);
 
   useEffect(() => {
@@ -280,102 +270,85 @@ export const EventForm: React.FC = () => {
     }
   }, [searchParams, id, setValue]);
 
+  // Populate form when existing event loads (edit mode)
   useEffect(() => {
-    const loadEvent = async (eventId: string) => {
-      try {
-        setIsLoading(true);
-        const event = await eventService.getById(eventId);
-        if (!event) throw new Error("Evento no encontrado");
+    if (!existingEvent) return;
+    setDiscountType(existingEvent.discount_type || "percent");
+    reset({
+      client_id: existingEvent.client_id || "",
+      event_date: existingEvent.event_date || "",
+      start_time: existingEvent.start_time || "",
+      end_time: existingEvent.end_time || "",
+      service_type: existingEvent.service_type || "",
+      num_people: existingEvent.num_people || 100,
+      status: existingEvent.status || "quoted",
+      discount: existingEvent.discount || 0,
+      requires_invoice: existingEvent.requires_invoice || false,
+      tax_rate: existingEvent.tax_rate || 16,
+      tax_amount: existingEvent.tax_amount || 0,
+      total_amount: existingEvent.total_amount || 0,
+      location: existingEvent.location || "",
+      city: existingEvent.city || "",
+      deposit_percent: existingEvent.deposit_percent ?? (user?.default_deposit_percent || 50),
+      cancellation_days: existingEvent.cancellation_days ?? (user?.default_cancellation_days || 15),
+      refund_percent: existingEvent.refund_percent ?? (user?.default_refund_percent || 0),
+      notes: existingEvent.notes || "",
+    });
+  }, [existingEvent, reset, user]);
 
-        setDiscountType(event.discount_type || "percent");
-        reset({
-          client_id: event.client_id || "",
-          event_date: event.event_date || "",
-          start_time: event.start_time || "",
-          end_time: event.end_time || "",
-          service_type: event.service_type || "",
-          num_people: event.num_people || 100,
-          status: event.status || "quoted",
-          discount: event.discount || 0,
-          requires_invoice: event.requires_invoice || false,
-          tax_rate: event.tax_rate || 16,
-          tax_amount: event.tax_amount || 0,
-          total_amount: event.total_amount || 0,
-          location: event.location || "",
-          city: event.city || "",
-          deposit_percent:
-            event.deposit_percent ?? (user?.default_deposit_percent || 50),
-          cancellation_days:
-            event.cancellation_days ?? (user?.default_cancellation_days || 15),
-          refund_percent:
-            event.refund_percent ?? (user?.default_refund_percent || 0),
-          notes: event.notes || "",
-        });
-
-        const [eventProducts, eventExtras, eventEquipment, eventSupplies] =
-          await Promise.all([
-            eventService.getProducts(eventId),
-            eventService.getExtras(eventId),
-            eventService.getEquipment(eventId),
-            eventService.getSupplies(eventId),
-          ]);
-
-        if (eventProducts) {
-          setSelectedProducts(
-            eventProducts.map((ep: EventProduct) => ({
-              product_id: ep.product_id,
-              quantity: ep.quantity,
-              price: ep.unit_price,
-              discount: ep.discount || 0,
-            })),
-          );
-        }
-
-        if (eventExtras) {
-          setExtras(
-            eventExtras.map((e: EventExtra) => ({
-              description: e.description,
-              cost: e.cost,
-              price: e.price,
-              exclude_utility: e.exclude_utility || false,
-              include_in_checklist: e.include_in_checklist !== false,
-            })),
-          );
-        }
-
-        if (eventEquipment) {
-          setSelectedEquipment(
-            eventEquipment.map((eq: EventEquipmentEntity) => ({
-              inventory_id: eq.inventory_id,
-              quantity: eq.quantity,
-              notes: eq.notes || "",
-            })),
-          );
-        }
-
-        if (eventSupplies) {
-          setSelectedSupplies(
-            eventSupplies.map((s: EventSupply) => ({
-              inventory_id: s.inventory_id,
-              quantity: s.quantity,
-              unit_cost: s.unit_cost,
-              source: s.source || "purchase",
-              exclude_cost: s.exclude_cost || false,
-            })),
-          );
-        }
-      } catch (err) {
-        logError("Error loading event", err);
-        setError("Error al cargar el evento.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      loadEvent(id);
+  // Populate items when they load (edit mode)
+  useEffect(() => {
+    if (existingEventProducts) {
+      setSelectedProducts(
+        existingEventProducts.map((ep: EventProduct) => ({
+          product_id: ep.product_id,
+          quantity: ep.quantity,
+          price: ep.unit_price,
+          discount: ep.discount || 0,
+        })),
+      );
     }
-  }, [id, reset, user]);
+  }, [existingEventProducts]);
+
+  useEffect(() => {
+    if (existingEventExtras) {
+      setExtras(
+        existingEventExtras.map((e: EventExtra) => ({
+          description: e.description,
+          cost: e.cost,
+          price: e.price,
+          exclude_utility: e.exclude_utility || false,
+          include_in_checklist: e.include_in_checklist !== false,
+        })),
+      );
+    }
+  }, [existingEventExtras]);
+
+  useEffect(() => {
+    if (existingEventEquipment) {
+      setSelectedEquipment(
+        existingEventEquipment.map((eq: EventEquipmentEntity) => ({
+          inventory_id: eq.inventory_id,
+          quantity: eq.quantity,
+          notes: eq.notes || "",
+        })),
+      );
+    }
+  }, [existingEventEquipment]);
+
+  useEffect(() => {
+    if (existingEventSupplies) {
+      setSelectedSupplies(
+        existingEventSupplies.map((s: EventSupply) => ({
+          inventory_id: s.inventory_id,
+          quantity: s.quantity,
+          unit_cost: s.unit_cost,
+          source: s.source || "purchase",
+          exclude_cost: s.exclude_cost || false,
+        })),
+      );
+    }
+  }, [existingEventSupplies]);
 
   useEffect(() => {
     const productsSubtotal = selectedProducts.reduce(
@@ -552,8 +525,10 @@ export const EventForm: React.FC = () => {
   };
 
   const handleClientCreated = (newClient: Client) => {
-    setClients((prev) => [...prev, newClient]);
-    // Use queueMicrotask to set value after React state update flushes
+    // Invalidate clients cache so dropdown picks up the new client
+    import("@/lib/queryClient").then(({ queryClient }) => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+    });
     queueMicrotask(() => {
       setValue("client_id", newClient.id, { shouldValidate: true });
     });
