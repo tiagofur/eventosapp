@@ -12,25 +12,79 @@ import { ContractTemplateError } from '../../lib/contractTemplate';
 
 vi.mock('../../services/eventService', () => ({
   eventService: {
+    getAll: vi.fn().mockResolvedValue([]),
     getById: vi.fn(),
+    getByDateRange: vi.fn().mockResolvedValue([]),
+    getByClientId: vi.fn().mockResolvedValue([]),
+    getUpcoming: vi.fn().mockResolvedValue([]),
     getProducts: vi.fn(),
     getExtras: vi.fn(),
     getEquipment: vi.fn(),
     getSupplies: vi.fn(),
+    create: vi.fn(),
     update: vi.fn(),
+    updateItems: vi.fn(),
     delete: vi.fn(),
+    checkEquipmentConflicts: vi.fn().mockResolvedValue([]),
+    getEquipmentSuggestions: vi.fn().mockResolvedValue([]),
+    getSupplySuggestions: vi.fn().mockResolvedValue([]),
+    addProducts: vi.fn(),
+    updateProducts: vi.fn(),
+    updateExtras: vi.fn(),
   },
 }));
 
 vi.mock('../../services/paymentService', () => ({
   paymentService: {
+    getAll: vi.fn().mockResolvedValue([]),
     getByEventId: vi.fn(),
+    getByEventIds: vi.fn().mockResolvedValue([]),
+    getByPaymentDateRange: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
 vi.mock('../../services/productService', () => ({
   productService: {
+    getAll: vi.fn().mockResolvedValue([]),
+    getById: vi.fn(),
+    getIngredients: vi.fn().mockResolvedValue([]),
     getIngredientsForProducts: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    uploadImage: vi.fn(),
+    addIngredients: vi.fn(),
+    updateIngredients: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/inventoryService', () => ({
+  inventoryService: {
+    getAll: vi.fn().mockResolvedValue([]),
+    getById: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/clientService', () => ({
+  clientService: {
+    getAll: vi.fn().mockResolvedValue([]),
+    getById: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    uploadPhoto: vi.fn(),
+  },
+}));
+
+vi.mock('../../services/subscriptionService', () => ({
+  subscriptionService: {
+    getStatus: vi.fn().mockResolvedValue({ plan: 'pro', has_stripe_account: false }),
   },
 }));
 
@@ -64,6 +118,15 @@ vi.mock('../../services/eventPaymentService', () => ({
 
 vi.mock('../../lib/errorHandler', () => ({
   logError: vi.fn(),
+  getErrorMessage: vi.fn((_err: unknown, fallback?: string) => fallback || 'Error'),
+}));
+
+vi.mock('../../hooks/useToast', () => ({
+  useToast: () => ({
+    addToast: vi.fn(),
+    removeToast: vi.fn(),
+    toasts: [],
+  }),
 }));
 
 vi.mock('../../lib/api', () => ({
@@ -89,7 +152,7 @@ const baseEvent = {
   tax_amount: 160,
   requires_invoice: true,
   tax_rate: 16,
-  client: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Calle 1', city: 'CDMX' },
+  clients: { id: 'c1', name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Calle 1', city: 'CDMX' },
   start_time: '10:00',
   end_time: '12:00',
   location: 'Salón Principal',
@@ -126,7 +189,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver lista de insumos/i }));
@@ -145,7 +208,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open Acciones dropdown and click Presupuesto
@@ -185,7 +248,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('10:00 - 12:00')).toBeInTheDocument();
@@ -201,7 +264,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open status dropdown
@@ -225,7 +288,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open dropdown and click confirmed (current status)
@@ -241,7 +304,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Estado del evento/i }));
@@ -256,7 +319,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Editar este evento/i }));
@@ -269,7 +332,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open Acciones dropdown and click Eliminar Evento
@@ -296,7 +359,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open Acciones dropdown and click Eliminar Evento
@@ -313,7 +376,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open Acciones dropdown and click Eliminar Evento
@@ -332,7 +395,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open Acciones dropdown and click Generar Factura
@@ -345,7 +408,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Switch to ingredients view
@@ -363,7 +426,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Budget PDF
@@ -391,7 +454,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Financial summary labels
@@ -414,7 +477,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // "Horario:" should not appear when no time range
@@ -427,7 +490,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Horario')).toBeInTheDocument();
@@ -441,7 +504,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Hacienda del Sol')).toBeInTheDocument();
@@ -453,7 +516,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.queryByText('Ubicación:')).not.toBeInTheDocument();
@@ -465,7 +528,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Factura: No requiere factura
@@ -476,13 +539,13 @@ describe('EventSummary', () => {
     setupMocks({
       city: 'Guadalajara',
       refund_percent: 25,
-      client: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Calle 123', city: 'Guadalajara' },
+      clients: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Calle 123', city: 'Guadalajara' },
     });
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByText('Contrato')[0]);
@@ -495,12 +558,12 @@ describe('EventSummary', () => {
   });
 
   it('shows missing data warning in contract when city is null', async () => {
-    setupMocks({ city: null, client: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Calle 1' } });
+    setupMocks({ city: null, clients: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Calle 1' } });
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByText('Contrato')[0]);
@@ -515,7 +578,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Sin extras agregados')).toBeInTheDocument();
@@ -528,7 +591,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver lista de insumos/i }));
@@ -540,7 +603,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText(/Generado por Eventos Ana/)).toBeInTheDocument();
@@ -559,7 +622,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver lista de insumos/i }));
@@ -585,7 +648,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver lista de insumos/i }));
@@ -603,7 +666,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Sin extras agregados')).toBeInTheDocument();
@@ -613,7 +676,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open dropdown
@@ -632,7 +695,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Estado del evento/i }));
@@ -649,7 +712,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getAllByText('Cotizado').length).toBeGreaterThanOrEqual(1);
@@ -658,13 +721,13 @@ describe('EventSummary', () => {
   it('shows missing data warning when event location is null', async () => {
     setupMocks({
       location: null,
-      client: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Av. Reforma 100', city: 'CDMX' },
+      clients: { name: 'Ana', phone: '555', email: 'ana@test.com', address: 'Av. Reforma 100', city: 'CDMX' },
     });
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByText('Contrato')[0]);
@@ -676,13 +739,13 @@ describe('EventSummary', () => {
   it('shows missing data warning when location and address are missing', async () => {
     setupMocks({
       location: null,
-      client: { name: 'Ana', phone: '555', email: 'ana@test.com' },
+      clients: { name: 'Ana', phone: '555', email: 'ana@test.com' },
     });
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByText('Contrato')[0]);
@@ -695,7 +758,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByText('Contrato')[0]);
@@ -711,7 +774,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByText('Contrato')[0]);
@@ -732,7 +795,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Equipo Asignado')).toBeInTheDocument();
@@ -751,7 +814,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Equipo Asignado')).toBeInTheDocument();
@@ -762,7 +825,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -779,7 +842,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -796,7 +859,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -810,7 +873,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -825,7 +888,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -851,7 +914,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -872,7 +935,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -896,7 +959,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -919,7 +982,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -941,7 +1004,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -963,7 +1026,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -982,7 +1045,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Progreso de Cobro')).toBeInTheDocument();
@@ -999,7 +1062,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Should show the register payment button with remaining amount
@@ -1015,7 +1078,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.queryByText(/Registrar pago por/)).not.toBeInTheDocument();
@@ -1029,7 +1092,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.queryByText(/Registrar pago por/)).not.toBeInTheDocument();
@@ -1043,7 +1106,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Más acciones/i }));
@@ -1061,7 +1124,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Más acciones/i }));
@@ -1085,7 +1148,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Más acciones/i }));
@@ -1111,7 +1174,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Más acciones/i }));
@@ -1131,7 +1194,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Switch to payments view
@@ -1155,7 +1218,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Stay in summary view, open actions
@@ -1171,7 +1234,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open Acciones dropdown and click Contrato (menuitem)
@@ -1192,7 +1255,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Más acciones/i }));
@@ -1212,7 +1275,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver lista de insumos/i }));
@@ -1231,7 +1294,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Progreso de Cobro')).toBeInTheDocument();
@@ -1246,7 +1309,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByText(/Registrar pago por/));
@@ -1261,7 +1324,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getAllByText('Completado').length).toBeGreaterThanOrEqual(1);
@@ -1273,19 +1336,19 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getAllByText('Cancelado').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders event without client phone', async () => {
-    setupMocks({ client: { name: 'Ana', phone: null, email: 'ana@test.com', address: 'Calle 1', city: 'CDMX' } });
+    setupMocks({ clients: { name: 'Ana', phone: null, email: 'ana@test.com', address: 'Calle 1', city: 'CDMX' } });
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Sin teléfono')).toBeInTheDocument();
@@ -1297,7 +1360,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     expect(screen.getByText('0.0%')).toBeInTheDocument();
@@ -1307,7 +1370,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Open actions dropdown
@@ -1326,7 +1389,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -1346,7 +1409,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -1370,7 +1433,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
@@ -1400,7 +1463,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     await waitFor(() => {
@@ -1412,7 +1475,7 @@ describe('EventSummary', () => {
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
-      expect(screen.getByText('Ana - Boda')).toBeInTheDocument();
+      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
     // Switch to contract view
