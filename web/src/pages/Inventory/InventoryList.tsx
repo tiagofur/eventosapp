@@ -117,7 +117,8 @@ const InlineStockCell: React.FC<{
 
 export const InventoryList: React.FC = () => {
   const navigate = useNavigate();
-  const { data: items = [], isLoading: loading } = useInventoryItems();
+  const { data: rawItems, isLoading: loading } = useInventoryItems();
+  const items = rawItems ?? [];
   const deleteItem = useDeleteInventoryItem();
   const updateItem = useUpdateInventoryItem();
   const [searchTerm, setSearchTerm] = useState("");

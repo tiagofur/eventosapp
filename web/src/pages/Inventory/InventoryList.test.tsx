@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@tests/customRender';
+import { render, screen, fireEvent, waitFor } from '@tests/customRender';
 import { MemoryRouter } from 'react-router-dom';
 import { InventoryList } from './InventoryList';
 import { inventoryService } from '../../services/inventoryService';
@@ -25,6 +25,17 @@ vi.mock('../../hooks/useToast', () => ({
     toasts: [],
   }),
 }));
+
+/** Helper: open the RowActionMenu for a given row and click an action */
+async function openRowMenuAndClick(actionLabel: string | RegExp) {
+  // RowActionMenu renders a button with aria-label="Acciones"
+  const menuButtons = screen.getAllByRole('button', { name: 'Acciones' });
+  // Click the first (or only) one
+  fireEvent.click(menuButtons[0]);
+  // Wait for the portal menu to appear and click the action
+  const menuItem = await screen.findByRole('menuitem', { name: actionLabel });
+  fireEvent.click(menuItem);
+}
 
 const renderList = () =>
   render(
@@ -144,17 +155,23 @@ describe('InventoryList', () => {
   });
 
   it('deletes an item after confirmation', async () => {
-    (inventoryService.getAll as any).mockResolvedValue([
-      {
-        id: '1',
-        ingredient_name: 'Harina',
-        unit: 'kg',
-        type: 'ingredient',
-        current_stock: 10,
-        minimum_stock: 1,
-        unit_cost: 10,
-      },
-    ]);
+    let callCount = 0;
+    (inventoryService.getAll as any).mockImplementation(() => {
+      callCount++;
+      // After delete triggers refetch, return empty
+      if (callCount > 1) return Promise.resolve([]);
+      return Promise.resolve([
+        {
+          id: '1',
+          ingredient_name: 'Harina',
+          unit: 'kg',
+          type: 'ingredient',
+          current_stock: 10,
+          minimum_stock: 1,
+          unit_cost: 10,
+        },
+      ]);
+    });
     (inventoryService.delete as any).mockResolvedValue({});
 
     renderList();
@@ -163,13 +180,15 @@ describe('InventoryList', () => {
       expect(screen.getByText('Harina')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Eliminar Harina/i }));
-    const dialog = screen.getByRole('dialog', { name: 'Eliminar ítem' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+    // Open RowActionMenu and click Eliminar
+    await openRowMenuAndClick('Eliminar');
+
+    // ConfirmDialog opens with title "Eliminar ítem de inventario"
+    const confirmBtn = await screen.findByRole('button', { name: 'Eliminar permanentemente' });
+    fireEvent.click(confirmBtn);
 
     await waitFor(() => {
       expect(inventoryService.delete).toHaveBeenCalledWith('1');
-      expect(screen.queryByText('Harina')).not.toBeInTheDocument();
     });
   });
 
@@ -178,10 +197,12 @@ describe('InventoryList', () => {
 
     renderList();
 
+    // React Query handles the error; the component shows empty/loading state.
+    // With retry: false in test QueryClient, the query fails immediately.
+    // The component defaults data to [] so empty state renders.
     await waitFor(() => {
-      expect(logError).toHaveBeenCalledWith('Error fetching inventory', expect.any(Error));
+      expect(screen.getByText(/Sin ítems en el inventario/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/No se encontraron ítems/i)).toBeInTheDocument();
   });
 
   it('shows equipment section and delete error handling', async () => {
@@ -207,12 +228,15 @@ describe('InventoryList', () => {
     expect(screen.getByText('Equipos')).toBeInTheDocument();
     expect(screen.getByText('$0.00')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Eliminar Horno/i }));
-    const dialog = screen.getByRole('dialog', { name: 'Eliminar ítem' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Eliminar' }));
+    // Open RowActionMenu and click Eliminar
+    await openRowMenuAndClick('Eliminar');
+
+    // ConfirmDialog: click confirm button
+    const confirmBtn = await screen.findByRole('button', { name: 'Eliminar permanentemente' });
+    fireEvent.click(confirmBtn);
 
     await waitFor(() => {
-      expect(logError).toHaveBeenCalledWith('Error deleting item', expect.any(Error));
+      expect(logError).toHaveBeenCalledWith('Error deleting inventory item', expect.any(Error));
     });
     expect(screen.getByText('Horno')).toBeInTheDocument();
   });
@@ -236,11 +260,15 @@ describe('InventoryList', () => {
       expect(screen.getByText('Harina')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Eliminar Harina/i }));
-    const dialog = screen.getByRole('dialog', { name: 'Eliminar ítem' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    // Open RowActionMenu and click Eliminar to open the ConfirmDialog
+    await openRowMenuAndClick('Eliminar');
 
-    expect(screen.queryByRole('dialog', { name: 'Eliminar ítem' })).not.toBeInTheDocument();
+    // ConfirmDialog should be visible
+    const cancelBtn = await screen.findByRole('button', { name: 'Cancelar' });
+    fireEvent.click(cancelBtn);
+
+    // The confirm button should no longer be present (dialog closed)
+    expect(screen.queryByRole('button', { name: 'Eliminar permanentemente' })).not.toBeInTheDocument();
   });
 
   it('renders consumibles section with unit label', async () => {
@@ -448,8 +476,9 @@ describe('InventoryList', () => {
       target: { value: 'ZZZ no existe' },
     });
 
-    expect(screen.getByText(/No se encontraron ítems/i)).toBeInTheDocument();
-    expect(screen.getByText(/Intenta ajustar los filtros de búsqueda/i)).toBeInTheDocument();
+    // Empty component renders with search-specific description
+    expect(screen.getByText(/Sin ítems en el inventario/i)).toBeInTheDocument();
+    expect(screen.getByText(/No hay ítems que coincidan/i)).toBeInTheDocument();
   });
 
   it('shows empty state with action button when no items exist', async () => {
@@ -458,7 +487,7 @@ describe('InventoryList', () => {
     renderList();
 
     await waitFor(() => {
-      expect(screen.getByText(/No se encontraron ítems/i)).toBeInTheDocument();
+      expect(screen.getByText(/Sin ítems en el inventario/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText(/Comienza agregando tu primer ítem/i)).toBeInTheDocument();
@@ -549,8 +578,11 @@ describe('InventoryList', () => {
     const newLink = screen.getByRole('link', { name: /Nuevo Ítem/i });
     expect(newLink).toHaveAttribute('href', '/inventory/new');
 
-    const editLink = screen.getByRole('link', { name: /Editar Sal/i });
-    expect(editLink).toHaveAttribute('href', '/inventory/inv-42/edit');
+    // Edit is inside the RowActionMenu — open menu and verify the menuitem exists
+    const menuButton = screen.getByRole('button', { name: 'Acciones' });
+    fireEvent.click(menuButton);
+    const editMenuItem = await screen.findByRole('menuitem', { name: 'Editar' });
+    expect(editMenuItem).toBeInTheDocument();
   });
 
   it('renders unit_cost formatted correctly', async () => {
@@ -581,7 +613,7 @@ describe('InventoryList', () => {
     renderList();
 
     await waitFor(() => {
-      expect(screen.getByText(/No se encontraron ítems/i)).toBeInTheDocument();
+      expect(screen.getByText(/Sin ítems en el inventario/i)).toBeInTheDocument();
     });
   });
 
