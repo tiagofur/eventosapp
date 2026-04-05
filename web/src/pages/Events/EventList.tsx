@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Event } from "../../types/entities";
@@ -40,12 +40,30 @@ const STATUS_CHIPS: { label: string; value: StatusFilter }[] = [
 
 export const EventList: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: events = [], isLoading: loading } = useEvents();
   const deleteEvent = useDeleteEvent();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  // Read filters from URL (persistent, shareable)
+  const searchTerm = searchParams.get("q") || "";
+  const statusFilter = (searchParams.get("status") || "all") as StatusFilter;
+  const dateFrom = searchParams.get("from") || "";
+  const dateTo = searchParams.get("to") || "";
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const updateFilter = (key: string, value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (!value || value === "all") {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+      return next;
+    }, { replace: true });
+  };
 
   const requestDelete = (id: string) => {
     setPendingDeleteId(id);
@@ -63,12 +81,15 @@ export const EventList: React.FC = () => {
   const filteredEvents = (events || []).filter((event) => {
     const clientName = event.clients?.name ?? "";
     const matchesSearch =
+      !searchTerm ||
       clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.service_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (event.city ?? "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || event.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesDateFrom = !dateFrom || event.event_date >= dateFrom;
+    const matchesDateTo = !dateTo || event.event_date <= dateTo;
+    return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
   });
 
   const {
@@ -204,13 +225,13 @@ export const EventList: React.FC = () => {
           className="block w-full pl-10 pr-8 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
           placeholder="Buscar eventos..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => updateFilter("q", e.target.value)}
           aria-label="Buscar eventos por cliente, servicio o ciudad"
         />
         {searchTerm && (
           <button
             type="button"
-            onClick={() => setSearchTerm("")}
+            onClick={() => updateFilter("q", "")}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-secondary hover:text-text transition-colors"
             aria-label="Limpiar búsqueda"
           >
@@ -219,21 +240,55 @@ export const EventList: React.FC = () => {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {STATUS_CHIPS.map((chip) => (
-          <button
-            key={chip.value}
-            type="button"
-            onClick={() => setStatusFilter(chip.value)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-              statusFilter === chip.value
-                ? "bg-primary text-white border-primary"
-                : "bg-card text-text-secondary border-border hover:border-primary/50 hover:text-primary"
-            }`}
-          >
-            {chip.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2">
+          {STATUS_CHIPS.map((chip) => (
+            <button
+              key={chip.value}
+              type="button"
+              onClick={() => updateFilter("status", chip.value)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                statusFilter === chip.value
+                  ? "bg-primary text-white border-primary"
+                  : "bg-card text-text-secondary border-border hover:border-primary/50 hover:text-primary"
+              }`}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <label htmlFor="date-from" className="sr-only">Desde</label>
+          <input
+            id="date-from"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => updateFilter("from", e.target.value)}
+            className="text-xs border border-border rounded-lg px-2 py-1 bg-card text-text focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            aria-label="Filtrar desde fecha"
+          />
+          <span className="text-xs text-text-secondary">—</span>
+          <label htmlFor="date-to" className="sr-only">Hasta</label>
+          <input
+            id="date-to"
+            type="date"
+            value={dateTo}
+            onChange={(e) => updateFilter("to", e.target.value)}
+            className="text-xs border border-border rounded-lg px-2 py-1 bg-card text-text focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            aria-label="Filtrar hasta fecha"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              type="button"
+              onClick={() => { updateFilter("from", ""); updateFilter("to", ""); }}
+              className="text-xs text-text-secondary hover:text-error transition-colors"
+              aria-label="Limpiar filtro de fechas"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
