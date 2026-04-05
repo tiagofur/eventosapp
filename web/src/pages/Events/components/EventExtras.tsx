@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Plus, Trash2, ClipboardCheck } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+
+import { SortableItem } from '@/components/SortableItem';
 
 export interface SelectedExtra {
   description: string;
@@ -13,7 +17,8 @@ interface EventExtrasProps {
   extras: SelectedExtra[];
   onAddExtra: () => void;
   onRemoveExtra: (index: number) => void;
-  onExtraChange: (index: number, field: keyof SelectedExtra, value: any) => void;
+  onExtraChange: (index: number, field: keyof SelectedExtra, value: string | number | boolean) => void;
+  onReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
 export const EventExtras: React.FC<EventExtrasProps> = ({
@@ -21,13 +26,37 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
   onAddExtra,
   onRemoveExtra,
   onExtraChange,
+  onReorder,
 }) => {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  const itemIds = useMemo(
+    () => extras.map((_, i) => `extra-${i}`),
+    [extras.length],
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !onReorder) return;
+    const oldIndex = itemIds.indexOf(String(active.id));
+    const newIndex = itemIds.indexOf(String(over.id));
+    if (oldIndex !== -1 && newIndex !== -1) {
+      onReorder(oldIndex, newIndex);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-text">Extras (Transporte, Personal, etc.)</h3>
 
-      {extras.map((item, index) => (
-        <div key={index} className="bg-surface-alt p-4 rounded-xl relative group mb-3 border border-border shadow-xs">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+          {extras.map((item, index) => (
+            <SortableItem key={itemIds[index]} id={itemIds[index]}>
+              <div className="bg-surface-alt p-4 rounded-xl relative group mb-3 border border-border shadow-xs">
           <button
             type="button"
             onClick={() => onRemoveExtra(index)}
@@ -107,8 +136,11 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
               />
             </div>
           </div>
-        </div>
-      ))}
+              </div>
+            </SortableItem>
+          ))}
+        </SortableContext>
+      </DndContext>
 
       <button
         type="button"

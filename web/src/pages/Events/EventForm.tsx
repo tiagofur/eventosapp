@@ -484,6 +484,15 @@ export const EventForm: React.FC = () => {
     setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleReorderProducts = (fromIndex: number, toIndex: number) => {
+    setSelectedProducts((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  };
+
   const handleProductChange = (index: number, field: string, value: string | number | boolean) => {
     setSelectedProducts((prev) => {
       const next = [...prev];
@@ -508,6 +517,15 @@ export const EventForm: React.FC = () => {
 
   const handleRemoveExtra = (index: number) => {
     setExtras((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleReorderExtras = (fromIndex: number, toIndex: number) => {
+    setExtras((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
   };
 
   const handleExtraChange = (index: number, field: string, value: string | number | boolean) => {
@@ -995,6 +1013,7 @@ export const EventForm: React.FC = () => {
                   onAddProduct={handleAddProduct}
                   onRemoveProduct={handleRemoveProduct}
                   onProductChange={handleProductChange}
+                  onReorder={handleReorderProducts}
                 />
               )}
               {activeStep === 3 && (
@@ -1003,6 +1022,7 @@ export const EventForm: React.FC = () => {
                   onAddExtra={handleAddExtra}
                   onRemoveExtra={handleRemoveExtra}
                   onExtraChange={handleExtraChange}
+                  onReorder={handleReorderExtras}
                 />
               )}
               {activeStep === 4 && (
