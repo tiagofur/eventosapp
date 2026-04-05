@@ -82,12 +82,10 @@ const renderCalendar = () =>
   );
 
 const waitForLoading = async () => {
-  // Wait for fetches to start if they haven't started yet
   await waitFor(() => {
     expect(eventService.getByDateRange).toHaveBeenCalled();
   }, { timeout: 2000 });
 
-  // Wait for fetches to finish (spinner should appear and then disappear)
   await waitFor(() => {
     expect(screen.queryByRole('status', { name: /Cargando/i })).not.toBeInTheDocument();
   }, { timeout: 5000 });
@@ -107,6 +105,12 @@ const makeEvent = (overrides: Record<string, any> = {}) => ({
   client: { name: 'Ana', phone: '5551234567' },
   ...overrides,
 });
+
+// Helper: select Jan 2 date (the initial date with fake timers is already Jan 2,
+// but clicking "Select" re-confirms it after any operations)
+const selectDate = () => {
+  fireEvent.click(screen.getByTestId('mock-select'));
+};
 
 describe('CalendarView', () => {
   const mockEvents: EventWithClient[] = [
@@ -135,7 +139,6 @@ describe('CalendarView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers({ shouldAdvanceTime: true });
-    // Set system time to Jan 2, 2024
     vi.setSystemTime(new Date(2024, 0, 2));
 
     (eventService.getByDateRange as any).mockResolvedValue(mockEvents);
@@ -184,18 +187,7 @@ describe('CalendarView', () => {
     renderCalendar();
     await waitForLoading();
 
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-select')).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByTestId('mock-select'));
-    await waitForLoading();
-
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-next')).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByTestId('mock-next'));
-    await waitForLoading();
-
+    // Initial selectedDate is Jan 2 (today with fake timers), events already visible
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
     });
@@ -208,7 +200,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue([]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
+    selectDate();
 
     await waitFor(() => {
       expect(screen.getByText(/No hay eventos para este día/i)).toBeInTheDocument();
@@ -225,7 +217,6 @@ describe('CalendarView', () => {
     });
     fireEvent.click(screen.getByTestId('mock-clear'));
 
-    // When no date selected, the dropdown "Nuevo" button still exists
     await waitFor(() => {
       expect(screen.getByLabelText('Crear nuevo evento o cotización')).toBeInTheDocument();
     });
@@ -241,15 +232,15 @@ describe('CalendarView', () => {
     });
   });
 
-  // ---------- NEW TESTS FOR COVERAGE ----------
+  // ---------- COVERAGE TESTS ----------
 
   it('displays event card with all detail fields (time, location, phone, total)', async () => {
     (eventService.getByDateRange as any).mockResolvedValue([makeEvent()]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
+    // Events show on initial load (selectedDate = Jan 2 = today)
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
     });
@@ -268,8 +259,7 @@ describe('CalendarView', () => {
     ]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Luis')).toBeInTheDocument();
@@ -283,8 +273,7 @@ describe('CalendarView', () => {
     ]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
@@ -298,8 +287,7 @@ describe('CalendarView', () => {
     ]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
@@ -316,8 +304,7 @@ describe('CalendarView', () => {
     ]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('C1')).toBeInTheDocument();
@@ -336,27 +323,23 @@ describe('CalendarView', () => {
     ]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('A1')).toBeInTheDocument();
     });
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('Eventos')).toBeInTheDocument();
+    expect(screen.getByText(/2 Eventos/)).toBeInTheDocument();
   });
 
   it('shows singular "Evento" badge for one event', async () => {
     (eventService.getByDateRange as any).mockResolvedValue([makeEvent()]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
     });
-    // Badge text is "1 Evento" inside a single span
     expect(screen.getByText(/1 Evento/)).toBeInTheDocument();
   });
 
@@ -364,8 +347,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue([makeEvent()]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
@@ -380,8 +362,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue([makeEvent()]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
@@ -396,8 +377,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue([makeEvent()]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
-    fireEvent.click(screen.getByText('Next'));
+    await waitForLoading();
 
     await waitFor(() => {
       expect(screen.getByText('Ana')).toBeInTheDocument();
@@ -412,7 +392,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue([]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
+    selectDate();
 
     await waitFor(() => {
       const link = screen.getByRole('link', { name: 'Crear evento para esta fecha' });
@@ -424,7 +404,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue(null);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
+    selectDate();
 
     await waitFor(() => {
       expect(screen.getByText(/No hay eventos para este día/i)).toBeInTheDocument();
@@ -435,7 +415,7 @@ describe('CalendarView', () => {
     (eventService.getByDateRange as any).mockResolvedValue([]);
 
     renderCalendar();
-    fireEvent.click(screen.getByText('Select'));
+    selectDate();
 
     await waitFor(() => {
       const link = screen.getByRole('link', { name: 'Crear evento para esta fecha' });

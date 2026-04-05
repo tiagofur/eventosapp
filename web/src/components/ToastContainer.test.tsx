@@ -119,8 +119,8 @@ describe('ToastContainer', () => {
 
     render(<ToastContainer />);
     const toast = screen.getByRole('status');
-    expect(toast.className).toContain('bg-green-50');
-    expect(toast.className).toContain('border-green-200');
+    expect(toast.className).toContain('bg-success/10');
+    expect(toast.className).toContain('border-success/30');
   });
 
   it('applies correct style classes for error toast', () => {

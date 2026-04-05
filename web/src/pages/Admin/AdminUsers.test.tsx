@@ -198,7 +198,8 @@ describe('AdminUsers', () => {
     await screen.findByText('Regalar plan');
     vi.mocked(adminService.upgradeUser).mockRejectedValueOnce('Primitive String Reject');
     fireEvent.click(screen.getByText('Confirmar regalo').closest('button')!);
-    await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith(expect.stringContaining('Error'), 'error'));
+    // React Query mutation onError calls getErrorMessage which returns the string itself
+    await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith(expect.stringContaining('Primitive String Reject'), 'error'));
 
     // 2.6 Edit Gift & Error (Standard Error Object)
     fireEvent.click(within(expiringRow).getByText('Editar regalo').closest('button')!);
@@ -213,13 +214,15 @@ describe('AdminUsers', () => {
     fireEvent.click(within(premRow).getByText('Rebajar').closest('button')!);
     // ConfirmDialog should appear
     await screen.findByText('Rebajar plan');
-    fireEvent.click(screen.getByText('Rebajar', { selector: 'button' }).closest('button')!);
+    const downgradeDialog = screen.getByRole('dialog');
+    fireEvent.click(within(downgradeDialog).getByText('Rebajar').closest('button')!);
     await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith(expect.stringContaining('Downgrade Fail'), 'error'));
 
     // 3.5 Downgrade & Cancel
     fireEvent.click(within(premRow).getByText('Rebajar').closest('button')!);
     await screen.findByText('Rebajar plan');
-    fireEvent.click(screen.getByText('Cancelar').closest('button')!);
+    const cancelDialog = screen.getByRole('dialog');
+    fireEvent.click(within(cancelDialog).getByText('Cancelar').closest('button')!);
     vi.mocked(adminService.upgradeUser).mockClear();
     expect(adminService.upgradeUser).not.toHaveBeenCalled();
 
@@ -227,10 +230,8 @@ describe('AdminUsers', () => {
     vi.mocked(adminService.upgradeUser).mockResolvedValueOnce({ ...getMockData()[0], plan: 'basic' });
     fireEvent.click(within(premRow).getByText('Rebajar').closest('button')!);
     await screen.findByText('Rebajar plan');
-    // Find the confirm "Rebajar" button inside the dialog
-    const dialogButtons = screen.getAllByText('Rebajar');
-    const dialogConfirmBtn = dialogButtons.find(el => el.closest('button') !== within(premRow).queryByText('Rebajar')?.closest('button'));
-    fireEvent.click(dialogConfirmBtn!.closest('button')!);
+    const successDialog = screen.getByRole('dialog');
+    fireEvent.click(within(successDialog).getByText('Rebajar').closest('button')!);
     await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith(expect.stringContaining('plan Basic'), 'success'));
 
     // 4. CSV Export

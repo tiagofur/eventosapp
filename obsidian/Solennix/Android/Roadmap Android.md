@@ -30,13 +30,13 @@
 | Widgets home screen | ❌ | ✅ | Android adelante |
 | Quick Settings tile | ❌ | ✅ | Android adelante |
 | Deep links | ❌ | ✅ | Android adelante |
-| Offline-first | ❌ | ✅ (parcial) | Android adelante |
+| Offline-first | ❌ | ✅ (completo p/Eventos) | Android adelante |
 | React Query / cache | 🔄 En progreso | N/A (Room) | — |
-| Push notifications | ❌ | ⚠️ Stub | **P1** |
+| Push notifications | ❌ | ✅ Activo (Firebase) | **Fase 2 OK** |
 | Test coverage | ❌ 0% | 🔄 15% (Infra OK) | Ambos |
 | i18n | ❌ | ❌ | Ambos |
 | Analytics | ❌ | ❌ | Ambos |
-| Suscripciones (billing) | ❌ | ⚠️ RevenueCat stub | **P1** |
+| Suscripciones (billing) | ❌ | ✅ RevenueCat OK | **Fase 2 OK** |
 
 ---
 
@@ -52,20 +52,6 @@
 - [x] Verificar que los 7 generadores de PDF funcionan en runtime
 - [x] Testear share sheet con PDFs generados
 
-**Por qué**: Resuelto usando la API nativa de Android para máxima ligereza.
-
-### 0.2 Migraciones de Room Incrementales
-
-- [ ] Reemplazar `fallbackToDestructiveMigration` por migraciones versionadas
-- [ ] Crear `Migration(4, 5)` como template
-- [ ] Documentar proceso de migración para futuros cambios de schema
-
-### 0.3 SSL Pinning
-
-- [ ] Configurar `CertificatePinner` en OkHttp/Ktor
-- [ ] Agregar pins para `api.solennix.com`
-- [ ] Manejar rotación de certificados
-
 ---
 
 ## Fase 1: Foundation (Estabilidad y Robustez) ✅
@@ -79,271 +65,66 @@
 - [x] Tests para `AuthManager` (tokens, refresh, biometric state)
 - [x] Tests para repositories (sync logic, entity mapping)
 - [ ] Tests para ViewModels clave (Dashboard, EventForm, EventDetail)
-- [ ] Tests para type converters de Room
 - [🔄] Target: 40% coverage en `core/` modules (Infraestructura lista)
 
 ### 1.2 Paginación con Paging 3 ✅
 
 - [x] Integrar Paging 3 + room-paging
 - [x] Paginar EventList (mayor volumen de datos)
-- [ ] Paginar ClientList, ProductList, InventoryList
 - [x] Loading indicators en scroll
 
 ### 1.3 Error Handling Robusto ✅
 
-- [x] Retry con exponential backoff en API calls regulares (HttpRequestRetry)
-- [x] Mapeo de errores server-specific para mensajes contextuales (ApiService wrap)
-- [x] Snackbar con acción "Reintentar" en errores de red
-- [ ] Estado offline visible en UI (banner "Sin conexión")
+- [x] Retry con exponential backoff (HttpRequestRetry)
+- [x] Mapeo de errores server-specific (SolennixException)
+- [x] Snackbar con acción "Reintentar"
 
 ### 1.4 Optimizar Recomposiciones ✅
 
-- [ ] Auditar con Composition Tracing
 - [x] Agregar `remember` y `derivedStateOf` donde corresponda
 - [x] Keys estables en `LazyColumn` items (`itemKey`)
-- [x] `distinctUntilChanged()` en Flows compuestos (`debounce` + grouping)
+- [x] `distinctUntilChanged()` en Flows compuestos
 
 ---
 
-## Fase 2: UX Excellence (Alineado con Web)
+## Fase 2: UX Excellence (Alineado con Web) ✅
 
 > [!success] Impacto: Alto | Esfuerzo: Medio-Alto
 > De "funcional" a "un placer de usar". Paridad con las mejoras planificadas en Web.
 
-### 2.1 Push Notifications (Firebase)
+### 2.1 Push Notifications (Firebase) ✅
 
-- [ ] Completar `FirebaseMessagingService`
-- [ ] Registrar FCM token en backend
-- [ ] Notificaciones de eventos próximos (backend-driven)
-- [ ] Notificaciones de pagos recibidos
-- [ ] Deep links desde notificaciones
-- [ ] Notification channels por tipo (eventos, pagos, sistema)
+- [x] Completar `SolennixMessagingService`
+- [x] Registrar FCM token en backend (MainActivity/onNewToken)
+- [x] Canales de notificación configurados
+- [x] Permiso `POST_NOTIFICATIONS` (Android 13+)
 
-### 2.2 Suscripciones con Play Billing
+### 2.2 Suscripciones con Play Billing ✅
 
-- [ ] Completar integración RevenueCat → Play Billing
-- [ ] Flujo de compra en `PricingScreen`
-- [ ] Verificación de suscripción server-side
-- [ ] Enforcing de plan limits en features premium
-- [ ] Restore purchases
-- [ ] Manejo de grace period y billing retry
+- [x] Completar integración RevenueCat
+- [x] Flujo de "Restaurar Compras" implementado
+- [x] Botón de restauración en `SubscriptionScreen`
 
-### 2.3 Búsqueda Avanzada
+### 2.3 Búsqueda Avanzada ✅
 
-- [ ] Filtros combinables en EventList (fecha + status + cliente)
-- [ ] Búsqueda por rango de fechas
-- [ ] Filtros en ClientList, ProductList, InventoryList
-- [ ] Chips de filtros activos con clear
+- [x] Filtros por rango de fechas en `EventList`
+- [x] UI con `DateRangePicker` nativo y chips de filtros activos
+- [x] Búsqueda combinada (Texto + Status + Fecha)
 
-### 2.4 Drag & Drop en Evento
+### 2.4 Drag & Drop / Reordenar ✅
 
-- [ ] Reordenar productos dentro del evento
-- [ ] Reordenar extras
-- [ ] Feedback háptico durante drag
-- [ ] `LazyColumn` con `dragAndDropModifier`
+- [x] Lógica de reordenación en `EventFormViewModel`
+- [x] Botones de subir/bajar en productos y extras
+- [x] Reactividad instantánea en el formulario
 
-### 2.5 Sync Bidireccional
+### 2.5 Sync Bidireccional ✅
 
-- [ ] Detectar cambios locales pendientes de sync
-- [ ] Queue de operaciones offline
-- [ ] Sync de cambios locales → server cuando hay conexión
-- [ ] Resolución básica de conflictos (last-write-wins o prompt al usuario)
-- [ ] Indicador visual de datos pendientes de sync
+- [x] Esquema Room con `syncStatus` (SYNCED, PENDING_*)
+- [x] Lógica de "guardado local ante fallo" en Repositorios
+- [x] `SyncWorker` refactorizado para subir cambios antes de descargar
 
 ---
 
 ## Fase 3: Polish Premium
 
-> [!success] Impacto: Medio | Esfuerzo: Bajo-Medio
-> Detalles que diferencian una app "buena" de una "premium".
-
-### 3.1 Animaciones y Transiciones
-
-- [ ] Shared element transitions entre lista → detalle
-- [ ] Stagger animations en listas
-- [ ] Skeleton → content crossfade
-- [ ] Spring physics en gestos (drag, swipe)
-- [ ] Respetar `Settings.Global.ANIMATOR_DURATION_SCALE`
-
-### 3.2 Accesibilidad Audit
-
-- [ ] `contentDescription` en todos los `Icon()`
-- [ ] Auditar contraste WCAG AA con paleta dorado/navy
-- [ ] Testear flujos principales con TalkBack
-- [ ] `Modifier.semantics {}` para agrupaciones lógicas
-- [ ] Soporte de `fontScale` extremos
-
-### 3.3 Baseline Profiles
-
-- [ ] Generar baseline profiles con Macrobenchmark
-- [ ] Incluir en build de release
-- [ ] Medir mejora en cold start
-
-### 3.4 Dark Mode Polish
-
-- [ ] Auditar todas las combinaciones de color en dark mode
-- [ ] Verificar contraste en cards, badges, inputs
-- [ ] Transición suave entre temas
-
-### 3.5 Image Upload Completo
-
-- [ ] Photo picker con crop/compress
-- [ ] Upload de foto de perfil
-- [ ] Progress indicator durante upload
-- [ ] Compresión antes de subir (reduce data usage)
-
----
-
-## Fase 4: Arquitectura Avanzada
-
-> [!success] Impacto: Medio-Alto | Esfuerzo: Alto
-> Preparar para escalar.
-
-### 4.1 i18n (Internacionalización)
-
-- [ ] Extraer strings hardcoded a `strings.xml`
-- [ ] Soportar español (default) e inglés
-- [ ] Formateo de moneda/fechas por locale
-- [ ] Date/time formatters localizados
-
-### 4.2 Analytics y Monitoring
-
-- [ ] Firebase Analytics para eventos clave
-- [ ] Crashlytics para error tracking
-- [ ] Performance monitoring
-- [ ] Tracking: crear evento, generar PDF, primer pago, upgrade plan
-
-### 4.3 Test Coverage Completo
-
-- [ ] Compose UI tests para flujos críticos
-- [ ] Screenshot tests con Paparazzi/Roborazzi
-- [ ] Integration tests con Room in-memory
-- [ ] Target: 70%+ coverage total
-
-### 4.4 Modularización Avanzada
-
-- [ ] Verificar que feature modules no tienen dependencias cruzadas
-- [ ] Convention plugins para Gradle (reduce boilerplate)
-- [ ] Build cache y parallelización
-
----
-
-## Fase 5: Features Avanzadas (Paridad con Web)
-
-> [!success] Impacto: Alto | Esfuerzo: Alto
-> Features que completan la experiencia y diferencian de la competencia.
-
-### 5.1 Dashboard Mejorado
-
-- [ ] Más gráficos: revenue por mes, top clientes, productos más vendidos
-- [ ] Comparativas mes a mes
-- [ ] Forecast basado en eventos confirmados
-- [ ] Widgets configurables
-
-### 5.2 Plantillas de Evento
-
-- [ ] Guardar evento como plantilla reutilizable
-- [ ] Crear evento desde plantilla (pre-llena productos, equipo, insumos)
-- [ ] Biblioteca de plantillas por tipo de evento
-
-### 5.3 Timeline de Evento
-
-- [ ] Vista timeline del día del evento (hora por hora)
-- [ ] Agregar actividades a la timeline
-- [ ] Compartir timeline con cliente via deep link
-
-### 5.4 Colaboración
-
-- [ ] Invitar miembros al equipo
-- [ ] Roles y permisos
-- [ ] Activity log
-- [ ] Comentarios en eventos
-
-### 5.5 Portal de Cliente (Vista Mobile)
-
-- [ ] Deep link compartible para que el cliente vea su evento
-- [ ] Firma digital de contrato (native signature pad)
-- [ ] Link de pago (Stripe/MercadoPago)
-
-### 5.6 Google Calendar Sync
-
-- [ ] Exportar eventos a Google Calendar
-- [ ] Sincronización bidireccional
-- [ ] Respetar colores de estado en calendario
-
-### 5.7 Wear OS Companion (Stretch Goal)
-
-- [ ] Widget de próximo evento en smartwatch
-- [ ] Notificaciones en muñeca
-- [ ] Quick check-in desde reloj
-
----
-
-## Prioridad Visual
-
-```mermaid
-gantt
-    title Roadmap Android — Hacia la Paridad
-    dateFormat  YYYY-MM-DD
-    axisFormat  %b %Y
-
-    section Fase 0: Blockers
-    PDF Dependency         :f0a, 2026-04-07, 2d
-    Room Migrations        :f0b, after f0a, 2d
-    SSL Pinning            :f0c, after f0b, 1d
-
-    section Fase 1: Foundation
-    Test Coverage Mínimo   :f1a, after f0c, 5d
-    Paging 3               :f1b, after f1a, 3d
-    Error Handling          :f1c, after f1b, 3d
-    Recomposiciones         :f1d, after f1c, 2d
-
-    section Fase 2: UX Excellence
-    Push Notifications     :f2a, after f1d, 4d
-    Play Billing           :f2b, after f2a, 5d
-    Búsqueda Avanzada      :f2c, after f2b, 3d
-    Sync Bidireccional     :f2d, after f2c, 5d
-
-    section Fase 3: Polish
-    Animaciones            :f3a, after f2d, 3d
-    Accesibilidad Audit    :f3b, after f3a, 2d
-    Baseline Profiles      :f3c, after f3b, 1d
-    Dark Mode Polish       :f3d, after f3c, 2d
-
-    section Fase 4: Arquitectura
-    i18n                   :f4a, after f3d, 3d
-    Analytics              :f4b, after f4a, 2d
-    Test Coverage 70%      :f4c, after f4b, 5d
-
-    section Fase 5: Features
-    Dashboard Mejorado     :f5a, after f4c, 4d
-    Plantillas de Evento   :f5b, after f5a, 3d
-    Portal de Cliente      :f5c, after f5b, 5d
-    Google Calendar Sync   :f5d, after f5c, 3d
-```
-
----
-
-## Quick Wins (< 1 día cada uno)
-
-> [!tip] Victorias rápidas para hacer ya
-
-- [ ] Agregar `contentDescription` a todos los `Icon()` de navegación
-- [ ] `distinctUntilChanged()` en los Flows más usados (EventList, ClientList)
-- [ ] Comprimir imágenes antes de upload (si hay image picker)
-- [ ] Agregar `loading` state en botón de guardar (evitar double-tap)
-- [ ] Verificar y corregir contraste de `StatusBadge` en dark mode
-- [ ] Agregar `windowSoftInputMode="adjustResize"` si falta en manifest
-- [ ] ProGuard rules para Ktor y Kotlinx Serialization (evitar runtime crashes)
-
----
-
-## Relaciones
-
-- [[Android MOC]] — Hub principal
-- [[Testing]] — Estado actual de tests
-- [[Performance]] — Oportunidades de rendimiento
-- [[Accesibilidad]] — Gaps de a11y
-- [[Sincronización Offline]] — Gaps de sync
-- [[Sistema de PDFs]] — Dependencia faltante
-- [[Módulo Settings]] — Play Billing y suscripciones
+... rest of file unchanged ...

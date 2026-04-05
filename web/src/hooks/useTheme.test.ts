@@ -11,7 +11,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 describe('useTheme', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    localStorage.clear();
+    (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue(null);
     document.documentElement.classList.remove('light', 'dark');
   });
 
@@ -27,7 +27,7 @@ describe('useTheme', () => {
   });
 
   it('uses saved theme when available', () => {
-    localStorage.setItem('theme', 'dark');
+    (localStorage.getItem as ReturnType<typeof vi.fn>).mockReturnValue('dark');
     window.matchMedia = vi.fn().mockReturnValue({
       matches: false,
       addEventListener: vi.fn(),
