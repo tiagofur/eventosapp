@@ -108,6 +108,16 @@ type FullPaymentRepository interface {
 	Delete(ctx context.Context, id, userID uuid.UUID) error
 }
 
+// DashboardRepository defines user-scoped dashboard analytics operations.
+type DashboardRepository interface {
+	GetKPIs(ctx context.Context, userID uuid.UUID) (*repository.DashboardKPIs, error)
+	GetRevenueChart(ctx context.Context, userID uuid.UUID, period string) ([]repository.RevenueDataPoint, error)
+	GetEventsByStatus(ctx context.Context, userID uuid.UUID) ([]repository.EventStatusCount, error)
+	GetTopClients(ctx context.Context, userID uuid.UUID, limit int) ([]repository.TopClient, error)
+	GetProductDemand(ctx context.Context, userID uuid.UUID) ([]repository.ProductDemandItem, error)
+	GetForecast(ctx context.Context, userID uuid.UUID) ([]repository.ForecastDataPoint, error)
+}
+
 // AdminRepository defines admin repo operations.
 type AdminRepository interface {
 	GetPlatformStats(ctx context.Context) (*repository.PlatformStats, error)

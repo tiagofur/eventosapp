@@ -74,6 +74,7 @@ func main() {
 	inventoryRepo := repository.NewInventoryRepo(pool)
 	paymentRepo := repository.NewPaymentRepo(pool)
 	adminRepo := repository.NewAdminRepo(pool)
+	dashboardRepo := repository.NewDashboardRepo(pool)
 	subscriptionRepo := repository.NewSubscriptionRepo(pool)
 	unavailRepo := repository.NewUnavailableDateRepo(pool)
 	deviceRepo := repository.NewDeviceRepo(pool)
@@ -120,11 +121,12 @@ func main() {
 	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir, userRepo)
 	uploadHandler.SetStorageProvider(storageProvider)
 	adminHandler := handlers.NewAdminHandler(adminRepo)
+	dashboardHandler := handlers.NewDashboardHandler(dashboardRepo)
 	unavailHandler := handlers.NewUnavailableDateHandler(unavailRepo)
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
 
 	// Create router
-	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, adminHandler, unavailHandler, deviceHandler, authService, userRepo, pool, cfg.CORSAllowedOrigins, cfg.UploadDir)
+	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, adminHandler, dashboardHandler, unavailHandler, deviceHandler, authService, userRepo, pool, cfg.CORSAllowedOrigins, cfg.UploadDir)
 
 	// Background job: expire gifted plans that have passed their expiry date.
 	// Runs once at startup then every hour.
