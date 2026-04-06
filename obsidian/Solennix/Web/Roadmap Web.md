@@ -140,8 +140,8 @@
 
 - [x] `prefers-reduced-motion` media query global
 - [x] Theme crossfade transition en `<html>`
-- [ ] _Futuro:_ Audit completo WCAG AA de todas las combinaciones dark mode
-- [ ] _Futuro:_ PDFs respetando tema actual
+- [x] Audit WCAG AA dark mode — text-tertiary, borders, info bumped for ≥4.5:1 / ≥3:1
+- [x] ~~_Futuro:_ PDFs respetando tema actual~~ — descartado: PDFs siempre fondo blanco (impresión); no hay preview in-app
 
 ---
 
@@ -267,7 +267,7 @@ gantt
 - [x] Skip-to-content link en Layout — **Quick Win**
 - [x] `rel="noopener noreferrer"` en links externos — **Ya existía**
 - [ ] `React.memo()` en componentes de tabla pesados — marginal con React Query
-- [ ] Verificar contraste WCAG en dark mode — requiere auditoría visual
+- [x] Verificar contraste WCAG en dark mode — audit completado, tokens corregidos
 
 ---
 

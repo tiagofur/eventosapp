@@ -95,23 +95,23 @@
     /* Warm cream text */
     --color-text: #F5F0E8;
     --color-text-secondary: #9A9590;
-    --color-text-tertiary: #6B6560;
+    --color-text-tertiary: #8E8983;
 
-    /* Navy-tinted borders */
-    --color-border: #252A35;
-    --color-border-strong: #3A3F4A;
+    /* Navy-tinted borders (WCAG AA: border-strong ≥3:1 on surfaces) */
+    --color-border: #5A6578;
+    --color-border-strong: #647382;
     --color-separator: rgba(84, 84, 88, 0.65);
 
     /* Semantic (brighter for dark) */
     --color-success: #30d158;
     --color-warning: #ff9f0a;
     --color-error: #ff453a;
-    --color-info: #0a84ff;
+    --color-info: #2490FF;
     --color-secondary: #94a3b8;
 
     /* Event Status (brighter for dark) */
     --color-status-quoted: #fbbf24;
-    --color-status-confirmed: #0a84ff;
+    --color-status-confirmed: #2490FF;
     --color-status-completed: #52B788;
     --color-status-cancelled: #ff453a;
 
@@ -374,10 +374,15 @@ input, select, textarea {
   animation: scale-in 0.15s ease-out both;
 }
 
-/* Light/dark theme crossfade */
+/* Light/dark theme crossfade (respects reduced motion via global rule) */
 @layer base {
   html {
     transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      transition: none;
+    }
   }
 }
 
