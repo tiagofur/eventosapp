@@ -26,6 +26,7 @@ public actor APIClient {
     private let session: URLSession
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
+    private let offlineMutationQueue: OfflineMutationQueue
 
     /// Reference to AuthManager for token refresh operations.
     /// Set after initialization to break the dependency cycle.
@@ -66,6 +67,7 @@ public actor APIClient {
 
         self.encoder = JSONEncoder()
         self.encoder.keyEncodingStrategy = .convertToSnakeCase
+        self.offlineMutationQueue = OfflineMutationQueue()
     }
 
     /// Resolves a relative API path (e.g. `/api/uploads/...`) to an absolute URL.
@@ -93,6 +95,11 @@ public actor APIClient {
     /// depending on UI packages.
     public func setErrorHandler(_ handler: @escaping @MainActor @Sendable (String) -> Void) {
         self.onError = handler
+    }
+
+    /// Attempts to replay pending offline mutations in FIFO order.
+    public func flushQueuedMutations() async {
+        await flushOfflineQueue()
     }
 
     // MARK: - Public HTTP Methods
@@ -172,8 +179,31 @@ public actor APIClient {
         body: some Encodable
     ) async throws -> T {
         var request = try buildRequest(endpoint, method: "POST")
-        request.httpBody = try encoder.encode(body)
-        return try await execute(request)
+        let bodyData = try encoder.encode(body)
+        request.httpBody = bodyData
+
+        do {
+            return try await execute(request, suppressNetworkToast: true)
+        } catch let apiError as APIError {
+            if await queueMutationIfNeeded(
+                apiError: apiError,
+                endpoint: endpoint,
+                method: "POST",
+                bodyData: bodyData,
+                idempotencyKey: request.value(forHTTPHeaderField: "X-Idempotency-Key")
+            ) {
+                let queuedError = APIError.networkError(
+                    "Sin conexión: guardamos tu cambio y se enviará automáticamente al reconectarte."
+                )
+                showErrorToast(for: queuedError)
+                throw queuedError
+            }
+            if case .networkError = apiError {
+                showErrorToast(for: apiError)
+            }
+
+            throw apiError
+        }
     }
 
     /// Perform a PUT request with a JSON body.
@@ -186,15 +216,56 @@ public actor APIClient {
         body: some Encodable
     ) async throws -> T {
         var request = try buildRequest(endpoint, method: "PUT")
-        request.httpBody = try encoder.encode(body)
-        return try await execute(request)
+        let bodyData = try encoder.encode(body)
+        request.httpBody = bodyData
+
+        do {
+            return try await execute(request, suppressNetworkToast: true)
+        } catch let apiError as APIError {
+            if await queueMutationIfNeeded(
+                apiError: apiError,
+                endpoint: endpoint,
+                method: "PUT",
+                bodyData: bodyData,
+                idempotencyKey: request.value(forHTTPHeaderField: "X-Idempotency-Key")
+            ) {
+                let queuedError = APIError.networkError(
+                    "Sin conexión: guardamos tu cambio y se enviará automáticamente al reconectarte."
+                )
+                showErrorToast(for: queuedError)
+                throw queuedError
+            }
+            if case .networkError = apiError {
+                showErrorToast(for: apiError)
+            }
+
+            throw apiError
+        }
     }
 
     /// Perform a DELETE request.
     /// - Parameter endpoint: The API endpoint path.
     public func delete(_ endpoint: String) async throws {
         let request = try buildRequest(endpoint, method: "DELETE")
-        let _: EmptyResponse = try await execute(request)
+        do {
+            let _: EmptyResponse = try await execute(request, suppressNetworkToast: true)
+        } catch let apiError as APIError {
+            if await queueMutationIfNeeded(
+                apiError: apiError,
+                endpoint: endpoint,
+                method: "DELETE",
+                bodyData: nil,
+                idempotencyKey: request.value(forHTTPHeaderField: "X-Idempotency-Key")
+            ) {
+                showErrorToast(for: .networkError("Sin conexión: la eliminación quedó en cola y se enviará automáticamente."))
+                return
+            }
+            if case .networkError = apiError {
+                showErrorToast(for: apiError)
+            }
+
+            throw apiError
+        }
     }
 
     /// Upload a file using multipart/form-data.
@@ -236,6 +307,9 @@ public actor APIClient {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if method == "POST" || method == "PUT" || method == "DELETE" {
+            request.setValue(UUID().uuidString, forHTTPHeaderField: "X-Idempotency-Key")
+        }
 
         // Attach Bearer token from Keychain
         if let token = keychainHelper.readString(for: KeychainHelper.Keys.accessToken) {
@@ -249,7 +323,8 @@ public actor APIClient {
 
     private func execute<T: Decodable>(
         _ request: URLRequest,
-        isRetry: Bool = false
+        isRetry: Bool = false,
+        suppressNetworkToast: Bool = false
     ) async throws -> T {
         let isIdempotent = request.httpMethod == "GET"
         var lastError: Error?
@@ -288,7 +363,9 @@ public actor APIClient {
                 continue
             } catch let urlError as URLError {
                 let err = APIError.networkError(APIError.userFacingMessage(for: urlError))
-                showErrorToast(for: err)
+                if !suppressNetworkToast {
+                    showErrorToast(for: err)
+                }
                 throw err
             } catch {
                 if let apiError = error as? APIError {
@@ -301,7 +378,9 @@ public actor APIClient {
         // Should not reach here, but handle the final error
         if let urlError = lastError as? URLError {
             let err = APIError.networkError(APIError.userFacingMessage(for: urlError))
-            showErrorToast(for: err)
+            if !suppressNetworkToast {
+                showErrorToast(for: err)
+            }
             throw err
         }
         throw lastError ?? APIError.unknown
@@ -324,6 +403,73 @@ public actor APIClient {
             return true
         }
         return false
+    }
+
+    private func queueMutationIfNeeded(
+        apiError: APIError,
+        endpoint: String,
+        method: String,
+        bodyData: Data?,
+        idempotencyKey: String?
+    ) async -> Bool {
+        guard shouldQueueMutation(endpoint: endpoint, method: method) else { return false }
+        guard case .networkError = apiError else { return false }
+
+        let mutation = QueuedMutation(
+            id: UUID().uuidString,
+            endpoint: endpoint,
+            method: method,
+            bodyBase64: bodyData?.base64EncodedString(),
+            idempotencyKey: idempotencyKey ?? UUID().uuidString,
+            createdAt: Date()
+        )
+        await offlineMutationQueue.enqueue(mutation)
+        return true
+    }
+
+    private func shouldQueueMutation(endpoint: String, method: String) -> Bool {
+        guard method == "POST" || method == "PUT" || method == "DELETE" else { return false }
+
+        // Auth and upload flows should fail fast and not be replayed later.
+        if endpoint.hasPrefix("/auth") || endpoint.hasPrefix("/uploads") {
+            return false
+        }
+
+        return true
+    }
+
+    private func flushOfflineQueue() async {
+        let pendingMutations = await offlineMutationQueue.dequeueAll()
+        guard !pendingMutations.isEmpty else { return }
+
+        var index = 0
+
+        while index < pendingMutations.count {
+            let mutation = pendingMutations[index]
+
+            do {
+                var request = try buildRequest(mutation.endpoint, method: mutation.method)
+                request.setValue(mutation.idempotencyKey, forHTTPHeaderField: "X-Idempotency-Key")
+                if let bodyBase64 = mutation.bodyBase64 {
+                    request.httpBody = Data(base64Encoded: bodyBase64)
+                }
+
+                _ = try await perform(request, isRetry: false)
+                index += 1
+            } catch let apiError as APIError {
+                switch apiError {
+                case .serverError(let statusCode, _) where statusCode >= 400 && statusCode < 500 && statusCode != 429:
+                    // Permanent client-side error: drop this mutation and continue.
+                    index += 1
+                default:
+                    await offlineMutationQueue.replace(with: Array(pendingMutations[index...]))
+                    return
+                }
+            } catch {
+                await offlineMutationQueue.replace(with: Array(pendingMutations[index...]))
+                return
+            }
+        }
     }
 
     // MARK: - Perform Request

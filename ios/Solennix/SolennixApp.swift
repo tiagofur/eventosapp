@@ -143,6 +143,7 @@ struct SolennixApp: App {
                         if user.plan != .basic {
                             subscriptionManager.setBackendPremiumStatus(true)
                         }
+                        await apiClient.flushQueuedMutations()
                     }
                 }
                 .task {
@@ -165,7 +166,14 @@ struct SolennixApp: App {
                             }
                             await ensurePushAuthorization()
                             await processPendingDeviceTokenRegistration()
+                            await apiClient.flushQueuedMutations()
                         }
+                    }
+                }
+                .onChange(of: networkMonitor.isConnected) { _, isConnected in
+                    guard isConnected, authManager.isAuthenticated else { return }
+                    Task {
+                        await apiClient.flushQueuedMutations()
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .deviceTokenReceived)) { notification in

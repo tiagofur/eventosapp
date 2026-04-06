@@ -106,7 +106,7 @@
 - [x] Retry con exponential backoff para errores transitorios — ✅ 2026-04-05 (2 retries, 1s/2s backoff, GET only, 5xx + timeouts + connection errors)
 - [x] UI de error con botón "Reintentar" contextual — ✅ 2026-04-05 (Dashboard, EventList, ClientList, ProductList, InventoryList)
 - [x] Sentry/Crashlytics integration — ✅ 2026-04-06 (Sentry SDK real, user tracking via AuthManager delegate, DSN/env por Info.plist)
-- [ ] Offline-first: queue de operaciones pendientes
+- [x] Offline-first: queue de operaciones pendientes — ✅ 2026-04-06 (cola persistente FIFO para POST/PUT/DELETE en fallos de red, replay automático al reconectar y tras login, `X-Idempotency-Key` por mutación)
 
 **Por qué**: Actualmente errores de red muestran mensaje genérico. El usuario no sabe qué hacer.
 
