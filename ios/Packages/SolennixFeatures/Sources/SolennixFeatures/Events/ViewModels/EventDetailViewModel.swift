@@ -94,26 +94,9 @@ public final class EventDetailViewModel {
         errorMessage = nil
 
         do {
-            async let eventResult: Event = apiClient.get(Endpoint.event(eventId))
-            async let productsResult: [EventProduct] = apiClient.get(Endpoint.eventProducts(eventId))
-            async let extrasResult: [EventExtra] = apiClient.get(Endpoint.eventExtras(eventId))
-            async let equipmentResult: [EventEquipment] = apiClient.get(Endpoint.eventEquipment(eventId))
-            async let suppliesResult: [EventSupply] = apiClient.get(Endpoint.eventSupplies(eventId))
-            async let paymentsResult: [Payment] = apiClient.get(
-                Endpoint.payments,
-                params: ["event_id": eventId]
-            )
-            async let allProductsResult: [Product] = apiClient.get(Endpoint.products)
-
-            let fetchedEvent = try await eventResult
+            // Fetch event first (needed for clientId)
+            let fetchedEvent: Event = try await apiClient.get(Endpoint.event(eventId))
             event = fetchedEvent
-            products = try await productsResult
-            extras = try await extrasResult
-            equipment = try await equipmentResult
-            supplies = try await suppliesResult
-            payments = try await paymentsResult
-            let allProducts = try await allProductsResult
-            productMap = Dictionary(uniqueKeysWithValues: allProducts.map { ($0.id, $0) })
 
             // Parse photos from event.photos JSON string
             if let photosString = fetchedEvent.photos,
@@ -124,11 +107,43 @@ public final class EventDetailViewModel {
                 eventPhotos = []
             }
 
-            // Fetch client
-            do {
-                client = try await apiClient.get(Endpoint.client(fetchedEvent.clientId))
-            } catch {
-                client = nil
+            // Fetch related data in parallel using TaskGroup to avoid async let dealloc crash
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { [apiClient] in
+                    if let result: [EventProduct] = try? await apiClient.get(Endpoint.eventProducts(eventId)) {
+                        await MainActor.run { self.products = result }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let result: [EventExtra] = try? await apiClient.get(Endpoint.eventExtras(eventId)) {
+                        await MainActor.run { self.extras = result }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let result: [EventEquipment] = try? await apiClient.get(Endpoint.eventEquipment(eventId)) {
+                        await MainActor.run { self.equipment = result }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let result: [EventSupply] = try? await apiClient.get(Endpoint.eventSupplies(eventId)) {
+                        await MainActor.run { self.supplies = result }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let result: [Payment] = try? await apiClient.get(Endpoint.payments, params: ["event_id": eventId]) {
+                        await MainActor.run { self.payments = result }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let allProducts: [Product] = try? await apiClient.get(Endpoint.products) {
+                        await MainActor.run { self.productMap = Dictionary(uniqueKeysWithValues: allProducts.map { ($0.id, $0) }) }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let fetchedClient: Client = try? await apiClient.get(Endpoint.client(fetchedEvent.clientId)) {
+                        await MainActor.run { self.client = fetchedClient }
+                    }
+                }
             }
         } catch {
             if let apiError = error as? APIError {
