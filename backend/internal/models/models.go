@@ -254,6 +254,19 @@ type EventPhoto struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// AuditLog represents an entry in the audit trail.
+type AuditLog struct {
+	ID           uuid.UUID  `json:"id"`
+	UserID       uuid.UUID  `json:"user_id"`
+	Action       string     `json:"action"`
+	ResourceType string     `json:"resource_type"`
+	ResourceID   *uuid.UUID `json:"resource_id,omitempty"`
+	Details      *string    `json:"details,omitempty"`
+	IPAddress    *string    `json:"ip_address,omitempty"`
+	UserAgent    *string    `json:"user_agent,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+}
+
 // DeviceToken represents a device registered for push notifications
 type DeviceToken struct {
 	ID        uuid.UUID `json:"id"`

@@ -15,8 +15,8 @@ import (
 
 func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, subHandler *handlers.SubscriptionHandler,
 	searchHandler *handlers.SearchHandler, eventPaymentHandler *handlers.EventPaymentHandler, uploadHandler *handlers.UploadHandler,
-	adminHandler *handlers.AdminHandler, dashboardHandler *handlers.DashboardHandler, unavailHandler *handlers.UnavailableDateHandler, deviceHandler *handlers.DeviceHandler,
-	authService *services.AuthService, userRepo *repository.UserRepo, pool *pgxpool.Pool, corsOrigins []string, uploadDir string) http.Handler {
+	adminHandler *handlers.AdminHandler, dashboardHandler *handlers.DashboardHandler, auditHandler *handlers.AuditHandler, unavailHandler *handlers.UnavailableDateHandler, deviceHandler *handlers.DeviceHandler,
+	authService *services.AuthService, userRepo *repository.UserRepo, auditRepo mw.AuditLogger, pool *pgxpool.Pool, corsOrigins []string, uploadDir string) http.Handler {
 
 	r := chi.NewRouter()
 
@@ -112,6 +112,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	// Protected routes
 	apiRouter.Group(func(r chi.Router) {
 		r.Use(mw.Auth(authService))
+		r.Use(mw.Audit(auditRepo))
 
 		// Uploads (authenticated, rate limited)
 		r.Group(func(r chi.Router) {
@@ -135,6 +136,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Route("/events", func(r chi.Router) {
 			r.Get("/", crudHandler.ListEvents)
 			r.Get("/upcoming", crudHandler.GetUpcomingEvents)
+			r.Get("/search", crudHandler.SearchEvents) // Advanced search — before /{id} to avoid conflict
 			r.Post("/", crudHandler.CreateEvent)
 			r.Get("/{id}", crudHandler.GetEvent)
 			r.Put("/{id}", crudHandler.UpdateEvent)
@@ -217,6 +219,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 			r.Get("/top-clients", dashboardHandler.GetTopClients)
 			r.Get("/product-demand", dashboardHandler.GetProductDemand)
 			r.Get("/forecast", dashboardHandler.GetForecast)
+			r.Get("/activity", auditHandler.GetActivity)
 		})
 	})
 
@@ -231,6 +234,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Get("/users/{id}", adminHandler.GetUser)
 		r.Put("/users/{id}/upgrade", adminHandler.UpgradeUser)
 		r.Get("/subscriptions", adminHandler.GetSubscriptions)
+		r.Get("/audit-logs", auditHandler.GetAllAuditLogs)
 	})
 
 	// Mount API subrouter under versioned prefix (canonical) and legacy prefix (backward compatible)

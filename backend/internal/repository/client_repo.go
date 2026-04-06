@@ -125,23 +125,23 @@ func (r *ClientRepo) Delete(ctx context.Context, id, userID uuid.UUID) error {
 	return nil
 }
 
-// Search performs a full-text search on clients for the given user
+// Search performs a fuzzy search on clients using pg_trgm similarity + ILIKE fallback
 func (r *ClientRepo) Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Client, error) {
-	searchPattern := "%" + query + "%"
 	sqlQuery := `SELECT id, user_id, name, phone, email, address, city, notes, photo_url,
 		total_events, total_spent, created_at, updated_at
 		FROM clients
 		WHERE user_id = $1
 		AND (
-			name ILIKE $2 OR
-			email ILIKE $2 OR
-			phone ILIKE $2 OR
-			city ILIKE $2
+			name ILIKE '%' || $2 || '%' OR
+			email ILIKE '%' || $2 || '%' OR
+			phone ILIKE '%' || $2 || '%' OR
+			city ILIKE '%' || $2 || '%' OR
+			similarity(name, $2) > 0.3
 		)
-		ORDER BY created_at DESC
+		ORDER BY similarity(name, $2) DESC, created_at DESC
 		LIMIT 10`
 
-	rows, err := r.pool.Query(ctx, sqlQuery, userID, searchPattern)
+	rows, err := r.pool.Query(ctx, sqlQuery, userID, query)
 	if err != nil {
 		return nil, err
 	}

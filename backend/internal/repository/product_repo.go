@@ -216,20 +216,20 @@ func (r *ProductRepo) VerifyOwnership(ctx context.Context, productIDs []uuid.UUI
 	return nil
 }
 
-// Search performs a full-text search on products for the given user
+// Search performs a fuzzy search on products using pg_trgm similarity + ILIKE fallback
 func (r *ProductRepo) Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Product, error) {
-	searchPattern := "%" + query + "%"
 	sqlQuery := `SELECT id, user_id, name, category, base_price, recipe, image_url, is_active, created_at, updated_at
 		FROM products
 		WHERE user_id = $1
 		AND (
-			name ILIKE $2 OR
-			category ILIKE $2
+			name ILIKE '%' || $2 || '%' OR
+			category ILIKE '%' || $2 || '%' OR
+			similarity(name, $2) > 0.3
 		)
-		ORDER BY created_at DESC
+		ORDER BY similarity(name, $2) DESC, created_at DESC
 		LIMIT 10`
 
-	rows, err := r.pool.Query(ctx, sqlQuery, userID, searchPattern)
+	rows, err := r.pool.Query(ctx, sqlQuery, userID, query)
 	if err != nil {
 		return nil, err
 	}

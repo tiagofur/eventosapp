@@ -740,9 +740,8 @@ func (r *EventRepo) DeductSupplyStock(ctx context.Context, eventID uuid.UUID) er
 	return err
 }
 
-// Search performs a full-text search on events for the given user
+// Search performs a fuzzy search on events using pg_trgm similarity + ILIKE fallback
 func (r *EventRepo) Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Event, error) {
-	searchPattern := "%" + query + "%"
 	sqlQuery := `SELECT e.id, e.user_id, e.client_id, e.event_date, e.service_type, e.num_people,
 		e.start_time, e.end_time, e.location, e.status, e.discount, e.tax_rate, e.tax_amount, e.total_amount,
 		e.deposit_percent, e.cancellation_days, e.refund_percent, e.created_at, e.updated_at,
@@ -751,14 +750,15 @@ func (r *EventRepo) Search(ctx context.Context, userID uuid.UUID, query string) 
 		LEFT JOIN clients c ON e.client_id = c.id
 		WHERE e.user_id = $1
 		AND (
-			e.service_type ILIKE $2 OR
-			e.location ILIKE $2 OR
-			c.name ILIKE $2
+			e.service_type ILIKE '%' || $2 || '%' OR
+			e.location ILIKE '%' || $2 || '%' OR
+			c.name ILIKE '%' || $2 || '%' OR
+			similarity(c.name, $2) > 0.3
 		)
-		ORDER BY e.event_date DESC
+		ORDER BY similarity(c.name, $2) DESC, e.event_date DESC
 		LIMIT 10`
 
-	rows, err := r.pool.Query(ctx, sqlQuery, userID, searchPattern)
+	rows, err := r.pool.Query(ctx, sqlQuery, userID, query)
 	if err != nil {
 		return nil, err
 	}
@@ -783,6 +783,87 @@ func (r *EventRepo) Search(ctx context.Context, userID uuid.UUID, query string) 
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating event search: %w", err)
+	}
+
+	if events == nil {
+		events = []models.Event{}
+	}
+
+	return events, nil
+}
+
+// EventSearchFilters holds optional, combinable filters for advanced event search.
+type EventSearchFilters struct {
+	Query    string
+	Status   string
+	FromDate string
+	ToDate   string
+	ClientID *uuid.UUID
+}
+
+// SearchEventsAdvanced performs a filtered search on events with combinable criteria.
+// All filters are optional — when omitted, that filter is not applied.
+func (r *EventRepo) SearchEventsAdvanced(ctx context.Context, userID uuid.UUID, filters EventSearchFilters) ([]models.Event, error) {
+	baseQuery := fmt.Sprintf(`SELECT %s, c.name as client_name, c.phone as client_phone
+		FROM events e LEFT JOIN clients c ON e.client_id = c.id
+		WHERE e.user_id = $1`, eventSelectFields)
+
+	args := []interface{}{userID}
+	argN := 2
+
+	if filters.Query != "" {
+		baseQuery += fmt.Sprintf(` AND (
+			e.service_type ILIKE '%%' || $%d || '%%' OR
+			e.location ILIKE '%%' || $%d || '%%' OR
+			c.name ILIKE '%%' || $%d || '%%' OR
+			similarity(c.name, $%d) > 0.3
+		)`, argN, argN, argN, argN)
+		args = append(args, filters.Query)
+		argN++
+	}
+
+	if filters.Status != "" {
+		baseQuery += fmt.Sprintf(` AND e.status = $%d`, argN)
+		args = append(args, filters.Status)
+		argN++
+	}
+
+	if filters.FromDate != "" {
+		baseQuery += fmt.Sprintf(` AND e.event_date >= $%d::date`, argN)
+		args = append(args, filters.FromDate)
+		argN++
+	}
+
+	if filters.ToDate != "" {
+		baseQuery += fmt.Sprintf(` AND e.event_date <= $%d::date`, argN)
+		args = append(args, filters.ToDate)
+		argN++
+	}
+
+	if filters.ClientID != nil {
+		baseQuery += fmt.Sprintf(` AND e.client_id = $%d`, argN)
+		args = append(args, *filters.ClientID)
+		argN++
+	}
+
+	baseQuery += ` ORDER BY e.event_date DESC LIMIT 50`
+
+	rows, err := r.pool.Query(ctx, baseQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		e, err := scanEventWithClient(rows)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating advanced event search: %w", err)
 	}
 
 	if events == nil {

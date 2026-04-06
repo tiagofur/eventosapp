@@ -47,6 +47,7 @@ type FullEventRepository interface {
 	GetSupplySuggestionsFromProducts(ctx context.Context, userID uuid.UUID, products []repository.ProductQuantity) ([]models.SupplySuggestion, error)
 	DeductSupplyStock(ctx context.Context, eventID uuid.UUID) error
 	Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Event, error)
+	SearchEventsAdvanced(ctx context.Context, userID uuid.UUID, filters repository.EventSearchFilters) ([]models.Event, error)
 }
 
 // ClientRepository defines client repo operations.
@@ -116,6 +117,14 @@ type DashboardRepository interface {
 	GetTopClients(ctx context.Context, userID uuid.UUID, limit int) ([]repository.TopClient, error)
 	GetProductDemand(ctx context.Context, userID uuid.UUID) ([]repository.ProductDemandItem, error)
 	GetForecast(ctx context.Context, userID uuid.UUID) ([]repository.ForecastDataPoint, error)
+}
+
+// AuditRepository defines audit log repo operations.
+type AuditRepository interface {
+	Create(ctx context.Context, log *models.AuditLog) error
+	GetByUser(ctx context.Context, userID uuid.UUID, offset, limit int) ([]models.AuditLog, int, error)
+	GetByResource(ctx context.Context, userID uuid.UUID, resourceType string, resourceID uuid.UUID) ([]models.AuditLog, error)
+	GetAll(ctx context.Context, offset, limit int) ([]models.AuditLog, int, error)
 }
 
 // AdminRepository defines admin repo operations.

@@ -300,6 +300,71 @@ func (h *CRUDHandler) GetUpcomingEvents(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, events)
 }
 
+// SearchEvents performs an advanced search on events with combinable filters.
+// GET /api/events/search?q=text&status=confirmed&from=2026-01-01&to=2026-12-31&client_id=uuid
+func (h *CRUDHandler) SearchEvents(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	q := r.URL.Query()
+
+	filters := repository.EventSearchFilters{
+		Query:    q.Get("q"),
+		Status:   q.Get("status"),
+		FromDate: q.Get("from"),
+		ToDate:   q.Get("to"),
+	}
+
+	// Validate status if provided
+	if filters.Status != "" {
+		validStatuses := map[string]bool{
+			"draft": true, "pending": true, "confirmed": true,
+			"completed": true, "cancelled": true,
+		}
+		if !validStatuses[filters.Status] {
+			writeError(w, http.StatusBadRequest, "Invalid status value")
+			return
+		}
+	}
+
+	// Parse client_id if provided
+	if cidStr := q.Get("client_id"); cidStr != "" {
+		cid, err := uuid.Parse(cidStr)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid client_id")
+			return
+		}
+		filters.ClientID = &cid
+	}
+
+	// Validate date formats if provided
+	if filters.FromDate != "" {
+		if _, err := time.Parse("2006-01-02", filters.FromDate); err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid 'from' date format (use YYYY-MM-DD)")
+			return
+		}
+	}
+	if filters.ToDate != "" {
+		if _, err := time.Parse("2006-01-02", filters.ToDate); err != nil {
+			writeError(w, http.StatusBadRequest, "Invalid 'to' date format (use YYYY-MM-DD)")
+			return
+		}
+	}
+
+	// At least one filter must be provided
+	if filters.Query == "" && filters.Status == "" && filters.FromDate == "" && filters.ToDate == "" && filters.ClientID == nil {
+		writeError(w, http.StatusBadRequest, "At least one search filter is required (q, status, from, to, client_id)")
+		return
+	}
+
+	events, err := h.eventRepo.SearchEventsAdvanced(r.Context(), userID, filters)
+	if err != nil {
+		slog.Error("Advanced event search failed", "error", err, "user_id", userID)
+		writeError(w, http.StatusInternalServerError, "Failed to search events")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, events)
+}
+
 func (h *CRUDHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))

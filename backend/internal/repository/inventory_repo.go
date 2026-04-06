@@ -121,21 +121,21 @@ func (r *InventoryRepo) Delete(ctx context.Context, id, userID uuid.UUID) error 
 	return nil
 }
 
-// Search performs a full-text search on inventory items for the given user
+// Search performs a fuzzy search on inventory items using pg_trgm similarity + ILIKE fallback
 func (r *InventoryRepo) Search(ctx context.Context, userID uuid.UUID, query string) ([]models.InventoryItem, error) {
-	searchPattern := "%" + query + "%"
 	sqlQuery := `SELECT id, user_id, ingredient_name, current_stock, minimum_stock, unit, unit_cost, type, last_updated
 		FROM inventory
 		WHERE user_id = $1
 		AND (
-			ingredient_name ILIKE $2 OR
-			unit ILIKE $2 OR
-			type ILIKE $2
+			ingredient_name ILIKE '%' || $2 || '%' OR
+			unit ILIKE '%' || $2 || '%' OR
+			type ILIKE '%' || $2 || '%' OR
+			similarity(ingredient_name, $2) > 0.3
 		)
-		ORDER BY last_updated DESC
+		ORDER BY similarity(ingredient_name, $2) DESC, last_updated DESC
 		LIMIT 10`
 
-	rows, err := r.pool.Query(ctx, sqlQuery, userID, searchPattern)
+	rows, err := r.pool.Query(ctx, sqlQuery, userID, query)
 	if err != nil {
 		return nil, err
 	}
