@@ -52,6 +52,19 @@ public final class InventoryListViewModel {
     public var showStockAdjustment: Bool = false
     public var adjustmentQuantity: Double = 0
 
+    // MARK: - Pagination
+
+    public var currentPage: Int = 1
+    public var totalPages: Int = 1
+    public var totalItems: Int = 0
+    public var isLoadingMore: Bool = false
+    private let pageSize: Int = 20
+
+    /// Whether there are more server pages to fetch.
+    public var hasMorePages: Bool {
+        currentPage < totalPages
+    }
+
     // MARK: - Computed
 
     /// Items grouped by type
@@ -82,6 +95,11 @@ public final class InventoryListViewModel {
         self.apiClient = apiClient
     }
 
+    /// Whether a search/filter is active (skip server pagination).
+    private var isFiltering: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || showLowStockOnly
+    }
+
     // MARK: - Data Loading
 
     @MainActor
@@ -90,14 +108,85 @@ public final class InventoryListViewModel {
         errorMessage = nil
 
         do {
-            let result: [InventoryItem] = try await apiClient.get(Endpoint.inventory)
-            items = result
+            if isFiltering {
+                // Fetch all items for client-side filtering.
+                let result: [InventoryItem] = try await apiClient.get(Endpoint.inventory)
+                items = result
+                currentPage = 1
+                totalPages = 1
+                totalItems = result.count
+            } else {
+                let sortParam: String
+                switch sortKey {
+                case .name:         sortParam = "ingredient_name"
+                case .currentStock: sortParam = "current_stock"
+                case .minimumStock: sortParam = "minimum_stock"
+                case .unitCost:     sortParam = "unit_cost"
+                }
+                let params: [String: String] = [
+                    "page": "\(currentPage)",
+                    "limit": "\(pageSize)",
+                    "sort": sortParam,
+                    "order": sortAscending ? "asc" : "desc"
+                ]
+                let paginated: PaginatedResponse<InventoryItem> = try await apiClient.get(Endpoint.inventory, params: params)
+                if currentPage == 1 {
+                    items = paginated.data
+                } else {
+                    items.append(contentsOf: paginated.data)
+                }
+                totalPages = paginated.totalPages
+                totalItems = paginated.total
+            }
             applyFilters()
         } catch {
             errorMessage = mapError(error)
         }
 
         isLoading = false
+    }
+
+    /// Load the next page of inventory items (for infinite scroll).
+    @MainActor
+    public func loadNextPage() async {
+        guard !isLoadingMore, hasMorePages, !isFiltering else { return }
+        isLoadingMore = true
+        currentPage += 1
+
+        do {
+            let sortParam: String
+            switch sortKey {
+            case .name:         sortParam = "ingredient_name"
+            case .currentStock: sortParam = "current_stock"
+            case .minimumStock: sortParam = "minimum_stock"
+            case .unitCost:     sortParam = "unit_cost"
+            }
+            let params: [String: String] = [
+                "page": "\(currentPage)",
+                "limit": "\(pageSize)",
+                "sort": sortParam,
+                "order": sortAscending ? "asc" : "desc"
+            ]
+            let paginated: PaginatedResponse<InventoryItem> = try await apiClient.get(Endpoint.inventory, params: params)
+            items.append(contentsOf: paginated.data)
+            totalPages = paginated.totalPages
+            totalItems = paginated.total
+            applyFilters()
+        } catch {
+            currentPage -= 1
+            errorMessage = mapError(error)
+        }
+        isLoadingMore = false
+    }
+
+    /// Reset pagination and reload from page 1.
+    @MainActor
+    public func resetPagination() async {
+        currentPage = 1
+        totalPages = 1
+        totalItems = 0
+        items = []
+        await loadItems()
     }
 
     // MARK: - Delete

@@ -47,16 +47,22 @@ public final class ClientListViewModel {
     public var errorMessage: String?
     
     // MARK: - Pagination
-    
+
     public var currentPage: Int = 1
     public let pageSize: Int = 20
-    public var hasMorePages: Bool = false
-    
-    // Computed property for the currently displayed items based on pagination
+    public var totalPages: Int = 1
+    public var totalItems: Int = 0
+    public var isLoadingMore: Bool = false
+
+    /// Whether there are more server pages to fetch.
+    public var hasMorePages: Bool {
+        currentPage < totalPages
+    }
+
+    /// Backward-compatible computed property. When using server-side pagination
+    /// this returns the full `filteredClients` array (already paginated on server).
     public var paginatedClients: [Client] {
-        let endIndex = min(currentPage * pageSize, filteredClients.count)
-        guard endIndex > 0 else { return [] }
-        return Array(filteredClients[0..<endIndex])
+        filteredClients
     }
 
     // MARK: - Dependencies
@@ -76,6 +82,11 @@ public final class ClientListViewModel {
         clients.count >= 15
     }
 
+    /// Whether a search filter is active (skip server pagination).
+    private var isFiltering: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     // MARK: - Data Loading
 
     @MainActor
@@ -84,9 +95,37 @@ public final class ClientListViewModel {
         errorMessage = nil
 
         do {
-            let result: [Client] = try await apiClient.get(Endpoint.clients)
-            clients = result
-            currentPage = 1
+            if isFiltering {
+                // Fetch all clients for client-side search filtering.
+                let result: [Client] = try await apiClient.get(Endpoint.clients)
+                clients = result
+                currentPage = 1
+                totalPages = 1
+                totalItems = result.count
+            } else {
+                let sortParam: String
+                switch sortKey {
+                case .updatedAt:   sortParam = "updated_at"
+                case .name:        sortParam = "name"
+                case .totalEvents: sortParam = "total_events"
+                case .totalSpent:  sortParam = "total_spent"
+                case .createdAt:   sortParam = "created_at"
+                }
+                let params: [String: String] = [
+                    "page": "\(currentPage)",
+                    "limit": "\(pageSize)",
+                    "sort": sortParam,
+                    "order": sortAscending ? "asc" : "desc"
+                ]
+                let paginated: PaginatedResponse<Client> = try await apiClient.get(Endpoint.clients, params: params)
+                if currentPage == 1 {
+                    clients = paginated.data
+                } else {
+                    clients.append(contentsOf: paginated.data)
+                }
+                totalPages = paginated.totalPages
+                totalItems = paginated.total
+            }
             applyFilters()
         } catch {
             errorMessage = mapError(error)
@@ -94,12 +133,49 @@ public final class ClientListViewModel {
 
         isLoading = false
     }
-    
+
+    /// Load the next page of clients (for infinite scroll).
     @MainActor
-    public func loadMore() {
-        guard !isLoading && hasMorePages else { return }
+    public func loadMore() async {
+        guard !isLoadingMore, hasMorePages, !isFiltering else { return }
+        isLoadingMore = true
         currentPage += 1
-        hasMorePages = (currentPage * pageSize) < filteredClients.count
+
+        do {
+            let sortParam: String
+            switch sortKey {
+            case .updatedAt:   sortParam = "updated_at"
+            case .name:        sortParam = "name"
+            case .totalEvents: sortParam = "total_events"
+            case .totalSpent:  sortParam = "total_spent"
+            case .createdAt:   sortParam = "created_at"
+            }
+            let params: [String: String] = [
+                "page": "\(currentPage)",
+                "limit": "\(pageSize)",
+                "sort": sortParam,
+                "order": sortAscending ? "asc" : "desc"
+            ]
+            let paginated: PaginatedResponse<Client> = try await apiClient.get(Endpoint.clients, params: params)
+            clients.append(contentsOf: paginated.data)
+            totalPages = paginated.totalPages
+            totalItems = paginated.total
+            applyFilters()
+        } catch {
+            currentPage -= 1
+            errorMessage = mapError(error)
+        }
+        isLoadingMore = false
+    }
+
+    /// Reset pagination and reload from page 1. Call when sort/filters change.
+    @MainActor
+    public func resetPagination() async {
+        currentPage = 1
+        totalPages = 1
+        totalItems = 0
+        clients = []
+        await loadClients()
     }
 
     // MARK: - Delete
@@ -150,10 +226,6 @@ public final class ClientListViewModel {
         }
 
         filteredClients = result
-        
-        // Reset pagination when filters change
-        currentPage = 1
-        hasMorePages = filteredClients.count > pageSize
     }
 
     // MARK: - Error Mapping

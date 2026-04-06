@@ -45,6 +45,19 @@ public final class ProductListViewModel {
     public var showDeleteConfirm: Bool = false
     public var errorMessage: String?
 
+    // MARK: - Pagination
+
+    public var currentPage: Int = 1
+    public var totalPages: Int = 1
+    public var totalItems: Int = 0
+    public var isLoadingMore: Bool = false
+    private let pageSize: Int = 20
+
+    /// Whether there are more server pages to fetch.
+    public var hasMorePages: Bool {
+        currentPage < totalPages
+    }
+
     // MARK: - Computed
 
     /// Unique categories from all products
@@ -77,6 +90,11 @@ public final class ProductListViewModel {
         self.apiClient = apiClient
     }
 
+    /// Whether a search/category filter is active (skip server pagination).
+    private var isFiltering: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedCategory != nil
+    }
+
     // MARK: - Data Loading
 
     @MainActor
@@ -85,14 +103,83 @@ public final class ProductListViewModel {
         errorMessage = nil
 
         do {
-            let result: [Product] = try await apiClient.get(Endpoint.products)
-            products = result
+            if isFiltering {
+                // Fetch all products for client-side filtering.
+                let result: [Product] = try await apiClient.get(Endpoint.products)
+                products = result
+                currentPage = 1
+                totalPages = 1
+                totalItems = result.count
+            } else {
+                let sortParam: String
+                switch sortKey {
+                case .name:      sortParam = "name"
+                case .basePrice: sortParam = "base_price"
+                case .category:  sortParam = "category"
+                }
+                let params: [String: String] = [
+                    "page": "\(currentPage)",
+                    "limit": "\(pageSize)",
+                    "sort": sortParam,
+                    "order": sortAscending ? "asc" : "desc"
+                ]
+                let paginated: PaginatedResponse<Product> = try await apiClient.get(Endpoint.products, params: params)
+                if currentPage == 1 {
+                    products = paginated.data
+                } else {
+                    products.append(contentsOf: paginated.data)
+                }
+                totalPages = paginated.totalPages
+                totalItems = paginated.total
+            }
             applyFilters()
         } catch {
             errorMessage = mapError(error)
         }
 
         isLoading = false
+    }
+
+    /// Load the next page of products (for infinite scroll).
+    @MainActor
+    public func loadNextPage() async {
+        guard !isLoadingMore, hasMorePages, !isFiltering else { return }
+        isLoadingMore = true
+        currentPage += 1
+
+        do {
+            let sortParam: String
+            switch sortKey {
+            case .name:      sortParam = "name"
+            case .basePrice: sortParam = "base_price"
+            case .category:  sortParam = "category"
+            }
+            let params: [String: String] = [
+                "page": "\(currentPage)",
+                "limit": "\(pageSize)",
+                "sort": sortParam,
+                "order": sortAscending ? "asc" : "desc"
+            ]
+            let paginated: PaginatedResponse<Product> = try await apiClient.get(Endpoint.products, params: params)
+            products.append(contentsOf: paginated.data)
+            totalPages = paginated.totalPages
+            totalItems = paginated.total
+            applyFilters()
+        } catch {
+            currentPage -= 1
+            errorMessage = mapError(error)
+        }
+        isLoadingMore = false
+    }
+
+    /// Reset pagination and reload from page 1.
+    @MainActor
+    public func resetPagination() async {
+        currentPage = 1
+        totalPages = 1
+        totalItems = 0
+        products = []
+        await loadProducts()
     }
 
     // MARK: - Delete

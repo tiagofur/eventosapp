@@ -169,9 +169,9 @@ public struct ClientListView: View {
                             Label("Eliminar", systemImage: "trash")
                         }
                     }
-                    .onAppear {
+                    .task {
                         if client == viewModel.paginatedClients.last {
-                            viewModel.loadMore()
+                            await viewModel.loadMore()
                         }
                     }
                 }
@@ -267,9 +267,9 @@ public struct ClientListView: View {
                         Label("Eliminar", systemImage: "trash")
                     }
                 }
-                .onAppear {
+                .task {
                     if client == viewModel.paginatedClients.last {
-                        viewModel.loadMore()
+                        await viewModel.loadMore()
                     }
                 }
             }

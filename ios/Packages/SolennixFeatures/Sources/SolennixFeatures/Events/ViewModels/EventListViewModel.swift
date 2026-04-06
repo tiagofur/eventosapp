@@ -17,6 +17,14 @@ public final class EventListViewModel {
     public var isLoading: Bool = false
     public var errorMessage: String? = nil
 
+    // MARK: - Pagination
+
+    public var currentPage: Int = 1
+    public var totalPages: Int = 1
+    public var totalItems: Int = 0
+    public var isLoadingMore: Bool = false
+    private let pageSize: Int = 20
+
     // MARK: - Dependencies
 
     private let apiClient: APIClient
@@ -72,6 +80,18 @@ public final class EventListViewModel {
         return result.sorted { $0.eventDate > $1.eventDate }
     }
 
+    // MARK: - Pagination Helpers
+
+    /// Whether there are more pages available to load.
+    public var hasMorePages: Bool {
+        currentPage < totalPages
+    }
+
+    /// Whether a search/filter is active (skip server pagination in that case).
+    private var isFiltering: Bool {
+        !searchQuery.isEmpty || selectedStatus != nil
+    }
+
     // MARK: - Data Loading
 
     @MainActor
@@ -79,18 +99,83 @@ public final class EventListViewModel {
         isLoading = true
         errorMessage = nil
         do {
-            async let eventsResult: [Event] = apiClient.get(Endpoint.events)
-            async let clientsResult: [Client] = apiClient.get(Endpoint.clients)
-            events = try await eventsResult
-            clients = try await clientsResult
+            if isFiltering {
+                // When filtering, fetch all events (no pagination) so client-side
+                // search/status filtering works across the full dataset.
+                async let eventsResult: [Event] = apiClient.get(Endpoint.events)
+                async let clientsResult: [Client] = apiClient.get(Endpoint.clients)
+                events = try await eventsResult
+                clients = try await clientsResult
+                totalPages = 1
+                totalItems = events.count
+                currentPage = 1
+            } else {
+                // Server-side paginated fetch.
+                let params: [String: String] = [
+                    "page": "\(currentPage)",
+                    "limit": "\(pageSize)",
+                    "sort": "event_date",
+                    "order": "desc"
+                ]
+                async let paginatedResult: PaginatedResponse<Event> = apiClient.get(Endpoint.events, params: params)
+                async let clientsResult: [Client] = apiClient.get(Endpoint.clients)
+
+                let paginated = try await paginatedResult
+                clients = try await clientsResult
+
+                if currentPage == 1 {
+                    events = paginated.data
+                } else {
+                    events.append(contentsOf: paginated.data)
+                }
+                totalPages = paginated.totalPages
+                totalItems = paginated.total
+            }
         } catch {
             errorMessage = "Error cargando eventos"
         }
         isLoading = false
     }
 
+    /// Load the next page of events (for infinite scroll).
+    @MainActor
+    public func loadNextPage() async {
+        guard !isLoadingMore, hasMorePages, !isFiltering else { return }
+        isLoadingMore = true
+        currentPage += 1
+
+        do {
+            let params: [String: String] = [
+                "page": "\(currentPage)",
+                "limit": "\(pageSize)",
+                "sort": "event_date",
+                "order": "desc"
+            ]
+            let paginated: PaginatedResponse<Event> = try await apiClient.get(Endpoint.events, params: params)
+            events.append(contentsOf: paginated.data)
+            totalPages = paginated.totalPages
+            totalItems = paginated.total
+        } catch {
+            // Revert page increment on failure.
+            currentPage -= 1
+            errorMessage = "Error cargando mas eventos"
+        }
+        isLoadingMore = false
+    }
+
+    /// Reset pagination and reload from page 1. Call when filters change.
+    @MainActor
+    public func resetPagination() async {
+        currentPage = 1
+        totalPages = 1
+        totalItems = 0
+        events = []
+        await loadEvents()
+    }
+
     @MainActor
     public func refresh() async {
+        currentPage = 1
         await loadEvents()
     }
 
