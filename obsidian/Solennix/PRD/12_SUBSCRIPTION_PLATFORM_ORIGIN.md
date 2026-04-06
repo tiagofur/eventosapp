@@ -132,13 +132,13 @@ Cuando el provider NO coincide con la plataforma actual, mostrar un `InfoBanner`
 
 ## Checklist
 
-- [ ] Web: mostrar badge de provider en tab Suscripción
-- [ ] Web: instrucciones de cancelación condicionales por provider
-- [ ] iOS: leer `provider` desde endpoint status
-- [ ] iOS: mostrar badge de provider en SubscriptionView
-- [ ] iOS: instrucciones de cancelación condicionales por provider
-- [ ] Android: leer `provider` desde endpoint status
-- [ ] Android: mostrar badge de provider en SubscriptionScreen
-- [ ] Android: instrucciones de cancelación condicionales por provider
-- [ ] PRD: actualizar 04_MONETIZATION.md y 11_CURRENT_STATUS.md
+- [x] Web: mostrar badge de provider en tab Suscripción
+- [x] Web: instrucciones de cancelación condicionales por provider
+- [x] iOS: leer `provider` desde endpoint status
+- [x] iOS: mostrar badge de provider en SubscriptionView
+- [x] iOS: instrucciones de cancelación condicionales por provider
+- [x] Android: leer `provider` desde endpoint status
+- [x] Android: mostrar badge de provider en SubscriptionScreen
+- [x] Android: instrucciones de cancelación condicionales por provider
+- [x] PRD: actualizar 04_MONETIZATION.md y 11_CURRENT_STATUS.md
 - [ ] Tests: verificar que UI muestra provider correcto en cada plataforma
