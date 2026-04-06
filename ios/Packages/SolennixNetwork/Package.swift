@@ -17,6 +17,10 @@ let package = Package(
             "SolennixCore",
             .product(name: "RevenueCat", package: "purchases-ios-spm"),
             .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
-        ])
+        ]),
+        .testTarget(
+            name: "SolennixNetworkTests",
+            dependencies: ["SolennixNetwork"]
+        )
     ]
 )

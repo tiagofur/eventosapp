@@ -214,7 +214,7 @@ final class NotificationManager: NSObject, ObservableObject {
         await UNUserNotificationCenter.current().pendingNotificationRequests()
     }
 
-    private static func extractEventId(fromIdentifier identifier: String) -> String? {
+    static func extractEventId(fromIdentifier identifier: String) -> String? {
         let suffix = "_\(ReminderType.oneDay.rawValue)"
         if identifier.hasSuffix(suffix) {
             return String(identifier.dropLast(suffix.count))
@@ -230,7 +230,7 @@ final class NotificationManager: NSObject, ObservableObject {
         return nil
     }
 
-    private static func resolveEventDate(for event: Event) -> Date? {
+    static func resolveEventDate(for event: Event) -> Date? {
         let eventDatePrefix = String(event.eventDate.prefix(10))
         let parts = eventDatePrefix.split(separator: "-")
         guard parts.count == 3,
@@ -323,7 +323,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         }
     }
 
-    private nonisolated func routeFromNotification(userInfo: [AnyHashable: Any], actionIdentifier: String) -> Route? {
+    nonisolated func routeFromNotification(userInfo: [AnyHashable: Any], actionIdentifier: String) -> Route? {
         let eventId = userInfo["event_id"] as? String
         let typeRaw = userInfo["type"] as? String
 

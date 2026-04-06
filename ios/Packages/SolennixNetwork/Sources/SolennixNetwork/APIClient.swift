@@ -412,7 +412,7 @@ public actor APIClient {
         bodyData: Data?,
         idempotencyKey: String?
     ) async -> Bool {
-        guard shouldQueueMutation(endpoint: endpoint, method: method) else { return false }
+        guard Self.shouldQueueMutation(endpoint: endpoint, method: method) else { return false }
         guard case .networkError = apiError else { return false }
 
         let mutation = QueuedMutation(
@@ -427,7 +427,7 @@ public actor APIClient {
         return true
     }
 
-    private func shouldQueueMutation(endpoint: String, method: String) -> Bool {
+    static func shouldQueueMutation(endpoint: String, method: String) -> Bool {
         guard method == "POST" || method == "PUT" || method == "DELETE" else { return false }
 
         // Auth and upload flows should fail fast and not be replayed later.
@@ -458,7 +458,7 @@ public actor APIClient {
                 index += 1
             } catch let apiError as APIError {
                 switch apiError {
-                case .serverError(let statusCode, _) where statusCode >= 400 && statusCode < 500 && statusCode != 429:
+                case .serverError(let statusCode, _) where Self.shouldDropReplay(statusCode: statusCode):
                     // Permanent client-side error: drop this mutation and continue.
                     index += 1
                 default:
@@ -470,6 +470,10 @@ public actor APIClient {
                 return
             }
         }
+    }
+
+    static func shouldDropReplay(statusCode: Int) -> Bool {
+        statusCode >= 400 && statusCode < 500 && statusCode != 429
     }
 
     // MARK: - Perform Request

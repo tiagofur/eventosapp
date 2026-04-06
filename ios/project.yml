@@ -88,6 +88,21 @@ targets:
       - package: SolennixDesign
       - package: SolennixNetwork
 
+  SolennixTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - SolennixTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.solennix.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+    dependencies:
+      - target: Solennix
+      - package: SolennixCore
+
 schemes:
   Solennix:
     build:
@@ -98,6 +113,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      targets:
+        - SolennixTests
     profile:
       config: Release
     analyze:

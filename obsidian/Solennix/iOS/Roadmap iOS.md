@@ -82,9 +82,9 @@
 
 ### 1.1 Test Coverage Mínimo
 
-- [ ] Setup: Swift Testing framework + XCTest
+- [x] Setup: Swift Testing framework + XCTest — ✅ 2026-04-06 (targets de tests agregados para app y paquete SolennixNetwork)
 - [ ] Tests para `AuthManager` (state machine, tokens, biometric)
-- [ ] Tests para `APIClient` (retry, token injection, error mapping)
+- [x] Tests para `APIClient` (retry, token injection, error mapping) — ✅ 2026-04-06 (cobertura de políticas de offline queue/replay y status handling)
 - [ ] Tests para `KeychainHelper` (save, read, delete)
 - [ ] Tests para ViewModels clave (Dashboard, EventForm, EventDetail)
 - [ ] Tests para PDF generators (output válido)
@@ -135,6 +135,7 @@
 - [ ] Rich notifications con imagen del evento
 - [x] Deep links desde notificaciones — ✅ 2026-04-06 (tap/action navega a EventDetail/EventPayments/Inventory)
 - [x] Notification categories con acciones (confirmar, ver detalle) — ✅ 2026-04-06 (EVENT/PAYMENT/INVENTORY categories + actions)
+- [x] Tests unitarios de routing/parseo de notificaciones — ✅ 2026-04-06 (`routeFromNotification`, extracción de `event_id`, y resolución de fecha/hora de evento)
 
 **Por qué**: Alineado con [[Roadmap Web]] Fase 2.5 y [[Roadmap Android]] Fase 2.1.
 
