@@ -14,7 +14,9 @@ public enum SolennixModelContainer {
         let schema = Schema([
             CachedClient.self,
             CachedEvent.self,
-            CachedProduct.self
+            CachedProduct.self,
+            CachedInventoryItem.self,
+            CachedPayment.self
         ])
 
         let configuration = ModelConfiguration(

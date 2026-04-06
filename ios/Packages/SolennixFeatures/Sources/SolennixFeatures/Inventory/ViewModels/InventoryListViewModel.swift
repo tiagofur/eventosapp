@@ -85,14 +85,23 @@ public final class InventoryListViewModel {
         items.filter { $0.currentStock < $0.minimumStock }.count
     }
 
+    /// Whether the current data was loaded from cache (not fresh from API).
+    public var isShowingCachedData: Bool = false
+
     // MARK: - Dependencies
 
     private let apiClient: APIClient
+    private var cacheManager: CacheManager?
 
     // MARK: - Init
 
     public init(apiClient: APIClient) {
         self.apiClient = apiClient
+    }
+
+    /// Set the cache manager for offline support.
+    public func setCacheManager(_ manager: CacheManager?) {
+        self.cacheManager = manager
     }
 
     /// Whether a search/filter is active (skip server pagination).
@@ -107,9 +116,15 @@ public final class InventoryListViewModel {
         isLoading = true
         errorMessage = nil
 
+        // Show cached data immediately while fetching
+        if items.isEmpty, let cached = try? cacheManager?.getCachedInventoryItems(), !cached.isEmpty {
+            items = cached
+            isShowingCachedData = true
+            applyFilters()
+        }
+
         do {
             if isFiltering {
-                // Fetch all items for client-side filtering.
                 let result: [InventoryItem] = try await apiClient.get(Endpoint.inventory)
                 items = result
                 currentPage = 1
@@ -138,9 +153,19 @@ public final class InventoryListViewModel {
                 totalPages = paginated.totalPages
                 totalItems = paginated.total
             }
+            isShowingCachedData = false
             applyFilters()
+
+            // Update cache with fresh data
+            try? cacheManager?.cacheInventoryItems(items)
         } catch {
-            errorMessage = mapError(error)
+            if items.isEmpty, let cached = try? cacheManager?.getCachedInventoryItems(), !cached.isEmpty {
+                items = cached
+                isShowingCachedData = true
+                applyFilters()
+            } else {
+                errorMessage = mapError(error)
+            }
         }
 
         isLoading = false

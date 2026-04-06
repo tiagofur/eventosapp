@@ -82,6 +82,47 @@ public final class CacheManager {
         return cached.map { $0.toProduct() }
     }
 
+    // MARK: - Inventory Items
+
+    /// Replaces all cached inventory items with the provided list.
+    public func cacheInventoryItems(_ items: [InventoryItem]) throws {
+        try deleteAll(CachedInventoryItem.self)
+        for item in items {
+            modelContext.insert(CachedInventoryItem(from: item))
+        }
+        try modelContext.save()
+    }
+
+    /// Returns all cached inventory items, converted to `InventoryItem` value types.
+    public func getCachedInventoryItems() throws -> [InventoryItem] {
+        let descriptor = FetchDescriptor<CachedInventoryItem>(
+            sortBy: [SortDescriptor(\.ingredientName)]
+        )
+        let cached = try modelContext.fetch(descriptor)
+        return cached.map { $0.toInventoryItem() }
+    }
+
+    // MARK: - Payments
+
+    /// Replaces all cached payments with the provided list.
+    public func cachePayments(_ payments: [Payment]) throws {
+        try deleteAll(CachedPayment.self)
+        for payment in payments {
+            modelContext.insert(CachedPayment(from: payment))
+        }
+        try modelContext.save()
+    }
+
+    /// Returns cached payments for a specific event.
+    public func getCachedPayments(eventId: String) throws -> [Payment] {
+        var descriptor = FetchDescriptor<CachedPayment>(
+            sortBy: [SortDescriptor(\.paymentDate, order: .reverse)]
+        )
+        descriptor.predicate = #Predicate<CachedPayment> { $0.eventId == eventId }
+        let cached = try modelContext.fetch(descriptor)
+        return cached.map { $0.toPayment() }
+    }
+
     // MARK: - Clear All
 
     /// Removes all cached data from the local store.
@@ -89,6 +130,8 @@ public final class CacheManager {
         try deleteAll(CachedClient.self)
         try deleteAll(CachedEvent.self)
         try deleteAll(CachedProduct.self)
+        try deleteAll(CachedInventoryItem.self)
+        try deleteAll(CachedPayment.self)
         try modelContext.save()
     }
 

@@ -25,14 +25,23 @@ public final class EventListViewModel {
     public var isLoadingMore: Bool = false
     private let pageSize: Int = 20
 
+    /// Whether the current data was loaded from cache (not fresh from API).
+    public var isShowingCachedData: Bool = false
+
     // MARK: - Dependencies
 
     private let apiClient: APIClient
+    private var cacheManager: CacheManager?
 
     // MARK: - Init
 
     public init(apiClient: APIClient) {
         self.apiClient = apiClient
+    }
+
+    /// Set the cache manager for offline support.
+    public func setCacheManager(_ manager: CacheManager?) {
+        self.cacheManager = manager
     }
 
     // MARK: - Client Map
@@ -98,10 +107,15 @@ public final class EventListViewModel {
     public func loadEvents() async {
         isLoading = true
         errorMessage = nil
+
+        // Show cached data immediately while fetching
+        if events.isEmpty, let cached = try? cacheManager?.getCachedEvents(), !cached.isEmpty {
+            events = cached
+            isShowingCachedData = true
+        }
+
         do {
             if isFiltering {
-                // When filtering, fetch all events (no pagination) so client-side
-                // search/status filtering works across the full dataset.
                 async let eventsResult: [Event] = apiClient.get(Endpoint.events)
                 async let clientsResult: [Client] = apiClient.get(Endpoint.clients)
                 events = try await eventsResult
@@ -110,7 +124,6 @@ public final class EventListViewModel {
                 totalItems = events.count
                 currentPage = 1
             } else {
-                // Server-side paginated fetch.
                 let params: [String: String] = [
                     "page": "\(currentPage)",
                     "limit": "\(pageSize)",
@@ -131,8 +144,17 @@ public final class EventListViewModel {
                 totalPages = paginated.totalPages
                 totalItems = paginated.total
             }
+            isShowingCachedData = false
+
+            // Update cache with fresh data
+            try? cacheManager?.cacheEvents(events)
         } catch {
-            errorMessage = "Error cargando eventos"
+            if events.isEmpty, let cached = try? cacheManager?.getCachedEvents(), !cached.isEmpty {
+                events = cached
+                isShowingCachedData = true
+            } else {
+                errorMessage = "Error cargando eventos"
+            }
         }
         isLoading = false
     }

@@ -13,6 +13,7 @@ public struct ClientListView: View {
     @Environment(\.openURL) private var openURL
     @Environment(PlanLimitsManager.self) private var planLimitsManager
     @Environment(\.apiClient) private var apiClient
+    @Environment(CacheManager.self) private var cacheManager: CacheManager?
 
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: ClientListViewModel(apiClient: apiClient))
@@ -20,6 +21,9 @@ public struct ClientListView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
+            if viewModel.isShowingCachedData {
+                CachedDataBanner()
+            }
             filterBar
             content
         }
@@ -55,7 +59,8 @@ public struct ClientListView: View {
         } message: { client in
             Text("Estas seguro de que quieres eliminar a \(client.name)? Esta accion no se puede deshacer.")
         }
-        .task { 
+        .task {
+            viewModel.setCacheManager(cacheManager)
             await viewModel.loadClients()
             await planLimitsManager.checkLimits()
         }

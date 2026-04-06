@@ -8,6 +8,7 @@ import SolennixNetwork
 public struct ProductListView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(CacheManager.self) private var cacheManager: CacheManager?
     @State private var viewModel: ProductListViewModel
     @Environment(PlanLimitsManager.self) private var planLimitsManager
 
@@ -17,6 +18,9 @@ public struct ProductListView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
+            if viewModel.isShowingCachedData {
+                CachedDataBanner()
+            }
             filterBar
             content
         }
@@ -51,8 +55,9 @@ public struct ProductListView: View {
         } message: { product in
             Text("Estas seguro de que quieres eliminar \"\(product.name)\"? Esta accion no se puede deshacer.")
         }
-        .task { 
-            await viewModel.loadProducts() 
+        .task {
+            viewModel.setCacheManager(cacheManager)
+            await viewModel.loadProducts()
             await planLimitsManager.checkLimits()
         }
     }

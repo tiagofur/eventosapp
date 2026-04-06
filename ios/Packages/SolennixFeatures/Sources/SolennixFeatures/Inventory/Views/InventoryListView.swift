@@ -8,6 +8,7 @@ import SolennixNetwork
 public struct InventoryListView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(CacheManager.self) private var cacheManager: CacheManager?
     @Environment(PlanLimitsManager.self) private var planLimitsManager
     @State private var viewModel: InventoryListViewModel
 
@@ -17,6 +18,9 @@ public struct InventoryListView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
+            if viewModel.isShowingCachedData {
+                CachedDataBanner()
+            }
             filterBar
             content
         }
@@ -55,7 +59,8 @@ public struct InventoryListView: View {
         .sheet(isPresented: $viewModel.showStockAdjustment) {
             stockAdjustmentSheet
         }
-        .task { 
+        .task {
+            viewModel.setCacheManager(cacheManager)
             await viewModel.loadItems()
             await planLimitsManager.checkLimits()
         }

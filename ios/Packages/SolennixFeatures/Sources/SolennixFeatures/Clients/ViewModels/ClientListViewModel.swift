@@ -65,14 +65,23 @@ public final class ClientListViewModel {
         filteredClients
     }
 
+    /// Whether the current data was loaded from cache (not fresh from API).
+    public var isShowingCachedData: Bool = false
+
     // MARK: - Dependencies
 
     private let apiClient: APIClient
+    private var cacheManager: CacheManager?
 
     // MARK: - Init
 
     public init(apiClient: APIClient) {
         self.apiClient = apiClient
+    }
+
+    /// Set the cache manager for offline support.
+    public func setCacheManager(_ manager: CacheManager?) {
+        self.cacheManager = manager
     }
 
     // MARK: - Computed
@@ -93,6 +102,13 @@ public final class ClientListViewModel {
     public func loadClients() async {
         isLoading = true
         errorMessage = nil
+
+        // Show cached data immediately while fetching from network
+        if clients.isEmpty, let cached = try? cacheManager?.getCachedClients(), !cached.isEmpty {
+            clients = cached
+            isShowingCachedData = true
+            applyFilters()
+        }
 
         do {
             if isFiltering {
@@ -126,9 +142,20 @@ public final class ClientListViewModel {
                 totalPages = paginated.totalPages
                 totalItems = paginated.total
             }
+            isShowingCachedData = false
             applyFilters()
+
+            // Update cache with fresh data
+            try? cacheManager?.cacheClients(clients)
         } catch {
-            errorMessage = mapError(error)
+            // If we have no data at all, try cache as fallback
+            if clients.isEmpty, let cached = try? cacheManager?.getCachedClients(), !cached.isEmpty {
+                clients = cached
+                isShowingCachedData = true
+                applyFilters()
+            } else {
+                errorMessage = mapError(error)
+            }
         }
 
         isLoading = false

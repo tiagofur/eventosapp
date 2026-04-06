@@ -11,6 +11,7 @@ public struct EventListView: View {
     // MARK: - Properties
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(CacheManager.self) private var cacheManager: CacheManager?
     @State private var viewModel: EventListViewModel
     @State private var showShareSheet = false
     @State private var csvFileURL: URL?
@@ -25,6 +26,9 @@ public struct EventListView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
+            if viewModel.isShowingCachedData {
+                CachedDataBanner()
+            }
             searchBar
             filterChips
             resultCount
@@ -37,6 +41,7 @@ public struct EventListView: View {
             await viewModel.refresh()
         }
         .task {
+            viewModel.setCacheManager(cacheManager)
             await viewModel.loadEvents()
         }
         .toolbar {

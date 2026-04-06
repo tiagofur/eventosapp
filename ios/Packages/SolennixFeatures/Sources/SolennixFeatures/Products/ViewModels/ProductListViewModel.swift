@@ -80,14 +80,23 @@ public final class ProductListViewModel {
         max(0, 20 - products.count)
     }
 
+    /// Whether the current data was loaded from cache (not fresh from API).
+    public var isShowingCachedData: Bool = false
+
     // MARK: - Dependencies
 
     private let apiClient: APIClient
+    private var cacheManager: CacheManager?
 
     // MARK: - Init
 
     public init(apiClient: APIClient) {
         self.apiClient = apiClient
+    }
+
+    /// Set the cache manager for offline support.
+    public func setCacheManager(_ manager: CacheManager?) {
+        self.cacheManager = manager
     }
 
     /// Whether a search/category filter is active (skip server pagination).
@@ -102,9 +111,15 @@ public final class ProductListViewModel {
         isLoading = true
         errorMessage = nil
 
+        // Show cached data immediately while fetching
+        if products.isEmpty, let cached = try? cacheManager?.getCachedProducts(), !cached.isEmpty {
+            products = cached
+            isShowingCachedData = true
+            applyFilters()
+        }
+
         do {
             if isFiltering {
-                // Fetch all products for client-side filtering.
                 let result: [Product] = try await apiClient.get(Endpoint.products)
                 products = result
                 currentPage = 1
@@ -132,9 +147,19 @@ public final class ProductListViewModel {
                 totalPages = paginated.totalPages
                 totalItems = paginated.total
             }
+            isShowingCachedData = false
             applyFilters()
+
+            // Update cache with fresh data
+            try? cacheManager?.cacheProducts(products)
         } catch {
-            errorMessage = mapError(error)
+            if products.isEmpty, let cached = try? cacheManager?.getCachedProducts(), !cached.isEmpty {
+                products = cached
+                isShowingCachedData = true
+                applyFilters()
+            } else {
+                errorMessage = mapError(error)
+            }
         }
 
         isLoading = false
