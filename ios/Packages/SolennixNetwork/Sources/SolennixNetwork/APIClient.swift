@@ -120,13 +120,27 @@ public actor APIClient {
         allParams["page"] = "1"
         allParams["limit"] = "10000"
         let request = try buildRequest(endpoint, method: "GET", params: allParams)
-        // Try paginated response first, fall back to plain array
-        do {
-            let paginated: PaginatedResponse<T> = try await execute(request)
+        let data = try await performRaw(request)
+
+        // Try paginated response first
+        if let paginated = try? decoder.decode(PaginatedResponse<T>.self, from: data) {
             return paginated.data
-        } catch APIError.decodingError {
-            let rebuilt = try buildRequest(endpoint, method: "GET", params: allParams)
-            return try await execute(rebuilt)
+        }
+        // Fall back to plain array
+        if let array = try? decoder.decode([T].self, from: data) {
+            return array
+        }
+        throw APIError.decodingError
+    }
+
+    /// Performs a request and returns raw Data (used by getAll for manual decoding).
+    private func performRaw(_ request: URLRequest) async throws -> Data {
+        do {
+            return try await perform(request, isRetry: false)
+        } catch let urlError as URLError {
+            let err = APIError.networkError(APIError.userFacingMessage(for: urlError))
+            showErrorToast(for: err)
+            throw err
         }
     }
 
