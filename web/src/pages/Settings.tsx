@@ -58,6 +58,21 @@ const SUB_STATUS_LABEL: Record<string, { text: string; color: string }> = {
   trialing: { text: "Periodo de prueba", color: "text-info bg-info/10" },
 };
 
+const PROVIDER_LABEL: Record<string, { badge: string; cancelInstructions: string }> = {
+  stripe: {
+    badge: "Suscrito vía Web",
+    cancelInstructions: "Podés gestionar o cancelar tu suscripción desde el portal de pagos web.",
+  },
+  apple: {
+    badge: "Suscrito vía App Store",
+    cancelInstructions: "Tu suscripción fue realizada desde iOS. Para cancelarla, abrí Configuración > tu Apple ID > Suscripciones en tu iPhone o iPad.",
+  },
+  google: {
+    badge: "Suscrito vía Google Play",
+    cancelInstructions: "Tu suscripción fue realizada desde Android. Para cancelarla, abrí Google Play Store > Pagos y suscripciones.",
+  },
+};
+
 export const Settings: React.FC = () => {
   const { user: profile, updateProfile } = useAuth();
   const [searchParams] = useSearchParams();
@@ -615,6 +630,11 @@ export const Settings: React.FC = () => {
                             </span>
                           );
                         })()}
+                        {subStatus.subscription.provider && PROVIDER_LABEL[subStatus.subscription.provider] && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-text-secondary bg-surface-alt">
+                            {PROVIDER_LABEL[subStatus.subscription.provider].badge}
+                          </span>
+                        )}
                         {subStatus.subscription.current_period_end && (
                           <span className="text-xs text-text-secondary">
                             {subStatus.subscription.cancel_at_period_end
@@ -630,6 +650,14 @@ export const Settings: React.FC = () => {
                         Tu suscripción se cancelará al final del periodo actual. Puedes reactivarla desde el portal de pagos.
                       </div>
                     )}
+
+                    {/* Cross-platform cancellation instructions */}
+                    {subStatus?.subscription?.provider && subStatus.subscription.provider !== "stripe" && PROVIDER_LABEL[subStatus.subscription.provider] && (
+                      <div className="mt-2 p-3 bg-info/10 border border-info/30 rounded-xl text-sm text-info flex items-start gap-2">
+                        <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                        <span>{PROVIDER_LABEL[subStatus.subscription.provider].cancelInstructions}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-3">
@@ -641,7 +669,7 @@ export const Settings: React.FC = () => {
                         Subir a Pro
                       </Link>
                     )}
-                    {(profile?.stripe_customer_id || subStatus?.has_stripe_account) && (
+                    {(profile?.stripe_customer_id || subStatus?.has_stripe_account) && (!subStatus?.subscription?.provider || subStatus.subscription.provider === "stripe") && (
                       <button
                         type="button"
                         onClick={handleManageSubscription}
