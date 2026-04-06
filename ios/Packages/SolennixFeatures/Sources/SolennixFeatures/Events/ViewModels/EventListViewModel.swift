@@ -14,8 +14,12 @@ public final class EventListViewModel {
     public var clients: [Client] = []
     public var searchQuery: String = ""
     public var selectedStatus: EventStatus? = nil
+    public var selectedClientId: String? = nil
+    public var dateRangeStart: Date? = nil
+    public var dateRangeEnd: Date? = nil
     public var isLoading: Bool = false
     public var errorMessage: String? = nil
+    public var showAdvancedFilters: Bool = false
 
     // MARK: - Pagination
 
@@ -69,11 +73,43 @@ public final class EventListViewModel {
 
     // MARK: - Filtered Events
 
+    /// Number of active advanced filters (client + date range).
+    public var activeFilterCount: Int {
+        var count = 0
+        if selectedClientId != nil { count += 1 }
+        if dateRangeStart != nil || dateRangeEnd != nil { count += 1 }
+        return count
+    }
+
+    /// Clears all advanced filters (client, date range).
+    public func clearAdvancedFilters() {
+        selectedClientId = nil
+        dateRangeStart = nil
+        dateRangeEnd = nil
+    }
+
     public var filteredEvents: [Event] {
         var result = events
 
         if let status = selectedStatus {
             result = result.filter { $0.status == status }
+        }
+
+        if let clientId = selectedClientId {
+            result = result.filter { $0.clientId == clientId }
+        }
+
+        // Date range filter
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withFullDate]
+        if let start = dateRangeStart {
+            let startStr = isoFormatter.string(from: Calendar.current.startOfDay(for: start))
+            result = result.filter { $0.eventDate >= startStr }
+        }
+        if let end = dateRangeEnd {
+            let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: end) ?? end
+            let endStr = isoFormatter.string(from: Calendar.current.startOfDay(for: nextDay))
+            result = result.filter { $0.eventDate < endStr }
         }
 
         if !searchQuery.isEmpty {
@@ -98,7 +134,7 @@ public final class EventListViewModel {
 
     /// Whether a search/filter is active (skip server pagination in that case).
     private var isFiltering: Bool {
-        !searchQuery.isEmpty || selectedStatus != nil
+        !searchQuery.isEmpty || selectedStatus != nil || selectedClientId != nil || dateRangeStart != nil || dateRangeEnd != nil
     }
 
     // MARK: - Data Loading

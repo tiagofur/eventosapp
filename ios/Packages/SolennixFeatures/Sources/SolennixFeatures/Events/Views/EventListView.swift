@@ -31,6 +31,7 @@ public struct EventListView: View {
             }
             searchBar
             filterChips
+            advancedFilters
             resultCount
             eventList
         }
@@ -145,6 +146,155 @@ public struct EventListView: View {
         .padding(.top, Spacing.sm)
     }
 
+    // MARK: - Advanced Filters
+
+    @ViewBuilder
+    private var advancedFilters: some View {
+        VStack(spacing: 0) {
+            // Toggle row
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    viewModel.showAdvancedFilters.toggle()
+                }
+            } label: {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.subheadline)
+                    Text("Filtros")
+                        .font(.caption)
+                        .fontWeight(.medium)
+
+                    if viewModel.activeFilterCount > 0 {
+                        Text("\(viewModel.activeFilterCount)")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(SolennixColors.primary)
+                            .clipShape(Capsule())
+                    }
+
+                    Spacer()
+
+                    if viewModel.activeFilterCount > 0 {
+                        Button {
+                            viewModel.clearAdvancedFilters()
+                        } label: {
+                            Text("Limpiar")
+                                .font(.caption)
+                                .foregroundStyle(SolennixColors.error)
+                        }
+                    }
+
+                    Image(systemName: viewModel.showAdvancedFilters ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                }
+                .foregroundStyle(SolennixColors.textSecondary)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
+            }
+
+            // Expandable filter content
+            if viewModel.showAdvancedFilters {
+                VStack(spacing: Spacing.sm) {
+                    // Client picker
+                    HStack {
+                        Text("Cliente")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                            .frame(width: 60, alignment: .leading)
+
+                        Picker("Cliente", selection: $viewModel.selectedClientId) {
+                            Text("Todos").tag(String?.none)
+                            ForEach(viewModel.clients.sorted(by: { $0.name < $1.name })) { client in
+                                Text(client.name).tag(Optional(client.id))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(SolennixColors.primary)
+                    }
+
+                    // Date range
+                    HStack {
+                        Text("Desde")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                            .frame(width: 60, alignment: .leading)
+
+                        if let start = viewModel.dateRangeStart {
+                            DatePicker("", selection: Binding(
+                                get: { start },
+                                set: { viewModel.dateRangeStart = $0 }
+                            ), displayedComponents: .date)
+                            .labelsHidden()
+                            .tint(SolennixColors.primary)
+
+                            Button {
+                                viewModel.dateRangeStart = nil
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.textTertiary)
+                            }
+                        } else {
+                            Button {
+                                viewModel.dateRangeStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+                            } label: {
+                                Text("Seleccionar")
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.primary)
+                            }
+                        }
+
+                        Spacer()
+                    }
+
+                    HStack {
+                        Text("Hasta")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                            .frame(width: 60, alignment: .leading)
+
+                        if let end = viewModel.dateRangeEnd {
+                            DatePicker("", selection: Binding(
+                                get: { end },
+                                set: { viewModel.dateRangeEnd = $0 }
+                            ), displayedComponents: .date)
+                            .labelsHidden()
+                            .tint(SolennixColors.primary)
+
+                            Button {
+                                viewModel.dateRangeEnd = nil
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.textTertiary)
+                            }
+                        } else {
+                            Button {
+                                viewModel.dateRangeEnd = Date()
+                            } label: {
+                                Text("Seleccionar")
+                                    .font(.caption)
+                                    .foregroundStyle(SolennixColors.primary)
+                            }
+                        }
+
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.bottom, Spacing.sm)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(SolennixColors.surfaceGrouped)
+    }
+
     // MARK: - Result Count
 
     private var resultCount: some View {
@@ -232,10 +382,11 @@ public struct EventListView: View {
                 .font(.subheadline)
                 .foregroundStyle(SolennixColors.textSecondary)
 
-            if viewModel.selectedStatus != nil || !viewModel.searchQuery.isEmpty {
+            if viewModel.selectedStatus != nil || !viewModel.searchQuery.isEmpty || viewModel.activeFilterCount > 0 {
                 Button {
                     viewModel.selectedStatus = nil
                     viewModel.searchQuery = ""
+                    viewModel.clearAdvancedFilters()
                 } label: {
                     Text("Limpiar filtros")
                         .font(.subheadline)
