@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.plan.LimitCheckResult
 import com.creapolis.solennix.core.data.plan.PlanLimitsManager
 import com.creapolis.solennix.core.data.repository.ClientRepository
+import com.creapolis.solennix.core.data.util.ImageCompressor
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Plan
 import com.creapolis.solennix.core.network.ApiService
@@ -21,7 +22,9 @@ import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 
@@ -174,9 +177,14 @@ class ClientFormViewModel @Inject constructor(
                 inputStream?.close()
 
                 if (bytes != null) {
+                    // Compress image in a background thread
+                    val compressedBytes = withContext(Dispatchers.Default) {
+                        ImageCompressor.compress(bytes)
+                    }
+
                     val response = apiService.upload(
                         Endpoints.UPLOAD_IMAGE,
-                        bytes,
+                        compressedBytes,
                         fileName,
                         mimeType
                     )

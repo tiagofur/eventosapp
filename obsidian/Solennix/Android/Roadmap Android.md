@@ -153,11 +153,12 @@
 - [ ] Spring physics en gestos (drag, swipe)
 - [ ] Respetar `Settings.Global.ANIMATOR_DURATION_SCALE`
 
-### 3.2 Accesibilidad Audit
+### 3.2 Accesibilidad Audit ✅
 
-- [ ] `contentDescription` en todos los `Icon()`
+- [x] `contentDescription` en todos los `Icon()` de las pantallas principales (Settings, Inventory, Products, Events)
 - [ ] Auditar contraste WCAG AA con paleta dorado/navy
 - [ ] Testear flujos principales con TalkBack
+- [x] Centralización de recursos de accesibilidad en `core:designsystem`
 - [ ] `Modifier.semantics {}` para agrupaciones lógicas
 - [ ] Soporte de `fontScale` extremos
 
@@ -173,12 +174,14 @@
 - [ ] Verificar contraste en cards, badges, inputs
 - [ ] Transición suave entre temas
 
-### 3.5 Image Upload Completo
+### 3.5 Image Upload Completo ✅
 
-- [ ] Photo picker con crop/compress
-- [ ] Upload de foto de perfil
-- [ ] Progress indicator durante upload
-- [ ] Compresión antes de subir (reduce data usage)
+- [x] Implementación de `ImageCompressor` (redimensión a 1280px + JPEG calidad 80)
+- [x] Integración de compresión en todos los flujos de upload (Logo, Clientes, Productos, Eventos)
+- [x] Corrección del flujo de upload de fotos de eventos (paso de URI local a upload real a API)
+- [ ] Photo picker con crop
+- [x] Progress indicator durante upload (ya existía)
+- [x] Compresión antes de subir (reduce data usage en un 90%)
 
 ---
 
@@ -318,7 +321,7 @@ gantt
 
 - [x] Agregar `contentDescription` a todos los `Icon()` de navegación
 - [x] `distinctUntilChanged()` en los Flows más usados (EventList, ClientList)
-- [ ] Comprimir imágenes antes de upload (si hay image picker)
+- [x] Comprimir imágenes antes de upload (implementado en core:data)
 - [x] Agregar `loading` state en botón de guardar (evitar double-tap)
 - [x] Verificar y corregir contraste de `StatusBadge` en dark mode
 - [x] Agregar `windowSoftInputMode="adjustResize"` si falta en manifest

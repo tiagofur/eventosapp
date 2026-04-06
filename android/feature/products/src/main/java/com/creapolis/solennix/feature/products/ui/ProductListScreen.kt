@@ -32,8 +32,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.SkeletonLoading
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.UpgradeBanner
@@ -99,7 +101,10 @@ fun ProductListScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 }
             )
@@ -113,7 +118,10 @@ fun ProductListScreen(
                 containerColor = SolennixTheme.colors.primary,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar producto")
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(DesignSystemR.string.cd_add)
+                )
             }
         },
         contentWindowInsets = WindowInsets(0)
@@ -141,7 +149,12 @@ fun ProductListScreen(
                         .fillMaxWidth()
                         .padding(16.dp),
                     placeholder = { Text("Filtrar productos por nombre o categoría...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = stringResource(DesignSystemR.string.cd_search)
+                        )
+                    },
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true
                 )
@@ -156,7 +169,7 @@ fun ProductListScreen(
                 ) {
                     Icon(
                         Icons.Default.SortByAlpha,
-                        contentDescription = null,
+                        contentDescription = stringResource(DesignSystemR.string.cd_tune),
                         modifier = Modifier.size(16.dp),
                         tint = SolennixTheme.colors.secondaryText
                     )
@@ -176,7 +189,7 @@ fun ProductListScreen(
                                     Icon(
                                         if (uiState.sortAscending) Icons.Default.ArrowUpward
                                         else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
+                                        contentDescription = stringResource(DesignSystemR.string.cd_tune),
                                         modifier = Modifier.size(14.dp)
                                     )
                                 }
@@ -256,7 +269,7 @@ fun ProductListScreen(
                                         ) {
                                             Icon(
                                                 Icons.Default.Delete,
-                                                contentDescription = "Eliminar",
+                                                contentDescription = stringResource(DesignSystemR.string.cd_delete),
                                                 tint = Color.White
                                             )
                                         }
@@ -416,7 +429,12 @@ fun ProductGridItem(
         ) {
             DropdownMenuItem(
                 text = { Text("Editar") },
-                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(DesignSystemR.string.cd_edit)
+                    )
+                },
                 onClick = { menuExpanded = false; onEdit() }
             )
             DropdownMenuItem(
@@ -424,7 +442,7 @@ fun ProductGridItem(
                 leadingIcon = {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = null,
+                        contentDescription = stringResource(DesignSystemR.string.cd_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 },
@@ -502,12 +520,22 @@ fun ProductListItem(
         ) {
             DropdownMenuItem(
                 text = { Text("Detalles") },
-                leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = stringResource(DesignSystemR.string.cd_visibility)
+                    )
+                },
                 onClick = { menuExpanded = false; onClick() }
             )
             DropdownMenuItem(
                 text = { Text("Editar") },
-                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(DesignSystemR.string.cd_edit)
+                    )
+                },
                 onClick = { menuExpanded = false; onEdit() }
             )
             DropdownMenuItem(
@@ -515,7 +543,7 @@ fun ProductListItem(
                 leadingIcon = {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = null,
+                        contentDescription = stringResource(DesignSystemR.string.cd_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 },

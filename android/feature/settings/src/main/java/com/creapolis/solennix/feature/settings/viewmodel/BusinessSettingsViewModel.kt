@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.data.util.ImageCompressor
 import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.get
@@ -13,7 +14,9 @@ import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
@@ -100,9 +103,14 @@ class BusinessSettingsViewModel @Inject constructor(
             isUploadingLogo = true
             errorMessage = null
             try {
+                // Compress image in a background thread
+                val compressedBytes = withContext(Dispatchers.Default) {
+                    ImageCompressor.compress(bytes)
+                }
+
                 val response = apiService.upload(
                     Endpoints.UPLOAD_IMAGE,
-                    bytes,
+                    compressedBytes,
                     "logo.jpg",
                     "image/jpeg"
                 )

@@ -879,6 +879,128 @@ func TestGenerateTokenPair_ContainsExpectedClaims(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// GenerateTokenPairWithFamily — FamilyID verification
+// ---------------------------------------------------------------------------
+
+func TestGenerateTokenPairWithFamily_GivenFamilyID_WhenGenerated_ThenRefreshTokenContainsFamilyID(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "family@test.dev"
+	familyID := uuid.New()
+
+	pair, err := svc.GenerateTokenPairWithFamily(userID, email, familyID)
+	if err != nil {
+		t.Fatalf("GenerateTokenPairWithFamily() error = %v", err)
+	}
+
+	// Parse refresh token and verify FamilyID is present
+	refreshClaims, err := svc.ValidateRefreshToken(pair.RefreshToken)
+	if err != nil {
+		t.Fatalf("ValidateRefreshToken() error = %v", err)
+	}
+	if refreshClaims.FamilyID != familyID {
+		t.Errorf("refresh FamilyID = %v, want %v", refreshClaims.FamilyID, familyID)
+	}
+
+	// Access token should NOT have a FamilyID (zero value)
+	accessClaims, err := svc.ValidateToken(pair.AccessToken)
+	if err != nil {
+		t.Fatalf("ValidateToken() error = %v", err)
+	}
+	if accessClaims.FamilyID != uuid.Nil {
+		t.Errorf("access FamilyID = %v, want zero UUID", accessClaims.FamilyID)
+	}
+}
+
+func TestGenerateTokenPairWithFamily_GivenDifferentFamilies_WhenGenerated_ThenTokensHaveDifferentFamilyIDs(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "families@test.dev"
+	familyA := uuid.New()
+	familyB := uuid.New()
+
+	pairA, err := svc.GenerateTokenPairWithFamily(userID, email, familyA)
+	if err != nil {
+		t.Fatalf("GenerateTokenPairWithFamily(A) error = %v", err)
+	}
+	pairB, err := svc.GenerateTokenPairWithFamily(userID, email, familyB)
+	if err != nil {
+		t.Fatalf("GenerateTokenPairWithFamily(B) error = %v", err)
+	}
+
+	claimsA, _ := svc.ValidateRefreshToken(pairA.RefreshToken)
+	claimsB, _ := svc.ValidateRefreshToken(pairB.RefreshToken)
+
+	if claimsA.FamilyID == claimsB.FamilyID {
+		t.Error("different family IDs should produce different FamilyID claims")
+	}
+}
+
+func TestGenerateTokenPair_GivenNoExplicitFamily_WhenGenerated_ThenRefreshTokenHasNonZeroFamilyID(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "auto-family@test.dev"
+
+	pair, err := svc.GenerateTokenPair(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error = %v", err)
+	}
+
+	refreshClaims, err := svc.ValidateRefreshToken(pair.RefreshToken)
+	if err != nil {
+		t.Fatalf("ValidateRefreshToken() error = %v", err)
+	}
+
+	// GenerateTokenPair calls GenerateTokenPairWithFamily with uuid.New(),
+	// so FamilyID should be non-zero
+	if refreshClaims.FamilyID == uuid.Nil {
+		t.Error("GenerateTokenPair should produce a non-zero FamilyID in refresh token")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// ValidateRefreshToken — expired token
+// ---------------------------------------------------------------------------
+
+func TestValidateRefreshToken_GivenExpiredToken_WhenValidated_ThenReturnsError(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	userID := uuid.New()
+	email := "expired-refresh@test.dev"
+
+	// Manually create an expired refresh token
+	now := time.Now()
+	claims := TokenClaims{
+		UserID:   userID,
+		Email:    email,
+		FamilyID: uuid.New(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(-1 * time.Hour)), // expired 1 hour ago
+			IssuedAt:  jwt.NewNumericDate(now.Add(-8 * 24 * time.Hour)),
+			Issuer:    "solennix-backend",
+			Subject:   "refresh",
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("failed to create expired refresh token: %v", err)
+	}
+
+	_, err = svc.ValidateRefreshToken(tokenString)
+	if err == nil {
+		t.Fatal("ValidateRefreshToken() expected error for expired token")
+	}
+}
+
+func TestValidateRefreshToken_GivenMalformedToken_WhenValidated_ThenReturnsError(t *testing.T) {
+	svc := NewAuthService("test-secret", 1)
+	_, err := svc.ValidateRefreshToken("not-a-valid-token")
+	if err == nil {
+		t.Fatal("ValidateRefreshToken() expected error for malformed token")
+	}
+}
+
 func TestHashPassword_ProducesDifferentHashes(t *testing.T) {
 	svc := NewAuthService("test-secret", 1)
 

@@ -83,6 +83,7 @@ interface EventRepository {
 
     // Photos
     suspend fun getEventPhotos(eventId: String): List<EventPhoto>
+    suspend fun uploadImage(bytes: ByteArray, fileName: String, mimeType: String): UploadResponse
     suspend fun uploadEventPhoto(eventId: String, imageUrl: String, caption: String? = null): EventPhoto
     suspend fun deleteEventPhoto(eventId: String, photoId: String)
 }
@@ -381,6 +382,14 @@ data class SupplyItemPayload(
     @SerialName("unit_cost") val unitCost: Double,
     val source: String,
     @SerialName("exclude_cost") val excludeCost: Boolean
+)
+
+@Serializable
+data class PhotoPayload(
+    val url: String,
+    val caption: String? = null
+)
+
 )
 
 @Serializable

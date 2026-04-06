@@ -1,5 +1,8 @@
 package com.creapolis.solennix.feature.events.viewmodel
 
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,6 +10,7 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.data.util.ImageCompressor
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventEquipment
@@ -28,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +40,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class EventDetailUiState(
@@ -287,18 +293,60 @@ class EventDetailViewModel @Inject constructor(
         }
     }
 
-    fun uploadPhoto(imageUrl: String, caption: String? = null) {
+    fun uploadPhoto(context: Context, uri: Uri, caption: String? = null) {
         viewModelScope.launch {
             _isPhotoUploading.value = true
             try {
-                val newPhoto = eventRepository.uploadEventPhoto(eventId, imageUrl, caption)
-                _photos.value = _photos.value + newPhoto
+                val contentResolver = context.contentResolver
+                val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                val fileName = getFileName(context, uri) ?: "event_photo.jpg"
+                val inputStream = contentResolver.openInputStream(uri)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+
+                if (bytes != null) {
+                    // 1. Compress image
+                    val compressedBytes = withContext(Dispatchers.Default) {
+                        ImageCompressor.compress(bytes)
+                    }
+
+                    // 2. Upload to storage
+                    val uploadResponse = eventRepository.uploadImage(
+                        compressedBytes,
+                        fileName,
+                        mimeType
+                    )
+
+                    // 3. Register photo in event
+                    val newPhoto = eventRepository.uploadEventPhoto(
+                        eventId,
+                        uploadResponse.url,
+                        caption
+                    )
+                    _photos.value = _photos.value + newPhoto
+                } else {
+                    _errorMessage.value = "No se pudo leer la imagen seleccionada"
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "Error uploading photo: ${e.message}"
             } finally {
                 _isPhotoUploading.value = false
             }
         }
+    }
+
+    private fun getFileName(context: Context, uri: Uri): String? {
+        var name: String? = null
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (index >= 0) {
+                    name = it.getString(index)
+                }
+            }
+        }
+        return name
     }
 
     fun deletePhoto(photo: EventPhoto) {
@@ -311,6 +359,61 @@ class EventDetailViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Muestra la notificacion persistente del evento del dia.
+     */
+    fun startEventDayNotification() {
+        val event = _event.value ?: return
+        val client = _client.value ?: return
+        eventDayNotificationManager.showEventNotification(event, client)
+    }
+
+    /**
+     * Cancela la notificacion persistente del evento del dia.
+     */
+    fun stopEventDayNotification() {
+        eventDayNotificationManager.dismissEventNotification(eventId)
+    }
+
+    /**
+     * Verifica si el evento es hoy y esta confirmado para mostrar notificacion automaticamente.
+     */
+    private fun checkAndShowEventDayNotification(event: Event?, client: Client?) {
+        if (event == null || client == null) return
+        val today = java.time.LocalDate.now().toString()
+        if (event.eventDate == today && event.status == EventStatus.CONFIRMED) {
+            eventDayNotificationManager.showEventNotification(event, client)
+        }
+    }
+
+    fun updateEventStatus(newStatus: EventStatus) {
+        viewModelScope.launch {
+            try {
+                val currentEvent = _event.value ?: return@launch
+                val updated = currentEvent.copy(status = newStatus)
+                eventRepository.updateEvent(updated)
+                _event.value = updated
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cambiar status: ${e.message}"
+            }
+        }
+    }
+
+    var deleteSuccess by mutableStateOf(false)
+        private set
+
+    fun deleteEvent() {
+        viewModelScope.launch {
+            try {
+                eventRepository.deleteEvent(eventId)
+                deleteSuccess = true
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al eliminar evento: ${e.message}"
+            }
+        }
+    }
+}
 
     /**
      * Muestra la notificacion persistente del evento del dia.

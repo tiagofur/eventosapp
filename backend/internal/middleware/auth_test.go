@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tiagofur/solennix-backend/internal/services"
@@ -123,6 +125,80 @@ func TestAuthMiddleware(t *testing.T) {
 			t.Fatalf("status = %d, want %d", rr.Code, http.StatusNoContent)
 		}
 	})
+}
+
+func TestSetTokenBlacklist_GivenCustomBlacklist_WhenSet_ThenGetReturnsIt(t *testing.T) {
+	original := GetTokenBlacklist()
+	defer SetTokenBlacklist(original) // restore after test
+
+	custom := &inMemoryBlacklist{}
+	SetTokenBlacklist(custom)
+
+	got := GetTokenBlacklist()
+	if got != custom {
+		t.Fatal("GetTokenBlacklist() did not return the custom blacklist set via SetTokenBlacklist()")
+	}
+}
+
+func TestInMemoryBlacklist_Revoke_GivenToken_WhenRevoked_ThenIsRevokedReturnsTrue(t *testing.T) {
+	bl := &inMemoryBlacklist{}
+	ctx := context.Background()
+	tokenHash := "abc123hash"
+
+	if bl.IsRevoked(ctx, tokenHash) {
+		t.Fatal("token should not be revoked before calling Revoke()")
+	}
+
+	err := bl.Revoke(ctx, tokenHash, time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatalf("Revoke() error = %v", err)
+	}
+
+	if !bl.IsRevoked(ctx, tokenHash) {
+		t.Fatal("token should be revoked after calling Revoke()")
+	}
+}
+
+func TestInMemoryBlacklist_IsRevoked_GivenUnknownToken_ThenReturnsFalse(t *testing.T) {
+	bl := &inMemoryBlacklist{}
+	if bl.IsRevoked(context.Background(), "never-revoked") {
+		t.Fatal("unknown token should not be revoked")
+	}
+}
+
+func TestAuthMiddleware_GivenRevokedToken_WhenRequest_ThenUnauthorized(t *testing.T) {
+	original := GetTokenBlacklist()
+	defer SetTokenBlacklist(original)
+
+	authService := services.NewAuthService("test-secret-revoke", 1)
+	userID := uuid.New()
+	email := "revoked@test.dev"
+	tokens, err := authService.GenerateTokenPair(userID, email)
+	if err != nil {
+		t.Fatalf("GenerateTokenPair() error = %v", err)
+	}
+
+	// Revoke the token
+	bl := &inMemoryBlacklist{}
+	tokenHash := sha256Hex(tokens.AccessToken)
+	_ = bl.Revoke(context.Background(), tokenHash, time.Now().Add(time.Hour))
+	SetTokenBlacklist(bl)
+
+	handler := Auth(authService)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("next handler should not be called for revoked token")
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/test", nil)
+	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusUnauthorized)
+	}
+	if !strings.Contains(rr.Body.String(), "Token has been revoked") {
+		t.Fatalf("body = %q, expected to contain 'Token has been revoked'", rr.Body.String())
+	}
 }
 
 func TestContextGettersWithMissingValues(t *testing.T) {

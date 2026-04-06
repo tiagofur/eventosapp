@@ -52,7 +52,7 @@
 - [x] Form previews y logos mantienen carga eager (visible inmediato)
 - [ ] _Futuro:_ Thumbnails en backend o CDN con resize
 - [ ] _Futuro:_ `srcSet` para responsive images
-- [ ] _Futuro:_ Placeholder blur/skeleton mientras cargan
+- [x] `OptimizedImage` component con shimmer placeholder + fade-in (ProductList, ProductDetails, ClientList, ClientDetails, EventSummary)
 
 ---
 
@@ -284,6 +284,8 @@ gantt
 > - `Ana - Boda` → `Ana — Boda` (em dash)
 > - Error assertions adaptados de inline `setError()` a mutation `onError`/toast
 > - `tests/customRender.tsx` provee `QueryClientProvider` global
+>
+> **2026-04-06**: ClientList.test.tsx arreglado — faltaba mock de `clientService.getPage` (usado por `useClientsPaginated`). 11 tests recuperados. Helper `mockClients()` configura `getAll` + `getPage` consistentemente.
 
 ---
 

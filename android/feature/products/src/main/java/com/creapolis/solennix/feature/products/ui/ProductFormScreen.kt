@@ -22,12 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
@@ -70,7 +72,10 @@ fun ProductFormScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 }
             )
@@ -125,7 +130,7 @@ fun ProductFormScreen(
                                         .data(UrlResolver.resolve(viewModel.imageUrl))
                                         .crossfade(true)
                                         .build(),
-                                    contentDescription = "Imagen del producto",
+                                    contentDescription = stringResource(DesignSystemR.string.cd_visibility),
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
@@ -133,7 +138,7 @@ fun ProductFormScreen(
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(
                                         Icons.Default.Image,
-                                        contentDescription = null,
+                                        contentDescription = stringResource(DesignSystemR.string.cd_visibility),
                                         modifier = Modifier.size(48.dp),
                                         tint = SolennixTheme.colors.secondaryText
                                     )
@@ -177,7 +182,7 @@ fun ProductFormScreen(
                             } else {
                                 Icon(
                                     Icons.Default.PhotoCamera,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(DesignSystemR.string.cd_edit),
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -219,7 +224,12 @@ fun ProductFormScreen(
                                     .fillMaxWidth()
                                     .menuAnchor(MenuAnchorType.PrimaryEditable),
                                 label = { Text("Categoría *") },
-                                leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Category,
+                                        contentDescription = stringResource(DesignSystemR.string.cd_category)
+                                    )
+                                },
                                 shape = MaterialTheme.shapes.small,
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = SolennixTheme.colors.primary,
@@ -398,7 +408,11 @@ private fun RecipeSectionCard(
                     )
                 }
                 TextButton(onClick = onAdd) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(DesignSystemR.string.cd_add),
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Agregar")
                 }
@@ -480,7 +494,7 @@ private fun RecipeItemRow(
             ) {
                 Icon(
                     Icons.Default.Inventory2,
-                    contentDescription = null,
+                    contentDescription = stringResource(DesignSystemR.string.cd_category),
                     tint = if (item.inventoryId.isNotBlank()) colors.primary else colors.tertiaryText,
                     modifier = Modifier.size(20.dp)
                 )
@@ -501,7 +515,7 @@ private fun RecipeItemRow(
                 }
                 Icon(
                     Icons.Default.ChevronRight,
-                    contentDescription = null,
+                    contentDescription = stringResource(DesignSystemR.string.cd_visibility),
                     tint = colors.tertiaryText,
                     modifier = Modifier.size(16.dp)
                 )
@@ -566,7 +580,7 @@ private fun RecipeItemRow(
             IconButton(onClick = onRemove) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Eliminar",
+                    contentDescription = stringResource(DesignSystemR.string.cd_delete),
                     tint = colors.error,
                     modifier = Modifier.size(20.dp)
                 )
@@ -608,7 +622,12 @@ private fun InventoryPickerBottomSheet(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text("Buscar item...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = stringResource(DesignSystemR.string.cd_search)
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
@@ -660,7 +679,7 @@ private fun InventoryPickerBottomSheet(
                             if (item.id == selectedId) {
                                 Icon(
                                     Icons.Default.CheckCircle,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(DesignSystemR.string.cd_check),
                                     tint = colors.primary,
                                     modifier = Modifier.size(20.dp)
                                 )

@@ -366,6 +366,285 @@ func TestEmailService_SendPasswordReset_BuildsCorrectLink(t *testing.T) {
 // Additional coverage — sendEmail error message wraps underlying error
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// SendWelcome tests
+// ---------------------------------------------------------------------------
+
+func TestEmailService_SendWelcome_GivenNoApiKey_WhenSent_ThenReturnsResendNotConfigured(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendWelcome("user@example.com", "Maria")
+	if err == nil || err.Error() != "Resend not configured" {
+		t.Errorf("expected 'Resend not configured' error, got %v", err)
+	}
+}
+
+func TestEmailService_SendWelcome_GivenFakeKey_WhenSent_ThenReturnsError(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "re_fake_key",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendWelcome("user@example.com", "Maria")
+	if err == nil {
+		t.Error("expected error when sending with fake key")
+	}
+}
+
+func TestEmailService_SendWelcome_GivenValidData_WhenRendered_ThenTemplateContainsExpectedContent(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL: "https://app.solennix.com",
+	}
+	svc := NewEmailService(cfg)
+
+	html := svc.renderTemplate(welcomeBody, map[string]string{
+		"UserName":      "Maria",
+		"DashboardLink": "https://app.solennix.com/dashboard",
+	})
+
+	if !strings.Contains(html, "Maria") {
+		t.Error("expected HTML to contain user name")
+	}
+	if !strings.Contains(html, "https://app.solennix.com/dashboard") {
+		t.Error("expected HTML to contain dashboard link")
+	}
+	if !strings.Contains(html, "Bienvenido") {
+		t.Error("expected HTML to contain welcome text")
+	}
+	if !strings.Contains(html, "Ir al Dashboard") {
+		t.Error("expected HTML to contain dashboard button text")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SendEventReminder tests
+// ---------------------------------------------------------------------------
+
+func TestEmailService_SendEventReminder_GivenNoApiKey_WhenSent_ThenReturnsResendNotConfigured(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendEventReminder("user@example.com", "Carlos", "Boda Rodriguez", "2026-04-15", "https://app.solennix.com/events/123")
+	if err == nil || err.Error() != "Resend not configured" {
+		t.Errorf("expected 'Resend not configured' error, got %v", err)
+	}
+}
+
+func TestEmailService_SendEventReminder_GivenFakeKey_WhenSent_ThenReturnsError(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "re_fake_key",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendEventReminder("user@example.com", "Carlos", "Boda Rodriguez", "2026-04-15", "https://app.solennix.com/events/123")
+	if err == nil {
+		t.Error("expected error when sending with fake key")
+	}
+}
+
+func TestEmailService_SendEventReminder_GivenValidData_WhenRendered_ThenTemplateContainsExpectedContent(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL: "https://app.solennix.com",
+	}
+	svc := NewEmailService(cfg)
+
+	html := svc.renderTemplate(eventReminderBody, map[string]string{
+		"UserName":  "Carlos",
+		"EventName": "Boda Rodriguez",
+		"EventDate": "2026-04-15",
+		"EventLink": "https://app.solennix.com/events/123",
+	})
+
+	if !strings.Contains(html, "Carlos") {
+		t.Error("expected HTML to contain user name")
+	}
+	if !strings.Contains(html, "Boda Rodriguez") {
+		t.Error("expected HTML to contain event name")
+	}
+	if !strings.Contains(html, "2026-04-15") {
+		t.Error("expected HTML to contain event date")
+	}
+	if !strings.Contains(html, "Ver Evento") {
+		t.Error("expected HTML to contain view event button text")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SendPaymentReceipt tests
+// ---------------------------------------------------------------------------
+
+func TestEmailService_SendPaymentReceipt_GivenNoApiKey_WhenSent_ThenReturnsResendNotConfigured(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendPaymentReceipt("user@example.com", "Ana", "Quinceañera", "$5,000 MXN", "2026-04-06")
+	if err == nil || err.Error() != "Resend not configured" {
+		t.Errorf("expected 'Resend not configured' error, got %v", err)
+	}
+}
+
+func TestEmailService_SendPaymentReceipt_GivenFakeKey_WhenSent_ThenReturnsError(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "re_fake_key",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendPaymentReceipt("user@example.com", "Ana", "Quinceañera", "$5,000 MXN", "2026-04-06")
+	if err == nil {
+		t.Error("expected error when sending with fake key")
+	}
+}
+
+func TestEmailService_SendPaymentReceipt_GivenValidData_WhenRendered_ThenTemplateContainsExpectedContent(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL: "https://app.solennix.com",
+	}
+	svc := NewEmailService(cfg)
+
+	html := svc.renderTemplate(paymentReceiptBody, map[string]string{
+		"UserName":    "Ana",
+		"EventName":   "Quinceañera",
+		"Amount":      "$5,000 MXN",
+		"PaymentDate": "2026-04-06",
+	})
+
+	if !strings.Contains(html, "Ana") {
+		t.Error("expected HTML to contain user name")
+	}
+	if !strings.Contains(html, "Quinceañera") {
+		t.Error("expected HTML to contain event name")
+	}
+	if !strings.Contains(html, "$5,000 MXN") {
+		t.Error("expected HTML to contain amount")
+	}
+	if !strings.Contains(html, "2026-04-06") {
+		t.Error("expected HTML to contain payment date")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// SendSubscriptionConfirmation tests
+// ---------------------------------------------------------------------------
+
+func TestEmailService_SendSubscriptionConfirmation_GivenNoApiKey_WhenSent_ThenReturnsResendNotConfigured(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendSubscriptionConfirmation("user@example.com", "Luis", "Pro")
+	if err == nil || err.Error() != "Resend not configured" {
+		t.Errorf("expected 'Resend not configured' error, got %v", err)
+	}
+}
+
+func TestEmailService_SendSubscriptionConfirmation_GivenFakeKey_WhenSent_ThenReturnsError(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL:     "http://localhost:5173",
+		ResendAPIKey:    "re_fake_key",
+		ResendFromEmail: "test@test.com",
+	}
+	svc := NewEmailService(cfg)
+
+	err := svc.SendSubscriptionConfirmation("user@example.com", "Luis", "Pro")
+	if err == nil {
+		t.Error("expected error when sending with fake key")
+	}
+}
+
+func TestEmailService_SendSubscriptionConfirmation_GivenValidData_WhenRendered_ThenTemplateContainsExpectedContent(t *testing.T) {
+	cfg := &config.Config{
+		FrontendURL: "https://app.solennix.com",
+	}
+	svc := NewEmailService(cfg)
+
+	html := svc.renderTemplate(subscriptionConfirmationBody, map[string]string{
+		"UserName": "Luis",
+		"PlanName": "Pro",
+	})
+
+	if !strings.Contains(html, "Luis") {
+		t.Error("expected HTML to contain user name")
+	}
+	if !strings.Contains(html, "Pro") {
+		t.Error("expected HTML to contain plan name")
+	}
+	if !strings.Contains(html, "activo") {
+		t.Error("expected HTML to contain active confirmation text")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// renderTemplate tests
+// ---------------------------------------------------------------------------
+
+func TestEmailService_RenderTemplate_GivenAllTemplates_WhenRendered_ThenContainsBaseLayout(t *testing.T) {
+	cfg := &config.Config{FrontendURL: "http://localhost:5173"}
+	svc := NewEmailService(cfg)
+
+	templates := map[string]struct {
+		tmpl string
+		data map[string]string
+	}{
+		"welcome": {
+			tmpl: welcomeBody,
+			data: map[string]string{"UserName": "Test", "DashboardLink": "http://test.com"},
+		},
+		"eventReminder": {
+			tmpl: eventReminderBody,
+			data: map[string]string{"UserName": "Test", "EventName": "Evt", "EventDate": "2026-01-01", "EventLink": "http://test.com"},
+		},
+		"paymentReceipt": {
+			tmpl: paymentReceiptBody,
+			data: map[string]string{"UserName": "Test", "EventName": "Evt", "Amount": "$100", "PaymentDate": "2026-01-01"},
+		},
+		"subscriptionConfirmation": {
+			tmpl: subscriptionConfirmationBody,
+			data: map[string]string{"UserName": "Test", "PlanName": "Pro"},
+		},
+		"passwordReset": {
+			tmpl: passwordResetBody,
+			data: map[string]string{"UserName": "Test", "ResetLink": "http://test.com"},
+		},
+	}
+
+	for name, tc := range templates {
+		t.Run(name, func(t *testing.T) {
+			html := svc.renderTemplate(tc.tmpl, tc.data)
+			if !strings.Contains(html, "<!DOCTYPE html>") {
+				t.Error("expected HTML to contain DOCTYPE")
+			}
+			if !strings.Contains(html, "Solennix") {
+				t.Error("expected HTML to contain Solennix branding")
+			}
+			if !strings.Contains(html, "footer") {
+				t.Error("expected HTML to contain footer")
+			}
+		})
+	}
+}
+
 func TestEmailService_SendEmail_ErrorWrapping(t *testing.T) {
 	cfg := &config.Config{
 		FrontendURL:     "http://localhost:5173",

@@ -14,12 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.revenuecat.purchases.Package
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
@@ -46,7 +45,10 @@ fun SubscriptionScreen(
                 title = { Text("Planes y Suscripcion") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atras")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 },
                 actions = {
@@ -98,8 +100,8 @@ fun SubscriptionScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    Icons.Default.Error,
-                                    contentDescription = null,
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = stringResource(DesignSystemR.string.cd_warning),
                                     tint = SolennixTheme.colors.error
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -429,10 +431,58 @@ fun PlanCard(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false
                 ) {
-                    Icon(Icons.Default.Check, contentDescription = null)
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = stringResource(DesignSystemR.string.cd_check)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Plan actual")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun FaqItem(
+    question: String,
+    answer: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded },
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = question,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = SolennixTheme.colors.primaryText,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = SolennixTheme.colors.secondaryText
+                )
+            }
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = answer,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SolennixTheme.colors.secondaryText
+                )
             }
         }
     }

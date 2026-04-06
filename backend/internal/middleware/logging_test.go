@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -40,6 +41,22 @@ func TestLogger(t *testing.T) {
 			t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
 		}
 	})
+}
+
+func TestLogger_GivenRequestWithRequestID_WhenLogged_ThenIncludesRequestID(t *testing.T) {
+	handler := Logger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	ctx := context.WithValue(req.Context(), RequestIDKey, "test-req-id-123")
+	req = req.WithContext(ctx)
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
 }
 
 func TestResponseWriterWriteHeader(t *testing.T) {

@@ -22,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.SkeletonLoading
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCardGrid
@@ -138,7 +140,10 @@ fun InventoryListScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 },
                 actions = {
@@ -147,7 +152,13 @@ fun InventoryListScreen(
                         onClick = { viewModel.onLowStockToggle(!uiState.lowStockOnly) },
                         label = { Text("Stock bajo") },
                         leadingIcon = if (uiState.lowStockOnly) {
-                            { Icon(Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    contentDescription = stringResource(DesignSystemR.string.cd_warning),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         } else null,
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = SolennixTheme.colors.error.copy(alpha = 0.1f),
@@ -164,7 +175,10 @@ fun InventoryListScreen(
                 containerColor = SolennixTheme.colors.primary,
                 contentColor = Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar item")
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = stringResource(DesignSystemR.string.cd_add)
+                )
             }
         },
         contentWindowInsets = WindowInsets(0)
@@ -184,7 +198,12 @@ fun InventoryListScreen(
                         .fillMaxWidth()
                         .padding(16.dp),
                     placeholder = { Text("Filtrar inventario por nombre...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = stringResource(DesignSystemR.string.cd_search)
+                        )
+                    },
                     shape = MaterialTheme.shapes.medium,
                     singleLine = true
                 )
@@ -198,8 +217,8 @@ fun InventoryListScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        Icons.Default.SortByAlpha,
-                        contentDescription = null,
+                        imageVector = Icons.Default.SortByAlpha,
+                        contentDescription = stringResource(DesignSystemR.string.cd_tune),
                         modifier = Modifier.size(16.dp),
                         tint = SolennixTheme.colors.secondaryText
                     )
@@ -218,8 +237,8 @@ fun InventoryListScreen(
                             trailingIcon = if (isSelected) {
                                 {
                                     Icon(
-                                        if (uiState.sortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                                        contentDescription = null,
+                                        imageVector = if (uiState.sortAscending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                        contentDescription = stringResource(DesignSystemR.string.cd_tune),
                                         modifier = Modifier.size(14.dp)
                                     )
                                 }
@@ -656,6 +675,47 @@ private fun InventoryGridCard(
             DropdownMenuItem(
                 text = { Text("Eliminar", color = SolennixTheme.colors.error) },
                 leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = SolennixTheme.colors.error) },
+                onClick = { showMenu = false; onDelete() }
+            )
+        }
+    }
+}
+                       imageVector = Icons.Default.Visibility,
+                        contentDescription = stringResource(DesignSystemR.string.cd_visibility)
+                    )
+                },
+                onClick = { showMenu = false; onClick() }
+            )
+            DropdownMenuItem(
+                text = { Text("Ajustar Stock") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = stringResource(DesignSystemR.string.cd_tune)
+                    )
+                },
+                onClick = { showMenu = false; onAdjust() }
+            )
+            DropdownMenuItem(
+                text = { Text("Editar") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(DesignSystemR.string.cd_edit)
+                    )
+                },
+                onClick = { showMenu = false; onEdit() }
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("Eliminar", color = SolennixTheme.colors.error) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(DesignSystemR.string.cd_delete),
+                        tint = SolennixTheme.colors.error
+                    )
+                },
                 onClick = { showMenu = false; onDelete() }
             )
         }

@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveDetailLayout
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
@@ -78,18 +80,24 @@ fun ProductDetailScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 },
                 actions = {
                     uiState.product?.let { product ->
                         IconButton(onClick = { onEditClick(product.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = stringResource(DesignSystemR.string.cd_edit)
+                            )
                         }
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(DesignSystemR.string.cd_delete),
                                 tint = SolennixTheme.colors.error
                             )
                         }
@@ -328,7 +336,12 @@ private fun KpiCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
+                Icon(
+                    icon,
+                    contentDescription = stringResource(DesignSystemR.string.cd_visibility),
+                    tint = iconColor,
+                    modifier = Modifier.size(16.dp)
+                )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = label,
@@ -389,7 +402,9 @@ private fun SmartAlertSection(
         ) {
             Icon(
                 imageVector = if (isHighDemand) Icons.Default.Warning else Icons.Default.CheckCircle,
-                contentDescription = null,
+                contentDescription = stringResource(
+                    if (isHighDemand) DesignSystemR.string.cd_warning else DesignSystemR.string.cd_check
+                ),
                 tint = if (isHighDemand) colors.primary else Color(0xFF4CAF50),
                 modifier = Modifier.size(24.dp)
             )
@@ -466,7 +481,12 @@ private fun InfoRow(
     colors: com.creapolis.solennix.core.designsystem.theme.SolennixColorScheme
 ) {
     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(20.dp))
+        Icon(
+            icon,
+            contentDescription = stringResource(DesignSystemR.string.cd_category),
+            tint = colors.primary,
+            modifier = Modifier.size(20.dp)
+        )
         Column {
             Text(text = label, style = MaterialTheme.typography.labelSmall, color = colors.secondaryText)
             Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = colors.primaryText)
@@ -503,7 +523,12 @@ private fun CompositionSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+                    Icon(
+                        icon,
+                        contentDescription = stringResource(DesignSystemR.string.cd_visibility),
+                        tint = iconColor,
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = title,

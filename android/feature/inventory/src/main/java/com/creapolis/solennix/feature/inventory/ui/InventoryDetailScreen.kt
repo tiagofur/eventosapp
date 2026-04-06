@@ -97,7 +97,10 @@ fun InventoryDetailScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 },
                 actions = {
@@ -108,13 +111,23 @@ fun InventoryDetailScreen(
                             }
                             showAdjustSheet = true
                         }) {
-                            Icon(Icons.Default.Tune, contentDescription = "Ajustar stock")
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = stringResource(DesignSystemR.string.cd_tune)
+                            )
                         }
                         IconButton(onClick = { onEditClick(item.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = stringResource(DesignSystemR.string.cd_edit)
+                            )
                         }
                         IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = SolennixTheme.colors.error)
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(DesignSystemR.string.cd_delete),
+                                tint = SolennixTheme.colors.error
+                            )
                         }
                     }
                 }
@@ -179,6 +192,7 @@ fun InventoryDetailScreen(
                                 valueColor = stockColor,
                                 extraLabel = if (uiState.isLowStock) "Bajo mínimo" else null,
                                 extraColor = colors.error,
+                                iconContentDescription = stringResource(DesignSystemR.string.cd_scale),
                                 modifier = Modifier.weight(1f)
                             )
                             InventoryKpiCard(
@@ -187,6 +201,7 @@ fun InventoryDetailScreen(
                                 label = "Stock Mínimo",
                                 value = "${item.minimumStock.let { if (it == it.toLong().toDouble()) it.toLong().toString() else "%.1f".format(it) }}",
                                 subtitle = item.unit,
+                                iconContentDescription = stringResource(DesignSystemR.string.cd_warning),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -197,6 +212,7 @@ fun InventoryDetailScreen(
                                 label = "Costo Unitario",
                                 value = item.unitCost?.asMXN() ?: "—",
                                 subtitle = "por ${item.unit}",
+                                iconContentDescription = stringResource(DesignSystemR.string.cd_savings),
                                 modifier = Modifier.weight(1f)
                             )
                             InventoryKpiCard(
@@ -205,6 +221,7 @@ fun InventoryDetailScreen(
                                 label = "Valor en Stock",
                                 value = if (item.unitCost != null) uiState.stockValue.asMXN() else "—",
                                 subtitle = "valor total",
+                                iconContentDescription = stringResource(DesignSystemR.string.cd_visibility),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -256,7 +273,11 @@ fun InventoryDetailScreen(
                                 contentColor = colors.primary
                             )
                         ) {
-                            Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                imageVector = Icons.Default.Tune,
+                                contentDescription = stringResource(DesignSystemR.string.cd_tune),
+                                modifier = Modifier.size(18.dp)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Ajustar Stock", fontWeight = FontWeight.SemiBold)
                         }
@@ -279,7 +300,8 @@ private fun InventoryKpiCard(
     modifier: Modifier = Modifier,
     valueColor: Color = SolennixTheme.colors.primaryText,
     extraLabel: String? = null,
-    extraColor: Color = SolennixTheme.colors.error
+    extraColor: Color = SolennixTheme.colors.error,
+    iconContentDescription: String? = null
 ) {
     Card(
         modifier = modifier,
@@ -289,16 +311,26 @@ private fun InventoryKpiCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = iconContentDescription,
+                    tint = iconColor,
+                    modifier = Modifier.size(16.dp)
+                )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(label, style = MaterialTheme.typography.labelSmall, color = SolennixTheme.colors.secondaryText)
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(6.6.dp))
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = valueColor, maxLines = 1)
             Text(subtitle, style = MaterialTheme.typography.labelSmall, color = SolennixTheme.colors.secondaryText)
             if (extraLabel != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = extraColor, modifier = Modifier.size(12.dp))
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = stringResource(DesignSystemR.string.cd_warning),
+                        tint = extraColor,
+                        modifier = Modifier.size(12.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(extraLabel, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = extraColor)
                 }
@@ -336,7 +368,12 @@ private fun SmartStockAlert(
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(icon as ImageVector, contentDescription = null, tint = iconColor as Color, modifier = Modifier.size(24.dp))
+            Icon(
+                imageVector = icon as ImageVector,
+                contentDescription = if (icon == Icons.Default.Warning) stringResource(DesignSystemR.string.cd_warning) else stringResource(DesignSystemR.string.cd_check),
+                tint = iconColor as Color,
+                modifier = Modifier.size(24.dp)
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = when {

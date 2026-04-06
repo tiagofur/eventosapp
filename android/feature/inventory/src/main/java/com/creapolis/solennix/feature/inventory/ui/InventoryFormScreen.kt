@@ -13,7 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.creapolis.solennix.core.data.plan.LimitCheckResult
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.PremiumButton
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
@@ -47,7 +49,10 @@ fun InventoryFormScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 }
             )
@@ -162,7 +167,12 @@ fun InventoryFormScreen(
                                             .fillMaxWidth()
                                             .menuAnchor(MenuAnchorType.PrimaryEditable),
                                         label = { Text("Unidad *") },
-                                        leadingIcon = { Icon(Icons.Default.Scale, contentDescription = null) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Scale,
+                                                contentDescription = stringResource(DesignSystemR.string.cd_scale)
+                                            )
+                                        },
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) },
                                         shape = MaterialTheme.shapes.small,
                                         colors = OutlinedTextFieldDefaults.colors(

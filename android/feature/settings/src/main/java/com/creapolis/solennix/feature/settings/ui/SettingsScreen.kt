@@ -14,10 +14,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.Avatar
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
@@ -65,7 +67,10 @@ fun SettingsScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 }
             )
@@ -223,7 +228,11 @@ fun LogoutItem(onClick: () -> Unit) {
             Text("Cerrar Sesión", color = SolennixTheme.colors.error)
         },
         leadingContent = {
-            Icon(Icons.Default.Logout, contentDescription = null, tint = SolennixTheme.colors.error)
+            Icon(
+                imageVector = Icons.Default.Logout,
+                contentDescription = stringResource(DesignSystemR.string.cd_logout),
+                tint = SolennixTheme.colors.error
+            )
         },
         modifier = Modifier.clickable(onClick = onClick)
     )

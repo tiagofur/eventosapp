@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.creapolis.solennix.core.designsystem.R as DesignSystemR
 import com.creapolis.solennix.core.designsystem.component.*
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveDetailLayout
@@ -111,16 +113,26 @@ fun EventDetailScreen(
                 onSearchClick = onSearchClick,
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(DesignSystemR.string.cd_back)
+                        )
                     }
                 },
                 actions = {
                     uiState.event?.let { event ->
                         IconButton(onClick = { onEditClick(event.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit")
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = stringResource(DesignSystemR.string.cd_edit)
+                            )
                         }
                         IconButton(onClick = { showDeleteDialog = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = SolennixTheme.colors.error)
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(DesignSystemR.string.cd_delete),
+                                tint = SolennixTheme.colors.error
+                            )
                         }
                     }
                 }
@@ -231,7 +243,11 @@ fun EventDetailScreen(
                                                 modifier = Modifier.weight(1f),
                                                 shape = MaterialTheme.shapes.medium
                                             ) {
-                                                Icon(Icons.Default.Savings, contentDescription = null, modifier = Modifier.size(18.dp))
+                                                Icon(
+                                                    imageVector = Icons.Default.Savings,
+                                                    contentDescription = stringResource(DesignSystemR.string.cd_savings),
+                                                    modifier = Modifier.size(18.dp)
+                                                )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text("Anticipo")
                                             }
@@ -2106,7 +2122,12 @@ private fun SummaryNavCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title, // Use title as description for nav cards
+                    tint = color,
+                    modifier = Modifier.size(20.dp)
+                )
                 Spacer(modifier = Modifier.weight(1f))
                 if (count != null && count > 0) {
                     Surface(
@@ -2138,8 +2159,8 @@ private fun SummaryNavCard(
                 )
             } else {
                 Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null,
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = stringResource(DesignSystemR.string.cd_visibility),
                     tint = SolennixTheme.colors.secondaryText,
                     modifier = Modifier.size(16.dp)
                 )

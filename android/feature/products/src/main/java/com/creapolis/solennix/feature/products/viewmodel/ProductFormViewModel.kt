@@ -255,9 +255,14 @@ class ProductFormViewModel @Inject constructor(
                 inputStream?.close()
 
                 if (bytes != null) {
+                    // Compress image in a background thread
+                    val compressedBytes = withContext(Dispatchers.Default) {
+                        ImageCompressor.compress(bytes)
+                    }
+
                     val response = apiService.upload(
                         Endpoints.UPLOAD_IMAGE,
-                        bytes,
+                        compressedBytes,
                         fileName,
                         mimeType
                     )

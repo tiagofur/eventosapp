@@ -38,12 +38,6 @@ export default defineConfig({
       ],
     },
     testTimeout: 15000,
-    pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: false,
-      },
-    },
     teardownTimeout: 30000,
   },
   resolve: {

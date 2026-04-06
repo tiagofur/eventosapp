@@ -52,6 +52,9 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.paging.common)
 
+    // ExifInterface
+    implementation(libs.androidx.exifinterface)
+
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

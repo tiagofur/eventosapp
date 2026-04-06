@@ -654,3 +654,124 @@ func (m *MockStripeService) GetSubscription(id string, params *stripe.Subscripti
 	}
 	return args.Get(0).(*stripe.Subscription), args.Error(1)
 }
+
+// ---------------------------------------------------------------------------
+// MockAuditRepo — implements AuditRepository
+// ---------------------------------------------------------------------------
+
+type MockAuditRepo struct {
+	mock.Mock
+}
+
+func (m *MockAuditRepo) Create(ctx context.Context, log *models.AuditLog) error {
+	args := m.Called(ctx, log)
+	return args.Error(0)
+}
+
+func (m *MockAuditRepo) GetByUser(ctx context.Context, userID uuid.UUID, offset, limit int) ([]models.AuditLog, int, error) {
+	args := m.Called(ctx, userID, offset, limit)
+	if args.Get(0) == nil {
+		return nil, args.Int(1), args.Error(2)
+	}
+	return args.Get(0).([]models.AuditLog), args.Int(1), args.Error(2)
+}
+
+func (m *MockAuditRepo) GetByResource(ctx context.Context, userID uuid.UUID, resourceType string, resourceID uuid.UUID) ([]models.AuditLog, error) {
+	args := m.Called(ctx, userID, resourceType, resourceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.AuditLog), args.Error(1)
+}
+
+func (m *MockAuditRepo) GetAll(ctx context.Context, offset, limit int) ([]models.AuditLog, int, error) {
+	args := m.Called(ctx, offset, limit)
+	if args.Get(0) == nil {
+		return nil, args.Int(1), args.Error(2)
+	}
+	return args.Get(0).([]models.AuditLog), args.Int(1), args.Error(2)
+}
+
+// ---------------------------------------------------------------------------
+// MockDashboardRepo — implements DashboardRepository
+// ---------------------------------------------------------------------------
+
+type MockDashboardRepo struct {
+	mock.Mock
+}
+
+func (m *MockDashboardRepo) GetKPIs(ctx context.Context, userID uuid.UUID) (*repository.DashboardKPIs, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*repository.DashboardKPIs), args.Error(1)
+}
+
+func (m *MockDashboardRepo) GetRevenueChart(ctx context.Context, userID uuid.UUID, period string) ([]repository.RevenueDataPoint, error) {
+	args := m.Called(ctx, userID, period)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.RevenueDataPoint), args.Error(1)
+}
+
+func (m *MockDashboardRepo) GetEventsByStatus(ctx context.Context, userID uuid.UUID) ([]repository.EventStatusCount, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.EventStatusCount), args.Error(1)
+}
+
+func (m *MockDashboardRepo) GetTopClients(ctx context.Context, userID uuid.UUID, limit int) ([]repository.TopClient, error) {
+	args := m.Called(ctx, userID, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.TopClient), args.Error(1)
+}
+
+func (m *MockDashboardRepo) GetProductDemand(ctx context.Context, userID uuid.UUID) ([]repository.ProductDemandItem, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.ProductDemandItem), args.Error(1)
+}
+
+func (m *MockDashboardRepo) GetForecast(ctx context.Context, userID uuid.UUID) ([]repository.ForecastDataPoint, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.ForecastDataPoint), args.Error(1)
+}
+
+// ---------------------------------------------------------------------------
+// MockRefreshTokenRepo — implements RefreshTokenRepository
+// ---------------------------------------------------------------------------
+
+type MockRefreshTokenRepo struct {
+	mock.Mock
+}
+
+func (m *MockRefreshTokenRepo) Store(ctx context.Context, userID, familyID uuid.UUID, tokenHash string, expiresAt time.Time) error {
+	args := m.Called(ctx, userID, familyID, tokenHash, expiresAt)
+	return args.Error(0)
+}
+
+func (m *MockRefreshTokenRepo) Consume(ctx context.Context, tokenHash string) (uuid.UUID, uuid.UUID, error) {
+	args := m.Called(ctx, tokenHash)
+	return args.Get(0).(uuid.UUID), args.Get(1).(uuid.UUID), args.Error(2)
+}
+
+func (m *MockRefreshTokenRepo) RevokeFamily(ctx context.Context, familyID uuid.UUID) error {
+	args := m.Called(ctx, familyID)
+	return args.Error(0)
+}
+
+func (m *MockRefreshTokenRepo) RevokeAllForUser(ctx context.Context, userID uuid.UUID) error {
+	args := m.Called(ctx, userID)
+	return args.Error(0)
+}
