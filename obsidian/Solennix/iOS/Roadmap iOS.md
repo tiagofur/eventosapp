@@ -112,10 +112,11 @@
 
 ### 1.4 Caché Completo
 
-- [ ] Agregar `CachedInventoryItem` a SwiftData
-- [ ] Agregar `CachedPayment` a SwiftData
+- [x] Agregar `CachedInventoryItem` a SwiftData — ✅ 2026-04-05
+- [x] Agregar `CachedPayment` a SwiftData — ✅ 2026-04-05
 - [ ] Implementar invalidación de caché por timestamp
-- [ ] Mostrar indicador "datos cacheados" en UI
+- [x] Mostrar indicador "datos cacheados" en UI — ✅ 2026-04-05 (CachedDataBanner en 4 vistas)
+- [x] Cache-first loading en ViewModels — ✅ 2026-04-05 (Client, Event, Product, Inventory)
 
 **Por qué**: Solo Client, Event y Product se cachean. Faltan Inventory y Payment.
 
