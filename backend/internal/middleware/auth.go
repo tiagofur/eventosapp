@@ -8,15 +8,46 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tiagofur/solennix-backend/internal/services"
 )
 
-// AccessTokenBlacklist stores SHA-256 hashes of revoked access tokens (e.g., on logout).
-// Key: hex-encoded SHA-256 hash, Value: token expiry time (for cleanup).
-// Used by handlers to blacklist tokens and by Auth middleware to reject them.
-var AccessTokenBlacklist sync.Map
+// TokenBlacklist checks whether a token hash has been revoked.
+type TokenBlacklist interface {
+	IsRevoked(ctx context.Context, tokenHash string) bool
+	Revoke(ctx context.Context, tokenHash string, expiresAt time.Time) error
+}
+
+// tokenBlacklistInstance holds the active blacklist implementation.
+// Set via SetTokenBlacklist; defaults to in-memory fallback.
+var tokenBlacklistInstance TokenBlacklist = &inMemoryBlacklist{}
+
+// SetTokenBlacklist configures the persistent token blacklist (call from main).
+func SetTokenBlacklist(bl TokenBlacklist) {
+	tokenBlacklistInstance = bl
+}
+
+// GetTokenBlacklist returns the active blacklist (used by handlers to revoke tokens).
+func GetTokenBlacklist() TokenBlacklist {
+	return tokenBlacklistInstance
+}
+
+// inMemoryBlacklist is a fallback using sync.Map (lost on restart).
+type inMemoryBlacklist struct {
+	m sync.Map
+}
+
+func (b *inMemoryBlacklist) IsRevoked(_ context.Context, tokenHash string) bool {
+	_, found := b.m.Load(tokenHash)
+	return found
+}
+
+func (b *inMemoryBlacklist) Revoke(_ context.Context, tokenHash string, expiresAt time.Time) error {
+	b.m.Store(tokenHash, expiresAt)
+	return nil
+}
 
 type contextKey string
 
@@ -54,7 +85,7 @@ func Auth(authService *services.AuthService) func(http.Handler) http.Handler {
 
 			// Check if token has been revoked (e.g., by logout)
 			tokenHash := sha256Hex(token)
-			if _, revoked := AccessTokenBlacklist.Load(tokenHash); revoked {
+			if tokenBlacklistInstance.IsRevoked(r.Context(), tokenHash) {
 				writeAuthError(w, http.StatusUnauthorized, "Token has been revoked")
 				return
 			}

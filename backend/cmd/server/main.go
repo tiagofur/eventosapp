@@ -76,6 +76,10 @@ func main() {
 	subscriptionRepo := repository.NewSubscriptionRepo(pool)
 	unavailRepo := repository.NewUnavailableDateRepo(pool)
 	deviceRepo := repository.NewDeviceRepo(pool)
+	revokedTokenRepo := repository.NewRevokedTokenRepo(pool)
+
+	// Set persistent token blacklist (replaces in-memory sync.Map)
+	mw.SetTokenBlacklist(revokedTokenRepo)
 
 	// Initialize notification service
 	notificationService := services.NewNotificationService(pushService, deviceRepo, pool)
@@ -125,6 +129,25 @@ func main() {
 		defer ticker.Stop()
 		for range ticker.C {
 			notificationService.ProcessPendingReminders(context.Background())
+		}
+	}()
+
+	// Background job: clean expired revoked tokens.
+	// Runs once at startup then every hour.
+	go func() {
+		cleanup := func() {
+			count, err := revokedTokenRepo.CleanupExpired(context.Background())
+			if err != nil {
+				slog.Error("Failed to cleanup expired tokens", "error", err)
+			} else if count > 0 {
+				slog.Info("Cleaned up expired revoked tokens", "count", count)
+			}
+		}
+		cleanup()
+		ticker := time.NewTicker(1 * time.Hour)
+		defer ticker.Stop()
+		for range ticker.C {
+			cleanup()
 		}
 	}()
 

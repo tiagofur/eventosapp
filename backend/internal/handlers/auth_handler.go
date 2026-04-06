@@ -47,32 +47,8 @@ func clientIP(r *http.Request) string {
 // with non-existent emails, preventing user enumeration via timing side-channels.
 var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("dummy-timing-normalization"), bcrypt.DefaultCost)
 
-// resetTokenBlacklist stores SHA-256 hashes of used password reset tokens.
-// Key: hex-encoded SHA-256 hash, Value: token expiry time (for cleanup).
-var resetTokenBlacklist sync.Map
-
-func init() {
-	// Periodically clean expired entries from both token blacklists
-	go func() {
-		ticker := time.NewTicker(10 * time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
-			now := time.Now()
-			resetTokenBlacklist.Range(func(key, value any) bool {
-				if expiry, ok := value.(time.Time); ok && now.After(expiry) {
-					resetTokenBlacklist.Delete(key)
-				}
-				return true
-			})
-			middleware.AccessTokenBlacklist.Range(func(key, value any) bool {
-				if expiry, ok := value.(time.Time); ok && now.After(expiry) {
-					middleware.AccessTokenBlacklist.Delete(key)
-				}
-				return true
-			})
-		}
-	}()
-}
+// Note: Token blacklist cleanup is now handled by the persistent RevokedTokenRepo
+// via a background job in main.go. The in-memory init() goroutine is no longer needed.
 
 // hashToken returns the hex-encoded SHA-256 hash of a token string.
 func hashToken(token string) string {
@@ -82,13 +58,12 @@ func hashToken(token string) string {
 
 // isResetTokenBlacklisted checks if a reset token has already been used.
 func isResetTokenBlacklisted(token string) bool {
-	_, found := resetTokenBlacklist.Load(hashToken(token))
-	return found
+	return middleware.GetTokenBlacklist().IsRevoked(context.Background(), hashToken(token))
 }
 
 // blacklistResetToken adds a reset token to the blacklist with its expiry time.
 func blacklistResetToken(token string, expiry time.Time) {
-	resetTokenBlacklist.Store(hashToken(token), expiry)
+	_ = middleware.GetTokenBlacklist().Revoke(context.Background(), hashToken(token), expiry)
 }
 
 // validatePasswordStrength checks that a password meets minimum complexity requirements:
@@ -402,7 +377,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 			if claims.ExpiresAt != nil {
 				expiry = claims.ExpiresAt.Time
 			}
-			middleware.AccessTokenBlacklist.Store(hashToken(token), expiry)
+			_ = middleware.GetTokenBlacklist().Revoke(context.Background(), hashToken(token), expiry)
 		}
 	}
 
