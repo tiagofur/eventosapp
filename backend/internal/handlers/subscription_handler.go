@@ -23,13 +23,19 @@ import (
 // web (Stripe) and mobile (Apple/Google via RevenueCat).
 // Also handles event payment webhooks.
 type SubscriptionHandler struct {
-	userRepo  UserRepository
-	subRepo   SubscriptionRepository
-	eventRepo EventRepository
-	paymentRepo PaymentRepository
-	stripe    StripeService
-	rcService *services.RevenueCatService
-	cfg       *config.Config
+	userRepo     UserRepository
+	subRepo      SubscriptionRepository
+	eventRepo    EventRepository
+	paymentRepo  PaymentRepository
+	stripe       StripeService
+	rcService    *services.RevenueCatService
+	emailService *services.EmailService // optional
+	cfg          *config.Config
+}
+
+// SetEmailService configures an optional email service for subscription notifications.
+func (h *SubscriptionHandler) SetEmailService(e *services.EmailService) {
+	h.emailService = e
 }
 
 func NewSubscriptionHandler(
@@ -217,6 +223,15 @@ func (h *SubscriptionHandler) StripeWebhook(w http.ResponseWriter, r *http.Reque
 				slog.Error("Failed to update user plan after checkout", "error", err)
 			} else {
 				slog.Info("User upgraded to pro via Stripe checkout", "user_id", userID)
+
+				// Send subscription confirmation email (fire-and-forget)
+				if h.emailService != nil {
+					go func() {
+						if user, err := h.userRepo.GetByID(context.Background(), userID); err == nil {
+							_ = h.emailService.SendSubscriptionConfirmation(user.Email, user.Name, "Pro")
+						}
+					}()
+				}
 
 				// Sync to RevenueCat so mobile apps see the entitlement
 				if h.rcService != nil {

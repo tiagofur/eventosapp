@@ -15,6 +15,7 @@ import (
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
 	"github.com/tiagofur/solennix-backend/internal/repository"
+	"github.com/tiagofur/solennix-backend/internal/services"
 )
 
 // NotificationSender is an optional interface for sending push notifications.
@@ -32,7 +33,8 @@ type CRUDHandler struct {
 	paymentRepo   FullPaymentRepository
 	userRepo      FullUserRepository
 	unavailRepo   UnavailableDateRepository
-	notifier      NotificationSender // optional, may be nil
+	notifier      NotificationSender      // optional, may be nil
+	emailService  *services.EmailService   // optional, may be nil
 }
 
 func NewCRUDHandler(
@@ -58,6 +60,11 @@ func NewCRUDHandler(
 // SetNotifier configures an optional push notification sender.
 func (h *CRUDHandler) SetNotifier(n NotificationSender) {
 	h.notifier = n
+}
+
+// SetEmailService configures an optional email service.
+func (h *CRUDHandler) SetEmailService(e *services.EmailService) {
+	h.emailService = e
 }
 
 // ===================
@@ -1521,6 +1528,25 @@ func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	if h.notifier != nil {
 		go func() {
 			_ = h.notifier.SendPaymentReceived(context.Background(), userID, payment.EventID, payment.Amount)
+		}()
+	}
+
+	// Send payment receipt email (fire-and-forget)
+	if h.emailService != nil {
+		go func() {
+			user, err := h.userRepo.GetByID(context.Background(), userID)
+			if err != nil {
+				return
+			}
+			eventName := "Evento"
+			if event, err := h.eventRepo.GetByID(context.Background(), payment.EventID, userID); err == nil {
+				eventName = event.ServiceType
+			}
+			_ = h.emailService.SendPaymentReceipt(
+				user.Email, user.Name, eventName,
+				fmt.Sprintf("$%.2f MXN", payment.Amount),
+				payment.PaymentDate,
+			)
 		}()
 	}
 

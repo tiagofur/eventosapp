@@ -217,6 +217,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Send welcome email (fire-and-forget)
+	if h.emailService != nil {
+		go func() {
+			if err := h.emailService.SendWelcome(user.Email, user.Name); err != nil {
+				slog.Warn("Failed to send welcome email", "email", user.Email, "error", err)
+			}
+		}()
+	}
+
 	// Generate tokens
 	tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
 	if err != nil {
