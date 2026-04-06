@@ -340,11 +340,11 @@ gantt
 > [!tip] Victorias rápidas
 
 - [x] `.accessibilityLabel()` en todos los `Image(systemName:)` de navegación — ✅ 2026-04-05 (14 instancias en 7 vistas)
-- [ ] Verificar contraste WCAG de StatusBadge en dark mode
+- [x] Verificar contraste WCAG de StatusBadge en dark mode — ✅ 2026-04-05 (dark mode OK, light mode corregido: Quoted #B45309, Confirmed #0055CC, Cancelled #CC2929)
 - [x] `@Environment(\.accessibilityReduceMotion)` en animaciones existentes — ✅ 2026-04-05 (7 vistas, 13 animaciones)
 - [x] `.refreshable` en todas las listas (pull-to-refresh) — ✅ Ya implementado (11 vistas)
 - [x] `.searchable(placement: .toolbar)` consistente en todas las listas — ✅ Listas principales usan InlineFilterBar (intencional), forms usan .searchable
-- [ ] Agregar `.sensoryFeedback()` (iOS 17) en acciones de save/delete
+- [x] Agregar `.sensoryFeedback()` (iOS 17) en acciones de save/delete — ✅ 2026-04-05 (HapticsHelper.play(.warning) en delete triggers de Product e Inventory, paridad con Client)
 - [x] Verificar Privacy Manifest tiene todas las declaraciones — ✅ 2026-04-05 (UserDefaults + FileTimestamp correctos, Keychain/CoreSpotlight/NWPathMonitor no requieren Required Reason API)
 
 ---
