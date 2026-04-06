@@ -18,8 +18,8 @@
 | Equipment/supply suggestions | ✅ | ✅ | ✅ | ✅ | — |
 | Stripe subscriptions (web) | ✅ | ✅ | — | — | — |
 | RevenueCat (mobile) | ✅ | — | ✅ | ✅ | — |
-| Push notifications | ⚠️ Registro | ⚠️ Stub | ⚠️ Stub | ⚠️ Stub | **P0** |
-| Paginación | ❌ | ✅ (client) | ✅ (client) | ✅ (Room) | **P0** |
+| Push notifications | ✅ FCM+APNs | ✅ FCM | ✅ APNs | ✅ FCM | — |
+| Paginación | ✅ Server | ✅ Server | ✅ Server | ✅ Server | — |
 | Email transaccional | ⚠️ Solo reset | ✅ | ✅ | ✅ | **P1** |
 | File storage | ⚠️ Local | ✅ | ✅ | ✅ | **P1** |
 | Dashboard analytics | ⚠️ Básico | ✅ KPIs | ✅ KPIs | ✅ KPIs | **P1** |
@@ -34,38 +34,38 @@
 > [!success] Impacto: Crítico | Esfuerzo: Medio
 > Sin esto, la plataforma NO está lista para usuarios en producción.
 
-### 0.1 Push Notifications (Envío Activo)
+### 0.1 Push Notifications (Envío Activo) ✅
 
-- [ ] Integrar FCM (Firebase Cloud Messaging) para Android + Web
-- [ ] Integrar APNs (Apple Push Notification service) para iOS
-- [ ] Crear `services/push_service.go` con envío por plataforma
-- [ ] Crear `services/notification_service.go` con templates de notificación
-- [ ] Notificaciones de evento próximo (24h, 1h antes)
-- [ ] Notificaciones de pago pendiente
+- [x] Integrar FCM (Firebase Cloud Messaging) para Android + Web
+- [x] Integrar APNs (Apple Push Notification service) para iOS
+- [x] Crear `services/push_service.go` con envío por plataforma
+- [x] Crear `services/notification_service.go` con templates de notificación
+- [x] Notificaciones de evento próximo (24h, 1h antes)
+- [x] Notificaciones de pago pendiente
 - [ ] Notificaciones de cotización sin confirmar
-- [ ] Batch sending (no una por una)
-- [ ] Manejo de tokens inválidos (limpieza automática)
+- [x] Batch sending (no una por una)
+- [x] Manejo de tokens inválidos (limpieza automática)
 
 **Por qué**: Device tokens se registran pero NADA se envía. El frontend iOS/Android/Web tienen stubs esperando esto. Es la brecha P1 más crítica. Ver [[Roadmap iOS]] Fase 2.1 y [[Roadmap Android]] Fase 2.1.
 
-### 0.2 Paginación Server-Side
+### 0.2 Paginación Server-Side ✅
 
-- [ ] Agregar `?page=1&limit=20&sort=created_at&order=desc` a todos los list endpoints
-- [ ] `GET /api/events?page=1&limit=20`
-- [ ] `GET /api/clients?page=1&limit=20`
-- [ ] `GET /api/products?page=1&limit=20`
-- [ ] `GET /api/inventory?page=1&limit=20`
-- [ ] `GET /api/payments?page=1&limit=20`
-- [ ] Response: `{ data: [], total: N, page: 1, limit: 20, total_pages: N }`
+- [x] Agregar `?page=1&limit=20&sort=created_at&order=desc` a todos los list endpoints
+- [x] `GET /api/events?page=1&limit=20`
+- [x] `GET /api/clients?page=1&limit=20`
+- [x] `GET /api/products?page=1&limit=20`
+- [x] `GET /api/inventory?page=1&limit=20`
+- [x] `GET /api/payments?page=1&limit=20`
+- [x] Response: `{ data: [], total: N, page: 1, limit: 20, total_pages: N }`
 - [ ] Cursor-based pagination como alternativa para eventos (por fecha)
 
 **Por qué**: Sin paginación, `GET /api/events` retorna TODOS los eventos. Con cientos de eventos, las respuestas serán enormes. El frontend ya maneja paginación client-side, pero la carga inicial crece con el tiempo.
 
-### 0.3 Password Validation en Backend
+### 0.3 Password Validation en Backend ✅ (ya existía)
 
-- [ ] Validar mínimo 8 caracteres en registro
-- [ ] Validar complejidad (al menos 1 mayúscula, 1 número)
-- [ ] Retornar error descriptivo
+- [x] Validar mínimo 8 caracteres en registro
+- [x] Validar complejidad (al menos 1 mayúscula, 1 número)
+- [x] Retornar error descriptivo
 
 **Por qué**: Seguridad básica. Actualmente solo el frontend valida. Un API client directo puede registrar passwords de 1 carácter.
 
@@ -288,11 +288,11 @@ gantt
 
 > [!tip] Victorias rápidas para hacer ya
 
-- [ ] Agregar `?page=1&limit=20` básico en `GET /api/events`
-- [ ] Validar password length >= 8 en `POST /api/auth/register`
-- [ ] Agregar índice `idx_events_user_date` en events
-- [ ] Agregar `GET /api/health` que verifique DB connection (no solo HTTP)
-- [ ] Agregar `X-Request-ID` header para tracing
+- [x] Agregar `?page=1&limit=20` básico en `GET /api/events`
+- [x] Validar password length >= 8 en `POST /api/auth/register`
+- [x] Agregar índice `idx_events_user_date` en events
+- [x] Agregar `GET /api/health` que verifique DB connection (no solo HTTP)
+- [x] Agregar `X-Request-ID` header para tracing
 - [ ] Rate limiting en `POST /api/auth/register` separado de login
 - [ ] Agregar `Content-Type` validation en upload handler
 - [ ] Log user_id en todas las requests autenticadas (ya está en context)
@@ -306,8 +306,8 @@ gantt
 
 | Feature | Frontend necesita | Backend estado | Esfuerzo |
 |---------|-------------------|----------------|----------|
-| **Paginación** | `?page&limit` en todos los list | ❌ No existe | 2-3 días |
-| **Push notifications** | Envío real de notificaciones | ⚠️ Solo registro | 4-5 días |
+| **Paginación** | `?page&limit` en todos los list | ✅ Implementado | — |
+| **Push notifications** | Envío real de notificaciones | ✅ FCM + APNs | — |
 | **Dashboard KPIs** | Server-side aggregation | ❌ Solo datos raw | 3-4 días |
 | **Plantillas de evento** | CRUD de templates | ❌ No existe | 3-4 días |
 | **Portal de cliente** | Endpoints públicos con token | ❌ No existe | 5-6 días |

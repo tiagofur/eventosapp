@@ -29,7 +29,7 @@ status: active
 
 | Plataforma | Estado | Notas |
 |------------|--------|-------|
-| Backend (Go) | Funcional ✅ | API completa, 29 migraciones, auth multi-proveedor, Stripe, RevenueCat + sync bidireccional |
+| Backend (Go) | Funcional ✅ | API completa, 31 migraciones, auth multi-proveedor, Stripe, RevenueCat, push notifications (FCM+APNs), paginacion server-side |
 | Web (React) | Funcional ✅ | Todas las paginas principales, panel admin, cotizacion rapida |
 | iOS (SwiftUI) | En desarrollo 🔄 | Features principales + widgets (4 tipos) + Live Activity + 7 generadores PDF |
 | Android (Jetpack Compose) | En desarrollo 🔄 | Features principales, arquitectura modular multi-feature, 8 generadores PDF, RevenueCat billing |
@@ -62,7 +62,6 @@ status: active
 - ✅ Deteccion de conflictos de equipamiento (`GET/POST /api/events/equipment/conflicts`)
 - ✅ Sugerencias de equipamiento (`GET/POST /api/events/equipment/suggestions`)
 - ✅ Sugerencias de suministros (`GET/POST /api/events/supplies/suggestions`)
-- ✅ Pago de eventos via Stripe (`POST /api/events/{id}/checkout-session`)
 
 ### Clientes
 - ✅ CRUD completo (`GET/POST /api/clients`, `GET/PUT/DELETE /api/clients/{id}`)
@@ -107,16 +106,34 @@ status: active
 ### Fechas No Disponibles
 - ✅ CRUD (`GET/POST /api/unavailable-dates`, `DELETE /api/unavailable-dates/{id}`)
 
+### Paginacion Server-Side
+- ✅ Paginacion en todos los list endpoints (`?page=1&limit=20&sort=col&order=desc`)
+- ✅ Response envelope: `{ data, total, page, limit, total_pages }`
+- ✅ Backward compatible: sin `page` param retorna array plano
+- ✅ Sort allowlist por entidad para prevenir SQL injection
+- ✅ Indices compuestos para rendimiento (migracion 030)
+
+### Push Notifications
+- ✅ PushService con FCM (firebase-admin-go) + APNs (sideshow/apns2)
+- ✅ NotificationService: recordatorios de evento (24h, 1h), pago recibido, evento confirmado
+- ✅ Background job cada 15 minutos para recordatorios
+- ✅ Tabla notification_log para deduplicacion (migracion 031)
+- ✅ Limpieza automatica de tokens invalidos
+
 ### Middleware
 - ✅ Recovery (panic recovery)
+- ✅ X-Request-ID (tracing de requests)
 - ✅ CORS (origenes configurables)
 - ✅ Security Headers (X-Frame-Options, CSP, HSTS, etc.)
-- ✅ Logger
+- ✅ Logger (incluye request ID)
 - ✅ Auth (JWT middleware)
 - ✅ AdminOnly (verificacion de rol)
 - ✅ Rate Limiting (configurable por grupo de rutas)
 
-### Migraciones (29 total)
+### Health Check
+- ✅ `/health` verifica conectividad a PostgreSQL via pool.Ping()
+
+### Migraciones (31 total)
 - ✅ 001: Tabla de usuarios
 - ✅ 002: Tabla de clientes
 - ✅ 003: Tabla de eventos
@@ -140,15 +157,18 @@ status: active
 - ✅ 025: IDs OAuth de usuario
 - ✅ 026: Device tokens
 - ✅ 027-029: Migraciones adicionales
+- ✅ 030: Indices de paginacion y rendimiento
+- ✅ 031: Tabla notification_log para deduplicacion de push
 
 ### Pendiente Backend
 
-> [!danger] Brechas criticas del backend
-> Push notifications y notificaciones email son P1. Device tokens se almacenan pero no se envian notificaciones.
+> [!warning] Brechas restantes del backend
 
-- ⬜ Push notifications (device tokens almacenados pero sin envio implementado)
-- ⬜ Notificaciones por email (solo reset de contrasena implementado)
+- ⬜ Notificaciones por email (solo reset de contrasena implementado — falta welcome, reminder, receipt)
 - ⬜ Verificacion de recibos de App Store / Play Store
+- ⬜ Notificacion de cotizacion sin confirmar
+- ⬜ File storage migration (S3/Cloud Storage)
+- ⬜ Token blacklist persistente (actualmente in-memory)
 
 ---
 
@@ -627,7 +647,6 @@ status: active
 |---------|-----|---------|-----|---------|-------|
 | Registro de pagos en evento | ✅ | ✅ | ✅ | ✅ | iOS/Android: sub-pantalla de pagos con historial y modal de registro |
 | Historial de pagos por evento | ✅ | ✅ | ✅ | ✅ | Con KPIs (Total, Pagado, Saldo) y barra de progreso |
-| Pago de evento (Stripe checkout) | ⬜ | ⬜ | ✅ | ✅ | Solo web tiene checkout Stripe directo |
 
 ### PDFs
 
