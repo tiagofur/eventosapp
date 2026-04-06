@@ -218,6 +218,37 @@ public final class ClientListViewModel {
         }
     }
 
+    /// Remove the client from the local list immediately (for undo pattern).
+    /// Returns the removed client and its index for restoration.
+    @MainActor
+    public func softDeleteClient(_ client: Client) -> (client: Client, index: Int)? {
+        guard let index = clients.firstIndex(where: { $0.id == client.id }) else { return nil }
+        let removed = clients.remove(at: index)
+        applyFilters()
+        return (removed, index)
+    }
+
+    /// Restore a previously soft-deleted client.
+    @MainActor
+    public func restoreClient(_ client: Client, at index: Int) {
+        let safeIndex = min(index, clients.count)
+        clients.insert(client, at: safeIndex)
+        applyFilters()
+    }
+
+    /// Permanently delete a client via API (called after undo grace period).
+    @MainActor
+    public func confirmDeleteClient(_ client: Client) async {
+        do {
+            try await apiClient.delete(Endpoint.client(client.id))
+        } catch {
+            // Restore on failure
+            clients.append(client)
+            applyFilters()
+            errorMessage = mapError(error)
+        }
+    }
+
     // MARK: - Filtering & Sorting
 
     public func applyFilters() {

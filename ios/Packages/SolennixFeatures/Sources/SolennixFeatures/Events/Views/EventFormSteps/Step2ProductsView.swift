@@ -66,6 +66,19 @@ struct Step2ProductsView: View {
                     LazyVGrid(columns: columns, spacing: Spacing.md) {
                         ForEach(Array(viewModel.selectedProducts.enumerated()), id: \.element.id) { index, item in
                             productRow(item: item, index: index)
+                                .draggable(item.id.uuidString) {
+                                    // Drag preview
+                                    Text(item.product?.name ?? "Producto")
+                                        .padding(Spacing.sm)
+                                        .background(SolennixColors.card)
+                                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                                }
+                                .dropDestination(for: String.self) { droppedItems, _ in
+                                    guard let sourceId = droppedItems.first,
+                                          let sourceIndex = viewModel.selectedProducts.firstIndex(where: { $0.id.uuidString == sourceId }) else { return false }
+                                    viewModel.moveProduct(from: sourceIndex, to: index)
+                                    return true
+                                }
                         }
                     }
                 }

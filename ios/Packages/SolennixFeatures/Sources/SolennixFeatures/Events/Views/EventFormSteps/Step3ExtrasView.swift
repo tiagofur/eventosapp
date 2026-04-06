@@ -61,8 +61,20 @@ struct Step3ExtrasView: View {
                         : [GridItem(.flexible())]
 
                     LazyVGrid(columns: columns, spacing: Spacing.md) {
-                        ForEach(Array(viewModel.extras.enumerated()), id: \.element.id) { index, _ in
+                        ForEach(Array(viewModel.extras.enumerated()), id: \.element.id) { index, extra in
                             extraRow(index: index)
+                                .draggable(extra.id.uuidString) {
+                                    Text(extra.description.isEmpty ? "Extra \(index + 1)" : extra.description)
+                                        .padding(Spacing.sm)
+                                        .background(SolennixColors.card)
+                                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                                }
+                                .dropDestination(for: String.self) { droppedItems, _ in
+                                    guard let sourceId = droppedItems.first,
+                                          let sourceIndex = viewModel.extras.firstIndex(where: { $0.id.uuidString == sourceId }) else { return false }
+                                    viewModel.moveExtra(from: sourceIndex, to: index)
+                                    return true
+                                }
                         }
                     }
                 }

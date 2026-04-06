@@ -14,6 +14,7 @@ public struct ClientListView: View {
     @Environment(PlanLimitsManager.self) private var planLimitsManager
     @Environment(\.apiClient) private var apiClient
     @Environment(CacheManager.self) private var cacheManager: CacheManager?
+    @Environment(ToastManager.self) private var toastManager
 
     public init(apiClient: APIClient) {
         _viewModel = State(initialValue: ClientListViewModel(apiClient: apiClient))
@@ -53,11 +54,21 @@ public struct ClientListView: View {
         ) { client in
             Button("Eliminar", role: .destructive) {
                 HapticsHelper.play(.success)
-                Task { await viewModel.deleteClient(client) }
+                guard let removed = viewModel.softDeleteClient(client) else { return }
+                toastManager.showUndo(
+                    message: "\(client.name) eliminado",
+                    onUndo: {
+                        viewModel.restoreClient(removed.client, at: removed.index)
+                        HapticsHelper.play(.success)
+                    },
+                    onExpire: {
+                        Task { await viewModel.confirmDeleteClient(removed.client) }
+                    }
+                )
             }
             Button("Cancelar", role: .cancel) {}
         } message: { client in
-            Text("Estas seguro de que quieres eliminar a \(client.name)? Esta accion no se puede deshacer.")
+            Text("Se eliminara a \(client.name). Podras deshacer durante unos segundos.")
         }
         .task {
             viewModel.setCacheManager(cacheManager)

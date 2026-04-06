@@ -400,7 +400,25 @@ public final class EventFormViewModel {
         selectedProducts[index].quantity = max(1, quantity)
     }
 
+    public func moveProduct(from source: Int, to destination: Int) {
+        guard selectedProducts.indices.contains(source),
+              destination >= 0, destination <= selectedProducts.count,
+              source != destination else { return }
+        let item = selectedProducts.remove(at: source)
+        let adjustedDestination = destination > source ? destination - 1 : destination
+        selectedProducts.insert(item, at: min(adjustedDestination, selectedProducts.count))
+    }
+
     // MARK: - Extra Management
+
+    public func moveExtra(from source: Int, to destination: Int) {
+        guard extras.indices.contains(source),
+              destination >= 0, destination <= extras.count,
+              source != destination else { return }
+        let item = extras.remove(at: source)
+        let adjustedDestination = destination > source ? destination - 1 : destination
+        extras.insert(item, at: min(adjustedDestination, extras.count))
+    }
 
     public func addExtra() {
         extras.append(SelectedExtra())
