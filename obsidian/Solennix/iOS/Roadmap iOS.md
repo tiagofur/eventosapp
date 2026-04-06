@@ -50,7 +50,7 @@
 
 ### 0.1 RevenueCat API Key
 
-- [ ] Reemplazar `appl_YOUR_API_KEY` placeholder en `SolennixApp.swift`
+ - [x] Reemplazar `appl_YOUR_API_KEY` placeholder en `SolennixApp.swift` — ✅ 2026-04-06 (ahora usa `REVENUECAT_PUBLIC_API_KEY` desde Info.plist/build settings)
 - [ ] Configurar offerings y packages en RevenueCat dashboard
 - [ ] Verificar flujo de compra completo en sandbox
 - [ ] Testear restore purchases

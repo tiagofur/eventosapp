@@ -63,7 +63,9 @@ struct SolennixApp: App {
         limits.setAuthManager(auth)
 
         let subManager = SubscriptionManager()
-        subManager.configure(apiKey: "appl_YOUR_API_KEY") // TODO: Replace with RevenueCat iOS public API key
+        let info = Bundle.main.infoDictionary
+        let revenueCatAPIKey = (info?["REVENUECAT_PUBLIC_API_KEY"] as? String) ?? ""
+        subManager.configure(apiKey: revenueCatAPIKey)
 
         _authManager = State(initialValue: auth)
         _planLimitsManager = State(initialValue: limits)
@@ -91,11 +93,13 @@ struct SolennixApp: App {
         TipsHelper.configure()
 
         // Configure Sentry
-        let info = Bundle.main.infoDictionary
         let sentryDSN = info?["SENTRY_DSN"] as? String
         let sentryEnvironment = (info?["SENTRY_ENVIRONMENT"] as? String) ?? "development"
         let releaseName = "ios@\(Bundle.main.appVersion)+\(Bundle.main.buildNumber)"
         SentryHelper.configure(dsn: sentryDSN, environment: sentryEnvironment, releaseName: releaseName)
+        if revenueCatAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            SentryHelper.capture(message: "RevenueCat key missing: set REVENUECAT_PUBLIC_API_KEY in build settings.")
+        }
 
         // Configure SwiftData for offline caching
         self.modelContainer = SolennixModelContainer.create()

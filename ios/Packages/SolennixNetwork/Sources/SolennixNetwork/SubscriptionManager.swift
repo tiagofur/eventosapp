@@ -68,6 +68,7 @@ public final class SubscriptionManager {
 
     /// Error mas reciente para mostrar al usuario.
     public var errorMessage: String?
+    public private(set) var isConfigured: Bool = false
 
     // MARK: - Computed Properties
 
@@ -89,8 +90,17 @@ public final class SubscriptionManager {
 
     /// Configura RevenueCat SDK. Debe llamarse una vez al inicio de la app.
     public func configure(apiKey: String) {
+        let normalizedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedKey.isEmpty else {
+            isConfigured = false
+            errorMessage = "Suscripciones no disponibles: falta la configuración de RevenueCat."
+            return
+        }
+
         Purchases.logLevel = .warn
-        Purchases.configure(withAPIKey: apiKey)
+        Purchases.configure(withAPIKey: normalizedKey)
+        isConfigured = true
+        errorMessage = nil
     }
 
     // MARK: - Login / Logout
@@ -99,6 +109,7 @@ public final class SubscriptionManager {
     /// Esto sincroniza cualquier receipt existente con el usuario correcto.
     @MainActor
     public func login(userID: String) async {
+        guard isConfigured else { return }
         do {
             let (customerInfo, _) = try await Purchases.shared.logIn(userID)
             self.customerInfo = customerInfo
@@ -114,6 +125,7 @@ public final class SubscriptionManager {
     /// Desloguea al usuario de RevenueCat.
     @MainActor
     public func logout() async {
+        guard isConfigured else { return }
         do {
             let customerInfo = try await Purchases.shared.logOut()
             self.customerInfo = customerInfo
@@ -128,6 +140,7 @@ public final class SubscriptionManager {
     /// Carga los offerings (productos con precios) desde RevenueCat.
     @MainActor
     public func loadOfferings() async {
+        guard isConfigured else { return }
         isLoading = true
         defer { isLoading = false }
 
@@ -146,6 +159,9 @@ public final class SubscriptionManager {
     /// - Throws: `SubscriptionError` si la compra falla.
     @MainActor
     public func purchase(_ package: RevenueCat.Package) async throws {
+        guard isConfigured else {
+            throw SubscriptionError.purchaseFailed("RevenueCat no esta configurado.")
+        }
         isPurchasing = true
         defer { isPurchasing = false }
 
@@ -180,6 +196,7 @@ public final class SubscriptionManager {
     /// Restaura compras anteriores del usuario via RevenueCat.
     @MainActor
     public func restorePurchases() async {
+        guard isConfigured else { return }
         isLoading = true
         defer { isLoading = false }
 
@@ -197,6 +214,7 @@ public final class SubscriptionManager {
     /// Actualiza el estado de suscripcion consultando RevenueCat.
     @MainActor
     public func checkEntitlementStatus() async {
+        guard isConfigured else { return }
         do {
             let customerInfo = try await Purchases.shared.customerInfo()
             self.customerInfo = customerInfo

@@ -58,6 +58,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Solennix/Solennix.entitlements
         SENTRY_DSN: ""
         SENTRY_ENVIRONMENT: development
+        REVENUECAT_PUBLIC_API_KEY: ""
     dependencies:
       - package: SolennixCore
       - package: SolennixDesign

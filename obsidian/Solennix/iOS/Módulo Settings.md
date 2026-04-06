@@ -59,7 +59,7 @@
 | Business | Todo + features enterprise |
 
 > [!important] RevenueCat
-> La gestión de suscripciones usa RevenueCat SDK. **El API key actual es un placeholder** (`appl_YOUR_API_KEY`) — debe reemplazarse antes de App Store submission.
+> La gestión de suscripciones usa RevenueCat SDK. La key se inyecta via `REVENUECAT_PUBLIC_API_KEY` (Info.plist/build settings) y debe definirse antes de App Store submission.
 
 ### Seguridad
 
