@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Client } from "@/types/entities";
 import {
@@ -18,18 +18,102 @@ import { RowActionMenu } from "@/components/RowActionMenu";
 import { exportToCsv } from "@/lib/exportCsv";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import Empty from "@/components/Empty";
-import { usePagination } from "@/hooks/usePagination";
 import { Pagination } from "@/components/Pagination";
 import { SkeletonTable } from "@/components/Skeleton";
-import { useClients, useDeleteClient } from "@/hooks/queries/useClientQueries";
+import {
+  useClients,
+  useClientsPaginated,
+  useDeleteClient,
+} from "@/hooks/queries/useClientQueries";
+
+const ITEMS_PER_PAGE = 8;
 
 export const ClientList: React.FC = () => {
-  const { data: clients = [], isLoading: loading } = useClients();
   const deleteClient = useDeleteClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<keyof Client | "">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const navigate = useNavigate();
+
+  const isSearching = searchTerm.trim().length > 0;
+
+  // Server-side paginated query (used when NOT searching)
+  const paginatedQuery = useClientsPaginated({
+    page,
+    limit: ITEMS_PER_PAGE,
+    sort: sortKey || undefined,
+    order: sortOrder,
+  });
+
+  // Full client list query (used only when searching, for client-side filtering)
+  const allClientsQuery = useClients();
+
+  // Pick the correct loading state
+  const loading = isSearching ? allClientsQuery.isLoading : paginatedQuery.isLoading;
+
+  // All clients for CSV export and search filtering
+  const allClients = allClientsQuery.data ?? [];
+
+  // Client-side filtered results (only used when searching)
+  const filteredClients = useMemo(() => {
+    if (!isSearching) return [];
+    const term = searchTerm.toLowerCase();
+    return allClients.filter(
+      (client) =>
+        client.name.toLowerCase().includes(term) ||
+        (client.email && client.email.toLowerCase().includes(term)) ||
+        client.phone.includes(searchTerm),
+    );
+  }, [allClients, searchTerm, isSearching]);
+
+  // Client-side sorting for search results
+  const sortedFilteredClients = useMemo(() => {
+    if (!isSearching || !sortKey) return filteredClients;
+    return [...filteredClients].sort((a, b) => {
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      if (aVal === bVal) return 0;
+      const isAsc = sortOrder === "asc";
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      if ((aVal ?? 0) > (bVal ?? 0)) return isAsc ? 1 : -1;
+      if ((aVal ?? 0) < (bVal ?? 0)) return isAsc ? -1 : 1;
+      return 0;
+    });
+  }, [filteredClients, sortKey, sortOrder, isSearching]);
+
+  // Client-side pagination for search results
+  const searchPage = Math.min(page, Math.max(1, Math.ceil(sortedFilteredClients.length / ITEMS_PER_PAGE)));
+  const searchPaginatedClients = useMemo(() => {
+    const start = (searchPage - 1) * ITEMS_PER_PAGE;
+    return sortedFilteredClients.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedFilteredClients, searchPage]);
+
+  // Unified data for the table
+  const paginatedClients = isSearching
+    ? searchPaginatedClients
+    : (paginatedQuery.data?.data ?? []);
+
+  const currentPage = isSearching
+    ? searchPage
+    : (paginatedQuery.data?.page ?? page);
+
+  const totalPages = isSearching
+    ? Math.max(1, Math.ceil(sortedFilteredClients.length / ITEMS_PER_PAGE))
+    : (paginatedQuery.data?.total_pages ?? 1);
+
+  const totalItems = isSearching
+    ? sortedFilteredClients.length
+    : (paginatedQuery.data?.total ?? 0);
+
+  // For the empty state and CSV export, we need to know if there are any clients at all
+  const hasAnyClients = isSearching
+    ? allClients.length > 0
+    : (paginatedQuery.data?.total ?? 0) > 0 || paginatedClients.length > 0;
 
   const requestDelete = (id: string) => {
     setPendingDeleteId(id);
@@ -44,29 +128,19 @@ export const ClientList: React.FC = () => {
     deleteClient.mutate(id);
   };
 
-  const filteredClients = (clients || []).filter(
-    (client) =>
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.email &&
-        client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      client.phone.includes(searchTerm),
-  );
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
-  const {
-    currentData: paginatedClients,
-    currentPage,
-    totalPages,
-    totalItems,
-    handlePageChange,
-    handleSort,
-    sortKey,
-    sortOrder,
-  } = usePagination({
-    data: filteredClients,
-    itemsPerPage: 8,
-    initialSortKey: "name",
-    initialSortOrder: "asc",
-  });
+  const handleSort = (key: keyof Client) => {
+    if (sortKey === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortOrder("asc");
+    }
+    setPage(1);
+  };
 
   const renderSortIcon = (key: keyof Client) => {
     if (sortKey !== key) return null;
@@ -103,7 +177,7 @@ export const ClientList: React.FC = () => {
           Clientes
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          {clients.length > 0 && (
+          {hasAnyClients && (
             <button
               type="button"
               onClick={() =>
@@ -119,7 +193,7 @@ export const ClientList: React.FC = () => {
                     "Total Gastado",
                     "Notas",
                   ],
-                  clients.map((c) => [
+                  allClients.map((c) => [
                     c.name,
                     c.phone,
                     c.email,
@@ -161,7 +235,10 @@ export const ClientList: React.FC = () => {
           className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
           placeholder="Buscar clientes..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
           aria-label="Buscar clientes por nombre, email o teléfono"
         />
       </div>
@@ -178,7 +255,7 @@ export const ClientList: React.FC = () => {
               { width: "w-20" },
             ]}
           />
-        ) : filteredClients.length === 0 ? (
+        ) : paginatedClients.length === 0 ? (
           <Empty
             icon={Users}
             title="No se encontraron clientes"
@@ -341,12 +418,12 @@ export const ClientList: React.FC = () => {
             </table>
           </div>
         )}
-        {!loading && filteredClients.length > 0 && (
+        {!loading && paginatedClients.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}
-            itemsPerPage={8}
+            itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={handlePageChange}
           />
         )}
