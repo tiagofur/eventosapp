@@ -122,14 +122,6 @@ struct CompactTabLayout: View {
             .tag(Tab.more)
         }
         .tint(SolennixColors.tabBarActive)
-        .overlay {
-            if showsFAB {
-                QuickActionsFAB(
-                    onNewEvent: { appendToCurrentPath(Route.eventForm()) },
-                    onQuickQuote: { appendToCurrentPath(Route.quickQuote) }
-                )
-            }
-        }
         .onChange(of: pendingSpotlightRoute) { _, newRoute in
             guard let route = newRoute else { return }
             // Navegar desde la pestaña Home para rutas de Spotlight
@@ -139,14 +131,6 @@ struct CompactTabLayout: View {
                 homePath.append(route)
             }
             pendingSpotlightRoute = nil
-        }
-    }
-
-    /// Tabs where the FAB should be visible.
-    private var showsFAB: Bool {
-        switch selectedTab {
-        case .home, .calendar, .events, .clients: return true
-        case .more: return false
         }
     }
 
