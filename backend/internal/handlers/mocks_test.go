@@ -257,6 +257,14 @@ func (m *MockFullEventRepo) Search(ctx context.Context, userID uuid.UUID, query 
 	return args.Get(0).([]models.Event), args.Error(1)
 }
 
+func (m *MockFullEventRepo) SearchEventsAdvanced(ctx context.Context, userID uuid.UUID, filters repository.EventSearchFilters) ([]models.Event, error) {
+	args := m.Called(ctx, userID, filters)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]models.Event), args.Error(1)
+}
+
 // ---------------------------------------------------------------------------
 // MockClientRepo — implements ClientRepository
 // ---------------------------------------------------------------------------

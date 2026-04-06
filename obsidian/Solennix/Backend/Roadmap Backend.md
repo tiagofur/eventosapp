@@ -22,9 +22,9 @@
 | Paginación | ✅ Server | ✅ Server | ✅ Server | ✅ Server | — |
 | Email transaccional | ⚠️ Solo reset | ✅ | ✅ | ✅ | **P1** |
 | File storage | ⚠️ Local | ✅ | ✅ | ✅ | **P1** |
-| Dashboard analytics | ⚠️ Básico | ✅ KPIs | ✅ KPIs | ✅ KPIs | **P1** |
-| API versioning | ❌ | — | — | — | **P2** |
-| Audit logging | ❌ | — | — | — | **P2** |
+| Dashboard analytics | ✅ Server-side | ✅ KPIs | ✅ KPIs | ✅ KPIs | — |
+| API versioning | ✅ v1 + legacy | — | — | — | — |
+| Audit logging | ✅ Middleware | — | — | — | — |
 | Background jobs | ⚠️ 1 job | — | — | — | **P2** |
 
 ---
@@ -119,46 +119,58 @@
 
 ---
 
-## Fase 2: API Modernization
+## Fase 2: API Modernization ✅
 
-> [!success] Impacto: Alto | Esfuerzo: Medio-Alto
-> Modernizar la API para soportar features del frontend.
+> [!done] FASE 2 COMPLETADA — 2026-04-06
+> Dashboard analytics, FTS, API versioning y audit logging implementados. Todos los tests pasan.
 
-### 2.1 Dashboard Analytics Endpoints
+### 2.1 Dashboard Analytics Endpoints ✅
 
-- [ ] `GET /api/dashboard/kpis` — KPIs calculados server-side (revenue, eventos mes, stock bajo, cotizaciones pendientes)
-- [ ] `GET /api/dashboard/revenue-chart?period=month` — Revenue por mes
-- [ ] `GET /api/dashboard/events-by-status` — Distribución de estados
-- [ ] `GET /api/dashboard/top-clients?limit=10` — Top clientes por gasto
-- [ ] `GET /api/dashboard/product-demand` — Productos más vendidos
-- [ ] `GET /api/dashboard/forecast` — Forecast basado en eventos confirmados
+- [x] `GET /api/v1/dashboard/kpis` — KPIs calculados server-side (revenue, eventos mes, stock bajo, cotizaciones pendientes, upcoming events, total clients, avg event value)
+- [x] `GET /api/v1/dashboard/revenue-chart?period=month|quarter|year` — Revenue por mes (últimos 12 meses por defecto)
+- [x] `GET /api/v1/dashboard/events-by-status` — Distribución de estados
+- [x] `GET /api/v1/dashboard/top-clients?limit=10` — Top clientes por gasto
+- [x] `GET /api/v1/dashboard/product-demand` — Productos más vendidos (top 10 desde event_products)
+- [x] `GET /api/v1/dashboard/forecast` — Forecast basado en eventos confirmados/cotizados futuros
+- [x] `GET /api/v1/dashboard/activity?page=1&limit=20` — Activity log del usuario (audit trail)
+
+**Archivos**: `repository/dashboard_repo.go`, `handlers/dashboard_handler.go`
 
 **Por qué**: Alineado con [[Roadmap Web]] Fase 5.1 y [[Roadmap Android]] Fase 5.1. El dashboard actual calcula todo client-side con datos raw. Con más datos, necesita server-side aggregation.
 
-### 2.2 Advanced Search
+### 2.2 Advanced Search ✅
 
-- [ ] Full-text search con PostgreSQL GIN indexes + `pg_trgm`
-- [ ] Filtros combinables: `GET /api/events?status=confirmed&from=2026-01-01&to=2026-12-31&client_id=xxx`
-- [ ] Fuzzy matching para nombres
-- [ ] Search highlighting en resultados
+- [x] Full-text search con PostgreSQL GIN indexes + `pg_trgm` (migración 033)
+- [x] Fuzzy matching con `similarity()` > 0.3 en clients, events, products, inventory
+- [x] Resultados ordenados por score de similaridad
+- [x] Filtros combinables: `GET /api/v1/events/search?q=text&status=confirmed&from=2026-01-01&to=2026-12-31&client_id=uuid`
+- [ ] Search highlighting en resultados (futuro)
+
+**Archivos**: `migrations/033_add_fulltext_search.up.sql`, `event_repo.go` (SearchEventsAdvanced), `crud_handler.go` (SearchEvents), 4 repos actualizados con similarity()
 
 **Por qué**: Alineado con [[Roadmap Web]] Fase 2.3. ILIKE no escala. Full-text search es nativo en PostgreSQL.
 
-### 2.3 API Versioning
+### 2.3 API Versioning ✅
 
-- [ ] Prefix rutas con `/api/v1/...`
-- [ ] Mantener `/api/...` como alias (backward compatible)
-- [ ] Header `Accept: application/vnd.solennix.v1+json`
-- [ ] Documentación de breaking changes entre versiones
+- [x] Prefix rutas con `/api/v1/...` (canonical)
+- [x] Mantener `/api/...` como alias (backward compatible via Chi Mount)
+- [x] Header `X-API-Version: v1` en todas las respuestas API
+- [ ] Header `Accept: application/vnd.solennix.v1+json` (futuro, cuando haya v2)
+- [ ] Documentación de breaking changes entre versiones (futuro)
+
+**Archivos**: `router/router.go` (refactored to chi.NewRouter + Mount), `middleware/version.go`
 
 **Por qué**: Sin versioning, cualquier cambio breaking afecta todos los clientes (Web, iOS, Android) simultáneamente.
 
-### 2.4 Audit Logging
+### 2.4 Audit Logging ✅
 
-- [ ] Crear tabla `audit_logs(id, user_id, action, resource_type, resource_id, details JSONB, ip, created_at)`
-- [ ] Middleware que registra creates, updates, deletes
-- [ ] Endpoint `GET /api/admin/audit-logs` para admin
-- [ ] Exportar logs para compliance
+- [x] Tabla `audit_logs(id, user_id, action, resource_type, resource_id, details JSONB, ip_address, user_agent, created_at)` (migración 034)
+- [x] Middleware async que registra POST, PUT, DELETE exitosos en goroutine
+- [x] `GET /api/v1/dashboard/activity` — Activity log del usuario autenticado (paginado)
+- [x] `GET /api/v1/admin/audit-logs` — Todos los audit logs (admin only, paginado)
+- [ ] Exportar logs para compliance (futuro)
+
+**Archivos**: `migrations/034_add_audit_logs.up.sql`, `repository/audit_repo.go`, `middleware/audit.go`, `handlers/audit_handler.go`
 
 **Por qué**: Alineado con [[Roadmap Web]] Fase 5.3 (Colaboración). Sin audit log, no hay manera de saber quién hizo qué.
 
@@ -263,11 +275,11 @@ gantt
     Token Blacklist Persist.   :f1c, after f1b, 2d
     Test Coverage 60%          :f1d, after f1c, 5d
 
-    section Fase 2: Modernization
-    Dashboard Analytics        :f2a, after f1d, 4d
-    Advanced Search (FTS)      :f2b, after f2a, 3d
-    API Versioning             :f2c, after f2b, 2d
-    Audit Logging              :f2d, after f2c, 3d
+    section Fase 2: Modernization ✅
+    Dashboard Analytics        :done, f2a, 2026-04-06, 1d
+    Advanced Search (FTS)      :done, f2b, 2026-04-06, 1d
+    API Versioning             :done, f2c, 2026-04-06, 1d
+    Audit Logging              :done, f2d, 2026-04-06, 1d
 
     section Fase 3: Security
     CSRF Protection            :f3a, after f2d, 2d
@@ -308,13 +320,13 @@ gantt
 |---------|-------------------|----------------|----------|
 | **Paginación** | `?page&limit` en todos los list | ✅ Implementado | — |
 | **Push notifications** | Envío real de notificaciones | ✅ FCM + APNs | — |
-| **Dashboard KPIs** | Server-side aggregation | ❌ Solo datos raw | 3-4 días |
+| **Dashboard KPIs** | Server-side aggregation | ✅ 6 endpoints + activity | — |
 | **Plantillas de evento** | CRUD de templates | ❌ No existe | 3-4 días |
 | **Portal de cliente** | Endpoints públicos con token | ❌ No existe | 5-6 días |
 | **Email transaccional** | Welcome, reminder, receipt | ⚠️ Solo reset | 3-4 días |
 | **File storage escalable** | S3/CDN para imágenes | ⚠️ Local disk | 2-3 días |
-| **Advanced search** | FTS con filtros combinables | ⚠️ ILIKE básico | 2-3 días |
-| **Audit log** | Activity tracking | ❌ No existe | 3-4 días |
+| **Advanced search** | FTS con filtros combinables | ✅ pg_trgm + GIN | — |
+| **Audit log** | Activity tracking | ✅ Middleware async | — |
 | **iCal feed** | Calendar export URL | ❌ No existe | 1-2 días |
 | **Webhooks outgoing** | Notificar a servicios externos | ❌ No existe | 2-3 días |
 | **Bulk operations** | Delete múltiple, status change batch | ❌ No existe | 2-3 días |

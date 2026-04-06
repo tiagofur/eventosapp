@@ -111,12 +111,12 @@ func main() {
 		})
 		if err != nil {
 			slog.Error("Failed to initialize S3 storage, falling back to local", "error", err)
-			storageProvider = storage.NewLocalProvider(cfg.UploadDir, "/api/uploads")
+			storageProvider = storage.NewLocalProvider(cfg.UploadDir, "/api/v1/uploads")
 		} else {
 			storageProvider = s3Provider
 		}
 	default:
-		storageProvider = storage.NewLocalProvider(cfg.UploadDir, "/api/uploads")
+		storageProvider = storage.NewLocalProvider(cfg.UploadDir, "/api/v1/uploads")
 	}
 
 	uploadHandler := handlers.NewUploadHandler(cfg.UploadDir, userRepo)
