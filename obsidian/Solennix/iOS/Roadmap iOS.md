@@ -149,16 +149,17 @@
 
 ### 2.3 Drag & Drop
 
-- [ ] Reordenar productos en EventForm (Step 2)
-- [ ] Reordenar extras (Step 3)
-- [ ] `.draggable()` + `.dropDestination()` nativo de SwiftUI
+- [x] Reordenar productos en EventForm (Step 2) — ✅ 2026-04-05
+- [x] Reordenar extras (Step 3) — ✅ 2026-04-05
+- [x] `.draggable()` + `.dropDestination()` nativo de SwiftUI — ✅ 2026-04-05
 
 **Por qué**: Alineado con [[Roadmap Web]] Fase 2.1.
 
 ### 2.4 Undo/Redo
 
-- [ ] Swipe-to-delete con undo toast (30 segundos soft delete)
-- [ ] `.onDelete` con confirmación y periodo de gracia
+- [x] Swipe-to-delete con undo toast (5 segundos soft delete) — ✅ 2026-04-05 (ClientListView)
+- [x] `.onDelete` con confirmación y periodo de gracia — ✅ 2026-04-05 (ToastManager.showUndo)
+- [ ] Extender undo a Product, Inventory, Event deletes
 
 **Por qué**: Alineado con [[Roadmap Web]] Fase 2.2.
 
