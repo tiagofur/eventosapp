@@ -1,0 +1,80 @@
+package middleware
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"net/http"
+	"strings"
+)
+
+// CSRF implements the Double-Submit Cookie pattern for web clients.
+// Requests authenticated via Bearer header are exempt (mobile/API clients don't use cookies).
+// Webhook paths are also exempt (verified by signature).
+func CSRF(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Skip for safe methods (GET, HEAD, OPTIONS)
+		if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
+			ensureCSRFCookie(w, r)
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Skip if using Bearer auth (mobile/API clients)
+		if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Skip webhook endpoints (verified by signature, no CSRF needed)
+		if isWebhookPath(r.URL.Path) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// Validate: X-CSRF-Token header must match csrf_token cookie
+		cookie, err := r.Cookie("csrf_token")
+		if err != nil {
+			writeAuthError(w, http.StatusForbidden, "CSRF token missing")
+			return
+		}
+
+		headerToken := r.Header.Get("X-CSRF-Token")
+		if headerToken == "" || headerToken != cookie.Value {
+			writeAuthError(w, http.StatusForbidden, "CSRF token invalid")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ensureCSRFCookie sets a csrf_token cookie if one is not already present.
+// The cookie is NOT httpOnly so that JavaScript can read it and send it
+// back as the X-CSRF-Token header on mutating requests.
+func ensureCSRFCookie(w http.ResponseWriter, r *http.Request) {
+	if _, err := r.Cookie("csrf_token"); err != nil {
+		token := generateCSRFToken()
+		http.SetCookie(w, &http.Cookie{
+			Name:     "csrf_token",
+			Value:    token,
+			Path:     "/",
+			HttpOnly: false, // JS must read this
+			Secure:   r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https",
+			SameSite: http.SameSiteStrictMode,
+			MaxAge:   86400, // 24 hours
+		})
+	}
+}
+
+// generateCSRFToken returns a cryptographically random 64-character hex string.
+func generateCSRFToken() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return hex.EncodeToString(b)
+}
+
+// isWebhookPath returns true for paths that contain "/webhook/" —
+// these endpoints verify authenticity via request signatures, not CSRF.
+func isWebhookPath(path string) bool {
+	return strings.Contains(path, "/webhook/")
+}

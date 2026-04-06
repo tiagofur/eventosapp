@@ -49,6 +49,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	// Build API subrouter — mounted under both /api/v1 (canonical) and /api (legacy alias)
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(mw.APIVersion("v1"))
+	apiRouter.Use(mw.CSRF)
 
 	// Auth routes (public) — rate limited to prevent brute-force attacks
 	apiRouter.Route("/auth", func(r chi.Router) {
