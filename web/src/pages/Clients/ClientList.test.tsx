@@ -9,6 +9,7 @@ const mockNavigate = vi.fn();
 vi.mock('../../services/clientService', () => ({
   clientService: {
     getAll: vi.fn(),
+    getPage: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -45,6 +46,18 @@ vi.mock('../../hooks/usePlanLimits', () => ({
   }),
 }));
 
+/** Sets up both getAll and getPage mocks with the same data. */
+const mockClients = (clients: any[]) => {
+  (clientService.getAll as any).mockResolvedValue(clients);
+  (clientService.getPage as any).mockResolvedValue({
+    data: clients,
+    total: clients.length,
+    page: 1,
+    limit: 20,
+    total_pages: 1,
+  });
+};
+
 const renderList = () =>
   render(
     <MemoryRouter>
@@ -71,7 +84,7 @@ describe('ClientList', () => {
   });
 
   it('renders clients after loading', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -93,7 +106,7 @@ describe('ClientList', () => {
   });
 
   it('filters clients by search term', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -128,7 +141,7 @@ describe('ClientList', () => {
   });
 
   it('navigates to detail on row click', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -151,7 +164,7 @@ describe('ClientList', () => {
   });
 
   it('deletes a client after confirmation', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -184,6 +197,7 @@ describe('ClientList', () => {
 
   it('shows empty state and logs fetch error', async () => {
     (clientService.getAll as any).mockRejectedValueOnce(new Error('fail'));
+    (clientService.getPage as any).mockRejectedValueOnce(new Error('fail'));
 
     renderList();
 
@@ -194,7 +208,7 @@ describe('ClientList', () => {
   });
 
   it('restores state when delete fails', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -225,7 +239,7 @@ describe('ClientList', () => {
   });
 
   it('clears delete state on cancel', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -252,7 +266,7 @@ describe('ClientList', () => {
   });
 
   it('stops propagation on edit link click', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -277,7 +291,7 @@ describe('ClientList', () => {
   });
 
   it('shows empty state with search description when search has no results', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -304,7 +318,7 @@ describe('ClientList', () => {
   });
 
   it('sorts by total_events column and shows sort icons', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -341,7 +355,7 @@ describe('ClientList', () => {
   });
 
   it('sorts by total_spent column', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
@@ -378,7 +392,7 @@ describe('ClientList', () => {
   });
 
   it('renders client without email', async () => {
-    (clientService.getAll as any).mockResolvedValue([
+    mockClients([
       {
         id: '1',
         name: 'Ana Perez',
