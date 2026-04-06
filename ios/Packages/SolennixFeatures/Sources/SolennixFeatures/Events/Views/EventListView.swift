@@ -54,6 +54,7 @@ public struct EventListView: View {
                         Image(systemName: "plus")
                             .font(.body)
                             .foregroundStyle(SolennixColors.primary)
+                            .accessibilityLabel("Crear evento o cotización")
                     }
 
                     Button {
@@ -62,6 +63,7 @@ public struct EventListView: View {
                         Image(systemName: "square.and.arrow.up")
                             .font(.body)
                             .foregroundStyle(SolennixColors.primary)
+                            .accessibilityLabel("Exportar eventos a CSV")
                     }
                 }
             }

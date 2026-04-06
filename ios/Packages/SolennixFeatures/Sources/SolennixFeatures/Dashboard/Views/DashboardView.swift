@@ -85,6 +85,7 @@ public struct DashboardView: View {
                     Image(systemName: "plus")
                         .font(.body)
                         .foregroundStyle(SolennixColors.primary)
+                        .accessibilityLabel("Crear evento o cotización")
                 }
             }
         }

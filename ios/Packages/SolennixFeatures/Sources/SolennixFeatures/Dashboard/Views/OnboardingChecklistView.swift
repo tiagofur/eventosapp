@@ -17,6 +17,7 @@ struct OnboardingStep: Identifiable {
 
 struct OnboardingChecklistView: View {
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let hasClients: Bool
     let hasProducts: Bool
     let hasEvents: Bool
@@ -93,7 +94,7 @@ struct OnboardingChecklistView: View {
                 HStack(spacing: Spacing.sm) {
                     ProgressView(value: progress)
                         .tint(SolennixColors.primary)
-                        .animation(.easeInOut, value: progress)
+                        .animation(reduceMotion ? nil : .easeInOut, value: progress)
 
                     Text("\(completedCount)/\(steps.count)")
                         .font(.caption)

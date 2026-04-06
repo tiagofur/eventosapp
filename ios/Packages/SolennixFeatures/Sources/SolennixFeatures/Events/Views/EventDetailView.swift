@@ -54,6 +54,7 @@ public struct EventDetailView: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
+                        .accessibilityLabel("Acciones del evento")
                 }
             }
         }

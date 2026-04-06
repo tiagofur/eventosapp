@@ -11,6 +11,7 @@ public struct EventFormView: View {
 
     @State private var viewModel: EventFormViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(eventId: String? = nil, apiClient: APIClient) {
         self.eventId = eventId
@@ -45,7 +46,7 @@ public struct EventFormView: View {
                     .tag(5)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .animation(.easeInOut(duration: 0.3), value: viewModel.currentStep)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.currentStep)
 
             Divider()
                 .foregroundStyle(SolennixColors.border)

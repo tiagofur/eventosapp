@@ -54,7 +54,7 @@ public struct EventContractPreviewView: View {
         .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Contrato")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.loadEvent(eventId) }
+        .task { await viewModel.loadData(eventId: eventId) }
     }
 
     // MARK: - Contract Content
@@ -290,7 +290,7 @@ public struct EventContractPreviewView: View {
             ("[Fecha actual]", todayFormatted),
             ("[Ciudad del contrato]", event.city ?? client?.city),
             ("[Notas del evento]", event.notes),
-            ("[Servicios del evento]", viewModel.eventProducts.map { "\($0.quantity) \($0.productName ?? "Producto")" }.joined(separator: ", ")),
+            ("[Servicios del evento]", viewModel.products.map { "\($0.quantity) \(viewModel.productMap[$0.productId]?.name ?? "Producto")" }.joined(separator: ", ")),
         ]
 
         var result = template

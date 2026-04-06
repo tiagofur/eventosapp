@@ -11,6 +11,7 @@ public struct EventChecklistView: View {
 
     @State private var viewModel: EventChecklistViewModel
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(eventId: String, apiClient: APIClient) {
         self.eventId = eventId
@@ -146,7 +147,7 @@ public struct EventChecklistView: View {
                     RoundedRectangle(cornerRadius: 4)
                         .fill(SolennixColors.primary)
                         .frame(width: geo.size.width * viewModel.progress, height: 8)
-                        .animation(.easeInOut(duration: 0.3), value: viewModel.progress)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewModel.progress)
                 }
             }
             .frame(height: 8)

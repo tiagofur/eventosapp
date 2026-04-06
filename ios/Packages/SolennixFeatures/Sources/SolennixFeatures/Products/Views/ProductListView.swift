@@ -31,6 +31,7 @@ public struct ProductListView: View {
                         Image(systemName: "plus.circle")
                             .font(.body)
                             .foregroundStyle(planLimitsManager.canCreateCatalogItem ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .accessibilityLabel("Agregar producto")
                     }
                     .disabled(!planLimitsManager.canCreateCatalogItem)
 
@@ -341,6 +342,7 @@ public struct ProductListView: View {
             Image(systemName: "arrow.up.arrow.down")
                 .font(.body)
                 .foregroundStyle(SolennixColors.primary)
+                .accessibilityLabel("Ordenar productos")
         }
     }
 

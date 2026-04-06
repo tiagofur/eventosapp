@@ -34,6 +34,7 @@ public struct ClientListView: View {
                         Image(systemName: "plus")
                             .font(.body)
                             .foregroundStyle(planLimitsManager.canCreateClient ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .accessibilityLabel("Agregar cliente")
                     }
                     .disabled(!planLimitsManager.canCreateClient)
 
@@ -385,6 +386,7 @@ public struct ClientListView: View {
             Image(systemName: "arrow.up.arrow.down")
                 .font(.body)
                 .foregroundStyle(SolennixColors.primary)
+                .accessibilityLabel("Ordenar clientes")
         }
     }
 

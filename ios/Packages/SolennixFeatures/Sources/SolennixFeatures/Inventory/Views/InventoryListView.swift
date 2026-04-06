@@ -31,6 +31,7 @@ public struct InventoryListView: View {
                         Image(systemName: "plus.circle")
                             .font(.body)
                             .foregroundStyle(planLimitsManager.canCreateCatalogItem ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .accessibilityLabel("Agregar item de inventario")
                     }
                     .disabled(!planLimitsManager.canCreateCatalogItem)
 
@@ -413,6 +414,7 @@ public struct InventoryListView: View {
             HStack(spacing: 4) {
                 Image(systemName: viewModel.showLowStockOnly ? "exclamationmark.triangle.fill" : "exclamationmark.triangle")
                     .foregroundStyle(viewModel.showLowStockOnly ? SolennixColors.warning : SolennixColors.textTertiary)
+                    .accessibilityLabel(viewModel.showLowStockOnly ? "Ocultar stock bajo" : "Mostrar stock bajo")
 
                 if viewModel.lowStockCount > 0 {
                     Text("\(viewModel.lowStockCount)")
@@ -452,6 +454,7 @@ public struct InventoryListView: View {
             Image(systemName: "arrow.up.arrow.down")
                 .font(.body)
                 .foregroundStyle(SolennixColors.primary)
+                .accessibilityLabel("Ordenar inventario")
         }
     }
 

@@ -18,6 +18,7 @@ public struct CalendarView: View {
     @Environment(PlanLimitsManager.self) private var planLimitsManager
     @Environment(\.apiClient) private var apiClient
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Init
 
@@ -55,6 +56,7 @@ public struct CalendarView: View {
                         Image(systemName: "plus")
                             .font(.body)
                             .foregroundStyle(SolennixColors.primary)
+                            .accessibilityLabel("Crear evento o cotización")
                     }
 
                     Button {
@@ -63,10 +65,11 @@ public struct CalendarView: View {
                         Image(systemName: "calendar.badge.minus")
                             .font(.body)
                             .foregroundStyle(SolennixColors.primary)
+                            .accessibilityLabel("Gestionar fechas bloqueadas")
                     }
 
                     Button {
-                        withAnimation(.easeInOut(duration: 0.25)) {
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
                             viewModel.goToToday()
                         }
                     } label: {

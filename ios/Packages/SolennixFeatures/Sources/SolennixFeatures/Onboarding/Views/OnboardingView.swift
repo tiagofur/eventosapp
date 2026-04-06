@@ -11,6 +11,7 @@ public struct OnboardingView: View {
     @State private var currentPage = 0
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let totalPages = 4
 
@@ -91,7 +92,7 @@ public struct OnboardingView: View {
             .padding(.trailing, Spacing.xl)
             .padding(.top, Spacing.sm)
             .opacity(currentPage < totalPages - 1 ? 1 : 0)
-            .animation(.easeInOut(duration: 0.2), value: currentPage)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: currentPage)
         }
     }
 
@@ -110,7 +111,7 @@ public struct OnboardingView: View {
                 .tag(3)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .animation(.easeInOut(duration: 0.3), value: currentPage)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: currentPage)
     }
 
     private var pageIndicatorAndNavigation: some View {
@@ -124,14 +125,14 @@ public struct OnboardingView: View {
                               : SolennixColors.border)
                         .frame(width: index == currentPage ? 10 : 8,
                                height: index == currentPage ? 10 : 8)
-                        .animation(.easeInOut(duration: 0.2), value: currentPage)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: currentPage)
                 }
             }
 
             // Navigation button
             if currentPage < totalPages - 1 {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
                         currentPage += 1
                     }
                 } label: {
@@ -179,7 +180,7 @@ public struct OnboardingView: View {
                 .symbolRenderingMode(.hierarchical)
             Spacer()
         }
-        .animation(.easeInOut(duration: 0.3), value: currentPage)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: currentPage)
     }
 
     @ViewBuilder
@@ -309,7 +310,7 @@ public struct OnboardingView: View {
     // MARK: - Actions
 
     private func completeOnboarding() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
             hasSeenOnboarding = true
         }
         dismiss()

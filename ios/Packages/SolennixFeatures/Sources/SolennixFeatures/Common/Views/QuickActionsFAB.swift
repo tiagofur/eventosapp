@@ -14,6 +14,7 @@ public struct QuickActionsFAB: View {
 
     @State private var isExpanded = false
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let onNewEvent: () -> Void
     private let onQuickQuote: () -> Void
@@ -46,7 +47,7 @@ public struct QuickActionsFAB: View {
                     icon: "bolt.fill",
                     label: "Cotización Rápida",
                     action: {
-                        withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.3)) { isExpanded = false }
                         onQuickQuote()
                     }
                 )
@@ -57,7 +58,7 @@ public struct QuickActionsFAB: View {
                     icon: "calendar.badge.plus",
                     label: "Nuevo Evento",
                     action: {
-                        withAnimation(.spring(response: 0.3)) { isExpanded = false }
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.3)) { isExpanded = false }
                         onNewEvent()
                     }
                 )
@@ -66,7 +67,7 @@ public struct QuickActionsFAB: View {
 
             // Main FAB button
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.7)) {
                     isExpanded.toggle()
                 }
             } label: {
