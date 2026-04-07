@@ -13,6 +13,19 @@ services:
     ports:
       - "${BACKEND_PORT:-8080}:8080"
 
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: solennix-seed
+    profiles: ["tools"]
+    env_file:
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["./seed"]
+
   frontend:
     build:
       context: ./web

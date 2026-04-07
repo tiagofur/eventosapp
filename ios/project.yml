@@ -56,9 +56,9 @@ targets:
         INFOPLIST_FILE: Solennix/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_ENTITLEMENTS: Solennix/Solennix.entitlements
-        SENTRY_DSN: ""
-        SENTRY_ENVIRONMENT: development
-        REVENUECAT_PUBLIC_API_KEY: ""
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
     dependencies:
       - package: SolennixCore
       - package: SolennixDesign

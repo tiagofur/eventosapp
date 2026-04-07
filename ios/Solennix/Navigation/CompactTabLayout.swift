@@ -31,6 +31,8 @@ struct CompactTabLayout: View {
             set: { newTab in
                 if newTab == selectedTab {
                     resetPath(for: newTab)
+                } else {
+                    resetPath(for: selectedTab)
                 }
                 selectedTab = newTab
             }

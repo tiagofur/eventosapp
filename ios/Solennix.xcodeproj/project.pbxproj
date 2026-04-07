@@ -121,6 +121,7 @@
 		8C00F21C74E3F4FEFE8F1C50 /* KeyboardShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcuts.swift; sourceTree = "<group>"; };
 		93621466CB78E70396E79E29 /* ShowUpcomingEventsIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowUpcomingEventsIntent.swift; sourceTree = "<group>"; };
 		9610BC66E6D620756BD4FBBA /* SolennixTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SolennixTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F958D99D18E1F682FC6DDB7 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		A18654763EF08D7510683BCA /* BackgroundTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTaskManager.swift; sourceTree = "<group>"; };
 		A3B0FFA9AF756AB9C85E856D /* SolennixApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolennixApp.swift; sourceTree = "<group>"; };
 		AB69CCDF04807E01479F4939 /* WidgetModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetModels.swift; sourceTree = "<group>"; };
@@ -175,6 +176,7 @@
 		00B3A82EFA8ECD121B573E85 = {
 			isa = PBXGroup;
 			children = (
+				347D6E2D6860BE0BB5AF0B23 /* Config */,
 				826E410389D263A701F16DF3 /* Packages */,
 				435EFF914B76BCDC680C2927 /* Solennix */,
 				AC58D8766C08AC5506C7BB54 /* SolennixIntents */,
@@ -221,6 +223,14 @@
 				93621466CB78E70396E79E29 /* ShowUpcomingEventsIntent.swift */,
 			);
 			path = Intents;
+			sourceTree = "<group>";
+		};
+		347D6E2D6860BE0BB5AF0B23 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				9F958D99D18E1F682FC6DDB7 /* Secrets.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		435EFF914B76BCDC680C2927 /* Solennix */ = {
@@ -783,6 +793,7 @@
 		};
 		A6D48A7343376DF9B1D6D76B /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9F958D99D18E1F682FC6DDB7 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Solennix/Solennix.entitlements;
@@ -797,10 +808,7 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.solennix.app;
-				REVENUECAT_PUBLIC_API_KEY = "";
 				SDKROOT = iphoneos;
-				SENTRY_DSN = "";
-				SENTRY_ENVIRONMENT = development;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -808,6 +816,7 @@
 		};
 		CCDA5D753663E9770B1F60B8 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9F958D99D18E1F682FC6DDB7 /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Solennix/Solennix.entitlements;
@@ -822,10 +831,7 @@
 				);
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.solennix.app;
-				REVENUECAT_PUBLIC_API_KEY = "";
 				SDKROOT = iphoneos;
-				SENTRY_DSN = "";
-				SENTRY_ENVIRONMENT = development;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

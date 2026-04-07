@@ -36,3 +36,6 @@ Package.resolved
 video/node_modules/
 video/out/
 solennix-release.jks
+
+# Solennix iOS secrets (keep template, ignore real values)
+ios/Config/Secrets.xcconfig
