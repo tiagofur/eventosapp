@@ -79,7 +79,15 @@ describe('AdminUsers', () => {
     vi.clearAllMocks();
     vi.mocked(adminService.getUsers).mockResolvedValue(getMockData());
     vi.mocked(adminService.getStats).mockResolvedValue(defaultStats);
-    vi.mocked(adminService.getSubscriptions).mockResolvedValue([]);
+    vi.mocked(adminService.getSubscriptions).mockResolvedValue({
+      total_active: 0,
+      total_canceled: 0,
+      total_trialing: 0,
+      total_past_due: 0,
+      stripe_count: 0,
+      apple_count: 0,
+      google_count: 0,
+    });
     vi.mocked(useToast).mockReturnValue({ addToast: mockAddToast, toasts: [], removeToast: vi.fn() } as any);
     vi.mocked(adminService.upgradeUser).mockImplementation(async (id, plan, expiresAt) => {
       const u = getMockData().find(t => t.id === id)!;
