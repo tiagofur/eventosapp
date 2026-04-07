@@ -99,7 +99,12 @@ export const Register: React.FC = () => {
       await checkAuth();
       navigate("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error al registrarse");
+      const message = err instanceof Error ? err.message : "";
+      if (message === "Email already registered") {
+        setError("Ya existe una cuenta con este correo electrónico.");
+      } else {
+        setError(message || "Error al registrarse");
+      }
     } finally {
       setIsLoading(false);
     }
