@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import SolennixFeatures
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
 

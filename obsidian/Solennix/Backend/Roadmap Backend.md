@@ -231,6 +231,22 @@
 
 ---
 
+## Fase 3.5: iOS Live Activity Push-to-Update ✅
+
+> [!done] Implementado 2026-04-06
+> Backend ahora puede empujar actualizaciones de estado a Live Activities iOS corriendo en el dispositivo del usuario, vía APNs `liveactivity` push type. La Dynamic Island refleja cambios cuando otro dispositivo o miembro del equipo modifica el evento.
+
+- [x] Migración 036: tabla `live_activity_tokens (id, user_id, event_id, push_token, created_at, expires_at)` con `UNIQUE(event_id, push_token)`
+- [x] `repository/live_activity_token_repo.go` — Register (upsert), GetByEventID, DeleteByEventID, DeleteByToken
+- [x] `services/live_activity_service.go` — `PushUpdate` y `PushEnd` con headers correctos: `apns-push-type: liveactivity`, topic `{bundleID}.push-type.liveactivity`, priority high. Limpia tokens muertos (BadDeviceToken/Unregistered/ExpiredToken) automáticamente. Reusa el `apns2.Client` ya inicializado en `PushService`.
+- [x] `handlers/live_activity_handler.go` — `POST /api/v1/live-activities/register` y `DELETE /api/v1/live-activities/by-event/{eventId}`
+- [x] Hook en `crud_handler.UpdateEvent` — cuando `existing.Status != oldStatus`, llama `liveActivitySvc.PushUpdate` con `DeriveContentStateFromStatus` mapeando confirmed→setup, completed→completed, cancelled→completed, otros→in_progress
+- [x] `LiveActivityContentState` con field tags JSON camelCase (`startTime`, `elapsedMinutes`, `statusLabel`) que matchean exactamente la decodificación de iOS `SolennixEventAttributes.ContentState`
+
+**Archivos**: `migrations/036_add_live_activity_tokens.{up,down}.sql`, `models/models.go` (LiveActivityToken), `repository/live_activity_token_repo.go`, `services/live_activity_service.go`, `handlers/live_activity_handler.go`, `cmd/server/main.go` (wiring), `internal/router/router.go` (rutas)
+
+---
+
 ## Fase 4: Features Avanzadas (Alineado con Frontend)
 
 > [!success] Impacto: Alto | Esfuerzo: Alto

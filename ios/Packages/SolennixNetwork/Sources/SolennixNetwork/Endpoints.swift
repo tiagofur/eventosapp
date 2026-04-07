@@ -115,4 +115,12 @@ public enum Endpoint {
 
     public static let registerDevice = "/devices/register"
     public static let unregisterDevice = "/devices/unregister"
+
+    // MARK: - Live Activities (iOS Dynamic Island remote updates)
+
+    public static let registerLiveActivityToken = "/live-activities/register"
+
+    public static func liveActivityByEvent(_ eventId: String) -> String {
+        "/live-activities/by-event/\(eventId)"
+    }
 }

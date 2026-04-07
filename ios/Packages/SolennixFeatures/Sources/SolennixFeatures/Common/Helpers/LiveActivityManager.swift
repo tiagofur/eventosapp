@@ -2,6 +2,7 @@
 import ActivityKit
 import Foundation
 import SolennixCore
+import SolennixNetwork
 
 // MARK: - Live Activity Manager
 
@@ -28,9 +29,22 @@ public final class LiveActivityManager {
     /// Almacena las referencias a actividades activas, indexadas por eventId.
     private var activeActivities: [String: String] = [:] // eventId -> activityId
 
+    /// API client para comunicarse con el backend (push token registration).
+    /// Inyectado por la app target en el arranque vía `configure(apiClient:)`.
+    private var apiClient: APIClient?
+
+    /// Tasks de captura de push tokens, indexadas por eventId. Permiten cancelar
+    /// el observer cuando la activity termina.
+    private var tokenObservers: [String: Task<Void, Never>] = [:]
+
     // MARK: - Init
 
     private init() {}
+
+    /// Inyecta el APIClient compartido. Llamar una sola vez desde la app target.
+    public func configure(apiClient: APIClient) {
+        self.apiClient = apiClient
+    }
 
     // MARK: - Verificación de Disponibilidad
 
@@ -77,18 +91,83 @@ public final class LiveActivityManager {
         let content = ActivityContent(state: initialState, staleDate: nil)
 
         do {
+            // pushType: .token habilita push-to-update remoto desde el backend.
             let activity = try Activity.request(
                 attributes: attributes,
                 content: content,
-                pushType: nil
+                pushType: .token
             )
 
             activeActivities[event.id] = activity.id
+            observePushToken(for: activity, eventId: event.id)
             print("[LiveActivityManager] Actividad iniciada para evento \(event.id): \(activity.id)")
             return true
         } catch {
             print("[LiveActivityManager] Error al iniciar actividad: \(error.localizedDescription)")
             return false
+        }
+    }
+
+    // MARK: - Push Token Observer
+
+    /// Observa los push token updates de una activity y los envía al backend
+    /// para que pueda enviar updates remotos via APNs (`apns-push-type: liveactivity`).
+    /// También observa el state stream para detectar dismissal y limpiar el token.
+    private func observePushToken(for activity: Activity<SolennixEventAttributes>, eventId: String) {
+        tokenObservers[eventId]?.cancel()
+
+        let task = Task { [weak self] in
+            // Stream paralelo: tokens y estado.
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { [weak self] in
+                    for await tokenData in activity.pushTokenUpdates {
+                        let tokenString = tokenData.map { String(format: "%02x", $0) }.joined()
+                        await self?.sendTokenToBackend(eventId: eventId, pushToken: tokenString)
+                    }
+                }
+                group.addTask { [weak self] in
+                    for await state in activity.activityStateUpdates {
+                        if state == .dismissed || state == .ended {
+                            await self?.cleanupBackendTokens(eventId: eventId)
+                            return
+                        }
+                    }
+                }
+            }
+        }
+        tokenObservers[eventId] = task
+    }
+
+    private func sendTokenToBackend(eventId: String, pushToken: String) async {
+        guard let apiClient else {
+            print("[LiveActivityManager] APIClient no configurado, no se envía token")
+            return
+        }
+        let body: [String: String] = [
+            "event_id": eventId,
+            "push_token": pushToken
+        ]
+        do {
+            let _: EmptyResponse = try await apiClient.post(
+                Endpoint.registerLiveActivityToken,
+                body: AnyCodable(body)
+            )
+            print("[LiveActivityManager] Push token registrado para evento \(eventId)")
+        } catch {
+            print("[LiveActivityManager] Error registrando push token: \(error.localizedDescription)")
+        }
+    }
+
+    private func cleanupBackendTokens(eventId: String) async {
+        tokenObservers[eventId]?.cancel()
+        tokenObservers.removeValue(forKey: eventId)
+
+        guard let apiClient else { return }
+        do {
+            try await apiClient.delete(Endpoint.liveActivityByEvent(eventId))
+            print("[LiveActivityManager] Tokens limpiados en backend para evento \(eventId)")
+        } catch {
+            print("[LiveActivityManager] Error limpiando tokens: \(error.localizedDescription)")
         }
     }
 
@@ -168,6 +247,7 @@ public final class LiveActivityManager {
 
         await activity.end(finalContent, dismissalPolicy: .after(.now + 60 * 5))
         activeActivities.removeValue(forKey: eventId)
+        await cleanupBackendTokens(eventId: eventId)
         print("[LiveActivityManager] Actividad finalizada para evento \(eventId)")
     }
 
@@ -175,6 +255,7 @@ public final class LiveActivityManager {
 
     /// Finaliza todas las Live Activities activas. Útil para limpieza al cerrar sesión.
     public func endAllActivities() async {
+        let eventIds = Array(activeActivities.keys)
         for activity in Activity<SolennixEventAttributes>.activities {
             let finalState = SolennixEventAttributes.ContentState(
                 status: "completed",
@@ -186,6 +267,9 @@ public final class LiveActivityManager {
             await activity.end(finalContent, dismissalPolicy: .immediate)
         }
 
+        for eventId in eventIds {
+            await cleanupBackendTokens(eventId: eventId)
+        }
         activeActivities.removeAll()
         print("[LiveActivityManager] Todas las actividades finalizadas")
     }

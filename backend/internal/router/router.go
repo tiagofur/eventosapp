@@ -16,6 +16,7 @@ import (
 func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, subHandler *handlers.SubscriptionHandler,
 	searchHandler *handlers.SearchHandler, eventPaymentHandler *handlers.EventPaymentHandler, uploadHandler *handlers.UploadHandler,
 	adminHandler *handlers.AdminHandler, dashboardHandler *handlers.DashboardHandler, auditHandler *handlers.AuditHandler, unavailHandler *handlers.UnavailableDateHandler, deviceHandler *handlers.DeviceHandler,
+	liveActivityHandler *handlers.LiveActivityHandler,
 	authService *services.AuthService, userRepo *repository.UserRepo, auditRepo mw.AuditLogger, pool *pgxpool.Pool, corsOrigins []string, uploadDir string) http.Handler {
 
 	r := chi.NewRouter()
@@ -212,6 +213,12 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Route("/devices", func(r chi.Router) {
 			r.Post("/register", deviceHandler.RegisterDevice)
 			r.Post("/unregister", deviceHandler.UnregisterDevice)
+		})
+
+		// iOS Live Activity push tokens (Dynamic Island remote updates)
+		r.Route("/live-activities", func(r chi.Router) {
+			r.Post("/register", liveActivityHandler.Register)
+			r.Delete("/by-event/{eventId}", liveActivityHandler.DeleteByEvent)
 		})
 
 		// Search — rate limited to prevent abuse

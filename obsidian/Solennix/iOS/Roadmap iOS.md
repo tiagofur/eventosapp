@@ -63,7 +63,7 @@
 ### 0.2 Live Activities — Completar Wiring
 
 - [x] Conectar actualizaciones de Live Activity con datos reales del evento — ✅ 2026-04-06 (eliminado widget zombie `EventLiveActivity`/`EventActivityAttributes` con tipo divergente; timer ahora usa `Text(startTime, style: .timer)` nativo de WidgetKit y refresca solo; `loadData` reconcilia status con backend post-refresh)
-- [ ] Implementar push-to-update para Live Activities (APNs) — requiere endpoint backend para Live Activity push tokens
+- [x] Implementar push-to-update para Live Activities (APNs) — ✅ 2026-04-06 (Activity ahora se inicia con `pushType: .token`; observer dual stream captura `pushTokenUpdates` → `POST /api/v1/live-activities/register` y `activityStateUpdates` → `DELETE /api/v1/live-activities/by-event/{id}`. Backend con migración 036, repo, service `LiveActivityService` con header `apns-push-type: liveactivity` + topic `bundle.push-type.liveactivity`, y hook automático en `PUT /events/{id}` cuando cambia el status)
 - [ ] Testear en dispositivos reales (Dynamic Island solo en iPhone 14 Pro+)
 
 **Por qué**: La infraestructura existe pero el mecanismo de actualización no está completo.

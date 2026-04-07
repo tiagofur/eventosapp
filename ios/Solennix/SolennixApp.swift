@@ -74,6 +74,9 @@ struct SolennixApp: App {
         _subscriptionManager = State(initialValue: subManager)
         self.apiClient = client
 
+        // Wire APIClient into LiveActivityManager for push token registration.
+        LiveActivityManager.shared.configure(apiClient: client)
+
         // Configure Google Sign-In
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: "43149798972-0nn6jdl55fau93m4knb6pts1k2eikan8.apps.googleusercontent.com")
 

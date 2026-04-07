@@ -276,3 +276,15 @@ type DeviceToken struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// LiveActivityToken represents an iOS Live Activity push token bound to an event.
+// Used to send remote updates to a running Activity (Dynamic Island / lock screen)
+// without requiring the app to be in the foreground.
+type LiveActivityToken struct {
+	ID        uuid.UUID  `json:"id"`
+	UserID    uuid.UUID  `json:"user_id"`
+	EventID   uuid.UUID  `json:"event_id"`
+	PushToken string     `json:"push_token"`
+	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+}

@@ -29,6 +29,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F57E330D7B39121459FC86CD"
+               BuildableName = "SolennixNotificationServiceExtension.appex"
+               BlueprintName = "SolennixNotificationServiceExtension"
+               ReferencedContainer = "container:Solennix.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "533502EEC4678D63921D71A6"
                BuildableName = "SolennixWidgetExtension.appex"
                BlueprintName = "SolennixWidgetExtension"
@@ -53,6 +67,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "972C8DBAEF69C53747D385CF"
+               BuildableName = "SolennixTests.xctest"
+               BlueprintName = "SolennixTests"
+               ReferencedContainer = "container:Solennix.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

@@ -26,15 +26,22 @@ type NotificationSender interface {
 }
 
 type CRUDHandler struct {
-	clientRepo    ClientRepository
-	eventRepo     FullEventRepository
-	productRepo   ProductRepository
-	inventoryRepo InventoryRepository
-	paymentRepo   FullPaymentRepository
-	userRepo      FullUserRepository
-	unavailRepo   UnavailableDateRepository
-	notifier      NotificationSender      // optional, may be nil
-	emailService  *services.EmailService   // optional, may be nil
+	clientRepo      ClientRepository
+	eventRepo       FullEventRepository
+	productRepo     ProductRepository
+	inventoryRepo   InventoryRepository
+	paymentRepo     FullPaymentRepository
+	userRepo        FullUserRepository
+	unavailRepo     UnavailableDateRepository
+	notifier        NotificationSender         // optional, may be nil
+	emailService    *services.EmailService      // optional, may be nil
+	liveActivitySvc LiveActivityNotifier        // optional, may be nil
+}
+
+// LiveActivityNotifier is the subset of services.LiveActivityService the handler needs.
+// Defined here to keep the handler decoupled from the concrete service.
+type LiveActivityNotifier interface {
+	PushUpdate(ctx context.Context, eventID uuid.UUID, state services.LiveActivityContentState) error
 }
 
 func NewCRUDHandler(
@@ -65,6 +72,11 @@ func (h *CRUDHandler) SetNotifier(n NotificationSender) {
 // SetEmailService configures an optional email service.
 func (h *CRUDHandler) SetEmailService(e *services.EmailService) {
 	h.emailService = e
+}
+
+// SetLiveActivityNotifier configures an optional Live Activity push notifier.
+func (h *CRUDHandler) SetLiveActivityNotifier(s LiveActivityNotifier) {
+	h.liveActivitySvc = s
 }
 
 // ===================
@@ -531,7 +543,37 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Push Live Activity update on any status change (fire-and-forget).
+	// Reaches running iOS Activities so the Dynamic Island reflects the new state
+	// even if the change came from another device or team member.
+	if h.liveActivitySvc != nil && existing.Status != oldStatus {
+		eventStart := parseEventStartTime(existing.EventDate, existing.StartTime)
+		state := services.DeriveContentStateFromStatus(existing.Status, eventStart)
+		go func() {
+			if err := h.liveActivitySvc.PushUpdate(context.Background(), id, state); err != nil {
+				slog.Warn("Failed to push live activity update", "event_id", id, "error", err)
+			}
+		}()
+	}
+
 	writeJSON(w, http.StatusOK, existing)
+}
+
+// parseEventStartTime combines event_date (YYYY-MM-DD or RFC3339) with optional
+// start_time (HH:MM[:SS]) into a single Time. Falls back to "now" if parsing fails.
+func parseEventStartTime(eventDate string, startTime *string) time.Time {
+	dateStr := strings.Split(eventDate, "T")[0]
+	timeStr := "09:00"
+	if startTime != nil && *startTime != "" {
+		timeStr = *startTime
+		if len(timeStr) > 5 {
+			timeStr = timeStr[:5]
+		}
+	}
+	if t, err := time.ParseInLocation("2006-01-02 15:04", dateStr+" "+timeStr, time.Local); err == nil {
+		return t
+	}
+	return time.Now()
 }
 
 func (h *CRUDHandler) DeleteEvent(w http.ResponseWriter, r *http.Request) {

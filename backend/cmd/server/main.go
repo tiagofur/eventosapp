@@ -81,12 +81,16 @@ func main() {
 	deviceRepo := repository.NewDeviceRepo(pool)
 	revokedTokenRepo := repository.NewRevokedTokenRepo(pool)
 	refreshTokenRepo := repository.NewRefreshTokenRepo(pool)
+	liveActivityRepo := repository.NewLiveActivityTokenRepo(pool)
 
 	// Set persistent token blacklist (replaces in-memory sync.Map)
 	mw.SetTokenBlacklist(revokedTokenRepo)
 
 	// Initialize notification service
 	notificationService := services.NewNotificationService(pushService, deviceRepo, pool)
+
+	// Initialize Live Activity push service (iOS Dynamic Island updates)
+	liveActivityService := services.NewLiveActivityService(liveActivityRepo, pushService)
 
 	// Initialize handlers
 	stripeService := &handlers.DefaultStripeService{}
@@ -96,6 +100,7 @@ func main() {
 	crudHandler := handlers.NewCRUDHandler(clientRepo, eventRepo, productRepo, inventoryRepo, paymentRepo, userRepo, unavailRepo)
 	crudHandler.SetNotifier(notificationService)
 	crudHandler.SetEmailService(emailService)
+	crudHandler.SetLiveActivityNotifier(liveActivityService)
 	subHandler := handlers.NewSubscriptionHandler(userRepo, subscriptionRepo, eventRepo, paymentRepo, stripeService, rcService, cfg)
 	subHandler.SetEmailService(emailService)
 	searchHandler := handlers.NewSearchHandler(clientRepo, productRepo, inventoryRepo, eventRepo)
@@ -128,9 +133,10 @@ func main() {
 	dashboardHandler := handlers.NewDashboardHandler(dashboardRepo)
 	unavailHandler := handlers.NewUnavailableDateHandler(unavailRepo)
 	deviceHandler := handlers.NewDeviceHandler(deviceRepo)
+	liveActivityHandler := handlers.NewLiveActivityHandler(liveActivityRepo)
 
 	// Create router
-	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, adminHandler, dashboardHandler, auditHandler, unavailHandler, deviceHandler, authService, userRepo, auditRepo, pool, cfg.CORSAllowedOrigins, cfg.UploadDir)
+	r := router.New(authHandler, crudHandler, subHandler, searchHandler, eventPaymentHandler, uploadHandler, adminHandler, dashboardHandler, auditHandler, unavailHandler, deviceHandler, liveActivityHandler, authService, userRepo, auditRepo, pool, cfg.CORSAllowedOrigins, cfg.UploadDir)
 
 	// Background job: expire gifted plans that have passed their expiry date.
 	// Runs once at startup then every hour.
