@@ -95,7 +95,7 @@ func (r *EventRepo) GetAllPaginated(ctx context.Context, userID uuid.UUID, offse
 
 	query := fmt.Sprintf(`SELECT %s, c.name as client_name, c.phone as client_phone
 		FROM events e LEFT JOIN clients c ON e.client_id = c.id
-		WHERE e.user_id = $1 ORDER BY e.%s %s LIMIT $2 OFFSET $3`, eventSelectFields, sortCol, order)
+		WHERE e.user_id = $1 ORDER BY %s %s LIMIT $2 OFFSET $3`, eventSelectFields, sortCol, order)
 	rows, err := r.pool.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err
