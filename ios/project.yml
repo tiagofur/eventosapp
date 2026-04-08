@@ -47,6 +47,8 @@ targets:
       properties:
         com.apple.developer.applesignin:
           - Default
+        com.apple.security.application-groups:
+          - group.com.solennix.app
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.solennix.app

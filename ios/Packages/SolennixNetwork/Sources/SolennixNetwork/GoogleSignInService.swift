@@ -54,16 +54,27 @@ public protocol GoogleSignInServiceProtocol: Sendable {
 /// let result = try await service.signIn()
 /// // Send result.idToken to your backend via AuthManager.signInWithGoogle
 /// ```
-public final class GoogleSignInService: GoogleSignInServiceProtocol, Sendable {
+@MainActor
+public final class GoogleSignInService: GoogleSignInServiceProtocol {
 
     public init() {}
 
     /// Perform Google Sign-In by presenting the sign-in sheet.
     /// - Returns: A `GoogleSignInResult` containing the ID token and user info.
-    @MainActor
     public func signIn() async throws -> GoogleSignInResult {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
+        // Pick the foreground-active window scene's key window's root VC.
+        // `connectedScenes.first` can return a background scene on iPad
+        // multi-window, which causes the Google sheet to attach to the
+        // wrong window or fail silently.
+        let activeScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? (UIApplication.shared.connectedScenes.first as? UIWindowScene)
+
+        let keyWindow = activeScene?.windows.first(where: { $0.isKeyWindow })
+            ?? activeScene?.windows.first
+
+        guard let rootViewController = keyWindow?.rootViewController else {
             throw GoogleSignInError.failed(
                 NSError(domain: "GoogleSignIn", code: -1,
                         userInfo: [NSLocalizedDescriptionKey: "No root view controller found"])

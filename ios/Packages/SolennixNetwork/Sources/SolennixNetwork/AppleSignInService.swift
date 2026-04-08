@@ -140,11 +140,22 @@ extension AppleSignInService: @preconcurrency ASAuthorizationControllerDelegate 
 extension AppleSignInService: @preconcurrency ASAuthorizationControllerPresentationContextProviding {
 
     public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        // Return the first window scene's key window
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = scene.windows.first else {
-            return ASPresentationAnchor()
+        // Pick the foreground-active window scene and its key window.
+        // On iPad with Stage Manager / multi-window, `connectedScenes.first`
+        // may return a background scene and `windows.first` may not be the
+        // key window — both of which cause the Apple sheet to appear on the
+        // wrong window or not at all.
+        let activeScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? (UIApplication.shared.connectedScenes.first as? UIWindowScene)
+
+        if let keyWindow = activeScene?.windows.first(where: { $0.isKeyWindow }) {
+            return keyWindow
         }
-        return window
+        if let anyWindow = activeScene?.windows.first {
+            return anyWindow
+        }
+        return ASPresentationAnchor()
     }
 }

@@ -8,7 +8,7 @@
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.roup.com.solennix.app</string>
+		<string>group.com.solennix.app</string>
 	</array>
 </dict>
 </plist>
