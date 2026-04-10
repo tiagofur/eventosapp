@@ -44,11 +44,11 @@ Rama `super-plan` lista con:
 
 ### 2. Backend Contract Expansion — progreso real posterior
 
-| Área | Resultado |
-| --- | --- |
-| OpenAPI | `backend/docs/openapi.yaml` expandido para nested event endpoints, product ingredients, event payment Stripe y envelopes paginados |
-| Contract tests | `backend/internal/handlers/contract_test.go` ahora falla si faltan esas rutas o schemas |
-| Validación | `go test ./internal/handlers -run "TestOpenAPISpec_(AuthContract\|SubscriptionsContract\|EventContract\|CoreCRUDContract\|OperationalEndpointsContract)$"` en PASS |
+| Área           | Resultado                                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| OpenAPI        | `backend/docs/openapi.yaml` expandido para nested event endpoints, product ingredients, event payment Stripe y envelopes paginados                                 |
+| Contract tests | `backend/internal/handlers/contract_test.go` ahora falla si faltan esas rutas o schemas                                                                            |
+| Validación     | `go test ./internal/handlers -run "TestOpenAPISpec_(AuthContract\|SubscriptionsContract\|EventContract\|CoreCRUDContract\|OperationalEndpointsContract)$"` en PASS |
 
 ### 3. Rama WIP `wip/e2b1-openapi-start` — 1 Commit
 
