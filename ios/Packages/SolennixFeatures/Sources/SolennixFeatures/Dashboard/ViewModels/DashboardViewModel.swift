@@ -153,7 +153,9 @@ public final class DashboardViewModel {
             label: String
         ) async -> [T] {
             let paramsDesc = params?.map { "\($0.key)=\($0.value)" }.joined(separator: "&") ?? "none"
-            NSLog("[Dashboard] 🔄 Loading %@ -> %@ params: %@", label, endpoint, paramsDesc)
+            // Log the ACTUAL resolved URL to diagnose 404s
+            let resolvedURL = await apiClient.resolveURL(endpoint)?.absoluteString ?? "nil"
+            NSLog("[Dashboard] 🔄 Loading %@ -> %@ params: %@ | FULL URL: %@", label, endpoint, paramsDesc, resolvedURL)
             do {
                 let result: [T] = try await apiClient.getAll(endpoint, params: params)
                 NSLog("[Dashboard] ✅ %@ loaded %d items", label, result.count)

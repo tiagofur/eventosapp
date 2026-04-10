@@ -8,24 +8,9 @@ import SolennixNetwork
 import SolennixDesign
 import SolennixFeatures
 
-// MARK: - APIClient Environment Key
-
-/// Custom `EnvironmentKey` for injecting the `APIClient` actor.
-///
-/// Since `actor` types cannot conform to `@Observable`, we use a
-/// traditional `EnvironmentKey` + `EnvironmentValues` extension
-/// rather than the `@Environment(Type.self)` pattern.
-private struct APIClientKey: EnvironmentKey {
-    static let defaultValue: APIClient = APIClient()
-}
-
-extension EnvironmentValues {
-    /// The shared API client for making network requests.
-    var apiClient: APIClient {
-        get { self[APIClientKey.self] }
-        set { self[APIClientKey.self] = newValue }
-    }
-}
+// NOTE: APIClient EnvironmentKey is defined in SolennixNetwork/APIClientEnvironmentKey.swift.
+// Do NOT redeclare it here — that would shadow the package's public key and cause
+// feature modules (which import SolennixNetwork) to read a different default value.
 
 // MARK: - App Entry Point
 

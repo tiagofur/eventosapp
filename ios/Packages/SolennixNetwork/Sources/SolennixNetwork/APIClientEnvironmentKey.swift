@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - APIClient Environment Key
 
 private struct APIClientKey: EnvironmentKey {
-    static let defaultValue: APIClient = APIClient()
+    static let defaultValue: APIClient = APIClient(baseURL: URL(string: "https://api.solennix.com/api")!)
 }
 
 public extension EnvironmentValues {

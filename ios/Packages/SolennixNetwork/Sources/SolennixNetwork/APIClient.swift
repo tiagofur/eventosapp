@@ -51,7 +51,7 @@ public actor APIClient {
     ///   - baseURL: The base URL of the API (e.g., `https://api.solennix.com`).
     ///   - keychainHelper: The keychain helper for reading auth tokens.
     public init(
-        baseURL: URL = URL(string: "https://api.solennix.com")!,
+        baseURL: URL = URL(string: "https://api.solennix.com/api")!,
         keychainHelper: KeychainHelper = .standard
     ) {
         self.baseURL = baseURL
@@ -78,7 +78,7 @@ public actor APIClient {
 
     /// Static URL resolver using the default base URL.
     /// Use this when you don't have access to an APIClient instance.
-    public static func resolveURL(_ path: String, baseURL: URL = URL(string: "https://api.solennix.com")!) -> URL? {
+    public static func resolveURL(_ path: String, baseURL: URL = URL(string: "https://api.solennix.com/api")!) -> URL? {
         if path.hasPrefix("http://") || path.hasPrefix("https://") {
             return URL(string: path)
         }
