@@ -18,6 +18,19 @@ func readOpenAPISpec(t *testing.T) string {
 	return string(content)
 }
 
+func assertContainsInOrder(t *testing.T, text string, fragments ...string) {
+	t.Helper()
+
+	searchFrom := 0
+	for _, fragment := range fragments {
+		idx := strings.Index(text[searchFrom:], fragment)
+		if idx < 0 {
+			t.Fatalf("openapi spec missing ordered fragment %q", fragment)
+		}
+		searchFrom += idx + len(fragment)
+	}
+}
+
 func TestOpenAPISpec_AuthContract(t *testing.T) {
 	spec := readOpenAPISpec(t)
 
@@ -195,6 +208,42 @@ func TestOpenAPISpec_CoreCRUDContract(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("product create response includes schema payload", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/products:",
+			"operationId: createProduct",
+			"description: Product created",
+			"content:",
+			"application/json:",
+			"$ref: \"#/components/schemas/Product\"",
+			"\"400\":",
+		)
+	})
+
+	t.Run("inventory create response includes schema payload", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/inventory:",
+			"operationId: createInventory",
+			"description: Inventory item created",
+			"content:",
+			"application/json:",
+			"$ref: \"#/components/schemas/InventoryItem\"",
+			"\"401\":",
+		)
+	})
+
+	t.Run("payment create response includes schema payload", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/payments:",
+			"operationId: createPayment",
+			"description: Payment created",
+			"content:",
+			"application/json:",
+			"$ref: \"#/components/schemas/Payment\"",
+			"\"400\":",
+		)
+	})
 }
 
 func TestOpenAPISpec_OperationalEndpointsContract(t *testing.T) {

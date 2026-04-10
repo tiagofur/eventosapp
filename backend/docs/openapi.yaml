@@ -2708,6 +2708,10 @@ paths:
       responses:
         "201":
           description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
         "400":
           description: Validation error
         "401":
@@ -2923,6 +2927,10 @@ paths:
       responses:
         "201":
           description: Inventory item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
         "401":
           description: Unauthorized
   /api/inventory/{id}:
@@ -3069,6 +3077,10 @@ paths:
       responses:
         "201":
           description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
         "400":
           description: Validation error
         "401":
