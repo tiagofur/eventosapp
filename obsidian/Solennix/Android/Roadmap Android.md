@@ -150,7 +150,7 @@
 - [x] Shared element transitions entre lista → detalle
 - [x] Stagger animations en listas
 - [x] Skeleton → content crossfade
-- [ ] Spring physics en gestos (drag, swipe)
+- [x] Spring physics en gestos (drag, swipe)
 - [x] Respetar `Settings.Global.ANIMATOR_DURATION_SCALE`
 
 ### 3.2 Accesibilidad Audit ✅

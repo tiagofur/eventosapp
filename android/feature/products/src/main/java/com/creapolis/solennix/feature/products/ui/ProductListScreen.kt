@@ -1,5 +1,8 @@
 package com.creapolis.solennix.feature.products.ui
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -28,9 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -250,29 +256,22 @@ fun ProductListScreen(
                         },
                         listContent = {
                             items(uiState.products, key = { it.id }) { product ->
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value == SwipeToDismissBoxValue.EndToStart) {
+                                            viewModel.deleteProduct(product.id)
+                                            true
+                                        } else false
+                                    }
+                                )
                                 SwipeToDismissBox(
-                                    state = rememberSwipeToDismissBoxState(
-                                        confirmValueChange = { value ->
-                                            if (value == SwipeToDismissBoxValue.EndToStart) {
-                                                viewModel.deleteProduct(product.id)
-                                                true
-                                            } else false
-                                        }
-                                    ),
+                                    state = dismissState,
                                     enableDismissFromStartToEnd = false,
                                     backgroundContent = {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(horizontal = 16.dp),
-                                            contentAlignment = Alignment.CenterEnd
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = stringResource(DesignSystemR.string.cd_delete),
-                                                tint = Color.White
-                                            )
-                                        }
+                                        SwipeDeleteBackground(
+                                            progress = dismissState.progress,
+                                            contentDescription = stringResource(DesignSystemR.string.cd_delete)
+                                        )
                                     },
                                     modifier = Modifier.animateItem()
                                 ) {
@@ -294,6 +293,47 @@ fun ProductListScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SwipeDeleteBackground(
+    progress: Float,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    endPadding: Dp = 20.dp
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "productSwipeDeleteProgress"
+    )
+
+    Surface(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.18f + (animatedProgress * 0.72f)),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = contentDescription,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier
+                    .padding(end = endPadding - (animatedProgress * 8).dp)
+                    .offset(x = ((1f - animatedProgress) * 14f).dp)
+                    .scale(0.82f + (animatedProgress * 0.28f))
+                    .alpha(0.45f + (animatedProgress * 0.55f))
+            )
         }
     }
 }

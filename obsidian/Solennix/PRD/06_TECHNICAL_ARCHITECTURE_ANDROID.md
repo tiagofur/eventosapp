@@ -647,6 +647,8 @@ val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope
 
 **Respeto de accesibilidad de animaciones:** `AnimatedEventListItem` lee `Settings.Global.ANIMATOR_DURATION_SCALE` en composable scope y multiplica el delay de stagger. Si el valor es 0 (animaciones desactivadas por el usuario), salta el delay completamente.
 
+**Spring physics en swipe:** `ProductListScreen` e `InventoryListScreen` usan `SwipeToDismissBox` con feedback elástico en el fondo de borrado (`animateFloatAsState(..., spring(...))`) para escalar/desplazar el ícono de delete según el progreso del gesto. En inventario, además, el contenedor de la sección anima el reflow con `animateContentSize(spring(...))` cuando un item desaparece.
+
 ---
 
 ### Entidades Principales

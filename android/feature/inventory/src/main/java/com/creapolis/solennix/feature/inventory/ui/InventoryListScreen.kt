@@ -1,6 +1,10 @@
 package com.creapolis.solennix.feature.inventory.ui
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -19,7 +23,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -427,7 +433,14 @@ private fun InventorySection(
         color = SolennixTheme.colors.card,
         tonalElevation = 1.dp
     ) {
-        Column {
+        Column(
+            modifier = Modifier.animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            )
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -465,19 +478,7 @@ private fun InventorySection(
                         state = dismissState,
                         enableDismissFromStartToEnd = false,
                         backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(SolennixTheme.colors.error),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Eliminar",
-                                    tint = Color.White,
-                                    modifier = Modifier.padding(end = 20.dp)
-                                )
-                            }
+                            InventorySwipeDeleteBackground(progress = dismissState.progress)
                         }
                     ) {
                         InventoryListItem(
@@ -496,6 +497,39 @@ private fun InventorySection(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun InventorySwipeDeleteBackground(progress: Float) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "inventorySwipeDeleteProgress"
+    )
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = SolennixTheme.colors.error.copy(alpha = 0.14f + (animatedProgress * 0.72f))
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Icon(
+                Icons.Default.Delete,
+                contentDescription = "Eliminar",
+                tint = Color.White,
+                modifier = Modifier
+                    .padding(end = 20.dp - (animatedProgress * 8).dp)
+                    .offset(x = ((1f - animatedProgress) * 14f).dp)
+                    .scale(0.82f + (animatedProgress * 0.28f))
+                    .alpha(0.45f + (animatedProgress * 0.55f))
+            )
         }
     }
 }

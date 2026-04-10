@@ -8,7 +8,7 @@ aliases:
   - Estado Actual
   - Current Status
 date: 2026-03-20
-updated: 2026-04-06
+updated: 2026-04-10
 status: active
 ---
 
@@ -616,6 +616,7 @@ status: active
 > - ~~Shared element transitions lista→detalle~~ — SharedTransitionLayout + sharedBounds via LocalSharedTransitionScope/LocalNavAnimatedVisibilityScope. Key pattern: `event_card_{id}`
 > - ~~Skeleton → content crossfade~~ — AnimatedContent con skeleton + shimmer en EventListScreen
 > - ~~Stagger animations en EventList~~ — AnimatedEventListItem con delay por índice (≤5 items × 45ms)
+> - ~~Spring physics en swipes~~ — SwipeToDismissBox en ProductList/InventoryList con feedback elástico del fondo de borrado + reflow spring en secciones de inventario
 > - ~~Respetar ANIMATOR_DURATION_SCALE~~ — Delay multiplicado por Settings.Global.ANIMATOR_DURATION_SCALE; skip si = 0
 > - ~~Accesibilidad a11y StatusBadge~~ — contentDescription + Role.Image en StatusBadge
 > - ~~RevenueCat sync en register/Google~~ — Agregado logInWith despues de register y Google sign-in
