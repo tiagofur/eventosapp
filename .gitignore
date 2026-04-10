@@ -39,3 +39,4 @@ solennix-release.jks
 
 # Solennix iOS secrets (keep template, ignore real values)
 ios/Config/Secrets.xcconfig
+android/google-services.json

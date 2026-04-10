@@ -373,7 +373,7 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
                     onValueChange = { viewModel.onClientSearchQueryChange(it) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Buscar cliente...") },
-                    leadingIcon = Icons.Default.Search,
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     shape = RoundedCornerShape(12.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -461,6 +461,7 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
 fun StepProducts(viewModel: EventFormViewModel) {
     var showProductPicker by remember { mutableStateOf(false) }
     val isWideScreen = LocalIsWideScreen.current
+    val availableProducts by viewModel.availableProducts.collectAsStateWithLifecycle()
 
     AdaptiveCenteredContent(maxWidth = 800.dp) {
     Column(modifier = Modifier.padding(24.dp)) {
@@ -473,14 +474,58 @@ fun StepProducts(viewModel: EventFormViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (viewModel.productLoadError != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.error.copy(alpha = 0.08f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.error.copy(alpha = 0.3f)),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        viewModel.productLoadError ?: "Error cargando productos",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.error
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { viewModel.retryLoadProducts() }) {
+                        Text("Reintentar")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         if (viewModel.selectedProducts.isEmpty()) {
-            EmptyState(
-                icon = Icons.Default.RestaurantMenu,
-                title = "Sin productos",
-                message = "Añade platos o servicios al evento para calcular el presupuesto.",
-                actionText = "Explorar Catálogo",
-                onAction = { showProductPicker = true }
-            )
+            when {
+                viewModel.isLoadingProducts && availableProducts.isEmpty() -> {
+                    EmptyState(
+                        icon = Icons.Default.HourglassEmpty,
+                        title = "Cargando catálogo",
+                        message = "Estamos obteniendo tus productos...",
+                        actionText = "Actualizar",
+                        onAction = { viewModel.retryLoadProducts() }
+                    )
+                }
+                availableProducts.isEmpty() -> {
+                    EmptyState(
+                        icon = Icons.Default.RestaurantMenu,
+                        title = "Sin productos disponibles",
+                        message = "No hay productos en el catálogo para añadir al evento.",
+                        actionText = "Reintentar",
+                        onAction = { viewModel.retryLoadProducts() }
+                    )
+                }
+                else -> {
+                    EmptyState(
+                        icon = Icons.Default.RestaurantMenu,
+                        title = "Sin productos",
+                        message = "Añade platos o servicios al evento para calcular el presupuesto.",
+                        actionText = "Explorar Catálogo",
+                        onAction = { showProductPicker = true }
+                    )
+                }
+            }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 if (isWideScreen) {
@@ -491,7 +536,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
                             Box(modifier = Modifier.weight(1f)) {
                                 ProductSelectionItem(
                                     item = pair[0],
-                                    availableProducts = viewModel.availableProducts.value,
+                                    availableProducts = availableProducts,
                                     onQuantityChange = { viewModel.updateProductQuantity(pair[0].productId, it) },
                                     onDiscountChange = { viewModel.updateProductDiscount(pair[0].productId, it) },
                                     onRemove = { viewModel.removeProduct(pair[0].productId) },
@@ -503,7 +548,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
                                 Box(modifier = Modifier.weight(1f)) {
                                     ProductSelectionItem(
                                         item = pair[1],
-                                        availableProducts = viewModel.availableProducts.value,
+                                        availableProducts = availableProducts,
                                         onQuantityChange = { viewModel.updateProductQuantity(pair[1].productId, it) },
                                         onDiscountChange = { viewModel.updateProductDiscount(pair[1].productId, it) },
                                         onRemove = { viewModel.removeProduct(pair[1].productId) },
@@ -521,7 +566,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
                         val item = viewModel.selectedProducts[index]
                         ProductSelectionItem(
                             item = item,
-                            availableProducts = viewModel.availableProducts.value,
+                            availableProducts = availableProducts,
                             onQuantityChange = { viewModel.updateProductQuantity(item.productId, it) },
                             onDiscountChange = { viewModel.updateProductDiscount(item.productId, it) },
                             onRemove = { viewModel.removeProduct(item.productId) },
@@ -905,9 +950,9 @@ fun StepEquipment(viewModel: EventFormViewModel) {
             if (viewModel.selectedEquipment.isEmpty()) {
                 EmptyState(
                     icon = Icons.Default.Build,
-                    title = "Sin equipamiento",
-                    message = "Añade equipo reutilizable necesario para el evento.",
-                    actionText = "Explorar Inventario",
+                    title = "Sin equipamiento (opcional)",
+                    message = "Podés continuar sin equipo o añadirlo para planificación más precisa.",
+                    actionText = "Añadir Equipamiento",
                     onAction = { showEquipmentPicker = true }
                 )
             } else {
@@ -981,7 +1026,10 @@ private fun EquipmentCard(
                             Text("Unidad: ${equipment.unit}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
                         }
                         if (equipment.currentStock != null) {
-                            Text("Stock: ${equipment.currentStock.toInt()}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
+                            val currentStock = equipment.currentStock
+                            if (currentStock != null) {
+                                Text("Stock: ${currentStock.toInt()}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
+                            }
                         }
                     }
                     Text(
@@ -1144,9 +1192,9 @@ fun StepSupplies(viewModel: EventFormViewModel) {
             if (viewModel.selectedSupplies.isEmpty()) {
                 EmptyState(
                     icon = Icons.Default.Inventory2,
-                    title = "Sin insumos",
-                    message = "Añade insumos consumibles necesarios para el evento.",
-                    actionText = "Explorar Inventario",
+                    title = "Sin insumos (opcional)",
+                    message = "Podés continuar sin insumos o añadirlos para costos más exactos.",
+                    actionText = "Añadir Insumos",
                     onAction = { showSupplyPicker = true }
                 )
             } else {
@@ -1235,11 +1283,12 @@ private fun SupplyCard(
                         if (supply.unit != null) {
                             Text("Unidad: ${supply.unit}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
                         }
-                        if (supply.currentStock != null) {
+                        val currentStock = supply.currentStock
+                        if (currentStock != null) {
                             Text(
-                                "Stock: ${String.format("%.1f", supply.currentStock)}",
+                                "Stock: ${String.format("%.1f", currentStock)}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (supply.currentStock >= supply.quantity) SolennixTheme.colors.success else SolennixTheme.colors.error
+                                color = if (currentStock >= supply.quantity) SolennixTheme.colors.success else SolennixTheme.colors.error
                             )
                         }
                     }
@@ -1367,9 +1416,10 @@ private fun SupplyPickerSheet(
                                         style = MaterialTheme.typography.bodySmall,
                                         color = SolennixTheme.colors.secondaryText
                                     )
-                                    if (item.unitCost != null) {
+                                    val unitCost = item.unitCost
+                                    if (unitCost != null) {
                                         Text(
-                                            "Costo: ${item.unitCost.asMXN()}/${item.unit}",
+                                            "Costo: ${unitCost.asMXN()}/${item.unit}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = SolennixTheme.colors.primary
                                         )
@@ -1528,6 +1578,15 @@ fun StepSummary(viewModel: EventFormViewModel, isEditMode: Boolean) {
                     Text("Resumen", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    if (viewModel.hasPendingProductCosts) {
+                        Text(
+                            "Algunos costos de productos siguen cargando. La rentabilidad puede ajustarse en segundos.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SolennixTheme.colors.warning
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     SummaryRow("Subtotal productos", viewModel.subtotalProducts.asMXN())
                     SummaryRow("Subtotal extras", viewModel.subtotalExtras.asMXN())
 
@@ -1626,48 +1685,64 @@ fun ProductPickerSheet(
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(12.dp))
-            LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                items(filteredProducts.size) { index ->
-                    val product = filteredProducts[index]
-                    val isSelected = selectedIds.contains(product.id)
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 3.dp)
-                            .clickable { onProductSelected(product) },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) SolennixTheme.colors.primary.copy(alpha = 0.08f)
-                            else SolennixTheme.colors.card
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+            if (viewModel.isLoadingProducts && products.value.isEmpty()) {
+                Text(
+                    "Cargando productos...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = SolennixTheme.colors.secondaryText
+                )
+            } else if (filteredProducts.isEmpty()) {
+                EmptyState(
+                    icon = Icons.Default.RestaurantMenu,
+                    title = "Sin resultados",
+                    message = "No encontramos productos con ese criterio.",
+                    actionText = "Reintentar",
+                    onAction = { viewModel.retryLoadProducts() }
+                )
+            } else {
+                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                    items(filteredProducts.size) { index ->
+                        val product = filteredProducts[index]
+                        val isSelected = selectedIds.contains(product.id)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .clickable { onProductSelected(product) },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) SolennixTheme.colors.primary.copy(alpha = 0.08f)
+                                else SolennixTheme.colors.card
+                            ),
+                            shape = MaterialTheme.shapes.medium
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(product.name, style = MaterialTheme.typography.bodyLarge)
-                                Text(
-                                    product.category,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = SolennixTheme.colors.secondaryText
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                product.basePrice.asMXN(),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = SolennixTheme.colors.primary,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            if (isSelected) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(product.name, style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        product.category,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = SolennixTheme.colors.secondaryText
+                                    )
+                                }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = "Seleccionado",
-                                    tint = SolennixTheme.colors.success,
-                                    modifier = Modifier.size(20.dp)
+                                Text(
+                                    product.basePrice.asMXN(),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = SolennixTheme.colors.primary,
+                                    fontWeight = FontWeight.SemiBold
                                 )
+                                if (isSelected) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = "Seleccionado",
+                                        tint = SolennixTheme.colors.success,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }

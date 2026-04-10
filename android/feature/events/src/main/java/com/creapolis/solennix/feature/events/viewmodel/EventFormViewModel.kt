@@ -21,6 +21,7 @@ import com.creapolis.solennix.core.network.put
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -114,6 +115,11 @@ class EventFormViewModel @Inject constructor(
     val selectedProducts = mutableStateListOf<EventProduct>()
     private val _availableProducts = MutableStateFlow<List<Product>>(emptyList())
     val availableProducts: StateFlow<List<Product>> = _availableProducts.asStateFlow()
+    var isLoadingProducts by mutableStateOf(false)
+        private set
+    var productLoadError by mutableStateOf<String?>(null)
+        private set
+    private var loadProductsJob: Job? = null
 
     // Step 3: Extras
     val eventExtras = mutableStateListOf<EventExtra>()
@@ -169,6 +175,36 @@ class EventFormViewModel @Inject constructor(
     // Product Unit Costs (for profitability)
     private val _productUnitCosts = mutableMapOf<String, Double>()
     val productUnitCosts: Map<String, Double> get() = _productUnitCosts.toMap()
+    val hasPendingProductCosts: Boolean
+        get() = selectedProducts
+            .map { it.productId }
+            .distinct()
+            .any { _productUnitCosts[it] == null }
+
+    fun retryLoadProducts() {
+        loadProductsCatalog()
+    }
+
+    private fun loadProductsCatalog() {
+        loadProductsJob?.cancel()
+        loadProductsJob = viewModelScope.launch {
+            productRepository.getProducts()
+                .onStart {
+                    isLoadingProducts = true
+                    productLoadError = null
+                }
+                .catch {
+                    _availableProducts.value = emptyList()
+                    productLoadError = "No se pudo cargar el catálogo de productos."
+                }
+                .onCompletion {
+                    isLoadingProducts = false
+                }
+                .collect {
+                    _availableProducts.value = it
+                }
+        }
+    }
 
     private fun fetchProductCosts() {
         val missing = selectedProducts
@@ -275,11 +311,7 @@ class EventFormViewModel @Inject constructor(
     }
 
     init {
-        viewModelScope.launch {
-            productRepository.getProducts().collect {
-                _availableProducts.value = it
-            }
-        }
+        loadProductsCatalog()
         viewModelScope.launch {
             inventoryRepository.getInventoryItems().collect { items ->
                 _availableEquipment.value = items.filter { it.type == InventoryType.EQUIPMENT }

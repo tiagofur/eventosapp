@@ -18,7 +18,7 @@ status: active
 **Version:** 1.1
 
 > [!tip] Documentos relacionados
-> [[PRD MOC]] · [[01_PRODUCT_VISION]] · [[02_FEATURES]] · [[04_MONETIZATION]] · [[09_ROADMAP]]
+> [[PRD MOC]] · [[01_PRODUCT_VISION]] · [[02_FEATURES]] · [[04_MONETIZATION]] · [[09_ROADMAP]] · [[SUPER PLAN MOC]] · [[03_CROSS_PLATFORM_PARITY_MODEL]] · [[11_CROSS_PLATFORM_KPI_SCORECARD]]
 
 ---
 
