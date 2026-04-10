@@ -275,7 +275,7 @@ fun EventListScreen(
                                         ) {
                                             Text(
                                                 filter.count.toString(),
-                                                color = if (isSelected) Color.White else SolennixTheme.colors.primaryText
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else SolennixTheme.colors.primaryText
                                             )
                                         }
                                     }

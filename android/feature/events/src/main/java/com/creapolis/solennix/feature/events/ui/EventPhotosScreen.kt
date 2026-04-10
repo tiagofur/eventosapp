@@ -101,11 +101,15 @@ fun EventPhotosScreen(
                 if (uiState.isPhotoUploading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.AddAPhoto, contentDescription = "Agregar foto", tint = Color.White)
+                    Icon(
+                        Icons.Default.AddAPhoto,
+                        contentDescription = "Agregar foto",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
         }

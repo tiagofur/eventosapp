@@ -379,6 +379,7 @@ Implementa el tema visual de Solennix basado en Material 3:
 
 - **`SolennixTheme`**: Wrapper de `MaterialTheme` con colores custom accesibles via `SolennixTheme.colors`, `SolennixTheme.spacing`, etc.
 - **`SolennixColorScheme`**: Esquema de colores personalizado con soporte para light/dark
+- **Contraste dinámico**: componentes interactivos (FAB, badges seleccionados) usan `MaterialTheme.colorScheme.onPrimary` para evitar hardcodes de blanco en dark mode
 - **Tokens**: `Color.kt`, `Typography.kt`, `Shape.kt`, `Spacing.kt`, `Elevation.kt`, `Gradient.kt`
 - **Componentes reutilizables**: `SolennixTextField`, `Avatar`, `StatusBadge`, `KPICard`, `ConfirmDialog`, `EmptyState`, `PremiumButton`, `SkeletonLoading`, `ToastOverlay`, `UpgradeBanner`
 - **Utilidades**: `HapticFeedback` para feedback táctil

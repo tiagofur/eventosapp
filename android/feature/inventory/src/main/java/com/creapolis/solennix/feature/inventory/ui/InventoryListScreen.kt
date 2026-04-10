@@ -1,10 +1,10 @@
 package com.creapolis.solennix.feature.inventory.ui
 
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
@@ -179,7 +179,7 @@ fun InventoryListScreen(
             FloatingActionButton(
                 onClick = onAddItemClick,
                 containerColor = SolennixTheme.colors.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(
                     Icons.Default.Add,

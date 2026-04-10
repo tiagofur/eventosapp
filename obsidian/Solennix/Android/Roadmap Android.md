@@ -171,7 +171,7 @@
 ### 3.4 Dark Mode Polish
 
 - [ ] Auditar todas las combinaciones de color en dark mode
-- [ ] Verificar contraste en cards, badges, inputs
+- [x] Verificar contraste en cards, badges, inputs (Events + Inventory: contenido dinámico `onPrimary`)
 - [ ] Transición suave entre temas
 
 ### 3.5 Image Upload Completo ✅

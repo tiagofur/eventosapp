@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.android.test)
+    id("com.android.test")
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.baselineprofile)
 }
@@ -18,7 +18,7 @@ android {
 
     testOptions {
         managedDevices {
-            devices {
+            allDevices {
                 create<com.android.build.api.dsl.ManagedVirtualDevice>("pixel6Api34") {
                     device = "Pixel 6"
                     apiLevel = 34
@@ -32,8 +32,6 @@ android {
 baselineProfile {
     useConnectedDevices = false
     managedDevices += "pixel6Api34"
-    includeInStartupProfile = true
-    automaticGenerationDuringBuild = false
 }
 
 dependencies {
