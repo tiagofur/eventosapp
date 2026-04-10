@@ -22,8 +22,8 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	r := chi.NewRouter()
 
 	// Global middleware
-	r.Use(mw.Recovery)        // Panic recovery — must be first
-	r.Use(mw.RequestID)       // X-Request-ID for tracing
+	r.Use(mw.Recovery)  // Panic recovery — must be first
+	r.Use(mw.RequestID) // X-Request-ID for tracing
 	r.Use(mw.CORS(corsOrigins))
 	r.Use(mw.SecurityHeaders) // Security headers (X-Frame-Options, CSP, HSTS, etc.)
 	r.Use(mw.Logger)
@@ -53,23 +53,29 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	apiRouter.Use(mw.Timeout(30 * time.Second)) // Bounds downstream SQL queries
 	apiRouter.Use(mw.CSRF)
 
-	// Auth routes (public) — rate limited to prevent brute-force attacks
+	// Auth routes
 	apiRouter.Route("/auth", func(r chi.Router) {
-		r.Use(mw.RateLimit(5, 1*time.Minute))
-		// /register has its own stricter limit (account creation abuse)
+		// Public brute-force-sensitive routes — rate limited
 		r.Group(func(r chi.Router) {
-			r.Use(mw.RateLimit(3, 15*time.Minute))
-			r.Post("/register", authHandler.Register)
+			r.Use(mw.RateLimit(5, 1*time.Minute))
+			r.Post("/login", authHandler.Login)
+			r.Post("/forgot-password", authHandler.ForgotPassword)
+			r.Post("/reset-password", authHandler.ResetPassword)
+			r.Post("/google", authHandler.GoogleSignIn)
+			r.Post("/apple", authHandler.AppleSignIn)
+			// /register has its own stricter limit (account creation abuse)
+			r.Group(func(r chi.Router) {
+				r.Use(mw.RateLimit(3, 15*time.Minute))
+				r.Post("/register", authHandler.Register)
+			})
 		})
-		r.Post("/login", authHandler.Login)
-		r.Post("/logout", authHandler.Logout) // Clear httpOnly cookie
-		r.Post("/refresh", authHandler.RefreshToken)
-		r.Post("/forgot-password", authHandler.ForgotPassword)
-		r.Post("/reset-password", authHandler.ResetPassword) // Reset password with token
-		r.Post("/google", authHandler.GoogleSignIn)          // Google OAuth sign-in
-		r.Post("/apple", authHandler.AppleSignIn)            // Apple Sign In
 
-		// Protected auth routes
+		// Session management — no aggressive rate limit
+		// /me is called on every page load, /refresh on token expiry, /logout to clear session
+		r.Post("/logout", authHandler.Logout)
+		r.Post("/refresh", authHandler.RefreshToken)
+
+		// Protected auth routes (requires valid token)
 		r.Group(func(r chi.Router) {
 			r.Use(mw.Auth(authService))
 			r.Get("/me", authHandler.Me)

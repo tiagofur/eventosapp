@@ -360,12 +360,20 @@ export const Dashboard: React.FC = () => {
   const monthEnd = useMemo(() => format(endOfMonth(today), "yyyy-MM-dd"), [today]);
 
   // ── Queries via React Query (cached, parallel, automatic) ──
-  const { data: eventsThisMonthList = [], isLoading: loadingMonth } = useEventsByDateRange(monthStart, monthEnd);
-  const { data: upcomingEvents = [], isLoading: loadingUpcoming } = useUpcomingEvents(5);
-  const { data: allEvents = [], isLoading: loadingAttention } = useEvents();
-  const { data: inventoryData = [], isLoading: loadingInventory } = useInventoryItems();
-  const { data: clients = [], isLoading: loadingClients } = useClients();
-  const { data: paymentsInMonth = [] } = usePaymentsByDateRange(monthStart, monthEnd);
+  // NOTE: ?? [] instead of = [] — destructuring defaults only catch undefined, not null
+  const { data: _eventsMonth, isLoading: loadingMonth } = useEventsByDateRange(monthStart, monthEnd);
+  const { data: _upcoming, isLoading: loadingUpcoming } = useUpcomingEvents(5);
+  const { data: _allEvents, isLoading: loadingAttention } = useEvents();
+  const { data: _inventory, isLoading: loadingInventory } = useInventoryItems();
+  const { data: _clients, isLoading: loadingClients } = useClients();
+  const { data: _paymentsMonth } = usePaymentsByDateRange(monthStart, monthEnd);
+
+  const eventsThisMonthList = _eventsMonth ?? [];
+  const upcomingEvents = _upcoming ?? [];
+  const allEvents = _allEvents ?? [];
+  const inventoryData = _inventory ?? [];
+  const clients = _clients ?? [];
+  const paymentsInMonth = _paymentsMonth ?? [];
 
   const attentionEvents = allEvents as DashboardEvent[];
   const clientCount = clients.length;
@@ -384,7 +392,8 @@ export const Dashboard: React.FC = () => {
     [eventsThisMonthList],
   );
   const realizedEventIds = useMemo(() => realizedEvents.map((e) => e.id), [realizedEvents]);
-  const { data: eventPayments = [] } = usePaymentsByEventIds(realizedEventIds);
+  const { data: _eventPayments } = usePaymentsByEventIds(realizedEventIds);
+  const eventPayments = _eventPayments ?? [];
 
   // ── Derived: attention event IDs for payment query ──
   const attentionCandidateIds = useMemo(() => {
@@ -398,7 +407,8 @@ export const Dashboard: React.FC = () => {
       })
       .map((event) => event.id);
   }, [attentionEvents]);
-  const { data: attentionPayments = [] } = usePaymentsByEventIds(attentionCandidateIds);
+  const { data: _attentionPayments } = usePaymentsByEventIds(attentionCandidateIds);
+  const attentionPayments = _attentionPayments ?? [];
 
   // ── Derived: financial metrics (pure computation from cached data) ──
   const netSalesThisMonth = useMemo(

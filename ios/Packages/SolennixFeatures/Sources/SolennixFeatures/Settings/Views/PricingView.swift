@@ -39,6 +39,9 @@ public struct PricingView: View {
                 // Restaurar compras y administrar suscripcion
                 subscriptionActionsSection
 
+                // API Legal requirements (EULA and Privacy)
+                legalLinksSection
+
                 // FAQ section
                 faqSection
             }
@@ -470,6 +473,26 @@ public struct PricingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+    }
+
+    // MARK: - Legal Links Section
+
+    private var legalLinksSection: some View {
+        VStack(spacing: Spacing.xs) {
+            Text("Al suscribirte, aceptas nuestros")
+                .font(.caption2)
+                .foregroundStyle(SolennixColors.textSecondary)
+            
+            HStack(spacing: Spacing.xs) {
+                Link("Terminos de Uso (EULA)", destination: URL(string: "https://creapolis.dev/terms-of-use/")!)
+                Text("y")
+                    .font(.caption2)
+                    .foregroundStyle(SolennixColors.textSecondary)
+                Link("Aviso de Privacidad", destination: URL(string: "https://creapolis.dev/privacy-policy/")!)
+            }
+            .font(.caption2)
+        }
+        .padding(.top, Spacing.sm)
     }
 }
 

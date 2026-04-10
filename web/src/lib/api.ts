@@ -93,6 +93,12 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      // Provide user-friendly messages for common status codes
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const waitHint = retryAfter ? ` Intentá nuevamente en ${retryAfter}.` : '';
+        throw new Error(`Demasiadas solicitudes.${waitHint} Esperá un momento e intentá de nuevo.`);
+      }
       throw new Error(errorData.error || `Request failed with status ${response.status}`);
     }
 

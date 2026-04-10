@@ -18,16 +18,20 @@ export function usePlanLimits() {
   const start = useMemo(() => format(startOfMonth(now), 'yyyy-MM-dd'), [now]);
   const end = useMemo(() => format(endOfMonth(now), 'yyyy-MM-dd'), [now]);
 
-  // These queries share cache with list pages — zero additional requests
-  // if Dashboard, EventList, ClientList, etc. have already fetched them
-  const { data: monthEvents = [], isLoading: eventsLoading } = useEventsByDateRange(start, end);
-  const { data: clients = [], isLoading: clientsLoading } = useClients();
-  const { data: products = [], isLoading: productsLoading } = useProducts();
-  const { data: inventory = [], isLoading: inventoryLoading } = useInventoryItems();
+  // NOTE: ?? [] instead of = [] — destructuring defaults only catch undefined, not null
+  const { data: _monthEvents, isLoading: eventsLoading } = useEventsByDateRange(start, end);
+  const { data: _clients, isLoading: clientsLoading } = useClients();
+  const { data: _products, isLoading: productsLoading } = useProducts();
+  const { data: _inventory, isLoading: inventoryLoading } = useInventoryItems();
+
+  const monthEvents = _monthEvents ?? [];
+  const clientList = _clients ?? [];
+  const productList = _products ?? [];
+  const inventoryList = _inventory ?? [];
 
   const eventsThisMonth = monthEvents.length;
-  const clientsCount = clients.length;
-  const catalogCount = products.length + inventory.length;
+  const clientsCount = clientList.length;
+  const catalogCount = productList.length + inventoryList.length;
 
   const loading = eventsLoading || (isBasicPlan && (clientsLoading || productsLoading || inventoryLoading));
 
