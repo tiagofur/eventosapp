@@ -12,12 +12,12 @@ func TestCSRF(t *testing.T) {
 		method         string
 		authHeader     string
 		path           string
-		cookieValue    string // csrf_token cookie
+		cookieValue    string // csrf_token_v2 cookie
 		headerToken    string // X-CSRF-Token header
 		authCookie     bool   // whether to include auth_token cookie (simulates web session)
 		wantStatus     int
 		wantNextCalled bool
-		wantCookie     bool // expect csrf_token cookie in response
+		wantCookie     bool // expect csrf_token_v2 cookie in response
 	}{
 		{
 			name:           "GivenGETRequest_WhenNoCookie_ThenPassAndSetCookie",

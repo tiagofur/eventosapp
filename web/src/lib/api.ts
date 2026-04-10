@@ -28,7 +28,7 @@ class ApiClient {
 
     // Include CSRF token if present
     if (typeof document !== 'undefined') {
-      const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+      const match = document.cookie.match(/(?:^|;\s*)csrf_token_v2=([^;]*)/);
       if (match && match[1]) {
         headers['X-CSRF-Token'] = decodeURIComponent(match[1]);
       }

@@ -43,8 +43,8 @@ func CSRF(next http.Handler) http.Handler {
 			return
 		}
 
-		// Validate: X-CSRF-Token header must match csrf_token cookie
-		cookie, err := r.Cookie("csrf_token")
+		// Validate: X-CSRF-Token header must match csrf_token_v2 cookie
+		cookie, err := r.Cookie("csrf_token_v2")
 		if err != nil {
 			writeAuthError(w, http.StatusForbidden, "CSRF token missing")
 			return
@@ -61,7 +61,7 @@ func CSRF(next http.Handler) http.Handler {
 }
 
 func ensureCSRFCookie(w http.ResponseWriter, r *http.Request) {
-	if _, err := r.Cookie("csrf_token"); err != nil {
+	if _, err := r.Cookie("csrf_token_v2"); err != nil {
 		token := generateCSRFToken()
 		
 		domain := ""
@@ -70,7 +70,7 @@ func ensureCSRFCookie(w http.ResponseWriter, r *http.Request) {
 		}
 
 		http.SetCookie(w, &http.Cookie{
-			Name:     "csrf_token",
+			Name:     "csrf_token_v2",
 			Value:    token,
 			Path:     "/",
 			Domain:   domain,
