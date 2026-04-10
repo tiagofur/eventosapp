@@ -157,9 +157,9 @@
 
 - [x] `contentDescription` en todos los `Icon()` de las pantallas principales (Settings, Inventory, Products, Events)
 - [x] Auditar contraste WCAG AA con paleta dorado/navy
-- [ ] Testear flujos principales con TalkBack
+- [x] Testear flujos principales con TalkBack (Dashboard + EventList con labels semánticos validados)
 - [x] Centralización de recursos de accesibilidad en `core:designsystem`
-- [ ] `Modifier.semantics {}` para agrupaciones lógicas
+- [x] `Modifier.semantics {}` para agrupaciones lógicas en tarjetas accionables (Dashboard + EventList)
 - [x] Soporte de `fontScale` extremos
 
 ### 3.3 Baseline Profiles

@@ -621,6 +621,8 @@ status: active
 > - ~~Contraste WCAG AA con paleta dorado/navy~~ — Tokens `secondaryText` / `tertiaryText` / `tabBarInactive` recalibrados en `Color.kt` + `EmptyState` con iconografía más legible
 > - ~~Soporte `fontScale` extremo~~ — `KPICard`, `PremiumButton` y `QuickActionButton` adaptados para escalas altas con alturas mínimas y textos multi-línea
 > - ~~Accesibilidad a11y StatusBadge~~ — contentDescription + Role.Image en StatusBadge
+> - ~~TalkBack en flujos principales~~ — labels semánticos y agrupaciones lógicas en tarjetas de `DashboardScreen` y `EventListScreen`
+> - ~~Tests de accesibilidad Android~~ — `DashboardAccessibilityTest` y `EventAccessibilityTest` validan contenido narrado por TalkBack
 > - ~~RevenueCat sync en register/Google~~ — Agregado logInWith despues de register y Google sign-in
 > - ~~Contract preview interactivo~~ — EventContractPreviewScreen implementado con gating de anticipo y campos faltantes
 > - ~~Cotizacion rapida (Quick Quote)~~ — QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator

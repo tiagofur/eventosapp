@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -153,6 +154,7 @@ class DashboardViewModelTest {
             productRepository,
             authManager
         )
+        val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
         advanceUntilIdle()
 
@@ -167,6 +169,7 @@ class DashboardViewModelTest {
         assertTrue(state.hasProducts)
         assertTrue(state.hasEvents)
         assertFalse(state.isRefreshing)
+        collectJob.cancel()
     }
 
     @Test
@@ -195,6 +198,7 @@ class DashboardViewModelTest {
             productRepository,
             authManager
         )
+        val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
         advanceUntilIdle()
         viewModel.refresh()
@@ -205,5 +209,6 @@ class DashboardViewModelTest {
         coVerify(atLeast = 1) { clientRepository.syncClients() }
         coVerify(atLeast = 1) { paymentRepository.syncPayments() }
         coVerify(atLeast = 1) { productRepository.syncProducts() }
+        collectJob.cancel()
     }
 }

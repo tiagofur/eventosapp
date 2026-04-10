@@ -476,16 +476,7 @@ private fun EventListItem(
         parseFlexibleDate(event.eventDate)?.format(dateFormatter) ?: event.eventDate
     }
     val accessibilitySummary = remember(event, clientName, eventDate) {
-        buildString {
-            append(event.serviceType)
-            append(", estado ${event.status.name.lowercase()}")
-            append(", fecha $eventDate")
-            append(", hora ${event.startTime ?: "todo el dia"}")
-            clientName?.takeIf { it.isNotBlank() }?.let { append(", cliente $it") }
-            event.location?.takeIf { it.isNotBlank() }?.let { append(", ubicación $it") }
-            append(", ${event.numPeople} personas")
-            append(", total ${event.totalAmount.asMXN()}")
-        }
+        eventCardTalkBackLabel(event, clientName, eventDate)
     }
 
     val sharedTransitionScope = LocalSharedTransitionScope.current
@@ -632,5 +623,18 @@ private fun EventListItem(
                 )
             }
         }
+    }
+}
+
+internal fun eventCardTalkBackLabel(event: Event, clientName: String?, formattedDate: String): String {
+    return buildString {
+        append(event.serviceType)
+        append(", estado ${event.status.name.lowercase()}")
+        append(", fecha $formattedDate")
+        append(", hora ${event.startTime ?: "todo el dia"}")
+        clientName?.takeIf { it.isNotBlank() }?.let { append(", cliente $it") }
+        event.location?.takeIf { it.isNotBlank() }?.let { append(", ubicación $it") }
+        append(", ${event.numPeople} personas")
+        append(", total ${event.totalAmount.asMXN()}")
     }
 }

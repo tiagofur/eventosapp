@@ -23,6 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -242,7 +245,12 @@ fun DashboardScreen(
                 if (uiState.lowStockItems.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
-                        Text(text = "Alertas de Inventario", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                        Text(
+                            text = "Alertas de Inventario",
+                            modifier = Modifier.semantics { heading() },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = SolennixTheme.colors.primaryText
+                        )
                         uiState.lowStockItems.forEach { item ->
                             InventoryAlertItem(item = item, onClick = { onInventoryClick(item.id) })
                         }
@@ -253,7 +261,12 @@ fun DashboardScreen(
                 if (uiState.upcomingEvents.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(24.dp))
-                        Text(text = "Próximos Eventos", style = MaterialTheme.typography.titleMedium, color = SolennixTheme.colors.primaryText)
+                        Text(
+                            text = "Próximos Eventos",
+                            modifier = Modifier.semantics { heading() },
+                            style = MaterialTheme.typography.titleMedium,
+                            color = SolennixTheme.colors.primaryText
+                        )
                         uiState.upcomingEvents.forEach { event ->
                             EventListItem(
                                 event = event,
@@ -372,6 +385,9 @@ fun PendingEventItem(pendingEvent: PendingEvent, onClick: () -> Unit = {}) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = pendingEventTalkBackLabel(pendingEvent)
+            }
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         shape = MaterialTheme.shapes.medium
@@ -421,6 +437,9 @@ fun EventListItem(event: Event, clientName: String? = null, onClick: () -> Unit 
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = dashboardEventTalkBackLabel(event, clientName)
+            }
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         shape = MaterialTheme.shapes.medium
@@ -576,6 +595,9 @@ fun InventoryAlertItem(item: InventoryItem, onClick: () -> Unit = {}) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = inventoryAlertTalkBackLabel(item)
+            }
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         shape = MaterialTheme.shapes.medium
@@ -605,4 +627,26 @@ fun InventoryAlertItem(item: InventoryItem, onClick: () -> Unit = {}) {
             }
         }
     }
+}
+
+internal fun pendingEventTalkBackLabel(pendingEvent: PendingEvent): String {
+    return buildString {
+        append("Evento pendiente")
+        append(": ${pendingEvent.event.serviceType}")
+        append(", fecha ${pendingEvent.event.eventDate}")
+        append(", motivo ${pendingEvent.reason}")
+    }
+}
+
+internal fun dashboardEventTalkBackLabel(event: Event, clientName: String?): String {
+    return buildString {
+        clientName?.takeIf { it.isNotBlank() }?.let { append("$it, ") }
+        append(event.serviceType)
+        append(", fecha ${event.eventDate}")
+        append(", estado ${statusLabel(event.status)}")
+    }
+}
+
+internal fun inventoryAlertTalkBackLabel(item: InventoryItem): String {
+    return "Stock bajo: ${item.ingredientName}, actual ${item.currentStock} ${item.unit}"
 }

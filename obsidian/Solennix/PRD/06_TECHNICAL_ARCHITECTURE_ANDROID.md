@@ -54,7 +54,7 @@ platform: Android
 | **Window**        | androidx.window              | 1.3.0           | Soporte para foldables                                                  |
 | **Navegación**    | Navigation Compose           | 2.8.5           | Navegación declarativa con type safety                                  |
 | **Firebase**      | Firebase BOM                 | 33.9.0          | Messaging + Analytics                                                   |
-| **Testing**       | JUnit + AndroidJUnitRunner   | —               | Unit + instrumented tests                                               |
+| **Testing**       | JUnit5 + MockK + Turbine     | —               | Unit tests de ViewModels + validaciones de labels de accesibilidad TalkBack |
 | **SDK**           | minSdk 26 — targetSdk 35     | —               | Android 8.0+ hasta Android 15                                           |
 
 ---
