@@ -22,6 +22,14 @@ describe('productService', () => {
     expect(api.get).toHaveBeenCalledWith('/products');
   });
 
+  it('getPage calls api.get with pagination params and returns envelope', async () => {
+    const response = { data: [{ id: '1' }], total: 1, page: 4, limit: 25, total_pages: 1 };
+    (api.get as any).mockResolvedValue(response);
+
+    await expect(productService.getPage({ page: 4, limit: 25, sort: 'name', order: 'asc' })).resolves.toEqual(response);
+    expect(api.get).toHaveBeenCalledWith('/products', { page: '4', limit: '25', sort: 'name', order: 'asc' });
+  });
+
   it('getById calls api.get', async () => {
     (api.get as any).mockResolvedValue({ id: '1' });
     await productService.getById('1');
