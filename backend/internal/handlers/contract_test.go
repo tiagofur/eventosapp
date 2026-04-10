@@ -51,6 +51,17 @@ func TestOpenAPISpec_AuthContract(t *testing.T) {
 		{name: "update profile endpoint", fragment: "/api/users/me:"},
 		{name: "change password endpoint", fragment: "/api/auth/change-password:"},
 		{name: "register request schema", fragment: "RegisterRequest:"},
+		{name: "register operation", fragment: "operationId: register"},
+		{name: "login operation", fragment: "operationId: login"},
+		{name: "logout operation", fragment: "operationId: logout"},
+		{name: "forgot password operation", fragment: "operationId: forgotPassword"},
+		{name: "reset password operation", fragment: "operationId: resetPassword"},
+		{name: "refresh token operation", fragment: "operationId: refreshToken"},
+		{name: "me operation", fragment: "operationId: me"},
+		{name: "google sign in operation", fragment: "operationId: googleSignIn"},
+		{name: "apple sign in operation", fragment: "operationId: appleSignIn"},
+		{name: "update profile operation", fragment: "operationId: updateProfile"},
+		{name: "change password operation", fragment: "operationId: changePassword"},
 		{name: "login request schema", fragment: "LoginRequest:"},
 		{name: "forgot password request schema", fragment: "ForgotPasswordRequest:"},
 		{name: "reset password request schema", fragment: "ResetPasswordRequest:"},
@@ -95,6 +106,11 @@ func TestOpenAPISpec_SubscriptionsContract(t *testing.T) {
 		{name: "stripe webhook endpoint", fragment: "/api/subscriptions/webhook/stripe:"},
 		{name: "revenuecat webhook endpoint", fragment: "/api/subscriptions/webhook/revenuecat:"},
 		{name: "subscription status schema", fragment: "SubscriptionStatusResponse:"},
+		{name: "subscription status operation", fragment: "operationId: getSubscriptionStatus"},
+		{name: "checkout session operation", fragment: "operationId: createCheckoutSession"},
+		{name: "portal session operation", fragment: "operationId: createPortalSession"},
+		{name: "stripe webhook operation", fragment: "operationId: stripeWebhook"},
+		{name: "revenuecat webhook operation", fragment: "operationId: revenueCatWebhook"},
 		{name: "subscription info schema", fragment: "SubscriptionInfo:"},
 		{name: "checkout response schema", fragment: "CheckoutSessionResponse:"},
 		{name: "stripe webhook invalid signature", fragment: "description: Invalid signature or payload"},
@@ -132,6 +148,25 @@ func TestOpenAPISpec_EventContract(t *testing.T) {
 		{name: "event supplies suggestions endpoint", fragment: "/api/events/supplies/suggestions:"},
 		{name: "event checkout session endpoint", fragment: "/api/events/{id}/checkout-session:"},
 		{name: "event payment session endpoint", fragment: "/api/events/{id}/payment-session:"},
+		{name: "list events operation", fragment: "operationId: listEvents"},
+		{name: "create event operation", fragment: "operationId: createEvent"},
+		{name: "get event operation", fragment: "operationId: getEvent"},
+		{name: "update event operation", fragment: "operationId: updateEvent"},
+		{name: "delete event operation", fragment: "operationId: deleteEvent"},
+		{name: "upcoming events operation", fragment: "operationId: getUpcomingEvents"},
+		{name: "event products operation", fragment: "operationId: getEventProducts"},
+		{name: "event extras operation", fragment: "operationId: getEventExtras"},
+		{name: "event photos operation", fragment: "operationId: getEventPhotos"},
+		{name: "add event photo operation", fragment: "operationId: addEventPhoto"},
+		{name: "delete event photo operation", fragment: "operationId: deleteEventPhoto"},
+		{name: "update event items operation", fragment: "operationId: updateEventItems"},
+		{name: "event equipment operation", fragment: "operationId: getEventEquipment"},
+		{name: "event supplies operation", fragment: "operationId: getEventSupplies"},
+		{name: "equipment conflicts operation", fragment: "operationId: checkEquipmentConflicts"},
+		{name: "equipment suggestions operation", fragment: "operationId: getEquipmentSuggestions"},
+		{name: "supply suggestions operation", fragment: "operationId: getSupplySuggestions"},
+		{name: "event checkout operation", fragment: "operationId: createEventCheckoutSession"},
+		{name: "event payment session operation", fragment: "operationId: getEventPaymentSession"},
 		{name: "event schema", fragment: "Event:"},
 		{name: "event upsert schema", fragment: "EventUpsertRequest:"},
 		{name: "event items update schema", fragment: "EventItemsUpdateRequest:"},
@@ -263,6 +298,60 @@ func TestOpenAPISpec_CoreCRUDContract(t *testing.T) {
 			"\"400\":",
 		)
 	})
+
+	t.Run("list clients keeps array and paginated oneOf", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/clients:",
+			"operationId: listClients",
+			"oneOf:",
+			"$ref: \"#/components/schemas/Client\"",
+			"$ref: \"#/components/schemas/PaginatedClientsResponse\"",
+		)
+	})
+
+	t.Run("list products keeps array and paginated oneOf", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/products:",
+			"operationId: listProducts",
+			"oneOf:",
+			"$ref: \"#/components/schemas/Product\"",
+			"$ref: \"#/components/schemas/PaginatedProductsResponse\"",
+		)
+	})
+
+	t.Run("list inventory keeps array and paginated oneOf", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/inventory:",
+			"operationId: listInventory",
+			"oneOf:",
+			"$ref: \"#/components/schemas/InventoryItem\"",
+			"$ref: \"#/components/schemas/PaginatedInventoryResponse\"",
+		)
+	})
+
+	t.Run("list payments keeps array and paginated oneOf", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/payments:",
+			"operationId: listPayments",
+			"oneOf:",
+			"$ref: \"#/components/schemas/Payment\"",
+			"$ref: \"#/components/schemas/PaginatedPaymentsResponse\"",
+		)
+	})
+}
+
+func TestOpenAPISpec_EventsListResponseShapes(t *testing.T) {
+	spec := readOpenAPISpec(t)
+
+	t.Run("list events keeps array and paginated oneOf", func(t *testing.T) {
+		assertContainsInOrder(t, spec,
+			"/api/events:",
+			"operationId: listEvents",
+			"oneOf:",
+			"$ref: \"#/components/schemas/Event\"",
+			"$ref: \"#/components/schemas/PaginatedEventsResponse\"",
+		)
+	})
 }
 
 func TestOpenAPISpec_OperationalEndpointsContract(t *testing.T) {
@@ -280,12 +369,27 @@ func TestOpenAPISpec_OperationalEndpointsContract(t *testing.T) {
 		{name: "live activity delete endpoint", fragment: "/api/live-activities/by-event/{eventId}:"},
 		{name: "upload image endpoint", fragment: "/api/uploads/image:"},
 		{name: "search endpoint", fragment: "/api/search:"},
+		{name: "get unavailable dates operation", fragment: "operationId: getUnavailableDates"},
+		{name: "create unavailable date operation", fragment: "operationId: createUnavailableDate"},
+		{name: "delete unavailable date operation", fragment: "operationId: deleteUnavailableDate"},
+		{name: "register device operation", fragment: "operationId: registerDevice"},
+		{name: "unregister device operation", fragment: "operationId: unregisterDevice"},
+		{name: "register live activity operation", fragment: "operationId: registerLiveActivity"},
+		{name: "delete live activity operation", fragment: "operationId: deleteLiveActivityByEvent"},
+		{name: "upload image operation", fragment: "operationId: uploadImage"},
+		{name: "search operation", fragment: "operationId: searchAll"},
 		{name: "dashboard kpis endpoint", fragment: "/api/dashboard/kpis:"},
 		{name: "dashboard revenue chart endpoint", fragment: "/api/dashboard/revenue-chart:"},
 		{name: "dashboard events by status endpoint", fragment: "/api/dashboard/events-by-status:"},
 		{name: "dashboard top clients endpoint", fragment: "/api/dashboard/top-clients:"},
 		{name: "dashboard product demand endpoint", fragment: "/api/dashboard/product-demand:"},
 		{name: "dashboard forecast endpoint", fragment: "/api/dashboard/forecast:"},
+		{name: "dashboard kpis operation", fragment: "operationId: getDashboardKPIs"},
+		{name: "dashboard revenue chart operation", fragment: "operationId: getRevenueChart"},
+		{name: "dashboard events by status operation", fragment: "operationId: getEventsByStatus"},
+		{name: "dashboard top clients operation", fragment: "operationId: getTopClients"},
+		{name: "dashboard product demand operation", fragment: "operationId: getProductDemand"},
+		{name: "dashboard forecast operation", fragment: "operationId: getForecast"},
 		{name: "unavailable date schema", fragment: "UnavailableDate:"},
 		{name: "device token schema", fragment: "DeviceToken:"},
 		{name: "live activity token schema", fragment: "LiveActivityToken:"},
@@ -324,6 +428,11 @@ func TestOpenAPISpec_AdminContract(t *testing.T) {
 		{name: "admin user upgrade endpoint", fragment: "/api/admin/users/{id}/upgrade:"},
 		{name: "admin subscriptions endpoint", fragment: "/api/admin/subscriptions:"},
 		{name: "platform stats schema", fragment: "PlatformStats:"},
+		{name: "admin stats operation", fragment: "operationId: getAdminStats"},
+		{name: "admin list users operation", fragment: "operationId: listAdminUsers"},
+		{name: "admin get user operation", fragment: "operationId: getAdminUser"},
+		{name: "admin upgrade user operation", fragment: "operationId: upgradeAdminUser"},
+		{name: "admin subscriptions operation", fragment: "operationId: getAdminSubscriptions"},
 		{name: "admin user schema", fragment: "AdminUser:"},
 		{name: "subscription overview schema", fragment: "SubscriptionOverview:"},
 		{name: "admin upgrade request schema", fragment: "AdminUpgradeRequest:"},
