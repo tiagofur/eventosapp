@@ -51,6 +51,7 @@ updated: 2026-04-10
 
 - [[14_WAVE_1_BREAKDOWN]] — Weeks 1-2: Foundation Control — Event Lifecycle + Backend Contract Freeze
 - [[15_QUICK_START_EXECUTION]] — Cómo ejecutar Wave 1 paso a paso (comienza aquí)
+- [[16_BACKEND_CONTRACT_READINESS]] — Estado actual del backend + tareas E2.B1/E2.B2
 
 ---
 

@@ -36,12 +36,14 @@ git pull origin super-plan  # si la rama ya existe en remote
 Abre `[[13_MASTER_TRACEABILITY_TABLE]]` y copia las filas T-01 y T-02 a tu issue tracker (GitHub Projects, Jira, Notion, etc.):
 
 **T-01: Event Lifecycle Reliability**
+
 - Objetivo: crear evento end-to-end sin bloqueos en 4 plataformas
 - Ola: Wave 1-2
 - Criterios: 5 pasos funcionales, sin "Próximamente"
 - Estados: Web ☆, iOS ☆, Android ☆, Backend ☆ (stella = start here)
 
 **T-02: Backend Contract Freeze**
+
 - Objetivo: documentar y validar contratos API críticos
 - Ola: Wave 1
 - Criterios: OpenAPI 3.1 + contract tests
@@ -69,17 +71,18 @@ Abre `[[13_MASTER_TRACEABILITY_TABLE]]` y copia las filas T-01 y T-02 a tu issue
    - Guardar en `backend/docs/openapi-events.yaml`
 
 2. **E1.B2** (6h): Tests de happy path
+
    ```bash
    # Crear test file
    vim backend/internal/handler/*_test.go
-   
+
    # Tests mínimos:
    # - TestEventCreate_Success
    # - TestEventCreate_WithProducts
    # - TestEventUpdate_Success
    # - TestEventGet_Success
    # - TestEventCreate_NoAuth_401
-   
+
    go test ./internal/handler -v -run TestEvent
    ```
 
@@ -90,6 +93,7 @@ Abre `[[13_MASTER_TRACEABILITY_TABLE]]` y copia las filas T-01 y T-02 a tu issue
    ```
 
 **Result**: Cuando termines, sube los cambios a rama temporary-e1b1-e2b1:
+
 ```bash
 git checkout -b temporary-e1b1-e2b1
 git add backend/
@@ -101,20 +105,23 @@ git commit -m "feat(backend): E1.B1 + E1.B2 + E2.B1 OpenAPI spec + happy path te
 **Web Track (E1.W1)**
 
 1. **Auditoria**: ¿Dónde están los "Próximamente"?
+
    ```bash
    cd web && grep -r "Proximamente\|Coming Soon" src/
    ```
+
    Anota en dónde aparecen.
 
 2. **Refactor E1.W1** (12h split in 2 days):
    - Día 1 (Jue): Paso 2 (Productos) funcional desde cero
    - Día 2 (Vie): Paso 3 (Extras), Paso 4 (Equipamiento)
-   
+
    Usar como referencia:
    - [[web/src/components/EventForm/]] — estructura actual
    - [[08_TECHNICAL_ARCHITECTURE_WEB|Web Architecture]] — patterns
-   
+
 3. **Tests mínimos**:
+
    ```bash
    npm run test:run -- EventForm.test.ts
    # Must pass: "renders all 5 steps without placeholders"
@@ -142,7 +149,7 @@ git commit -m "feat(backend): E1.B1 + E1.B2 + E2.B1 OpenAPI spec + happy path te
 Abre [[13_MASTER_TRACEABILITY_TABLE]] y actualiza:
 
 ```
-| T-01 | ... | Wave 1-2 | Event Lifecycle | ... | In Progress | 
+| T-01 | ... | Wave 1-2 | Event Lifecycle | ... | In Progress |
 | T-02 | ... | Wave 1   | Backend Contract | ... | In Progress |
 ```
 
@@ -188,6 +195,7 @@ Abre [[13_MASTER_TRACEABILITY_TABLE]] y actualiza:
 **Contract Validation (E2.C1)**
 
 Web, iOS, Android cada uno:
+
 1. Verifica que las llamadas a `/api/events/*` exactamente matches OpenAPI spec (E2.B1).
 2. Crea una auditoría (`checklist-contract-validation.md`) con:
    - ✅ POST /api/events — mapeado en Web EventAPI
@@ -198,11 +206,13 @@ Web, iOS, Android cada uno:
 **Consolidación**
 
 1. Ve a super-plan:
+
    ```bash
    git checkout super-plan
    ```
 
 2. Actualiza Wave 1 Breakdown con estados reales:
+
    ```bash
    # En 14_WAVE_1_BREAKDOWN.md, cambiar story status de Planned → In Progress
    ```
