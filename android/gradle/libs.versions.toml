@@ -26,6 +26,10 @@ junit5 = "5.11.3"
 mockk = "1.13.13"
 turbine = "1.2.0"
 kotlinx-coroutines-test = "1.9.0"
+benchmark = "1.3.3"
+baselineprofile-plugin = "1.3.3"
+uiautomator = "2.3.0"
+test-ext-junit = "1.2.1"
 
 [libraries]
 # Window Manager
@@ -41,6 +45,10 @@ mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "moc
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 hilt-android-test = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark" }
+profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version = "1.4.1" }
+test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "test-ext-junit" }
+test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 
 # Glance Widgets
 glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
@@ -128,6 +136,7 @@ androidx-room-paging = { group = "androidx.room", name = "room-paging", version.
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
+android-test = { id = "com.android.test", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
@@ -135,3 +144,4 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
 android-junit5 = { id = "de.mannodermaus.android-junit5", version = "1.11.3.0" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile-plugin" }

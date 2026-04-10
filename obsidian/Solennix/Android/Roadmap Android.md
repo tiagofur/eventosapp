@@ -164,8 +164,8 @@
 
 ### 3.3 Baseline Profiles
 
-- [ ] Generar baseline profiles con Macrobenchmark
-- [ ] Incluir en build de release
+- [x] Generar baseline profiles con Macrobenchmark (módulo `:baselineprofile`)
+- [x] Incluir en build de release (`app` consume `baselineProfile(project(":baselineprofile"))`)
 - [ ] Medir mejora en cold start
 
 ### 3.4 Dark Mode Polish

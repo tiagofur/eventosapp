@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.baselineprofile)
 }
 
 import java.util.Properties
@@ -67,6 +68,10 @@ android {
     }
 }
 
+baselineProfile {
+    automaticGenerationDuringBuild = false
+}
+
 dependencies {
     implementation(project(":core:model"))
     implementation(project(":core:network"))
@@ -112,4 +117,7 @@ dependencies {
     implementation(libs.work.runtime)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
+
+    implementation(libs.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
 }

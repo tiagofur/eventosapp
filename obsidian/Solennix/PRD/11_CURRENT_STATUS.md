@@ -623,6 +623,7 @@ status: active
 > - ~~Accesibilidad a11y StatusBadge~~ — contentDescription + Role.Image en StatusBadge
 > - ~~TalkBack en flujos principales~~ — labels semánticos y agrupaciones lógicas en tarjetas de `DashboardScreen` y `EventListScreen`
 > - ~~Tests de accesibilidad Android~~ — `DashboardAccessibilityTest` y `EventAccessibilityTest` validan contenido narrado por TalkBack
+> - ~~Baseline Profiles (infra)~~ — módulo `:baselineprofile` con `BaselineProfileGenerator` + `measureColdStartup`; app integrada con `profileinstaller` y consumo de perfiles en release
 > - ~~RevenueCat sync en register/Google~~ — Agregado logInWith despues de register y Google sign-in
 > - ~~Contract preview interactivo~~ — EventContractPreviewScreen implementado con gating de anticipo y campos faltantes
 > - ~~Cotizacion rapida (Quick Quote)~~ — QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator

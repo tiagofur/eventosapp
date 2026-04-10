@@ -55,6 +55,7 @@ platform: Android
 | **Navegación**    | Navigation Compose           | 2.8.5           | Navegación declarativa con type safety                                  |
 | **Firebase**      | Firebase BOM                 | 33.9.0          | Messaging + Analytics                                                   |
 | **Testing**       | JUnit5 + MockK + Turbine     | —               | Unit tests de ViewModels + validaciones de labels de accesibilidad TalkBack |
+| **Performance**   | Baseline Profile + Macrobenchmark | 1.3.3       | Perfilado de startup y optimización de tiempos de arranque en release     |
 | **SDK**           | minSdk 26 — targetSdk 35     | —               | Android 8.0+ hasta Android 15                                           |
 
 ---
