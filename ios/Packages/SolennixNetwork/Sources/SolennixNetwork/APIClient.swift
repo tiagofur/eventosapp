@@ -126,6 +126,11 @@ public actor APIClient {
         let request = try buildRequest(endpoint, method: "GET", params: params)
         let data = try await performRaw(request)
 
+        // Safeguard against unallocated Go slices returning "null"
+        if String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) == "null" {
+            return PaginatedResponse<T>(data: [], total: 0, page: 1, limit: 20, totalPages: 1)
+        }
+
         // Try paginated format first
         if let paginated = try? decoder.decode(PaginatedResponse<T>.self, from: data) {
             return paginated
@@ -146,6 +151,11 @@ public actor APIClient {
         allParams["limit"] = "10000"
         let request = try buildRequest(endpoint, method: "GET", params: allParams)
         let data = try await performRaw(request)
+
+        // Safeguard against unallocated Go slices returning as "null" instead of "[]"
+        if String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) == "null" {
+            return []
+        }
 
         // Try paginated response first
         if let paginated = try? decoder.decode(PaginatedResponse<T>.self, from: data) {
