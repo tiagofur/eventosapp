@@ -145,6 +145,8 @@ public final class DashboardViewModel {
         let startStr = dateFormatter.string(from: startOfMonth)
         let endStr = dateFormatter.string(from: endOfMonth)
 
+        var encounteredError = false
+
         func loadOrEmpty<T: Decodable>(
             _ endpoint: String,
             params: [String: String]? = nil,
@@ -154,6 +156,7 @@ public final class DashboardViewModel {
                 return try await apiClient.getAll(endpoint, params: params)
             } catch {
                 NSLog("[Dashboard] ⚠️ %@ failed: %@", label, String(describing: error))
+                encounteredError = true
                 return []
             }
         }
@@ -232,15 +235,12 @@ public final class DashboardViewModel {
         cashCollectedThisMonth = monthPayments.reduce(0) { $0 + $1.amount }
         recalculateMonthlyMetrics()
 
-        if clients.isEmpty,
-           monthEvents.isEmpty,
-           upcoming.isEmpty,
-           loadedAllEvents.isEmpty,
-           inventory.isEmpty,
-           products.isEmpty,
-           monthPayments.isEmpty,
-           loadedAllPayments.isEmpty {
-            errorMessage = "No se pudo cargar el dashboard"
+        if encounteredError {
+            if clients.isEmpty && loadedAllEvents.isEmpty && products.isEmpty {
+                errorMessage = "No se pudo cargar el dashboard"
+            } else {
+                errorMessage = "Algunos datos no se pudieron cargar"
+            }
         }
 
         isLoading = false
