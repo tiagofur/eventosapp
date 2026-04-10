@@ -50,6 +50,7 @@ updated: 2026-04-10
 ## Desglose por Ola
 
 - [[14_WAVE_1_BREAKDOWN]] — Weeks 1-2: Foundation Control — Event Lifecycle + Backend Contract Freeze
+- [[15_QUICK_START_EXECUTION]] — Cómo ejecutar Wave 1 paso a paso (comienza aquí)
 
 ---
 

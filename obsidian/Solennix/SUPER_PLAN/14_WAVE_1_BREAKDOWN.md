@@ -184,11 +184,11 @@ Documentar y validar los contratos API críticos (eventos, clientes, productos, 
 
 ## Riesgos Wave 1
 
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|--------|:------------:|:-------:|-----------|
-| Backend API tiene breaking changes no documentadas | Alta | Alto | E2.B2: detectar antes de cierre |
-| Web/iOS/Android out of sync con contrato | Media | Alto | E2.C1: auditar clientes |
-| Evento form complejo quebrado en tablet Android | Media | Medio | E1.A1: testear en multiples devices |
+| Riesgo                                             | Probabilidad | Impacto | Mitigación                          |
+| -------------------------------------------------- | :----------: | :-----: | ----------------------------------- |
+| Backend API tiene breaking changes no documentadas |     Alta     |  Alto   | E2.B2: detectar antes de cierre     |
+| Web/iOS/Android out of sync con contrato           |    Media     |  Alto   | E2.C1: auditar clientes             |
+| Evento form complejo quebrado en tablet Android    |    Media     |  Medio  | E1.A1: testear en multiples devices |
 
 ---
 
@@ -203,7 +203,7 @@ Week 2 (Apr 17-23):
   E1.W1 fin + tests
   E1.I1, E1.A1              ← Mobile validacion
   E2.B2, E2.C1              ← Contract validation
-  
+
 Fin Wave 1 (Apr 24):
   Go/No-Go: Todos los epics Done + tablero de riesgos amarillo/verde
 ```

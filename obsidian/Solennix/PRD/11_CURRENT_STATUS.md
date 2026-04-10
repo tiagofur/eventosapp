@@ -600,12 +600,12 @@ status: active
 
 > [!warning] Items pendientes Android
 
-| Item                                                 | Prioridad | Notas                                                                                            |
-| ---------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------ |
-| Push notifications (FCM)                             | ✅ RESUELTO | FCM completo: SolennixMessagingService implementado, deep links desde notificaciones           |
-| Deep linking completo                                | ✅ RESUELTO | Parser completo: auth/app separados, 11 hosts, subrutas de evento                              |
-| Navigation Rail (tablets)                            | P2        | Parcialmente implementado via AdaptiveNavigationRailLayout — falta completar refactor de sidebar |
-| Live Activity equivalente (notificacion persistente) | P2        | No implementado                                                                                  |
+| Item                                                 | Prioridad   | Notas                                                                                            |
+| ---------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------ |
+| Push notifications (FCM)                             | ✅ RESUELTO | FCM completo: SolennixMessagingService implementado, deep links desde notificaciones             |
+| Deep linking completo                                | ✅ RESUELTO | Parser completo: auth/app separados, 11 hosts, subrutas de evento                                |
+| Navigation Rail (tablets)                            | P2          | Parcialmente implementado via AdaptiveNavigationRailLayout — falta completar refactor de sidebar |
+| Live Activity equivalente (notificacion persistente) | P2          | No implementado                                                                                  |
 
 > [!note] Items completados Android
 >

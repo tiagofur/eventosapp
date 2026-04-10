@@ -20,14 +20,14 @@ Convertir el SUPER PLAN en ejecucion verificable: cada objetivo debe mapearse a 
 
 ## Tabla Maestra
 
-| ID | Objetivo | Ola | Epic | Criterios de Aceptacion | Evidencia Obligatoria | KPI Principal | Estado |
-|----|----------|-----|------|-------------------------|-----------------------|---------------|--------|
-| T-01 | Estabilizar crear evento end-to-end | Wave 1-2 | Event Lifecycle Reliability | Crear/editar/guardar evento sin bloqueos en 4 plataformas; sin placeholders en pasos core | Tests de flujo core + video de smoke por plataforma + logs sin errores P0/P1 | Crash-free sessions; P0 open count | In Progress |
-| T-02 | Congelar contrato API de eventos | Wave 1 | Backend Contract Freeze | Contratos versionados y validados; sin breaking changes no anunciados | Schema diff + contract tests + changelog de endpoints | Divergencias activas por contrato | In Progress |
-| T-03 | Cerrar gaps de paridad P0 | Wave 3 | Core Parity Program | Todas las features P0 en estado Green en matriz de paridad | Matriz actualizada + evidencia funcional por plataforma | Features P0 Green ratio | Planned |
-| T-04 | Reforzar UX nativa smartphone/tablet/desktop | Wave 4 | Native UX Excellence | Flujos core pasan checklist UX por dispositivo | Checklist UX aprobada + capturas comparativas | Flujos core completados por dispositivo | Planned |
-| T-05 | Hardening de resiliencia y observabilidad | Wave 5 | Reliability and Telemetry | Alertas, trazas y errores accionables en todos los entornos | Dashboards + alert rules + runbook de incidentes | MTTR P0/P1; Change failure rate | Planned |
-| T-06 | Ejecutar release train con gates estrictos | Wave 6 | Controlled Release Train | RC aprobado sin fallas criticas de estabilidad/paridad | Go/No-Go checklist + scorecard final + acta de release | Build success rate; Go/No-Go pass rate | Planned |
+| ID   | Objetivo                                     | Ola      | Epic                        | Criterios de Aceptacion                                                                   | Evidencia Obligatoria                                                        | KPI Principal                           | Estado      |
+| ---- | -------------------------------------------- | -------- | --------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------- | ----------- |
+| T-01 | Estabilizar crear evento end-to-end          | Wave 1-2 | Event Lifecycle Reliability | Crear/editar/guardar evento sin bloqueos en 4 plataformas; sin placeholders en pasos core | Tests de flujo core + video de smoke por plataforma + logs sin errores P0/P1 | Crash-free sessions; P0 open count      | In Progress |
+| T-02 | Congelar contrato API de eventos             | Wave 1   | Backend Contract Freeze     | Contratos versionados y validados; sin breaking changes no anunciados                     | Schema diff + contract tests + changelog de endpoints                        | Divergencias activas por contrato       | In Progress |
+| T-03 | Cerrar gaps de paridad P0                    | Wave 3   | Core Parity Program         | Todas las features P0 en estado Green en matriz de paridad                                | Matriz actualizada + evidencia funcional por plataforma                      | Features P0 Green ratio                 | Planned     |
+| T-04 | Reforzar UX nativa smartphone/tablet/desktop | Wave 4   | Native UX Excellence        | Flujos core pasan checklist UX por dispositivo                                            | Checklist UX aprobada + capturas comparativas                                | Flujos core completados por dispositivo | Planned     |
+| T-05 | Hardening de resiliencia y observabilidad    | Wave 5   | Reliability and Telemetry   | Alertas, trazas y errores accionables en todos los entornos                               | Dashboards + alert rules + runbook de incidentes                             | MTTR P0/P1; Change failure rate         | Planned     |
+| T-06 | Ejecutar release train con gates estrictos   | Wave 6   | Controlled Release Train    | RC aprobado sin fallas criticas de estabilidad/paridad                                    | Go/No-Go checklist + scorecard final + acta de release                       | Build success rate; Go/No-Go pass rate  | Planned     |
 
 ## Regla de Actualizacion
 
@@ -52,7 +52,7 @@ Convertir el SUPER PLAN en ejecucion verificable: cada objetivo debe mapearse a 
 
 - **T-01**: Ver [[14_WAVE_1_BREAKDOWN]] para stories de Event Lifecycle.
 - **T-02**: Validate API contract freeze y crear changelog de endpoints en backend.
-- Verificar que no hay breaking changes en /api/events/* desde última integración.
+- Verificar que no hay breaking changes en /api/events/\* desde última integración.
 
 ## Enlaces
 
