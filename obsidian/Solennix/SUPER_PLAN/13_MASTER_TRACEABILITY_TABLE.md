@@ -51,8 +51,9 @@ Convertir el SUPER PLAN en ejecucion verificable: cada objetivo debe mapearse a 
 ## Próximas Acciones (Semana 1-2)
 
 - **T-01**: Ver [[14_WAVE_1_BREAKDOWN]] para stories de Event Lifecycle.
-- **T-02**: Validate API contract freeze y crear changelog de endpoints en backend.
-- Verificar que no hay breaking changes en /api/events/\* desde última integración.
+- **T-02**: Contrato backend ya expandido en `backend/docs/openapi.yaml` con auth, subscriptions, CRUD core, dashboard, search, uploads, devices y unavailable-dates.
+- **T-02**: Contract suite activa en `backend/internal/handlers/contract_test.go` validando presencia de endpoints, schemas y responses críticas.
+- **T-01**: Backend ya cubre validación de `event_date` inválida y solapamiento con unavailable dates en `CreateEvent`.
 
 ## Enlaces
 

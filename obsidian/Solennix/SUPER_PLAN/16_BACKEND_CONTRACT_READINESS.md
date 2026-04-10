@@ -15,7 +15,14 @@ updated: 2026-04-10
 
 ## Resumen Ejecutivo
 
-El backend Go ya tiene **implementados todos los handlers core** (CRUD de eventos, clientes, productos, inventario, pagos). La tarea E2.B1 es **documentarlos en OpenAPI 3.1** y la tarea E2.B2 es **crear tests de contract que detecten breaking changes**.
+El backend Go ya tiene **implementados todos los handlers core** (CRUD de eventos, clientes, productos, inventario, pagos). E2.B1 ya avanzó a un `openapi.yaml` expandido y E2.B2 ya tiene una primera suite de contract tests que falla si desaparecen endpoints, schemas o responses críticas.
+
+## Estado Real al Cierre del Día
+
+- `backend/docs/openapi.yaml` existe y ya cubre auth, subscriptions, CRUD core, dashboard, search, uploads, devices, live-activities y unavailable-dates.
+- `backend/internal/handlers/contract_test.go` valida contrato de auth, subscriptions, events, CRUD core y endpoints operativos.
+- `backend/internal/handlers/crud_handler_success_test.go` ya cubre `CreateEvent` con fecha inválida y overlap con unavailable dates.
+- Siguiente foco real: endurecer E2.B2 con validaciones más finas de payloads reales y cerrar E2.C1 contra clientes Web/iOS/Android.
 
 ---
 
@@ -275,11 +282,13 @@ backend/
 - [x] Models definidos en Go structs
 - [x] Validación en handlers
 - [x] Errores estructurados (writeError)
+- [x] OpenAPI base documentado y expandido
+- [x] Contract tests base para rutas y schemas críticas
 
 ### ⬜ Pendiente Wave 1
 
-- [ ] OpenAPI 3.1 spec (`backend/docs/openapi.yaml`)
-- [ ] Contract breaking change tests
+- [ ] Refinar OpenAPI con endpoints secundarios y ejemplos específicos si hace falta
+- [ ] Endurecer contract tests con checks de payloads reales y status codes exactos
 - [ ] CI validation job en GitHub Actions
 - [ ] Changelog de endpoints
 - [ ] Documentación de breaking changes (si hay)

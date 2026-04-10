@@ -36,10 +36,10 @@ Garantizar que el flujo de crear/editar/guardar evento funciona sin bloqueos en 
   - ✅ Schema JSON completos (request + response)
   - ✅ Validación de campos obligatorios vs opcionales
   - ✅ Código de respuesta por escenario (201, 400, 401, 422, 500)
-- **Evidencia**: `backend/docs/openapi-events.yaml` + tests de contract
+- **Evidencia**: `backend/docs/openapi.yaml` + `backend/internal/handlers/contract_test.go`
 - **Esfuerzo**: 4h
 - **Owner**: Backend
-- **Status**: Planned
+- **Status**: In Progress
 
 #### Backend: E1.B2 — Event Create/Edit Happy Path Tests
 
@@ -51,10 +51,10 @@ Garantizar que el flujo de crear/editar/guardar evento funciona sin bloqueos en 
   - ✅ Test: editar evento existente → cambios reflejados
   - ✅ Test: crear evento sin permisos → 401
   - ✅ Cobertura ≥ 85% en handler de eventos
-- **Evidencia**: Tests corriendo en GH Actions + coverage report
+- **Evidencia**: `crud_handler_success_test.go` + nuevos tests de `event_date` inválida y unavailable dates
 - **Esfuerzo**: 6h
 - **Owner**: Backend
-- **Status**: Planned
+- **Status**: In Progress
 
 #### Web: E1.W1 — Event Form End-to-End (No Placeholders)
 
@@ -138,10 +138,10 @@ Documentar y validar los contratos API críticos (eventos, clientes, productos, 
   - ✅ `/api/payments` — CRUD
   - ✅ `/api/subscriptions` — status, checkout, portal, webhooks
   - ✅ Cada endpoint: métodos HTTP, parámetros, schemas, códigos de estado
-- **Evidencia**: `/backend/docs/openapi.yaml` + validado con `openapi-validator`
+- **Evidencia**: `/backend/docs/openapi.yaml` ya cubre auth, subscriptions, CRUD core, dashboard, search, uploads, devices, live-activities y unavailable-dates
 - **Esfuerzo**: 8h
 - **Owner**: Backend
-- **Status**: Planned
+- **Status**: In Progress
 
 #### Backend: E2.B2 — Contract Breaking Change Detection
 
@@ -151,10 +151,10 @@ Documentar y validar los contratos API críticos (eventos, clientes, productos, 
   - ✅ Test: remover campo requerido → test falla
   - ✅ Test: cambiar endpoint path → test falla
   - ✅ Test: deprecar campo sin default → warning (no fulla)
-- **Evidencia**: Tests en suite de contract + CI rule que bloquea PR si rompe
+- **Evidencia**: `backend/internal/handlers/contract_test.go` ya valida auth, subscriptions, events, CRUD core y endpoints operativos
 - **Esfuerzo**: 6h
 - **Owner**: Backend
-- **Status**: Planned
+- **Status**: In Progress
 
 #### Web/iOS/Android: E2.C1 — Client Validation Against Contract
 
@@ -170,8 +170,8 @@ Documentar y validar los contratos API críticos (eventos, clientes, productos, 
 
 ### Entregables de Epic E2
 
-- [ ] Backend: OpenAPI 3.1 spec completo
-- [ ] Backend: Contract breaking change tests
+- [x] Backend: OpenAPI 3.1 spec base expandido
+- [x] Backend: Contract breaking change tests base
 - [ ] Web/iOS/Android: Validación de cliente contra spec
 
 ### Go/No-Go Criteria
