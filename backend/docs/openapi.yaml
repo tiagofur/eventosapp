@@ -105,9 +105,9 @@ components:
         - tokens
       properties:
         user:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/User"
         tokens:
-          $ref: '#/components/schemas/TokenPair'
+          $ref: "#/components/schemas/TokenPair"
     RegisterRequest:
       type: object
       required:
@@ -221,7 +221,7 @@ components:
           type: boolean
         subscription:
           allOf:
-            - $ref: '#/components/schemas/SubscriptionInfo'
+            - $ref: "#/components/schemas/SubscriptionInfo"
           nullable: true
     Event:
       type: object
@@ -309,7 +309,7 @@ components:
           type: string
           nullable: true
         client:
-          $ref: '#/components/schemas/Client'
+          $ref: "#/components/schemas/Client"
         created_at:
           type: string
           format: date-time
@@ -548,6 +548,274 @@ components:
         created_at:
           type: string
           format: date-time
+    UnavailableDate:
+      type: object
+      required:
+        - id
+        - user_id
+        - start_date
+        - end_date
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+        end_date:
+          type: string
+        reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UnavailableDateCreateRequest:
+      type: object
+      required:
+        - start_date
+        - end_date
+      properties:
+        start_date:
+          type: string
+        end_date:
+          type: string
+        reason:
+          type: string
+    DeviceToken:
+      type: object
+      required:
+        - id
+        - user_id
+        - token
+        - platform
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        token:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android, web]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    DeviceRegisterRequest:
+      type: object
+      required:
+        - token
+        - platform
+      properties:
+        token:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android, web]
+    DeviceUnregisterRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+    StatusOkResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    LiveActivityToken:
+      type: object
+      required:
+        - id
+        - user_id
+        - event_id
+        - push_token
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        event_id:
+          type: string
+          format: uuid
+        push_token:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    LiveActivityRegisterRequest:
+      type: object
+      required:
+        - event_id
+        - push_token
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        push_token:
+          type: string
+    UploadImageResponse:
+      type: object
+      required:
+        - url
+        - thumbnail_url
+        - filename
+      properties:
+        url:
+          type: string
+        thumbnail_url:
+          type: string
+        filename:
+          type: string
+    SearchResponse:
+      type: object
+      required:
+        - clients
+        - products
+        - inventory
+        - events
+      properties:
+        clients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        inventory:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+    DashboardKPIs:
+      type: object
+      required:
+        - total_revenue
+        - events_this_month
+        - pending_quotes
+        - low_stock_items
+        - upcoming_events
+        - total_clients
+        - average_event_value
+      properties:
+        total_revenue:
+          type: number
+          format: double
+        events_this_month:
+          type: integer
+        pending_quotes:
+          type: integer
+        low_stock_items:
+          type: integer
+        upcoming_events:
+          type: integer
+        total_clients:
+          type: integer
+        average_event_value:
+          type: number
+          format: double
+    RevenueDataPoint:
+      type: object
+      required:
+        - month
+        - revenue
+        - event_count
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+          format: double
+        event_count:
+          type: integer
+    EventStatusCount:
+      type: object
+      required:
+        - status
+        - count
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+    TopClient:
+      type: object
+      required:
+        - id
+        - name
+        - total_spent
+        - total_events
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        total_spent:
+          type: number
+          format: double
+        total_events:
+          type: integer
+    ProductDemandItem:
+      type: object
+      required:
+        - id
+        - name
+        - times_used
+        - total_revenue
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        times_used:
+          type: integer
+        total_revenue:
+          type: number
+          format: double
+    ForecastDataPoint:
+      type: object
+      required:
+        - month
+        - confirmed_revenue
+        - confirmed_events
+      properties:
+        month:
+          type: string
+        confirmed_revenue:
+          type: number
+          format: double
+        confirmed_events:
+          type: integer
     ErrorResponse:
       type: object
       properties:
@@ -564,9 +832,9 @@ paths:
       operationId: healthCheck
       summary: Check API and database health
       responses:
-        '200':
+        "200":
           description: API healthy
-        '503':
+        "503":
           description: Database unavailable
   /api/auth/register:
     post:
@@ -578,26 +846,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              $ref: "#/components/schemas/RegisterRequest"
       responses:
-        '201':
+        "201":
           description: User registered
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSuccessResponse'
-        '400':
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
           description: Invalid input
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
           description: Email already registered
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/auth/login:
     post:
       security: []
@@ -608,26 +876,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
+        "200":
           description: Authenticated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSuccessResponse'
-        '400':
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
           description: Invalid request body
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Invalid credentials
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/auth/refresh:
     post:
       security: []
@@ -638,38 +906,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RefreshTokenRequest'
+              $ref: "#/components/schemas/RefreshTokenRequest"
       responses:
-        '200':
+        "200":
           description: Tokens refreshed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenPair'
-        '400':
+                $ref: "#/components/schemas/TokenPair"
+        "400":
           description: Invalid request body
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Invalid or expired token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/auth/logout:
     post:
       security: []
       operationId: logout
       summary: Logout and clear auth cookie/token
       responses:
-        '200':
+        "200":
           description: Logout processed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: "#/components/schemas/MessageResponse"
   /api/auth/forgot-password:
     post:
       security: []
@@ -680,14 +948,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ForgotPasswordRequest'
+              $ref: "#/components/schemas/ForgotPasswordRequest"
       responses:
-        '200':
+        "200":
           description: Reset message accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                $ref: "#/components/schemas/MessageResponse"
   /api/auth/reset-password:
     post:
       security: []
@@ -698,34 +966,34 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResetPasswordRequest'
+              $ref: "#/components/schemas/ResetPasswordRequest"
       responses:
-        '200':
+        "200":
           description: Password updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '400':
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
           description: Invalid or malformed request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/auth/me:
     get:
       operationId: me
       summary: Get current authenticated user profile
       responses:
-        '200':
+        "200":
           description: Current user
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '401':
+                $ref: "#/components/schemas/User"
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: User not found
   /api/auth/change-password:
     post:
@@ -736,113 +1004,113 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+              $ref: "#/components/schemas/ChangePasswordRequest"
       responses:
-        '200':
+        "200":
           description: Password changed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '400':
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
   /api/subscriptions/status:
     get:
       operationId: getSubscriptionStatus
       summary: Get current subscription and billing status
       responses:
-        '200':
+        "200":
           description: Subscription status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubscriptionStatusResponse'
-        '401':
+                $ref: "#/components/schemas/SubscriptionStatusResponse"
+        "401":
           description: Unauthorized
   /api/subscriptions/checkout-session:
     post:
       operationId: createCheckoutSession
       summary: Create Stripe checkout session for Pro subscription
       responses:
-        '200':
+        "200":
           description: Checkout session created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckoutSessionResponse'
-        '401':
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+        "401":
           description: Unauthorized
-        '500':
+        "500":
           description: Stripe not configured or session creation failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/subscriptions/portal-session:
     post:
       operationId: createPortalSession
       summary: Create Stripe customer portal session
       responses:
-        '200':
+        "200":
           description: Portal session created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckoutSessionResponse'
-        '400':
+                $ref: "#/components/schemas/CheckoutSessionResponse"
+        "400":
           description: No associated Stripe customer
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
-        '500':
+        "500":
           description: Stripe not configured or portal creation failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/subscriptions/webhook/stripe:
     post:
       security: []
       operationId: stripeWebhook
       summary: Receive Stripe webhook events
       responses:
-        '200':
+        "200":
           description: Webhook processed
-        '400':
+        "400":
           description: Invalid signature or payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
           description: Webhook not configured
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/subscriptions/webhook/revenuecat:
     post:
       security: []
       operationId: revenueCatWebhook
       summary: Receive RevenueCat webhook events
       responses:
-        '200':
+        "200":
           description: Webhook processed
-        '400':
+        "400":
           description: Invalid webhook payload
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/events:
     get:
       operationId: listEvents
@@ -859,20 +1127,20 @@ paths:
             type: integer
             default: 20
       responses:
-        '200':
+        "200":
           description: List of events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Event'
-        '401':
+                  $ref: "#/components/schemas/Event"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       operationId: createEvent
       summary: Create new event
@@ -881,28 +1149,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventUpsertRequest'
+              $ref: "#/components/schemas/EventUpsertRequest"
       responses:
-        '201':
+        "201":
           description: Event created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
-        '400':
+                $ref: "#/components/schemas/Event"
+        "400":
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
-        '422':
+        "422":
           description: Unprocessable entity
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
   /api/events/{id}:
     get:
       operationId: getEvent
@@ -915,15 +1183,15 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Event details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
-        '401':
+                $ref: "#/components/schemas/Event"
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Event not found
     put:
       operationId: updateEvent
@@ -940,19 +1208,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventUpsertRequest'
+              $ref: "#/components/schemas/EventUpsertRequest"
       responses:
-        '200':
+        "200":
           description: Event updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
-        '400':
+                $ref: "#/components/schemas/Event"
+        "400":
           description: Validation error
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Event not found
     delete:
       operationId: deleteEvent
@@ -965,11 +1233,11 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Event deleted
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Event not found
   /api/clients:
     get:
@@ -987,15 +1255,15 @@ paths:
             type: integer
             default: 20
       responses:
-        '200':
+        "200":
           description: List of clients
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Client'
-        '401':
+                  $ref: "#/components/schemas/Client"
+        "401":
           description: Unauthorized
     post:
       operationId: createClient
@@ -1005,17 +1273,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: "#/components/schemas/Client"
       responses:
-        '201':
+        "201":
           description: Client created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
-        '400':
+                $ref: "#/components/schemas/Client"
+        "400":
           description: Validation error
-        '401':
+        "401":
           description: Unauthorized
   /api/clients/{id}:
     get:
@@ -1029,15 +1297,15 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Client details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
-        '401':
+                $ref: "#/components/schemas/Client"
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Client not found
     put:
       operationId: updateClient
@@ -1054,17 +1322,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: "#/components/schemas/Client"
       responses:
-        '200':
+        "200":
           description: Client updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Client'
-        '401':
+                $ref: "#/components/schemas/Client"
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Client not found
     delete:
       operationId: deleteClient
@@ -1077,11 +1345,11 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Client deleted
-        '401':
+        "401":
           description: Unauthorized
-        '404':
+        "404":
           description: Client not found
   /api/products:
     get:
@@ -1099,15 +1367,15 @@ paths:
             type: integer
             default: 20
       responses:
-        '200':
+        "200":
           description: List of products
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Product'
-        '401':
+                  $ref: "#/components/schemas/Product"
+        "401":
           description: Unauthorized
     post:
       operationId: createProduct
@@ -1117,28 +1385,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Product'
+              $ref: "#/components/schemas/Product"
       responses:
-        '201':
+        "201":
           description: Product created
-        '400':
+        "400":
           description: Validation error
-        '401':
+        "401":
           description: Unauthorized
   /api/inventory:
     get:
       operationId: listInventory
       summary: Get all inventory for authenticated user
       responses:
-        '200':
+        "200":
           description: List of inventory items
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/InventoryItem'
-        '401':
+                  $ref: "#/components/schemas/InventoryItem"
+        "401":
           description: Unauthorized
     post:
       operationId: createInventory
@@ -1148,26 +1416,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InventoryItem'
+              $ref: "#/components/schemas/InventoryItem"
       responses:
-        '201':
+        "201":
           description: Inventory item created
-        '401':
+        "401":
           description: Unauthorized
   /api/payments:
     get:
       operationId: listPayments
       summary: Get all payments for authenticated user
       responses:
-        '200':
+        "200":
           description: List of payments
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Payment'
-        '401':
+                  $ref: "#/components/schemas/Payment"
+        "401":
           description: Unauthorized
     post:
       operationId: createPayment
@@ -1177,11 +1445,363 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Payment'
+              $ref: "#/components/schemas/Payment"
       responses:
-        '201':
+        "201":
           description: Payment created
-        '400':
+        "400":
           description: Validation error
-        '401':
+        "401":
+          description: Unauthorized
+  /api/unavailable-dates:
+    get:
+      operationId: getUnavailableDates
+      summary: Get unavailable dates in a date range
+      parameters:
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: end
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unavailable dates found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UnavailableDate"
+        "400":
+          description: Invalid or missing date parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createUnavailableDate
+      summary: Create an unavailable date range
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnavailableDateCreateRequest"
+      responses:
+        "201":
+          description: Unavailable date created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnavailableDate"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/unavailable-dates/{id}:
+    delete:
+      operationId: deleteUnavailableDate
+      summary: Delete an unavailable date range
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Unavailable date deleted
+        "400":
+          description: Invalid id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Unavailable date not found
+  /api/devices/register:
+    post:
+      operationId: registerDevice
+      summary: Register a device token for push notifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceRegisterRequest"
+      responses:
+        "200":
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceToken"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/devices/unregister:
+    post:
+      operationId: unregisterDevice
+      summary: Unregister a device token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceUnregisterRequest"
+      responses:
+        "200":
+          description: Device unregistered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusOkResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/live-activities/register:
+    post:
+      operationId: registerLiveActivity
+      summary: Register an iOS live activity push token for an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LiveActivityRegisterRequest"
+      responses:
+        "201":
+          description: Live activity token registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LiveActivityToken"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/live-activities/by-event/{eventId}:
+    delete:
+      operationId: deleteLiveActivityByEvent
+      summary: Delete live activity tokens by event id
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Live activity tokens deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusOkResponse"
+        "400":
+          description: Invalid event ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/uploads/image:
+    post:
+      operationId: uploadImage
+      summary: Upload an image file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadImageResponse"
+        "400":
+          description: Invalid upload request or file type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Upload limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/search:
+    get:
+      operationId: searchAll
+      summary: Search across clients products inventory and events
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results grouped by resource type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          description: Missing query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/dashboard/kpis:
+    get:
+      operationId: getDashboardKPIs
+      summary: Get dashboard KPI summary
+      responses:
+        "200":
+          description: Dashboard KPIs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardKPIs"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Failed to get dashboard KPIs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/dashboard/revenue-chart:
+    get:
+      operationId: getRevenueChart
+      summary: Get monthly revenue chart data
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [month, quarter, year]
+      responses:
+        "200":
+          description: Revenue chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenueDataPoint"
+        "400":
+          description: Invalid period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+  /api/dashboard/events-by-status:
+    get:
+      operationId: getEventsByStatus
+      summary: Get event counts grouped by status
+      responses:
+        "200":
+          description: Event counts by status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventStatusCount"
+        "401":
+          description: Unauthorized
+  /api/dashboard/top-clients:
+    get:
+      operationId: getTopClients
+      summary: Get top clients by total spent
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Top clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopClient"
+        "401":
+          description: Unauthorized
+  /api/dashboard/product-demand:
+    get:
+      operationId: getProductDemand
+      summary: Get most used products and generated revenue
+      responses:
+        "200":
+          description: Product demand data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductDemandItem"
+        "401":
+          description: Unauthorized
+  /api/dashboard/forecast:
+    get:
+      operationId: getForecast
+      summary: Get revenue forecast for future confirmed or quoted events
+      responses:
+        "200":
+          description: Forecast data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ForecastDataPoint"
+        "401":
           description: Unauthorized
