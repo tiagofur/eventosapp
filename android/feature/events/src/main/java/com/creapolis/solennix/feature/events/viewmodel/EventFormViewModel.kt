@@ -808,9 +808,43 @@ class EventFormViewModel @Inject constructor(
             selectedClient == null -> "Seleccioná un cliente"
             serviceType.isBlank() -> "Ingresá el tipo de servicio"
             (numPeople.toIntOrNull() ?: 0) < 1 -> "Ingresá la cantidad de personas"
+            !isValidTime24h(startTime) ->
+                "Hora de inicio inválida — usá formato HH:mm (ej: 14:30)"
+            !isValidTime24h(endTime) ->
+                "Hora de fin inválida — usá formato HH:mm (ej: 20:00)"
+            startTime.isNotBlank() && endTime.isNotBlank() &&
+                normalizeTime(startTime) == normalizeTime(endTime) ->
+                "La hora de inicio y de fin no pueden ser iguales"
             else -> null
         }
         else -> null
+    }
+
+    /**
+     * Accepts a blank string (maps to null in the backend) or a 24h time in HH:mm /
+     * HH:mm:ss format. Uses [java.time.LocalTime.parse] which rejects out-of-range
+     * values like "25:00" or "12:61".
+     *
+     * Domain note: we intentionally DO NOT enforce `endTime > startTime` because LATAM
+     * events (weddings, quinceañeras) regularly run past midnight — a start of 20:00 and
+     * an end of 02:00 is valid and means "next day". Only equality is rejected (that's
+     * a zero-duration bug).
+     */
+    private fun isValidTime24h(s: String): Boolean {
+        if (s.isBlank()) return true
+        return try {
+            java.time.LocalTime.parse(s)
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /** Normalizes "14:30" and "14:30:00" to the same canonical form for comparison. */
+    private fun normalizeTime(s: String): String? = try {
+        java.time.LocalTime.parse(s).toString()
+    } catch (e: Exception) {
+        null
     }
 
     fun saveEvent() {
@@ -824,6 +858,22 @@ class EventFormViewModel @Inject constructor(
         }
         if (serviceType.isBlank()) {
             saveError = "Agrega el tipo de servicio"
+            return
+        }
+        // Final time validation — defensive, in case the user skipped step 0 validation.
+        if (!isValidTime24h(startTime)) {
+            saveError = "Hora de inicio inválida — usá formato HH:mm (ej: 14:30)"
+            return
+        }
+        if (!isValidTime24h(endTime)) {
+            saveError = "Hora de fin inválida — usá formato HH:mm (ej: 20:00)"
+            return
+        }
+        if (
+            startTime.isNotBlank() && endTime.isNotBlank() &&
+            normalizeTime(startTime) == normalizeTime(endTime)
+        ) {
+            saveError = "La hora de inicio y de fin no pueden ser iguales"
             return
         }
         viewModelScope.launch {

@@ -686,8 +686,10 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 | **D.1** | 7 silent `catch (_:)` — CRUD acciones    | ✅ Parcial (Product/Inventory delete+adjust, Event primary load) | `ProductListViewModel`, `InventoryListViewModel`, `EventFormViewModel.loadExistingEvent` |
 | **D.2** | Silent catches en secondary fetches     | ❌ Pendiente slice 3                     | `EventFormViewModel.fetchProductCosts/fetchEquipmentSuggestions`, `QuickQuoteViewModel.fetchProductCosts` |
 | **D.3** | 12 pantallas con spinner sin timeout  | ❌ Pendiente (UX polish, no blocker)    | ClientDetail, ClientForm, ClientList, ProductForm, ProductDetail, Inventory*, EventDetail*... |
-| **E**  | `PricingScreen:36` crash si user null | ❌ Pendiente                            | `android/feature/settings/.../PricingScreen.kt:36`                                             |
-| **E**  | `BuildConfig.API_BASE_URL` sin validar | ❌ Pendiente                           | `android/core/network/.../KtorClient.kt`                                                       |
+| **E**  | `PricingScreen:36` crash si user null | ⏭️ Descartado — archivo eliminado en Bloque C | —                                                                             |
+| **E**  | `BuildConfig.API_BASE_URL` sin validar | ⏭️ Descartado — hardcoded a `"https://api.solennix.com/api/"`, no nullable | `core/network/build.gradle.kts:20`                    |
+| **E**  | `ClientFormViewModel` campos opcionales sin validación | ⏭️ Descartado — re-audit 2026-04-11 confirmó validación COMPLETA ya existente (name/phone required + email/phone format, hasAttemptedSubmit pattern) | `feature/clients/.../ClientFormViewModel.kt:62-93` |
+| **E**  | `EventFormViewModel` sin validación de tiempo client-side | ✅ Agregado `isValidTime24h` + `normalizeTime` helpers; validación en `validateStep(0)` y defensivo en `saveEvent`. Formato `HH:mm` requerido. Rechaza horas iguales pero permite overnight events (20:00→02:00 común en bodas LATAM) | `feature/events/.../EventFormViewModel.kt:validateStep, saveEvent` |
 | **F**  | Sync final de docs con realidad       | ✅ Completado — `Roadmap Android.md` corregido (Fase 0.3 y 2.2 dejaron de mentir) | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`, `Android/Firma y Secretos de Release.md` |
 
 ### Pendiente Android (no blocker)
