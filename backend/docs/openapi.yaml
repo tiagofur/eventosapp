@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: Solennix API
   version: 1.0.0
@@ -292,6 +292,7 @@ components:
         has_stripe_account:
           type: boolean
         subscription:
+          type: object
           allOf:
             - $ref: "#/components/schemas/SubscriptionInfo"
           nullable: true
@@ -1480,132 +1481,132 @@ components:
         caption:
           type: string
           nullable: true
-      PlatformStats:
-        type: object
-        required:
-          - total_users
-          - basic_users
-          - pro_users
-          - premium_users
-          - total_events
-          - total_clients
-          - total_products
-          - new_users_today
-          - new_users_week
-          - new_users_month
-          - active_subscriptions
-        properties:
-          total_users:
-            type: integer
-          basic_users:
-            type: integer
-          pro_users:
-            type: integer
-          premium_users:
-            type: integer
-          total_events:
-            type: integer
-          total_clients:
-            type: integer
-          total_products:
-            type: integer
-          new_users_today:
-            type: integer
-          new_users_week:
-            type: integer
-          new_users_month:
-            type: integer
-          active_subscriptions:
-            type: integer
-      AdminUser:
-        type: object
-        required:
-          - id
-          - email
-          - name
-          - plan
-          - role
-          - has_paid_subscription
-          - events_count
-          - clients_count
-          - products_count
-          - created_at
-          - updated_at
-        properties:
-          id:
-            type: string
-            format: uuid
-          email:
-            type: string
-            format: email
-          name:
-            type: string
-          business_name:
-            type: string
-            nullable: true
-          plan:
-            type: string
-            enum: [basic, pro, premium]
-          role:
-            type: string
-          stripe_customer_id:
-            type: string
-            nullable: true
-          has_paid_subscription:
-            type: boolean
-          plan_expires_at:
-            type: string
-            format: date-time
-            nullable: true
-          events_count:
-            type: integer
-          clients_count:
-            type: integer
-          products_count:
-            type: integer
-          created_at:
-            type: string
-            format: date-time
-          updated_at:
-            type: string
-            format: date-time
-      SubscriptionOverview:
-        type: object
-        required:
-          - total_active
-          - total_canceled
-          - total_trialing
-          - total_past_due
-          - stripe_count
-          - apple_count
-          - google_count
-        properties:
-          total_active:
-            type: integer
-          total_canceled:
-            type: integer
-          total_trialing:
-            type: integer
-          total_past_due:
-            type: integer
-          stripe_count:
-            type: integer
-          apple_count:
-            type: integer
-          google_count:
-            type: integer
-      AdminUpgradeRequest:
-        type: object
-        properties:
-          plan:
-            type: string
-            enum: [basic, pro, premium]
-            description: Target plan. Defaults to pro when omitted or empty.
-          expires_at:
-            type: string
-            format: date
-            nullable: true
-            description: Optional gift expiry date in YYYY-MM-DD format.
+    PlatformStats:
+      type: object
+      required:
+        - total_users
+        - basic_users
+        - pro_users
+        - premium_users
+        - total_events
+        - total_clients
+        - total_products
+        - new_users_today
+        - new_users_week
+        - new_users_month
+        - active_subscriptions
+      properties:
+        total_users:
+          type: integer
+        basic_users:
+          type: integer
+        pro_users:
+          type: integer
+        premium_users:
+          type: integer
+        total_events:
+          type: integer
+        total_clients:
+          type: integer
+        total_products:
+          type: integer
+        new_users_today:
+          type: integer
+        new_users_week:
+          type: integer
+        new_users_month:
+          type: integer
+        active_subscriptions:
+          type: integer
+    AdminUser:
+      type: object
+      required:
+        - id
+        - email
+        - name
+        - plan
+        - role
+        - has_paid_subscription
+        - events_count
+        - clients_count
+        - products_count
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        business_name:
+          type: string
+          nullable: true
+        plan:
+          type: string
+          enum: [basic, pro, premium]
+        role:
+          type: string
+        stripe_customer_id:
+          type: string
+          nullable: true
+        has_paid_subscription:
+          type: boolean
+        plan_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        events_count:
+          type: integer
+        clients_count:
+          type: integer
+        products_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SubscriptionOverview:
+      type: object
+      required:
+        - total_active
+        - total_canceled
+        - total_trialing
+        - total_past_due
+        - stripe_count
+        - apple_count
+        - google_count
+      properties:
+        total_active:
+          type: integer
+        total_canceled:
+          type: integer
+        total_trialing:
+          type: integer
+        total_past_due:
+          type: integer
+        stripe_count:
+          type: integer
+        apple_count:
+          type: integer
+        google_count:
+          type: integer
+    AdminUpgradeRequest:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [basic, pro, premium]
+          description: Target plan. Defaults to pro when omitted or empty.
+        expires_at:
+          type: string
+          format: date
+          nullable: true
+          description: Optional gift expiry date in YYYY-MM-DD format.
     ErrorResponse:
       type: object
       properties:
