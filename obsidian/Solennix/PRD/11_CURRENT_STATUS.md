@@ -39,7 +39,7 @@ status: active
 | Backend (Go)              | Funcional ✅ + **MVP Contract Freeze cerrado 2026-04-10** | API completa, 37 migraciones, auth multi-proveedor, Stripe, RevenueCat, push notifications (FCM+APNs), paginacion server-side, dashboard analytics, FTS, audit logging, CSRF, refresh token rotation, **OpenAPI 1.0 cubriendo 100% de rutas del router y gateado en CI con @redocly/cli lint**, **event handlers a ≥85% coverage** (E1.B2), coverage handlers 78.6% |
 | Web (React)               | Funcional ✅ + **100% alineada con el contrato del backend 2026-04-10** | Todas las paginas principales, panel admin, cotizacion rapida. **`openapi-typescript` regenera los tipos desde `backend/docs/openapi.yaml` en cada `check`/`build`**; CI verifica que el archivo commiteado está sincronizado con el spec. Tests: 1128 unit + 2 e2e (Playwright skipea los 26 que requieren backend automáticamente). Ver E2.C1 Web en [[SUPER_PLAN/16_BACKEND_CONTRACT_READINESS]]. |
 | iOS (SwiftUI)             | En desarrollo 🔄 | Features principales + widgets (4 tipos) + Live Activity + 7 generadores PDF                                                                                                                                                                                                     |
-| Android (Jetpack Compose) | En desarrollo 🔄 | Features principales, arquitectura modular multi-feature, 8 generadores PDF, RevenueCat billing                                                                                                                                                                                  |
+| Android (Jetpack Compose) | En desarrollo 🔄 + **Wave Rescate Play Store iniciado 2026-04-11** | Features principales, arquitectura modular multi-feature, 8 generadores PDF. **Blockers detectados**: Play Billing botón upgrade vacío, SSL pinning faltante, 7 silent catches, keystore password trivial. Ver sección "Wave Rescate Android" y [[../Android/Firma y Secretos de Release]].                                        |
 
 ---
 
@@ -669,7 +669,27 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 - ✅ SearchBar en TopAppBar
 - ✅ Arquitectura modular multi-feature
 
-### Pendiente Android
+### Wave Rescate Android — Blockers Play Store (2026-04-11)
+
+> [!danger] Audit 2026-04-11 — los docs estaban desincronizados con el código
+> Auditoría cruzada detectó que varios items marcados como "✅ Resuelto" NO están en el código. Ver [[../Android/Firma y Secretos de Release|Firma y Secretos de Release]] para el plan de rescate.
+
+| Bloque | Item                                  | Estado                                  | Archivos afectados                                                                             |
+| ------ | ------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **A**  | Keystore password trivial (`asd123`)  | 🔄 Infra lista, usuario debe rotar      | `android/key.properties`, `android/solennix.jks`                                               |
+| **A**  | `REVENUECAT_API_KEY` sin validar      | ✅ Fail-fast agregado                   | `android/app/build.gradle.kts`                                                                 |
+| **A**  | Release sin fail-fast de secretos     | ✅ Agregado                             | `android/app/build.gradle.kts`                                                                 |
+| **B**  | SSL Pinning declarado pero inexistente | ❌ Pendiente                            | `android/core/network/.../KtorClient.kt`                                                       |
+| **C**  | Play Billing botón "Upgrade" vacío    | ❌ Pendiente (`TODO: Implement`)        | `android/feature/settings/.../PricingScreen.kt:168`                                            |
+| **C**  | `SubscriptionScreen` BillingState incompleto | ❌ Pendiente                      | `android/feature/settings/.../SubscriptionScreen.kt`                                           |
+| **C**  | RevenueCat silent failure en register/Google | ❌ Pendiente                      | `android/feature/auth/.../AuthViewModel.kt:174-180`                                            |
+| **D**  | 7 silent `catch (_:)` en ViewModels   | ❌ Pendiente                            | Event/Quick/Product/Inventory/Auth ViewModels                                                  |
+| **D**  | 12 pantallas con spinner sin timeout  | ❌ Pendiente                            | ClientDetail, ClientForm, ClientList, ProductForm, ProductDetail, Inventory*, EventDetail*... |
+| **E**  | `PricingScreen:36` crash si user null | ❌ Pendiente                            | `android/feature/settings/.../PricingScreen.kt:36`                                             |
+| **E**  | `BuildConfig.API_BASE_URL` sin validar | ❌ Pendiente                           | `android/core/network/.../KtorClient.kt`                                                       |
+| **F**  | Sync final de docs con realidad       | ❌ Pendiente                            | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`                                       |
+
+### Pendiente Android (no blocker)
 
 > [!warning] Items pendientes Android
 
@@ -684,7 +704,7 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 >
 > - ~~Widgets (Glance)~~ — QuickActionsWidget implementado con eventos del dia + acciones rapidas
 > - ~~Generacion de PDF~~ — 8 generadores implementados: Budget, Contract, Shopping, Checklist, PaymentReport, Invoice, Equipment, QuickQuote
-> - ~~Play Billing~~ — Implementado via RevenueCat SDK
+> - ~~RevenueCat SDK integrado~~ — SDK agregado y `Purchases.sharedInstance` inicializado (compra real NO implementada — ver Wave Rescate Bloque C)
 > - ~~Google Sign-In mock~~ — Reemplazado mock con Credential Manager real
 > - ~~Shared element transitions lista→detalle~~ — SharedTransitionLayout + sharedBounds via LocalSharedTransitionScope/LocalNavAnimatedVisibilityScope. Key pattern: `event_card_{id}`
 > - ~~Skeleton → content crossfade~~ — AnimatedContent con skeleton + shimmer en EventListScreen
@@ -699,7 +719,7 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 > - ~~Baseline Profiles (infra)~~ — módulo `:baselineprofile` con `BaselineProfileGenerator` + `measureColdStartup`; app integrada con `profileinstaller` y consumo de perfiles en release
 > - ~~Dark mode polish (parcial)~~ — contraste dinámico en Events/Inventory para badges/FAB usando `MaterialTheme.colorScheme.onPrimary` (evita blanco fijo en modo oscuro)
 > - ~~Photo picker con crop~~ — flujo de fotos de eventos aplica auto-crop 4:3 antes de compresión/upload
-> - ~~RevenueCat sync en register/Google~~ — Agregado logInWith despues de register y Google sign-in
+> - ~~RevenueCat logInWith llamado en register/Google~~ — El call existe pero está envuelto en `catch (_:) {}` silencioso (ver Wave Rescate Bloque C)
 > - ~~Contract preview interactivo~~ — EventContractPreviewScreen implementado con gating de anticipo y campos faltantes
 > - ~~Cotizacion rapida (Quick Quote)~~ — QuickQuoteScreen + QuickQuoteViewModel + QuickQuotePdfGenerator
 > - ~~Feature gating enforcement~~ — PlanLimitsManager wired into EventForm, ClientForm, ProductForm + UpgradePlanDialog

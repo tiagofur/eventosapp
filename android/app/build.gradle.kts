@@ -10,11 +10,54 @@ plugins {
 
 import java.util.Properties
 
+// Release signing config — see obsidian/Solennix/Android/Firma y Secretos de Release.md
+//
+// Credentials are resolved in this order:
+//   1. Environment variables (CI-friendly):
+//        SOLENNIX_KEYSTORE_FILE, SOLENNIX_KEYSTORE_PASSWORD,
+//        SOLENNIX_KEY_ALIAS, SOLENNIX_KEY_PASSWORD
+//   2. android/key.properties (local dev; gitignored)
+//
+// If neither is present, release signing config is NOT created and `./gradlew assembleRelease`
+// will fail fast with a clear error instead of producing an unsigned APK.
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
         keystorePropertiesFile.inputStream().use { load(it) }
     }
+}
+
+fun signingValue(key: String, envVar: String): String? {
+    val fromEnv = System.getenv(envVar)
+    if (!fromEnv.isNullOrBlank()) return fromEnv
+    val fromFile = keystoreProperties[key] as? String
+    return fromFile?.takeIf { it.isNotBlank() }
+}
+
+val releaseStoreFile = signingValue("storeFile", "SOLENNIX_KEYSTORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "SOLENNIX_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "SOLENNIX_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "SOLENNIX_KEY_PASSWORD")
+
+val hasReleaseSigningConfig = releaseStoreFile != null &&
+    releaseStorePassword != null &&
+    releaseKeyAlias != null &&
+    releaseKeyPassword != null
+
+// RevenueCat API key — required for any non-debug build. Resolved from:
+//   1. Env var REVENUECAT_API_KEY (CI)
+//   2. Gradle property REVENUECAT_API_KEY (in ~/.gradle/gradle.properties)
+// If missing, debug builds compile with an empty key and log a warning; release builds fail fast.
+val revenueCatApiKey: String = System.getenv("REVENUECAT_API_KEY")
+    ?: (project.findProperty("REVENUECAT_API_KEY") as? String)
+    ?: ""
+
+if (revenueCatApiKey.isBlank()) {
+    logger.warn(
+        "⚠️  REVENUECAT_API_KEY is not set. Debug builds will compile but subscriptions " +
+            "will NOT work. Set it in ~/.gradle/gradle.properties or as an env var before " +
+            "building release."
+    )
 }
 
 android {
@@ -30,16 +73,16 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "REVENUECAT_API_KEY", "\"${project.findProperty("REVENUECAT_API_KEY") ?: ""}\"")
+        buildConfigField("String", "REVENUECAT_API_KEY", "\"$revenueCatApiKey\"")
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
+        if (hasReleaseSigningConfig) {
             create("release") {
-                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword!!
+                keyAlias = releaseKeyAlias!!
+                keyPassword = releaseKeyPassword!!
             }
         }
     }
@@ -52,7 +95,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfigs.findByName("release")?.let { signingConfig = it }
+            if (hasReleaseSigningConfig) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
@@ -117,3 +162,26 @@ dependencies {
     implementation(libs.profileinstaller)
     baselineProfile(project(":baselineprofile"))
 }
+
+// Fail fast on release builds if required secrets are missing.
+// Prevents accidentally producing an unsigned APK or a release with empty RevenueCat key.
+tasks.matching { it.name.startsWith("assembleRelease") || it.name.startsWith("bundleRelease") }
+    .configureEach {
+        doFirst {
+            val missing = buildList {
+                if (!hasReleaseSigningConfig) add(
+                    "Release signing config (SOLENNIX_KEYSTORE_* env vars or android/key.properties)"
+                )
+                if (revenueCatApiKey.isBlank()) add(
+                    "REVENUECAT_API_KEY (env var or ~/.gradle/gradle.properties)"
+                )
+            }
+            if (missing.isNotEmpty()) {
+                throw GradleException(
+                    "Cannot build release: missing required config:\n" +
+                        missing.joinToString("\n") { "  - $it" } +
+                        "\n\nSee obsidian/Solennix/Android/Firma y Secretos de Release.md"
+                )
+            }
+        }
+    }
