@@ -1120,6 +1120,64 @@ components:
           type: integer
         total_pages:
           type: integer
+    AuditLog:
+      type: object
+      required:
+        - id
+        - user_id
+        - action
+        - resource_type
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          description: Verb or action performed (e.g. create, update, delete, login)
+        resource_type:
+          type: string
+          description: Type of resource affected (e.g. event, client, product)
+        resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        details:
+          type: string
+          nullable: true
+        ip_address:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    PaginatedAuditLogsResponse:
+      type: object
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - total_pages
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        total_pages:
+          type: integer
     UnavailableDate:
       type: object
       required:
@@ -2098,6 +2156,64 @@ paths:
           description: Unauthorized
         "404":
           description: Event not found
+  /api/events/search:
+    get:
+      operationId: searchEvents
+      summary: Advanced search over events by query, status, date range or client
+      description: At least one filter must be provided (q, status, from, to or client_id). Returns a flat array of events matching every provided filter.
+      parameters:
+        - name: q
+          in: query
+          description: Free-text query matched against title, description and notes
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by event status
+          schema:
+            type: string
+            enum: [quoted, confirmed, completed, cancelled]
+        - name: from
+          in: query
+          description: Inclusive start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          description: Inclusive end date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: client_id
+          in: query
+          description: Restrict results to one client
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Matching events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "400":
+          description: Invalid filters or missing mandatory filter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Failed to search events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/events/upcoming:
     get:
       operationId: getUpcomingEvents
@@ -2375,6 +2491,56 @@ paths:
         "404":
           description: Event not found
   /api/events/equipment/conflicts:
+    get:
+      operationId: checkEquipmentConflictsGET
+      summary: Check scheduling conflicts using query parameters (mobile variant)
+      description: Alternative to the POST variant that accepts filters via query string. Without event_date and inventory_ids the response is an empty array.
+      parameters:
+        - name: event_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: inventory_ids
+          in: query
+          description: Comma-separated list of inventory UUIDs
+          schema:
+            type: string
+        - name: exclude_event_id
+          in: query
+          description: Event UUID to exclude from conflict calculation (useful when editing)
+          schema:
+            type: string
+            format: uuid
+        - name: start_time
+          in: query
+          schema:
+            type: string
+        - name: end_time
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Equipment conflict results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentConflict"
+        "400":
+          description: Invalid inventory ID or exclude_event_id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to check equipment conflicts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       operationId: checkEquipmentConflicts
       summary: Check scheduling conflicts for selected equipment
@@ -2406,6 +2572,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
   /api/events/equipment/suggestions:
+    get:
+      operationId: getEquipmentSuggestionsGET
+      summary: Suggest equipment for selected products using query parameters (mobile variant)
+      parameters:
+        - name: product_ids
+          in: query
+          description: Comma-separated list of product UUIDs
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Equipment suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipmentSuggestion"
+        "400":
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to fetch equipment suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       operationId: getEquipmentSuggestions
       summary: Suggest equipment required for selected products
@@ -2437,6 +2633,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
   /api/events/supplies/suggestions:
+    get:
+      operationId: getSupplySuggestionsGET
+      summary: Suggest supplies for selected products using query parameters (mobile variant)
+      parameters:
+        - name: product_ids
+          in: query
+          description: Comma-separated list of product UUIDs
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Supply suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupplySuggestion"
+        "400":
+          description: Invalid product ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to fetch supply suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       operationId: getSupplySuggestions
       summary: Suggest supplies required for selected products
@@ -3515,6 +3741,53 @@ paths:
                   $ref: "#/components/schemas/ForecastDataPoint"
         "401":
           description: Unauthorized
+  /api/dashboard/activity:
+    get:
+      operationId: getActivityLog
+      summary: Get the audit activity log for the authenticated user
+      description: Returns the authenticated user's audit log entries. Returns a flat array when no page is provided or a paginated envelope when page is present.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, action, resource]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Activity log entries
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/AuditLog"
+                  - $ref: "#/components/schemas/PaginatedAuditLogsResponse"
+        "401":
+          description: Unauthorized
+        "500":
+          description: Failed to get activity log
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/admin/stats:
     get:
       operationId: getAdminStats
@@ -3660,6 +3933,59 @@ paths:
           description: Unauthorized
         "500":
           description: Failed to get subscription overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/admin/audit-logs:
+    get:
+      operationId: getAllAuditLogs
+      summary: Get paginated audit logs across all users (admin only)
+      description: Returns the platform-wide audit log. Returns a flat array when no page is provided or a paginated envelope when page is present.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, action, resource]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Platform audit log entries
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/AuditLog"
+                  - $ref: "#/components/schemas/PaginatedAuditLogsResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin role required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to get audit logs
           content:
             application/json:
               schema:
