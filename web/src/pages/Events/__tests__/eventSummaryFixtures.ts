@@ -83,6 +83,7 @@ export interface EventSummaryMockedServices {
     getExtras: { mockResolvedValue: (v: unknown) => void };
     getEquipment: { mockResolvedValue: (v: unknown) => void };
     getSupplies: { mockResolvedValue: (v: unknown) => void };
+    getEventPhotos: { mockResolvedValue: (v: unknown) => void };
   };
   paymentService: {
     getByEventId: { mockResolvedValue: (v: unknown) => void };
@@ -111,6 +112,7 @@ export const installEventSummaryMocks = (
   ]);
   services.eventService.getEquipment.mockResolvedValue([]);
   services.eventService.getSupplies.mockResolvedValue([]);
+  services.eventService.getEventPhotos.mockResolvedValue([]);
   services.paymentService.getByEventId.mockResolvedValue([]);
   services.productService.getIngredientsForProducts.mockResolvedValue([
     {

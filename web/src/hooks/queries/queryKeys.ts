@@ -14,6 +14,7 @@ export const queryKeys = {
     extras: (eventId: string) => ['events', eventId, 'extras'] as const,
     equipment: (eventId: string) => ['events', eventId, 'equipment'] as const,
     supplies: (eventId: string) => ['events', eventId, 'supplies'] as const,
+    photos: (eventId: string) => ['events', eventId, 'photos'] as const,
     upcoming: (limit: number) => ['events', 'upcoming', limit] as const,
     dateRange: (start: string, end: string) => ['events', 'range', start, end] as const,
     byClient: (clientId: string) => ['events', 'byClient', clientId] as const,

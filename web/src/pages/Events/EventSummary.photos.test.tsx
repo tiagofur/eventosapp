@@ -26,6 +26,9 @@ vi.mock('../../services/eventService', () => ({
     getExtras: vi.fn(),
     getEquipment: vi.fn(),
     getSupplies: vi.fn(),
+    getEventPhotos: vi.fn(),
+    addEventPhoto: vi.fn(),
+    deleteEventPhoto: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     updateItems: vi.fn(),
@@ -170,8 +173,13 @@ describe('EventSummary — photos', () => {
     expect(screen.getByText('Agregar Fotos')).toBeInTheDocument();
   });
 
-  it('renders photos from event data and shows photo grid', async () => {
-    setupMocks({ photos: JSON.stringify(['https://example.com/photo1.jpg', 'https://example.com/photo2.jpg']) });
+  it('renders photos fetched from the backend endpoint', async () => {
+    // The Web no longer parses event.photos JSON — it calls
+    // eventService.getEventPhotos(id) which returns EventPhoto[] directly.
+    (eventService.getEventPhotos as any).mockResolvedValue([
+      { id: 'photo-1', url: 'https://example.com/photo1.jpg', created_at: '2026-04-01T00:00:00Z' },
+      { id: 'photo-2', url: 'https://example.com/photo2.jpg', created_at: '2026-04-01T00:00:00Z' },
+    ]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -181,41 +189,17 @@ describe('EventSummary — photos', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
 
-    expect(screen.getByAltText('Foto 1 del evento')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByAltText('Foto 1 del evento')).toBeInTheDocument();
+    });
     expect(screen.getByAltText('Foto 2 del evento')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('renders photos from event data when photos is already an array', async () => {
-    setupMocks({ photos: ['https://example.com/a.jpg'] });
-
-    render(<MemoryRouter><EventSummary /></MemoryRouter>);
-
-    await waitFor(() => {
-      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
-
-    expect(screen.getByAltText('Foto 1 del evento')).toBeInTheDocument();
-  });
-
-  it('handles malformed photos JSON gracefully', async () => {
-    setupMocks({ photos: '{not valid json' });
-
-    render(<MemoryRouter><EventSummary /></MemoryRouter>);
-
-    await waitFor(() => {
-      expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
-
-    expect(screen.getByText('No hay fotos del evento.')).toBeInTheDocument();
-  });
-
   it('opens lightbox when clicking a photo and closes it', async () => {
-    setupMocks({ photos: JSON.stringify(['https://example.com/photo1.jpg']) });
+    (eventService.getEventPhotos as any).mockResolvedValue([
+      { id: 'photo-1', url: 'https://example.com/photo1.jpg', created_at: '2026-04-01T00:00:00Z' },
+    ]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -224,6 +208,9 @@ describe('EventSummary — photos', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
+    await waitFor(() => {
+      expect(screen.getByAltText('Foto 1 del evento')).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByAltText('Foto 1 del evento'));
 
     expect(screen.getByRole('dialog', { name: /Vista ampliada/i })).toBeInTheDocument();
@@ -237,7 +224,9 @@ describe('EventSummary — photos', () => {
   });
 
   it('closes lightbox by clicking the overlay', async () => {
-    setupMocks({ photos: JSON.stringify(['https://example.com/photo1.jpg']) });
+    (eventService.getEventPhotos as any).mockResolvedValue([
+      { id: 'photo-1', url: 'https://example.com/photo1.jpg', created_at: '2026-04-01T00:00:00Z' },
+    ]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -246,6 +235,9 @@ describe('EventSummary — photos', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
+    await waitFor(() => {
+      expect(screen.getByAltText('Foto 1 del evento')).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByAltText('Foto 1 del evento'));
 
     fireEvent.click(screen.getByRole('dialog', { name: /Vista ampliada/i }));
@@ -256,8 +248,14 @@ describe('EventSummary — photos', () => {
   });
 
   it('uploads photos successfully', async () => {
+    // Step 1: /uploads/image returns the persistent URL.
     (api.postFormData as any).mockResolvedValue({ url: 'https://example.com/uploaded.jpg' });
-    (eventService.update as any).mockResolvedValue({});
+    // Step 2: POST /api/events/{id}/photos registers the photo on the event.
+    (eventService.addEventPhoto as any).mockResolvedValue({
+      id: 'new-photo-id',
+      url: 'https://example.com/uploaded.jpg',
+      created_at: '2026-04-01T00:00:00Z',
+    });
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -277,8 +275,13 @@ describe('EventSummary — photos', () => {
     });
 
     await waitFor(() => {
-      expect(eventService.update).toHaveBeenCalledWith('event-1', { photos: expect.any(String) });
+      expect(eventService.addEventPhoto).toHaveBeenCalledWith('event-1', {
+        url: 'https://example.com/uploaded.jpg',
+      });
     });
+    // The legacy path that serialized the array via eventService.update
+    // with a JSON string is gone.
+    expect(eventService.update).not.toHaveBeenCalled();
   });
 
   it('rejects oversized photos during upload', async () => {
@@ -323,8 +326,11 @@ describe('EventSummary — photos', () => {
   });
 
   it('removes a photo successfully', async () => {
-    setupMocks({ photos: JSON.stringify(['https://example.com/photo1.jpg', 'https://example.com/photo2.jpg']) });
-    (eventService.update as any).mockResolvedValue({});
+    (eventService.getEventPhotos as any).mockResolvedValue([
+      { id: 'photo-1', url: 'https://example.com/photo1.jpg', created_at: '2026-04-01T00:00:00Z' },
+      { id: 'photo-2', url: 'https://example.com/photo2.jpg', created_at: '2026-04-01T00:00:00Z' },
+    ]);
+    (eventService.deleteEventPhoto as any).mockResolvedValue(undefined);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -333,19 +339,23 @@ describe('EventSummary — photos', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Eliminar foto 1/i })).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /Eliminar foto 1/i }));
 
     await waitFor(() => {
-      expect(eventService.update).toHaveBeenCalledWith('event-1', {
-        photos: JSON.stringify(['https://example.com/photo2.jpg']),
-      });
+      expect(eventService.deleteEventPhoto).toHaveBeenCalledWith('event-1', 'photo-1');
     });
+    expect(eventService.update).not.toHaveBeenCalled();
   });
 
   it('handles photo removal error', async () => {
-    setupMocks({ photos: JSON.stringify(['https://example.com/photo1.jpg']) });
-    (eventService.update as any).mockRejectedValue(new Error('remove failed'));
+    (eventService.getEventPhotos as any).mockResolvedValue([
+      { id: 'photo-1', url: 'https://example.com/photo1.jpg', created_at: '2026-04-01T00:00:00Z' },
+    ]);
+    (eventService.deleteEventPhoto as any).mockRejectedValue(new Error('remove failed'));
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -354,6 +364,9 @@ describe('EventSummary — photos', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Eliminar foto 1/i })).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByRole('button', { name: /Eliminar foto 1/i }));
 
     await waitFor(() => {
@@ -380,7 +393,9 @@ describe('EventSummary — photos', () => {
   });
 
   it('clicking the lightbox image does not close the lightbox (stopPropagation)', async () => {
-    setupMocks({ photos: JSON.stringify(['https://example.com/photo1.jpg']) });
+    (eventService.getEventPhotos as any).mockResolvedValue([
+      { id: 'photo-1', url: 'https://example.com/photo1.jpg', created_at: '2026-04-01T00:00:00Z' },
+    ]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -389,6 +404,9 @@ describe('EventSummary — photos', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: /Ver fotos del evento/i }));
+    await waitFor(() => {
+      expect(screen.getByAltText('Foto 1 del evento')).toBeInTheDocument();
+    });
     fireEvent.click(screen.getByAltText('Foto 1 del evento'));
 
     expect(screen.getByRole('dialog', { name: /Vista ampliada/i })).toBeInTheDocument();

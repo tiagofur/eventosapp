@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { eventService } from '@/services/eventService';
+import type { EventPhotoCreateRequest } from '@/services/eventService';
 import { queryKeys } from './queryKeys';
 import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
@@ -86,6 +87,14 @@ export function useEventSupplies(eventId: string | undefined) {
   });
 }
 
+export function useEventPhotos(eventId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.events.photos(eventId!),
+    queryFn: () => eventService.getEventPhotos(eventId!),
+    enabled: !!eventId,
+  });
+}
+
 // ── Mutations ──
 
 export function useCreateEvent() {
@@ -158,6 +167,50 @@ export function useDeleteEvent() {
     onError: (error) => {
       logError('Error deleting event', error);
       addToast(getErrorMessage(error, 'Error al eliminar el evento.'), 'error');
+    },
+  });
+}
+
+// ── Photo mutations ──
+
+export function useAddEventPhoto(eventId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['events', eventId, 'photos', 'add'],
+    mutationFn: (req: EventPhotoCreateRequest) => {
+      if (!eventId) throw new Error('eventId is required');
+      return eventService.addEventPhoto(eventId, req);
+    },
+    onSuccess: () => {
+      if (!eventId) return;
+      // Invalidate both the photos list and the event detail — the detail
+      // still carries a `photos` JSON string that the backend keeps in sync.
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.photos(eventId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) });
+    },
+    onError: (error) => {
+      logError('Error uploading event photos', error);
+    },
+  });
+}
+
+export function useDeleteEventPhoto(eventId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['events', eventId, 'photos', 'delete'],
+    mutationFn: (photoId: string) => {
+      if (!eventId) throw new Error('eventId is required');
+      return eventService.deleteEventPhoto(eventId, photoId);
+    },
+    onSuccess: () => {
+      if (!eventId) return;
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.photos(eventId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(eventId) });
+    },
+    onError: (error) => {
+      logError('Error removing photo', error);
     },
   });
 }
