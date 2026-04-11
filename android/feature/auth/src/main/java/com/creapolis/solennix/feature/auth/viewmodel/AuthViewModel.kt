@@ -280,5 +280,8 @@ private fun ApiError.userMessage(context: ErrorContext): String = when (this) {
     is ApiError.NetworkError -> "Error de conexión. Verificá tu internet."
     is ApiError.ServerError -> "Error del servidor. Intentá más tarde."
     is ApiError.DecodingError -> "Error inesperado. Intentá de nuevo."
+    is ApiError.SecurityError ->
+        "No pudimos verificar la conexión segura con el servidor. " +
+            "Posible red comprometida. Intentá desde otra red."
     is ApiError.Unknown -> "Error inesperado. Intentá de nuevo."
 }
