@@ -140,6 +140,7 @@
 		E2E55DCCA04D139222E1CEBC /* EventCountIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventCountIntent.swift; sourceTree = "<group>"; };
 		EC4BED0BA0668EB3B1475A7D /* KPIWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KPIWidget.swift; sourceTree = "<group>"; };
 		F712A2D8BEDA9371EBEED283 /* WidgetDataSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataSync.swift; sourceTree = "<group>"; };
+		4DDC4EAF1ADABBBC3A0948A5 /* SolennixProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SolennixProducts.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +253,7 @@
 				1D5FE68FCA472E277CBF66FD /* PrivacyInfo.xcprivacy */,
 				3EDE477D65F41F57F76457B4 /* Solennix.entitlements */,
 				A3B0FFA9AF756AB9C85E856D /* SolennixApp.swift */,
+				4DDC4EAF1ADABBBC3A0948A5 /* SolennixProducts.storekit */,
 			);
 			path = Solennix;
 			sourceTree = "<group>";
