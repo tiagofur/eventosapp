@@ -295,7 +295,7 @@ Antes de subir una versión a Play Store:
 > - [ ] Validar `./gradlew :app:assembleRelease` funciona end-to-end
 > - [ ] Testear SSL pinning con Charles/mitmproxy (verificar que rechaza root cert falso)
 
-> [!note] Completado por Claude en los bloques A + B + C
+> [!note] Completado por Claude en los bloques A + B + C + D (parcial)
 > - [x] **Bloque A** — `build.gradle.kts` soporta env vars + file con fail-fast en release
 > - [x] **Bloque A** — `key.properties.example` creado como template
 > - [x] **Bloque A** — Validación de `REVENUECAT_API_KEY` antes de compilar release
@@ -307,6 +307,12 @@ Antes de subir una versión a Play Store:
 > - [x] **Bloque C** — Ruta `pricing` ahora renderea `SubscriptionScreen` real (compra + restore + provider badge)
 > - [x] **Bloque C** — `PricingScreen.kt` zombie eliminado (info estática duplicada con precios hardcodeados)
 > - [x] **Bloque C** — `AuthViewModel.syncRevenueCat` ahora usa `logInWith` con logs en lugar de `catch (_:)` silencioso
+> - [x] **Bloque D** — Framework `UiEvent` + `UiEventSnackbarHandler` en `core:designsystem`
+> - [x] **Bloque D** — `ProductListViewModel.deleteProduct` + refresh emiten errores con Snackbar "Reintentar"
+> - [x] **Bloque D** — `InventoryListViewModel.deleteItem` + `adjustStock` + `refresh` con Snackbar "Reintentar"
+> - [x] **Bloque D** — `EventFormViewModel.loadExistingEvent` — ahora expone `loadError` y el screen renderea card de error con botón "Reintentar" en lugar de un form vacío
+> - [ ] **Bloque D slice 3 (pendiente)** — secondary fetches en EventForm (product costs, equipment suggestions) y QuickQuote — no bloquean flujos pero muestran datos incompletos silenciosamente
+> - [ ] **Bloque D spinner timeouts (pendiente)** — 12 pantallas con `CircularProgressIndicator` sin fallback si la API cuelga (UX polish, no release blocker)
 > - [x] Docs sincronizados con `11_CURRENT_STATUS.md`
 
 ---

@@ -31,6 +31,7 @@ import com.creapolis.solennix.core.designsystem.component.*
 import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveFormRow
+import com.creapolis.solennix.core.designsystem.event.UiEventSnackbarHandler
 import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.*
@@ -50,6 +51,12 @@ fun EventFormScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { 6 })
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    UiEventSnackbarHandler(
+        events = viewModel.uiEvents,
+        snackbarHostState = snackbarHostState,
+    )
 
     // Trigger suggestions when entering equipment/supplies steps
     LaunchedEffect(pagerState.currentPage) {
@@ -71,47 +78,69 @@ fun EventFormScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            BottomStepNavigation(
-                currentPage = pagerState.currentPage,
-                totalPages = 6,
-                onNext = {
-                    val error = viewModel.validateStep(pagerState.currentPage)
-                    if (error != null) {
-                        viewModel.saveError = error
-                    } else if (pagerState.currentPage < 5) {
-                        scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
-                    } else {
-                        viewModel.saveEvent()
-                    }
-                },
-                onBack = {
-                    scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
-                },
-                isLoading = viewModel.isLoading,
-                isEditMode = viewModel.isEditMode
-            )
+            // Hide step navigation when the form failed to load — the only valid action
+            // is "Reintentar" (shown in the error card below).
+            if (viewModel.loadError == null) {
+                BottomStepNavigation(
+                    currentPage = pagerState.currentPage,
+                    totalPages = 6,
+                    onNext = {
+                        val error = viewModel.validateStep(pagerState.currentPage)
+                        if (error != null) {
+                            viewModel.saveError = error
+                        } else if (pagerState.currentPage < 5) {
+                            scope.launch {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
+                        } else {
+                            viewModel.saveEvent()
+                        }
+                    },
+                    onBack = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
+                    },
+                    isLoading = viewModel.isLoading,
+                    isEditMode = viewModel.isEditMode
+                )
+            }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            LinearProgressIndicator(
-                progress = { (pagerState.currentPage + 1) / 6f },
-                modifier = Modifier.fillMaxWidth(),
-                color = SolennixTheme.colors.primary
-            )
+        val loadError = viewModel.loadError
+        when {
+            loadError != null -> {
+                EventLoadErrorCard(
+                    message = loadError,
+                    onRetry = { viewModel.retryLoad() },
+                    onNavigateBack = onNavigateBack,
+                    modifier = Modifier.padding(padding),
+                )
+            }
+            else -> {
+                Column(modifier = Modifier.padding(padding)) {
+                    LinearProgressIndicator(
+                        progress = { (pagerState.currentPage + 1) / 6f },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = SolennixTheme.colors.primary
+                    )
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-                userScrollEnabled = false
-            ) { page ->
-                when (page) {
-                    0 -> StepGeneralInfo(viewModel)
-                    1 -> StepProducts(viewModel)
-                    2 -> StepExtras(viewModel)
-                    3 -> StepEquipment(viewModel)
-                    4 -> StepSupplies(viewModel)
-                    5 -> StepSummary(viewModel, isEditMode = viewModel.isEditMode)
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = false
+                    ) { page ->
+                        when (page) {
+                            0 -> StepGeneralInfo(viewModel)
+                            1 -> StepProducts(viewModel)
+                            2 -> StepExtras(viewModel)
+                            3 -> StepEquipment(viewModel)
+                            4 -> StepSupplies(viewModel)
+                            5 -> StepSummary(viewModel, isEditMode = viewModel.isEditMode)
+                        }
+                    }
                 }
             }
         }
@@ -132,6 +161,66 @@ fun EventFormScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * Full-screen error state shown when `loadExistingEvent` fails. Replaces the form steps
+ * so the user can't interact with an empty/stale form pretending everything is fine.
+ */
+@Composable
+private fun EventLoadErrorCard(
+    message: String,
+    onRetry: () -> Unit,
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudOff,
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+            tint = SolennixTheme.colors.secondaryText,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "No se pudo cargar el evento",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = SolennixTheme.colors.primaryText,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = SolennixTheme.colors.secondaryText,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onRetry,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = SolennixTheme.colors.primary,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Reintentar")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = onNavigateBack) {
+            Text("Volver")
+        }
     }
 }
 

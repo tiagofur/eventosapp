@@ -683,8 +683,9 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 | **C**  | Play Billing botón "Upgrade" vacío    | ✅ Resuelto (ruta `pricing` ahora renderea `SubscriptionScreen`) | `CompactBottomNavLayout.kt:298`, `PricingScreen.kt` eliminado |
 | **C**  | `SubscriptionScreen` BillingState incompleto | ✅ Auditado — ya estaba bien (NotReady/Ready/Error cubiertos) | `SubscriptionScreen.kt:94-129`                    |
 | **C**  | RevenueCat silent failure en register/Google | ✅ Resuelto con `logInWith` + `Log.w` (no bloquea auth) | `AuthViewModel.kt:172-199`                              |
-| **D**  | 7 silent `catch (_:)` en ViewModels   | ❌ Pendiente                            | Event/Quick/Product/Inventory/Auth ViewModels                                                  |
-| **D**  | 12 pantallas con spinner sin timeout  | ❌ Pendiente                            | ClientDetail, ClientForm, ClientList, ProductForm, ProductDetail, Inventory*, EventDetail*... |
+| **D.1** | 7 silent `catch (_:)` — CRUD acciones    | ✅ Parcial (Product/Inventory delete+adjust, Event primary load) | `ProductListViewModel`, `InventoryListViewModel`, `EventFormViewModel.loadExistingEvent` |
+| **D.2** | Silent catches en secondary fetches     | ❌ Pendiente slice 3                     | `EventFormViewModel.fetchProductCosts/fetchEquipmentSuggestions`, `QuickQuoteViewModel.fetchProductCosts` |
+| **D.3** | 12 pantallas con spinner sin timeout  | ❌ Pendiente (UX polish, no blocker)    | ClientDetail, ClientForm, ClientList, ProductForm, ProductDetail, Inventory*, EventDetail*... |
 | **E**  | `PricingScreen:36` crash si user null | ❌ Pendiente                            | `android/feature/settings/.../PricingScreen.kt:36`                                             |
 | **E**  | `BuildConfig.API_BASE_URL` sin validar | ❌ Pendiente                           | `android/core/network/.../KtorClient.kt`                                                       |
 | **F**  | Sync final de docs con realidad       | ❌ Pendiente                            | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`                                       |

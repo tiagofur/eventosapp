@@ -13,6 +13,7 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.designsystem.event.UiEvent
 import com.creapolis.solennix.core.model.*
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.get
@@ -50,6 +51,17 @@ class EventFormViewModel @Inject constructor(
         get() = limitCheckResult is LimitCheckResult.LimitReached
 
     var isLoadingEvent by mutableStateOf(false)
+
+    /**
+     * Non-null when the primary event load failed and the form is in an unusable state.
+     * The screen should render an error card with a "Reintentar" button instead of the
+     * form fields when this is set.
+     */
+    var loadError by mutableStateOf<String?>(null)
+        private set
+
+    private val _uiEvents = MutableSharedFlow<UiEvent>(extraBufferCapacity = 1)
+    val uiEvents: SharedFlow<UiEvent> = _uiEvents.asSharedFlow()
 
     // Step 1: General Info
     var selectedClient by mutableStateOf<Client?>(null)
@@ -389,71 +401,110 @@ class EventFormViewModel @Inject constructor(
     private fun loadExistingEvent(id: String) {
         viewModelScope.launch {
             isLoadingEvent = true
+            loadError = null
             try {
                 val event = eventRepository.getEvent(id)
-                if (event != null) {
-                    // Populate general info
-                    eventDate = try {
-                        LocalDate.parse(event.eventDate)
-                    } catch (e: Exception) {
-                        LocalDate.now()
-                    }
-                    startTime = event.startTime ?: ""
-                    endTime = event.endTime ?: ""
-                    status = event.status
-                    serviceType = event.serviceType
-                    numPeople = event.numPeople.toString()
-                    location = event.location ?: ""
-                    city = event.city ?: ""
-                    notes = event.notes ?: ""
-                    discount = event.discount.toString()
-                    discountType = event.discountType
-                    requiresInvoice = event.requiresInvoice
-                    taxRate = event.taxRate.toString()
-                    depositPercent = event.depositPercent?.toString() ?: "50.0"
-                    cancellationDays = event.cancellationDays?.toString() ?: "7.0"
-                    refundPercent = event.refundPercent?.toString() ?: "50.0"
+                    ?: throw IllegalStateException(
+                        "El evento no existe o fue eliminado. Tirá abajo para actualizar " +
+                            "desde el servidor."
+                    )
 
-                    // Load client
-                    val client = clientRepository.getClient(event.clientId)
-                    selectedClient = client
-                    clientEventCount = client?.totalEvents
-                    clientTotalSpent = client?.totalSpent
+                // Populate general info
+                eventDate = try {
+                    LocalDate.parse(event.eventDate)
+                } catch (e: Exception) {
+                    LocalDate.now()
+                }
+                startTime = event.startTime ?: ""
+                endTime = event.endTime ?: ""
+                status = event.status
+                serviceType = event.serviceType
+                numPeople = event.numPeople.toString()
+                location = event.location ?: ""
+                city = event.city ?: ""
+                notes = event.notes ?: ""
+                discount = event.discount.toString()
+                discountType = event.discountType
+                requiresInvoice = event.requiresInvoice
+                taxRate = event.taxRate.toString()
+                depositPercent = event.depositPercent?.toString() ?: "50.0"
+                cancellationDays = event.cancellationDays?.toString() ?: "7.0"
+                refundPercent = event.refundPercent?.toString() ?: "50.0"
 
-                    // Load products
-                    try {
-                        eventRepository.syncEventItems(id)
-                    } catch (_: Exception) { }
-                    val products = eventRepository.getEventProducts(id).first()
-                    selectedProducts.clear()
-                    selectedProducts.addAll(products)
-                    fetchProductCosts()
+                // Load client — non-fatal if the client record is stale
+                val client = clientRepository.getClient(event.clientId)
+                selectedClient = client
+                clientEventCount = client?.totalEvents
+                clientTotalSpent = client?.totalSpent
 
-                    // Load extras
-                    val extras = eventRepository.getEventExtras(id).first()
-                    eventExtras.clear()
-                    eventExtras.addAll(extras)
+                // Sync event items from server — non-fatal, cache is authoritative for UI
+                try {
+                    eventRepository.syncEventItems(id)
+                } catch (e: Exception) {
+                    _uiEvents.tryEmit(
+                        UiEvent.Error(
+                            message = "No se pudo sincronizar con el servidor. " +
+                                "Mostrando datos en caché.",
+                            retryActionId = null,
+                        )
+                    )
+                }
 
-                    // Load equipment
-                    try {
-                        val equipment: List<EventEquipment> = apiService.get(Endpoints.eventEquipment(id))
-                        selectedEquipment.clear()
-                        selectedEquipment.addAll(equipment)
-                    } catch (_: Exception) { }
+                // Load products (primary)
+                val products = eventRepository.getEventProducts(id).first()
+                selectedProducts.clear()
+                selectedProducts.addAll(products)
+                fetchProductCosts()
 
-                    // Load supplies
-                    try {
-                        val supplies: List<EventSupply> = apiService.get(Endpoints.eventSupplies(id))
-                        selectedSupplies.clear()
-                        selectedSupplies.addAll(supplies)
-                    } catch (_: Exception) { }
+                // Load extras (primary)
+                val extras = eventRepository.getEventExtras(id).first()
+                eventExtras.clear()
+                eventExtras.addAll(extras)
+
+                // Load equipment — non-fatal, renders empty section with an advisory
+                try {
+                    val equipment: List<EventEquipment> =
+                        apiService.get(Endpoints.eventEquipment(id))
+                    selectedEquipment.clear()
+                    selectedEquipment.addAll(equipment)
+                } catch (e: Exception) {
+                    _uiEvents.tryEmit(
+                        UiEvent.Error(
+                            message = "No se pudo cargar el equipamiento del evento.",
+                            retryActionId = null,
+                        )
+                    )
+                }
+
+                // Load supplies — non-fatal
+                try {
+                    val supplies: List<EventSupply> =
+                        apiService.get(Endpoints.eventSupplies(id))
+                    selectedSupplies.clear()
+                    selectedSupplies.addAll(supplies)
+                } catch (e: Exception) {
+                    _uiEvents.tryEmit(
+                        UiEvent.Error(
+                            message = "No se pudieron cargar los insumos del evento.",
+                            retryActionId = null,
+                        )
+                    )
                 }
             } catch (e: Exception) {
-                // Error loading event data — form stays in default state
+                // Primary load failed — the form is unusable. Set error state so the UI
+                // can render a retry card instead of an empty form pretending everything
+                // is fine.
+                loadError = e.message
+                    ?: "No se pudo cargar el evento. Verificá tu conexión y reintentá."
             } finally {
                 isLoadingEvent = false
             }
         }
+    }
+
+    /** Retry loading the current event after a failure. */
+    fun retryLoad() {
+        eventId?.let { loadExistingEvent(it) }
     }
 
     fun addProduct(product: Product, quantity: Double) {
