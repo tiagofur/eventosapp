@@ -98,6 +98,7 @@ public struct AboutView: View {
     private var legalSection: some View {
         VStack(spacing: 0) {
             Button {
+                HapticsHelper.play(.selection)
                 legalSheetURL = IdentifiableURL(LegalURL.terms)
             } label: {
                 HStack {
@@ -116,6 +117,7 @@ public struct AboutView: View {
                 .padding(.leading, Spacing.md)
 
             Button {
+                HapticsHelper.play(.selection)
                 legalSheetURL = IdentifiableURL(LegalURL.privacy)
             } label: {
                 HStack {

@@ -165,6 +165,7 @@ public struct SettingsView: View {
         }
 
         Button {
+            HapticsHelper.play(.selection)
             legalSheetURL = IdentifiableURL(LegalURL.privacy)
         } label: {
             HStack {
@@ -180,6 +181,7 @@ public struct SettingsView: View {
         .accessibilityHint("Abre la politica de privacidad en Safari")
 
         Button {
+            HapticsHelper.play(.selection)
             legalSheetURL = IdentifiableURL(LegalURL.terms)
         } label: {
             HStack {

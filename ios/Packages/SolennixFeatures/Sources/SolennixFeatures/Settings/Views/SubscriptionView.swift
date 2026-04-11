@@ -325,6 +325,7 @@ public struct SubscriptionView: View {
 
             HStack(spacing: Spacing.lg) {
                 Button {
+                    HapticsHelper.play(.selection)
                     legalSheetURL = IdentifiableURL(LegalURL.terms)
                 } label: {
                     Text("Terminos")
@@ -335,6 +336,7 @@ public struct SubscriptionView: View {
                     .foregroundStyle(SolennixColors.textTertiary)
 
                 Button {
+                    HapticsHelper.play(.selection)
                     legalSheetURL = IdentifiableURL(LegalURL.privacy)
                 } label: {
                     Text("Privacidad")

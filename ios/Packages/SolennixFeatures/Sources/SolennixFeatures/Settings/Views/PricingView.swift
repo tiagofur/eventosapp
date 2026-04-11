@@ -257,6 +257,7 @@ public struct PricingView: View {
             // Boton mensual
             if let monthly = subscriptionManager.monthlyPackage {
                 Button {
+                    HapticsHelper.play(.medium)
                     Task { await handlePurchase(monthly) }
                 } label: {
                     HStack {
@@ -281,6 +282,7 @@ public struct PricingView: View {
             // Boton anual
             if let yearly = subscriptionManager.yearlyPackage {
                 Button {
+                    HapticsHelper.play(.medium)
                     Task { await handlePurchase(yearly) }
                 } label: {
                     HStack {
@@ -332,6 +334,7 @@ public struct PricingView: View {
         VStack(spacing: Spacing.sm) {
             // Restaurar compras
             Button {
+                HapticsHelper.play(.light)
                 Task { await subscriptionManager.restorePurchases() }
             } label: {
                 HStack {
@@ -370,13 +373,16 @@ public struct PricingView: View {
     private func handlePurchase(_ package: RevenueCat.Package) async {
         do {
             try await subscriptionManager.purchase(package)
+            HapticsHelper.play(.success)
         } catch let error as SubscriptionError {
             if case .userCancelled = error {
                 return
             }
+            HapticsHelper.play(.error)
             purchaseErrorMessage = error.localizedDescription
             showError = true
         } catch {
+            HapticsHelper.play(.error)
             purchaseErrorMessage = "Ocurrio un error inesperado al procesar la compra."
             showError = true
         }
@@ -508,6 +514,7 @@ public struct PricingView: View {
         VStack(spacing: Spacing.md) {
             HStack(spacing: Spacing.lg) {
                 Button {
+                    HapticsHelper.play(.selection)
                     legalSheetURL = IdentifiableURL(LegalURL.terms)
                 } label: {
                     Text("Terminos de Uso (EULA)")
@@ -518,6 +525,7 @@ public struct PricingView: View {
                     .foregroundStyle(SolennixColors.textTertiary)
 
                 Button {
+                    HapticsHelper.play(.selection)
                     legalSheetURL = IdentifiableURL(LegalURL.privacy)
                 } label: {
                     Text("Privacidad")

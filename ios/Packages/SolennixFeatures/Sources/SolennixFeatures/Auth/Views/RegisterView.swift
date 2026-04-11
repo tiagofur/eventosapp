@@ -217,6 +217,7 @@ public struct RegisterView: View {
                 .foregroundStyle(SolennixColors.textSecondary)
 
             Button {
+                HapticsHelper.play(.selection)
                 legalSheetURL = IdentifiableURL(LegalURL.terms)
             } label: {
                 Text("Terminos")
@@ -230,6 +231,7 @@ public struct RegisterView: View {
                 .foregroundStyle(SolennixColors.textSecondary)
 
             Button {
+                HapticsHelper.play(.selection)
                 legalSheetURL = IdentifiableURL(LegalURL.privacy)
             } label: {
                 Text("Privacidad")
