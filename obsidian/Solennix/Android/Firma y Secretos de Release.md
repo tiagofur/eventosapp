@@ -184,6 +184,91 @@ En CI, **no subas el `.jks` al repo**. Opciones:
 
 ---
 
+## SSL Pinning
+
+> [!warning] Defensa contra MITM
+> Sin pinning, cualquier atacante con control de la red (proxy corporativo con TLS inspection, WiFi público comprometido, router hackeado) puede interceptar y modificar los requests de la app. Pinning rompe ese ataque.
+
+El cliente Ktor (`KtorClient`) instala un `CertificatePinner` de OkHttp si `BuildConfig.SSL_PINS` está poblado. Los pins se resuelven desde:
+
+1. Env var `SOLENNIX_SSL_PINS` (CI)
+2. Gradle property `SOLENNIX_SSL_PINS` (en `~/.gradle/gradle.properties`)
+
+Formato: lista separada por comas de entries `sha256/<base64>=`. Ejemplo:
+
+```properties
+SOLENNIX_SSL_PINS=sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=,sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+```
+
+**Mínimo 2 pins en release** (current + backup) — sin un backup pin, cualquier rotación del certificado del backend brickea la app hasta que los usuarios actualicen. `./gradlew :app:bundleRelease` falla si hay menos de 2.
+
+### Obtener los pins de `api.solennix.com`
+
+El pin es el hash SHA-256 del **Subject Public Key Info** (no del cert entero). Usá `openssl`:
+
+```bash
+# Pin del leaf cert (current)
+echo | openssl s_client -servername api.solennix.com -connect api.solennix.com:443 2>/dev/null \
+  | openssl x509 -pubkey -noout \
+  | openssl rsa -pubin -outform DER 2>/dev/null \
+  | openssl dgst -sha256 -binary \
+  | openssl enc -base64
+
+# Pin de la intermediate CA (backup — sobrevive rotación del leaf)
+echo | openssl s_client -servername api.solennix.com -connect api.solennix.com:443 -showcerts 2>/dev/null \
+  | awk '/BEGIN CERT/,/END CERT/{print}' \
+  | awk -v RS='-----END CERTIFICATE-----\n' 'NR==2{print $0 "-----END CERTIFICATE-----"}' \
+  | openssl x509 -pubkey -noout \
+  | openssl rsa -pubin -outform DER 2>/dev/null \
+  | openssl dgst -sha256 -binary \
+  | openssl enc -base64
+```
+
+> [!tip] Estrategia recomendada
+> Pinea el **leaf + intermediate + backup intermediate de otra CA**. Eso te da resiliencia ante:
+> - Rotación automática del leaf (el intermediate pin sigue válido)
+> - Compromiso del intermediate (el backup de otra CA sigue válido)
+> - Cualquier ataque con un cert legítimamente firmado por CA distinta (el pinner lo rechaza)
+
+### Configurar los pins
+
+Una vez que tengas los hashes, pegalos en `~/.gradle/gradle.properties`:
+
+```properties
+SOLENNIX_SSL_PINS=sha256/<leaf-pin>=,sha256/<intermediate-pin>=,sha256/<backup-pin>=
+```
+
+### Debug builds
+
+Debug builds pueden correr **sin pinning** — dejá `SOLENNIX_SSL_PINS` vacío y `KtorClient` va a loguear un warning en `logcat`:
+
+```
+W/KtorClient: SSL pinning DISABLED: BuildConfig.SSL_PINS is empty...
+```
+
+Esto es intencional — permite desarrollar contra `http://10.0.2.2:8080` o `https://staging.solennix.com` sin tener que configurar pins separados por ambiente.
+
+### Verificar que funciona
+
+Corré una request desde la app y buscá en `logcat`:
+
+```bash
+adb logcat | grep -E "KtorClient|CertificatePinner"
+```
+
+Si ves `SSL pinning DISABLED` en release → los pins no llegaron al BuildConfig.
+Si ves `javax.net.ssl.SSLPeerUnverifiedException: Certificate pinning failure!` → el pin no matchea el cert real. Re-generá los pins con openssl.
+
+Testear el rechazo (Man-in-the-Middle simulado): corré la app detrás de Charles Proxy o mitmproxy con su root cert instalado — si el pinning funciona, TODAS las requests a api.solennix.com fallan con `ApiError.SecurityError`. Si pasan, el pinning NO está activo.
+
+### Manejo de `SecurityError` en UI
+
+`ApiErrorMapper` mapea `SSLPeerUnverifiedException` y `SSLHandshakeException` a `ApiError.SecurityError`. Los ViewModels deben distinguirlo del `NetworkError` genérico — un `SecurityError` NO se debe reintentar automáticamente y debe mostrar un mensaje del tipo:
+
+> "No pudimos verificar la conexión segura con el servidor. Posible red comprometida. Intentá desde otra red."
+
+---
+
 ## Checklist pre-release
 
 Antes de subir una versión a Play Store:
@@ -192,6 +277,8 @@ Antes de subir una versión a Play Store:
 - [ ] `solennix.jks` existe en `android/` o env var `SOLENNIX_KEYSTORE_FILE` apunta a él
 - [ ] Passwords del keystore guardados en password manager (no perder)
 - [ ] `REVENUECAT_API_KEY` configurado y empieza con `goog_`
+- [ ] `SOLENNIX_SSL_PINS` tiene al menos 2 pins separados por coma
+- [ ] Probado con Charles/mitmproxy: pinning rechaza requests con root cert falso
 - [ ] `./gradlew :app:bundleRelease` genera el AAB sin errores
 - [ ] El AAB firmado se valida: `jarsigner -verify -verbose app/build/outputs/bundle/release/app-release.aab`
 - [ ] `versionCode` incrementado respecto a la versión anterior publicada
@@ -203,14 +290,20 @@ Antes de subir una versión a Play Store:
 > [!warning] Acciones pendientes del usuario
 > - [ ] Rotar `asd123` → password fuerte (keytool -storepasswd)
 > - [ ] Configurar `REVENUECAT_API_KEY` en `~/.gradle/gradle.properties`
+> - [ ] Generar `SOLENNIX_SSL_PINS` con los comandos openssl y ponerlos en `~/.gradle/gradle.properties`
 > - [ ] Guardar passwords en password manager
 > - [ ] Validar `./gradlew :app:assembleRelease` funciona end-to-end
+> - [ ] Testear SSL pinning con Charles/mitmproxy (verificar que rechaza root cert falso)
 
-> [!note] Completado por Claude en este bloque
-> - [x] `build.gradle.kts` ahora soporta env vars + file con fail-fast en release
-> - [x] `key.properties.example` creado como template
-> - [x] Validación de `REVENUECAT_API_KEY` antes de compilar release
-> - [x] Warning en debug si RevenueCat key está vacío
+> [!note] Completado por Claude en los bloques A + B
+> - [x] **Bloque A** — `build.gradle.kts` soporta env vars + file con fail-fast en release
+> - [x] **Bloque A** — `key.properties.example` creado como template
+> - [x] **Bloque A** — Validación de `REVENUECAT_API_KEY` antes de compilar release
+> - [x] **Bloque A** — Warning en debug si RevenueCat key está vacío
+> - [x] **Bloque B** — `CertificatePinner` instalado en `KtorClient` con resolución desde env/gradle property
+> - [x] **Bloque B** — `BuildConfig.SSL_PINS` + `BuildConfig.API_HOST` emitidos por `core/network`
+> - [x] **Bloque B** — `ApiError.SecurityError` agregado y mapeo de `SSLPeerUnverifiedException`/`SSLHandshakeException`
+> - [x] **Bloque B** — Fail-fast en release si faltan <2 pins
 > - [x] Docs sincronizados con `11_CURRENT_STATUS.md`
 
 ---

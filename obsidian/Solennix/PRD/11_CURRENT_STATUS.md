@@ -679,7 +679,7 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 | **A**  | Keystore password trivial (`asd123`)  | 🔄 Infra lista, usuario debe rotar      | `android/key.properties`, `android/solennix.jks`                                               |
 | **A**  | `REVENUECAT_API_KEY` sin validar      | ✅ Fail-fast agregado                   | `android/app/build.gradle.kts`                                                                 |
 | **A**  | Release sin fail-fast de secretos     | ✅ Agregado                             | `android/app/build.gradle.kts`                                                                 |
-| **B**  | SSL Pinning declarado pero inexistente | ❌ Pendiente                            | `android/core/network/.../KtorClient.kt`                                                       |
+| **B**  | SSL Pinning declarado pero inexistente | ✅ Infra lista, usuario debe generar pins | `android/core/network/.../KtorClient.kt`, `ApiErrorMapper.kt`, `ApiError.kt`                  |
 | **C**  | Play Billing botón "Upgrade" vacío    | ❌ Pendiente (`TODO: Implement`)        | `android/feature/settings/.../PricingScreen.kt:168`                                            |
 | **C**  | `SubscriptionScreen` BillingState incompleto | ❌ Pendiente                      | `android/feature/settings/.../SubscriptionScreen.kt`                                           |
 | **C**  | RevenueCat silent failure en register/Google | ❌ Pendiente                      | `android/feature/auth/.../AuthViewModel.kt:174-180`                                            |

@@ -60,6 +60,17 @@ if (revenueCatApiKey.isBlank()) {
     )
 }
 
+// SSL pins — required for release builds only. Same resolution as :core:network.
+// `core/network/build.gradle.kts` is the one that actually emits BuildConfig.SSL_PINS; this
+// check exists only to fail the :app release build early if pins are missing.
+val sslPinsProperty: String = System.getenv("SOLENNIX_SSL_PINS")
+    ?: (project.findProperty("SOLENNIX_SSL_PINS") as? String)
+    ?: ""
+val sslPinsList: List<String> = sslPinsProperty
+    .split(",")
+    .map { it.trim() }
+    .filter { it.isNotBlank() }
+
 android {
     namespace = "com.creapolis.solennix"
     compileSdk = 35
@@ -164,7 +175,8 @@ dependencies {
 }
 
 // Fail fast on release builds if required secrets are missing.
-// Prevents accidentally producing an unsigned APK or a release with empty RevenueCat key.
+// Prevents accidentally producing an unsigned APK, a release with empty RevenueCat key, or
+// a release without SSL pinning (trivially MITM-able).
 tasks.matching { it.name.startsWith("assembleRelease") || it.name.startsWith("bundleRelease") }
     .configureEach {
         doFirst {
@@ -174,6 +186,10 @@ tasks.matching { it.name.startsWith("assembleRelease") || it.name.startsWith("bu
                 )
                 if (revenueCatApiKey.isBlank()) add(
                     "REVENUECAT_API_KEY (env var or ~/.gradle/gradle.properties)"
+                )
+                if (sslPinsList.size < 2) add(
+                    "SOLENNIX_SSL_PINS with at least 2 comma-separated sha256/<base64>= pins " +
+                        "(current leaf/intermediate + backup). Found ${sslPinsList.size}."
                 )
             }
             if (missing.isNotEmpty()) {
