@@ -177,25 +177,40 @@ dependencies {
 // Fail fast on release builds if required secrets are missing.
 // Prevents accidentally producing an unsigned APK, a release with empty RevenueCat key, or
 // a release without SSL pinning (trivially MITM-able).
+//
+// NOTE: We pre-compute `missingReleaseSecrets` at configuration time as a plain
+// `List<String>` so the closure captured by `doFirst` below only references serializable
+// values. Referencing `hasReleaseSigningConfig` / `revenueCatApiKey` / `sslPinsList`
+// directly inside the closure breaks Gradle's configuration cache — they are script
+// object references that cannot be serialized.
+val missingReleaseSecrets: List<String> = buildList {
+    if (!hasReleaseSigningConfig) add(
+        "Release signing config (SOLENNIX_KEYSTORE_* env vars or android/key.properties)"
+    )
+    if (revenueCatApiKey.isBlank()) add(
+        "REVENUECAT_API_KEY (env var or ~/.gradle/gradle.properties)"
+    )
+    if (sslPinsList.size < 2) add(
+        "SOLENNIX_SSL_PINS with at least 2 comma-separated sha256/<base64>= pins " +
+            "(current leaf/intermediate + backup). Found ${sslPinsList.size}."
+    )
+}
+
 tasks.matching { it.name.startsWith("assembleRelease") || it.name.startsWith("bundleRelease") }
     .configureEach {
+        // Opt out of configuration cache for this task — the doFirst closure below
+        // captures the `missingReleaseSecrets` list which, despite being a plain
+        // List<String>, still triggers Gradle script object serialization errors when
+        // embedded inside the task action. This only affects release tasks; debug and
+        // library tasks remain configuration-cache compatible.
+        notCompatibleWithConfigurationCache(
+            "Release secret verification uses buildscript values that cannot be serialized"
+        )
         doFirst {
-            val missing = buildList {
-                if (!hasReleaseSigningConfig) add(
-                    "Release signing config (SOLENNIX_KEYSTORE_* env vars or android/key.properties)"
-                )
-                if (revenueCatApiKey.isBlank()) add(
-                    "REVENUECAT_API_KEY (env var or ~/.gradle/gradle.properties)"
-                )
-                if (sslPinsList.size < 2) add(
-                    "SOLENNIX_SSL_PINS with at least 2 comma-separated sha256/<base64>= pins " +
-                        "(current leaf/intermediate + backup). Found ${sslPinsList.size}."
-                )
-            }
-            if (missing.isNotEmpty()) {
+            if (missingReleaseSecrets.isNotEmpty()) {
                 throw GradleException(
                     "Cannot build release: missing required config:\n" +
-                        missing.joinToString("\n") { "  - $it" } +
+                        missingReleaseSecrets.joinToString("\n") { "  - $it" } +
                         "\n\nSee obsidian/Solennix/Android/Firma y Secretos de Release.md"
                 )
             }

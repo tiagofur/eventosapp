@@ -238,6 +238,27 @@ Una vez que tengas los hashes, pegalos en `~/.gradle/gradle.properties`:
 SOLENNIX_SSL_PINS=sha256/<leaf-pin>=,sha256/<intermediate-pin>=,sha256/<backup-pin>=
 ```
 
+### Pins actuales (snapshot 2026-04-11)
+
+> [!warning] Rotación
+> **El pin del leaf rota cada 60-90 días** cuando Let's Encrypt renueva el certificado automáticamente. Si ves `SSLPeerUnverifiedException` en producción, regenerá el leaf pin con los comandos de arriba. El intermediate (R13) es estable por años.
+
+- **Leaf** (`api.solennix.com` cert actual al 2026-04-11):
+  `sha256/cqUCZrKa2WzBkuENY5IHCkPgp7uR9Xsb3k2OUw0u3Hs=`
+- **Intermediate** (Let's Encrypt R13 — estable):
+  `sha256/AlSQhgtJirc8ahLyekmtX+Iw+v46yPYRLJt9Cq1GlB0=`
+
+Valor completo para copiar a `~/.gradle/gradle.properties`:
+```properties
+SOLENNIX_SSL_PINS=sha256/cqUCZrKa2WzBkuENY5IHCkPgp7uR9Xsb3k2OUw0u3Hs=,sha256/AlSQhgtJirc8ahLyekmtX+Iw+v46yPYRLJt9Cq1GlB0=
+```
+
+O para CI / build ad-hoc:
+```bash
+./gradlew :app:assembleRelease \
+  -PSOLENNIX_SSL_PINS="sha256/cqUCZrKa2WzBkuENY5IHCkPgp7uR9Xsb3k2OUw0u3Hs=,sha256/AlSQhgtJirc8ahLyekmtX+Iw+v46yPYRLJt9Cq1GlB0="
+```
+
 ### Debug builds
 
 Debug builds pueden correr **sin pinning** — dejá `SOLENNIX_SSL_PINS` vacío y `KtorClient` va a loguear un warning en `logcat`:
