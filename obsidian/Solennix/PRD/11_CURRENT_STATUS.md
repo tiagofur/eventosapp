@@ -680,9 +680,9 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 | **A**  | `REVENUECAT_API_KEY` sin validar      | ✅ Fail-fast agregado                   | `android/app/build.gradle.kts`                                                                 |
 | **A**  | Release sin fail-fast de secretos     | ✅ Agregado                             | `android/app/build.gradle.kts`                                                                 |
 | **B**  | SSL Pinning declarado pero inexistente | ✅ Infra lista, usuario debe generar pins | `android/core/network/.../KtorClient.kt`, `ApiErrorMapper.kt`, `ApiError.kt`                  |
-| **C**  | Play Billing botón "Upgrade" vacío    | ❌ Pendiente (`TODO: Implement`)        | `android/feature/settings/.../PricingScreen.kt:168`                                            |
-| **C**  | `SubscriptionScreen` BillingState incompleto | ❌ Pendiente                      | `android/feature/settings/.../SubscriptionScreen.kt`                                           |
-| **C**  | RevenueCat silent failure en register/Google | ❌ Pendiente                      | `android/feature/auth/.../AuthViewModel.kt:174-180`                                            |
+| **C**  | Play Billing botón "Upgrade" vacío    | ✅ Resuelto (ruta `pricing` ahora renderea `SubscriptionScreen`) | `CompactBottomNavLayout.kt:298`, `PricingScreen.kt` eliminado |
+| **C**  | `SubscriptionScreen` BillingState incompleto | ✅ Auditado — ya estaba bien (NotReady/Ready/Error cubiertos) | `SubscriptionScreen.kt:94-129`                    |
+| **C**  | RevenueCat silent failure en register/Google | ✅ Resuelto con `logInWith` + `Log.w` (no bloquea auth) | `AuthViewModel.kt:172-199`                              |
 | **D**  | 7 silent `catch (_:)` en ViewModels   | ❌ Pendiente                            | Event/Quick/Product/Inventory/Auth ViewModels                                                  |
 | **D**  | 12 pantallas con spinner sin timeout  | ❌ Pendiente                            | ClientDetail, ClientForm, ClientList, ProductForm, ProductDetail, Inventory*, EventDetail*... |
 | **E**  | `PricingScreen:36` crash si user null | ❌ Pendiente                            | `android/feature/settings/.../PricingScreen.kt:36`                                             |

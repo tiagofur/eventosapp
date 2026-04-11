@@ -76,9 +76,9 @@ import com.creapolis.solennix.feature.settings.ui.BusinessSettingsScreen
 import com.creapolis.solennix.feature.settings.ui.ChangePasswordScreen
 import com.creapolis.solennix.feature.settings.ui.ContractDefaultsScreen
 import com.creapolis.solennix.feature.settings.ui.EditProfileScreen
-import com.creapolis.solennix.feature.settings.ui.PricingScreen
 import com.creapolis.solennix.feature.settings.ui.PrivacyScreen
 import com.creapolis.solennix.feature.settings.ui.SettingsScreen
+import com.creapolis.solennix.feature.settings.ui.SubscriptionScreen
 import com.creapolis.solennix.feature.settings.ui.TermsScreen
 
 @Composable
@@ -296,7 +296,14 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 ContractDefaultsScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
             }
             composable("pricing") {
-                PricingScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
+                // "pricing" route now renders the real subscription flow with dynamic
+                // RevenueCat packages, restore purchases and provider-aware cancel
+                // instructions. The legacy PricingScreen (static marketing copy with a
+                // broken upgrade button) was removed in Bloque C.
+                SubscriptionScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
             composable("about") {
                 AboutScreen(onNavigateBack = { navController.popBackStack() })
