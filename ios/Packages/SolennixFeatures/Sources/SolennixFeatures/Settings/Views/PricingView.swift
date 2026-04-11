@@ -12,6 +12,7 @@ public struct PricingView: View {
     @State private var selectedPlan: Plan = .basic
     @State private var showError: Bool = false
     @State private var purchaseErrorMessage: String = ""
+    @State private var legalSheetURL: IdentifiableURL?
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -63,6 +64,10 @@ public struct PricingView: View {
             Button("Aceptar", role: .cancel) {}
         } message: {
             Text(purchaseErrorMessage)
+        }
+        .sheet(item: $legalSheetURL) { wrapper in
+            SafariView(url: wrapper.url)
+                .ignoresSafeArea()
         }
     }
 
@@ -455,7 +460,7 @@ public struct PricingView: View {
 
             faqItem(
                 question: "Hay periodo de prueba?",
-                answer: "Puedes probar todas las funciones premium durante 14 dias gratis."
+                answer: "Si. Ofrecemos 14 dias de prueba gratuita de Premium. Al finalizar el periodo de prueba, la suscripcion se renovara automaticamente al precio del plan seleccionado, a menos que la canceles al menos 24 horas antes de que termine el trial. Podes cancelar en cualquier momento desde los Ajustes de tu Apple ID."
             )
         }
     }
@@ -487,7 +492,7 @@ public struct PricingView: View {
                 .fontWeight(.bold)
                 .foregroundStyle(SolennixColors.text)
 
-            Text("El pago se cargará a tu cuenta de Apple ID al confirmar la compra. La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período actual. Se cobrará a tu cuenta la renovación dentro de las 24 horas anteriores al final del período actual. Puedes gestionar y cancelar tus suscripciones en los ajustes de tu cuenta del App Store después de la compra.")
+            Text("El pago se cargara a tu cuenta de Apple ID al confirmar la compra. La suscripcion se renovara automaticamente a menos que sea cancelada al menos 24 horas antes del final del periodo actual. Se cobrara a tu cuenta la renovacion dentro de las 24 horas anteriores al final del periodo actual, al precio del plan seleccionado. Las suscripciones pueden ser administradas por el usuario y la renovacion automatica puede desactivarse yendo a los Ajustes de la cuenta del App Store despues de la compra. No se permite la cancelacion de la suscripcion actual durante el periodo activo.")
                 .font(.caption2)
                 .foregroundStyle(SolennixColors.textSecondary)
                 .lineSpacing(2)
@@ -502,22 +507,28 @@ public struct PricingView: View {
     private var legalLinksSection: some View {
         VStack(spacing: Spacing.md) {
             HStack(spacing: Spacing.lg) {
-                NavigationLink(value: Route.terms) {
+                Button {
+                    legalSheetURL = IdentifiableURL(LegalURL.terms)
+                } label: {
                     Text("Terminos de Uso (EULA)")
                 }
+                .accessibilityHint("Abre los terminos de uso en Safari")
 
                 Text("•")
                     .foregroundStyle(SolennixColors.textTertiary)
 
-                NavigationLink(value: Route.privacy) {
+                Button {
+                    legalSheetURL = IdentifiableURL(LegalURL.privacy)
+                } label: {
                     Text("Privacidad")
                 }
+                .accessibilityHint("Abre la politica de privacidad en Safari")
             }
             .font(.body)
             .fontWeight(.bold)
             .foregroundStyle(SolennixColors.primary)
             .buttonStyle(.plain)
-            
+
             Text("Solennix es un producto de Creapolis")
                 .font(.caption2)
                 .foregroundStyle(SolennixColors.textTertiary)

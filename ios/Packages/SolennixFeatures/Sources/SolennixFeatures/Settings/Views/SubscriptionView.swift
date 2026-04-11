@@ -10,6 +10,7 @@ import SolennixNetwork
 public struct SubscriptionView: View {
 
     @State private var viewModel: SettingsViewModel
+    @State private var legalSheetURL: IdentifiableURL?
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(\.horizontalSizeClass) private var sizeClass
     private let apiClient: APIClient
@@ -55,6 +56,10 @@ public struct SubscriptionView: View {
             await viewModel.loadUser()
             await subscriptionManager.checkEntitlementStatus()
             await subscriptionManager.fetchBackendStatus(apiClient: apiClient)
+        }
+        .sheet(item: $legalSheetURL) { wrapper in
+            SafariView(url: wrapper.url)
+                .ignoresSafeArea()
         }
     }
 
@@ -319,16 +324,22 @@ public struct SubscriptionView: View {
                 .padding(.vertical, Spacing.sm)
 
             HStack(spacing: Spacing.lg) {
-                NavigationLink(value: Route.terms) {
+                Button {
+                    legalSheetURL = IdentifiableURL(LegalURL.terms)
+                } label: {
                     Text("Terminos")
                 }
+                .accessibilityHint("Abre los terminos de uso en Safari")
 
                 Text("•")
                     .foregroundStyle(SolennixColors.textTertiary)
 
-                NavigationLink(value: Route.privacy) {
+                Button {
+                    legalSheetURL = IdentifiableURL(LegalURL.privacy)
+                } label: {
                     Text("Privacidad")
                 }
+                .accessibilityHint("Abre la politica de privacidad en Safari")
             }
             .font(.subheadline)
             .fontWeight(.semibold)

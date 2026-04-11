@@ -8,14 +8,21 @@ aliases:
   - Estado Actual
   - Current Status
 date: 2026-03-20
-updated: 2026-04-10
+updated: 2026-04-11
 status: active
 ---
 
 # Estado Actual del Proyecto — Solennix
 
 **Fecha:** Abril 2026
-**Version:** 1.1
+**Version:** 1.2
+
+> [!info] 2026-04-11 — iOS Apple Compliance Hardening
+> Antes del reenvio a App Review, la app iOS pasa por un hardening de compliance de suscripciones:
+> - **Free trial disclosure** agregado al FAQ de `PricingView` (auto-conversion a pago al finalizar los 14 dias).
+> - **Subscription disclosure text** reforzado con la clausula explicita de gestion/cancelacion desde Ajustes de la cuenta App Store.
+> - **Terms de Uso y Politica de Privacidad** ahora se abren en `SFSafariViewController` apuntando a los URLs canonicos `https://creapolis.dev/terms-of-use/` y `https://creapolis.dev/privacy-policy/`. Las vistas in-app `TermsView`/`PrivacyView` fueron eliminadas — la fuente de verdad legal vive en la web y se actualiza sin requerir releases.
+> - Backend changes recientes (FTS search, activity log, admin audit log, CSRF v2) verificados como **sin impacto** sobre iOS: el cliente usa Bearer JWT y bypasa CSRF; los nuevos endpoints no son consumidos por iOS.
 
 > [!tip] Documentos relacionados
 > [[PRD MOC]] · [[01_PRODUCT_VISION]] · [[02_FEATURES]] · [[04_MONETIZATION]] · [[09_ROADMAP]] · [[SUPER PLAN MOC]] · [[03_CROSS_PLATFORM_PARITY_MODEL]] · [[11_CROSS_PLATFORM_KPI_SCORECARD]]

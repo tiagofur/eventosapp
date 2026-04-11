@@ -6,6 +6,8 @@ import SolennixCore
 
 public struct AboutView: View {
 
+    @State private var legalSheetURL: IdentifiableURL?
+
     public init() {}
 
     public var body: some View {
@@ -33,6 +35,10 @@ public struct AboutView: View {
         .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Acerca de")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $legalSheetURL) { wrapper in
+            SafariView(url: wrapper.url)
+                .ignoresSafeArea()
+        }
     }
 
     // MARK: - App Header Section
@@ -91,32 +97,41 @@ public struct AboutView: View {
 
     private var legalSection: some View {
         VStack(spacing: 0) {
-            NavigationLink(value: Route.terms) {
+            Button {
+                legalSheetURL = IdentifiableURL(LegalURL.terms)
+            } label: {
                 HStack {
                     Text("Terminos de Uso (EULA)")
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption)
                         .foregroundStyle(SolennixColors.textTertiary)
                 }
                 .padding(Spacing.md)
+                .contentShape(Rectangle())
             }
+            .accessibilityHint("Abre los terminos de uso en Safari")
 
             Divider()
                 .padding(.leading, Spacing.md)
 
-            NavigationLink(value: Route.privacy) {
+            Button {
+                legalSheetURL = IdentifiableURL(LegalURL.privacy)
+            } label: {
                 HStack {
                     Text("Politica de Privacidad")
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption)
                         .foregroundStyle(SolennixColors.textTertiary)
                 }
                 .padding(Spacing.md)
+                .contentShape(Rectangle())
             }
+            .accessibilityHint("Abre la politica de privacidad en Safari")
         }
         .font(.subheadline)
+        .foregroundStyle(SolennixColors.text)
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .buttonStyle(.plain)

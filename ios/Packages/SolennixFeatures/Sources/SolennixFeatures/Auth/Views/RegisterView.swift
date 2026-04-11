@@ -14,6 +14,7 @@ public struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var viewModel: AuthViewModel?
+    @State private var legalSheetURL: IdentifiableURL?
 
     public init() {}
 
@@ -32,6 +33,10 @@ public struct RegisterView: View {
             if viewModel == nil {
                 viewModel = AuthViewModel(authManager: authManager)
             }
+        }
+        .sheet(item: $legalSheetURL) { wrapper in
+            SafariView(url: wrapper.url)
+                .ignoresSafeArea()
         }
     }
 
@@ -211,20 +216,28 @@ public struct RegisterView: View {
             Text("Al registrarte aceptas nuestros")
                 .foregroundStyle(SolennixColors.textSecondary)
 
-            NavigationLink(value: Route.terms) {
+            Button {
+                legalSheetURL = IdentifiableURL(LegalURL.terms)
+            } label: {
                 Text("Terminos")
                     .foregroundStyle(SolennixColors.primary)
                     .underline()
             }
+            .buttonStyle(.plain)
+            .accessibilityHint("Abre los terminos de uso en Safari")
 
             Text("y")
                 .foregroundStyle(SolennixColors.textSecondary)
 
-            NavigationLink(value: Route.privacy) {
+            Button {
+                legalSheetURL = IdentifiableURL(LegalURL.privacy)
+            } label: {
                 Text("Privacidad")
                     .foregroundStyle(SolennixColors.primary)
                     .underline()
             }
+            .buttonStyle(.plain)
+            .accessibilityHint("Abre la politica de privacidad en Safari")
         }
         .font(.caption)
         .multilineTextAlignment(.center)
