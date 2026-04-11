@@ -688,7 +688,7 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 | **D.3** | 12 pantallas con spinner sin timeout  | ❌ Pendiente (UX polish, no blocker)    | ClientDetail, ClientForm, ClientList, ProductForm, ProductDetail, Inventory*, EventDetail*... |
 | **E**  | `PricingScreen:36` crash si user null | ❌ Pendiente                            | `android/feature/settings/.../PricingScreen.kt:36`                                             |
 | **E**  | `BuildConfig.API_BASE_URL` sin validar | ❌ Pendiente                           | `android/core/network/.../KtorClient.kt`                                                       |
-| **F**  | Sync final de docs con realidad       | ❌ Pendiente                            | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`                                       |
+| **F**  | Sync final de docs con realidad       | ✅ Completado — `Roadmap Android.md` corregido (Fase 0.3 y 2.2 dejaron de mentir) | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`, `Android/Firma y Secretos de Release.md` |
 
 ### Pendiente Android (no blocker)
 

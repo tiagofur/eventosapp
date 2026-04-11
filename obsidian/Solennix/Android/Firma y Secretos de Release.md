@@ -295,7 +295,17 @@ Antes de subir una versión a Play Store:
 > - [ ] Validar `./gradlew :app:assembleRelease` funciona end-to-end
 > - [ ] Testear SSL pinning con Charles/mitmproxy (verificar que rechaza root cert falso)
 
-> [!note] Completado por Claude en los bloques A + B + C + D (parcial)
+## Commits del Wave Rescate (rama `super-plan`)
+
+| Commit    | Bloque                                | Descripción corta                                                                 |
+| --------- | ------------------------------------- | --------------------------------------------------------------------------------- |
+| `f003a0b` | **A**                                 | `chore(android): add fail-fast signing and RevenueCat secret validation`           |
+| `3d2a763` | **B**                                 | `feat(android): add SSL certificate pinning with fail-fast release gate`           |
+| `b75881c` | **C**                                 | `fix(android): wire upgrade button to real subscription flow`                      |
+| `d8c77bd` | **D** (slices 1+2)                    | `fix(android): surface CRUD failures via retryable Snackbar`                      |
+| (next)    | **F**                                 | `docs(android): sync Roadmap with Wave Rescate reality`                           |
+
+> [!note] Completado por Claude en los bloques A + B + C + D (parcial) + F
 > - [x] **Bloque A** — `build.gradle.kts` soporta env vars + file con fail-fast en release
 > - [x] **Bloque A** — `key.properties.example` creado como template
 > - [x] **Bloque A** — Validación de `REVENUECAT_API_KEY` antes de compilar release
