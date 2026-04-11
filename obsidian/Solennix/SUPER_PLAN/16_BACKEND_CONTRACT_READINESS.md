@@ -292,16 +292,19 @@ backend/
 - [x] **CI gate de OpenAPI** via `@redocly/cli lint` (commit `99c17bc`)
 - [x] **Bugs preexistentes del spec corregidos** expuestos por el lint: indentación de schemas admin + `nullable` con `allOf` sin type (commit `99c17bc`)
 - [x] **Event handlers a ≥85% coverage** (E1.B2): commit `836eba6`. SearchEvents 42→100, UpdateEvent 74→85.5, HandleEventPaymentSuccess 58→100, fotos/supplies/GET variants 0→94-100
+- [x] **E2.C1 (Web) DONE 2026-04-10** — slice `backend-as-source-of-truth` completo (7 commits): baseline + `openapi-typescript` como fuente única de tipos + bugfixes surfaced (product_name shape, user_id en Insert payloads, enum InventoryItem.type, city no buscada en FTS) + entities.ts como capa delgada sobre `components['schemas']` + fotos de evento a endpoints dedicados + advanced FTS + widgets de activity log + CI pipeline completo pasando sin backend (Playwright auto-skip). Ver detalle en Wave 1 T-02 de `13_MASTER_TRACEABILITY_TABLE.md`.
 
 ### ⬜ Pendiente Wave 1
 
-- [ ] E2.C1 — Web/iOS/Android auditan consumo real contra el spec (**desbloqueado por el cierre de E2.B1/E2.B2**)
+- [ ] E2.C1 — **iOS/Android** siguen pendientes de auditar su consumo contra el spec (Web cerrado 2026-04-10)
 
 ---
 
 ## Bloqueo de E2.B1 → E2.C1
 
 **✅ Desbloqueado 2026-04-10.** E2.B1 y E2.B2 están done. Web, iOS y Android ya pueden correr su auditoría contra `backend/docs/openapi.yaml` sin riesgo de persecución de target móvil.
+
+**Web cerrado 2026-04-10** via el slice `backend-as-source-of-truth` — los tipos TypeScript del Web se regeneran automáticamente desde `openapi.yaml` en cada build/check, y el CI rompe si el archivo commiteado está desalineado con el spec. El Web ya no puede divergir del contrato por construcción. iOS y Android siguen pendientes.
 
 ---
 
