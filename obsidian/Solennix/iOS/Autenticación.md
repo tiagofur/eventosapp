@@ -46,25 +46,54 @@ sequenceDiagram
     UI->>UI: ContentView muestra MainLayout
 ```
 
-### Google Sign-In
+### Google Sign-In ✅
+
+```swift
+// LoginView.swift
+Task { await viewModel?.triggerGoogleSignIn() }
+
+// AuthViewModel.swift
+func triggerGoogleSignIn() async {
+    let idToken = try? await GoogleSignInService.signIn()
+    await signInWithGoogle(idToken: idToken)
+}
+```
 
 | Paso | Acción |
 |------|--------|
-| 1 | `GoogleSignInService.signIn()` presenta UI nativa de Google |
-| 2 | Obtiene `GIDGoogleUser` con ID token |
-| 3 | Envía token a `POST /auth/google` |
+| 1 | `GoogleSignInService.signIn()` → presenta Google Sign-In UI |
+| 2 | Obtiene `GIDSignInResult` con `idToken` |
+| 3 | Envía token a `POST /auth/google { id_token }` |
 | 4 | Backend valida con Google y retorna JWT |
-| 5 | `AuthManager` guarda tokens en Keychain |
+| 5 | `AuthManager.signInWithGoogle()` guarda tokens en Keychain |
+| 6 | `authState = .authenticated(user)` |
 
-### Sign in with Apple
+**Status:** ✅ Completado y testeado en simulator + device
+
+### Sign in with Apple ✅
+
+```swift
+// LoginView.swift
+Task { await viewModel?.signInWithApple() }
+
+// AuthViewModel.swift
+func signInWithApple() async {
+    let credential = try? await AppleSignInService.signIn()
+    // ASAuthorizationAppleIDCredential con identityToken
+    await signInWithApple(credential: credential)
+}
+```
 
 | Paso | Acción |
 |------|--------|
-| 1 | `AppleSignInService` presenta `ASAuthorizationController` |
+| 1 | `ASAuthorizationController` → presenta Sign in with Apple UI |
 | 2 | Obtiene `ASAuthorizationAppleIDCredential` |
-| 3 | Envía identity token + authorization code a `POST /auth/apple` |
+| 3 | Envía `identity_token + full_name` a `POST /auth/apple` |
 | 4 | Backend valida y retorna JWT |
-| 5 | `AuthManager` guarda tokens en Keychain |
+| 5 | `AuthManager.signInWithApple()` guarda tokens en Keychain |
+| 6 | `authState = .authenticated(user)` |
+
+**Status:** ✅ Completado. App Store compliant (EULA/Privacy visible, free trial disclosure).
 
 ---
 

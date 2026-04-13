@@ -44,24 +44,51 @@ sequenceDiagram
     UI->>UI: Navega a MainNavHost
 ```
 
-### Google Sign-In
+### Google Sign-In ✅
+
+```kotlin
+// LoginScreen.kt
+GoogleSignInButton(
+    onSuccess = { idToken, fullName ->
+        viewModel.loginWithGoogle(idToken, fullName)
+    }
+)
+```
 
 | Paso | Acción |
 |------|--------|
-| 1 | `CredentialManager.getCredential()` con `GetGoogleIdTokenCredentialRequest` |
-| 2 | Obtiene `GoogleIdTokenCredential` |
-| 3 | Envía token a `POST /auth/google` |
-| 4 | Backend valida y retorna JWT |
-| 5 | `AuthManager.storeTokens()` |
+| 1 | `GoogleSignInButton` composite → `CredentialManager.getCredential()` |
+| 2 | Request: `GetGoogleIdTokenCredentialRequest(serverClientId = "...")` |
+| 3 | Obtiene `GoogleIdTokenCredential` con `idToken` |
+| 4 | Envía token a `POST /auth/google { id_token, full_name }` |
+| 5 | Backend valida y retorna JWT |
+| 6 | `AuthManager.storeTokens(accessToken, refreshToken)` en EncryptedSharedPreferences |
+| 7 | `AuthState.Authenticated(user)` |
 
-### Apple Sign-In
+**Status:** ✅ Completado. Testeado en emulator + devices reales.
+
+### Apple Sign-In ✅
+
+```kotlin
+// LoginScreen.kt
+AppleSignInButton(
+    onSuccess = { identityToken, fullName ->
+        viewModel.loginWithApple(identityToken, fullName)
+    }
+)
+```
 
 | Paso | Acción |
 |------|--------|
-| 1 | Flujo OAuth web-based |
-| 2 | Envía authorization code a `POST /auth/apple` |
-| 3 | Backend valida y retorna JWT |
-| 4 | `AuthManager.storeTokens()` |
+| 1 | `AppleSignInButton` composite → Apple OAuth SDK |
+| 2 | Web-based OAuth flow (compatible con API 26+) |
+| 3 | Obtiene `identity_token` + `authorization_code` |
+| 4 | Envía a `POST /auth/apple { identity_token, authorization_code }` |
+| 5 | Backend valida y retorna JWT |
+| 6 | `AuthManager.storeTokens(...)` en EncryptedSharedPreferences |
+| 7 | `AuthState.Authenticated(user)` |
+
+**Status:** ✅ Completado. No conflictos con Play Billing (separado).
 
 ---
 
