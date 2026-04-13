@@ -2,8 +2,8 @@
 
 > [!info] Plataforma
 > **Stack**: React 19 + TypeScript + Tailwind CSS 4 + Vite
-> **Estado**: Producción (MVP completo)
-> **Última actualización**: 2026-04-10
+> **Estado**: Producción (MVP completo) — Google & Apple SSO ✅
+> **Última actualización**: 2026-04-12 — Refactored Google One Tap + paridad documentada
 
 ---
 
