@@ -3,8 +3,8 @@
 > [!info] Solennix
 > **Producto**: Plataforma de gestión de eventos para organizadores LATAM
 > **Plataformas**: iOS · Android · Web · Backend (Go)
-> **Estado**: En desarrollo activo
-> **Última actualización**: 2026-04-04
+> **Estado**: En desarrollo activo — Google & Apple Sign-In ✅ completado en todas plataformas
+> **Última actualización**: 2026-04-12 — Verificación y documentación de paridad authentication
 
 ---
 

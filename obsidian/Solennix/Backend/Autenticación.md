@@ -72,29 +72,103 @@ type TokenClaims struct {
 > `ValidateResetToken()` solo acepta subject `password-reset`.
 > **Previene** que un refresh token se use como access token y viceversa.
 
-## OAuth (Google y Apple)
+## OAuth (Google y Apple) ✅
 
-```mermaid
-graph TD
-    A[Google ID Token] --> B[Backend verifica audience<br/>contra GOOGLE_CLIENT_IDS]
-    B --> C{¿Usuario existe?}
-    C -->|Sí| D[Link google_user_id<br/>+ Generar TokenPair]
-    C -->|No| E[Create user +<br/>Hash random password<br/>+ Generar TokenPair]
+### Google Sign-In ✅
 
-    F[Apple Identity Token] --> G[Backend verifica audience<br/>contra APPLE_BUNDLE_ID]
-    G --> C
-
-    style A fill:#4285F9,stroke:#38376F
-    style D fill:#2D6A4F,stroke:#38376F,color:#F5F0E8
+```go
+// handlers/auth_handler.go
+func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
+    var req struct {
+        IDToken  string  `json:"id_token"`
+        FullName *string `json:"full_name,omitempty"`
+    }
+    
+    // Validar Google ID token contra GOOGLE_CLIENT_IDS
+    claims, err := validateGoogleIDToken(r.Context(), req.IDToken, h.cfg.GoogleClientIDs)
+    
+    // Buscar o crear usuario
+    user := h.userRepo.GetByGoogleID(ctx, claims.Subject)
+    if user == nil {
+        user = CreateUser(claims.Email, claims.Name)
+        user.GoogleUserID = claims.Subject
+    }
+    
+    // Generar TokenPair y setear cookie httpOnly
+    tokens, _ := h.authService.GenerateTokenPair(user.ID, user.Email)
+    setAuthCookie(w, r, tokens.AccessToken)
+    
+    writeJSON(w, http.StatusOK, TokenResponse{
+        AccessToken:  tokens.AccessToken,
+        RefreshToken: tokens.RefreshToken,
+        User:         user,
+    })
+}
 ```
 
-| Proveedor | Audience Check | Link Account |
-|-----------|---------------|-------------|
-| Google | `GOOGLE_CLIENT_IDS` (comma-separated: iOS, Android, Web) | `LinkGoogleAccount()` |
-| Apple | `APPLE_BUNDLE_ID` | `LinkAppleAccount()` |
+**Validación:**
+- Verifica `audience` contra `GOOGLE_CLIENT_IDS` (comma-separated: iOS, Android, Web)
+- Busca usuario existente por `google_user_id`
+- Si no existe → crea usuario con password nullable
+- Genera JWT tokens + setea httpOnly cookie
+- Status: ✅ Completado y en producción
+
+### Apple Sign-In ✅
+
+```go
+// handlers/auth_handler.go
+func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
+    var req struct {
+        IdentityToken     string  `json:"identity_token"`
+        AuthorizationCode string  `json:"authorization_code"`
+        FullName          *string `json:"full_name,omitempty"`
+        Email             *string `json:"email,omitempty"`
+    }
+    
+    // Validar Apple identity token
+    claims, err := validateAppleIDToken(req.IdentityToken, h.cfg.AppleClientIDs)
+    
+    // Buscar o crear usuario
+    user := h.userRepo.GetByAppleID(ctx, claims.Subject)
+    if user == nil {
+        email := claims.Email
+        if email == "" && req.Email != nil {
+            email = *req.Email
+        }
+        user = CreateUser(email, *req.FullName)
+        user.AppleUserID = claims.Subject
+    }
+    
+    // Generar TokenPair
+    tokens, _ := h.authService.GenerateTokenPair(user.ID, user.Email)
+    setAuthCookie(w, r, tokens.AccessToken)
+    
+    writeJSON(w, http.StatusOK, TokenResponse{
+        AccessToken:  tokens.AccessToken,
+        RefreshToken: tokens.RefreshToken,
+        User:         user,
+        EmailIsPrivateRelay: claims.IsPrivateRelay,
+    })
+}
+```
+
+**Validación:**
+- Verifica `audience` contra `APPLE_CLIENT_IDS` (Apple Team ID + Bundle ID)
+- Busca usuario existente por `apple_user_id`
+- Soporta optional `authorization_code` para future refresh token rotation
+- Detecta Private Relay emails en response
+- Genera JWT tokens + setea httpOnly cookie
+- Status: ✅ Completado y en producción
+
+### Account Linking (Futuro)
+
+| Proveedor | Method | Description |
+|-----------|--------|-------------|
+| Google | `LinkGoogleAccount()` | Si usuario ya autenticado → vincular google_user_id |
+| Apple | `LinkAppleAccount()` | Si usuario ya autenticado → vincular apple_user_id |
 
 > [!note] Password nullable
- Migación 029 hace que `password_hash` sea nullable (`*string`). Esto permite cuentas OAuth-only sin password.
+> Migración 029 hace que `password_hash` sea nullable (`*string`). Esto permite cuentas OAuth-only sin password.
 
 ## Token Refresh
 

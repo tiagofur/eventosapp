@@ -6,6 +6,8 @@
 > **Stack**: Kotlin · Jetpack Compose · Hilt · Ktor · Room
 > **Min SDK**: 26 (Android 8.0) · **Target SDK**: 35
 > **Build**: Gradle 8.13 · Kotlin 2.0 · Java 17
+> **Estado**: Producción (MVP + Google/Apple SSO ✅ + SSL Pinning) · Play Store ready
+> **Última actualización**: 2026-04-12
 
 ---
 

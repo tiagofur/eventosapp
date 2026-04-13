@@ -4,8 +4,8 @@
 
 > [!info] Plataforma
 > **Stack**: Go 1.24 + Chi v5 + PostgreSQL 15 + pgx/v5
-> **Estado**: Producción (API completa)
-> **Última actualización**: 2026-04-05
+> **Estado**: Producción (API completa + Google/Apple OAuth ✅ + JWT refresh rotation)
+> **Última actualización**: 2026-04-12 — Verificado paridad authentication
 
 ---
 

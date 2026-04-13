@@ -77,12 +77,54 @@ graph TD
 > - **credentials: 'include'** en cada request
 > - **Deduplicación** de refresh — un solo request concurrent
 
-## SSO (Single Sign-On)
+## SSO (Single Sign-On) ✅
 
-| Proveedor | Componente | Flujo |
-|-----------|-----------|-------|
-| Google | `GoogleSignInButton.tsx` | Popup Google → Backend recibe code → Cookies httpOnly |
-| Apple | `AppleSignInButton.tsx` | Redirect Apple → Backend recibe code → Cookies httpOnly |
+### Google Sign-In
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant F as Frontend
+    participant G as Google API
+    participant B as Backend Go
+
+    U->>F: Click "Continuar con Google"
+    F->>G: One Tap / Account Chooser
+    G-->>F: Google ID token
+    F->>B: POST /auth/google { id_token }
+    B->>B: Validate token + Create/Link user
+    B-->>F: Set-Cookie: auth_token (httpOnly)
+    F->>F: checkAuth() → GET /auth/me
+    F-->>U: Redirect → /dashboard
+```
+
+**Componente:** `GoogleSignInButton.tsx`  
+**Flujo:** Google One Tap → Prompt/Popup → ID Token → Backend validation → httpOnly cookies
+
+### Apple Sign-In
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant F as Frontend
+    participant A as AppleID.auth
+    participant B as Backend Go
+
+    U->>F: Click "Continuar con Apple"
+    F->>A: AppleID.auth.signIn()
+    A-->>F: Authorization { id_token, user.name? }
+    F->>B: POST /auth/apple { identity_token, full_name }
+    B->>B: Validate token + Create/Link user
+    B-->>F: Set-Cookie: auth_token (httpOnly)
+    F->>F: checkAuth() → GET /auth/me
+    F-->>U: Redirect → /dashboard
+    
+    Note over F: Si email es Private Relay,<br/>mostrar noticia al usuario
+```
+
+**Componente:** `AppleSignInButton.tsx`  
+**Flujo:** AppleID SDK → Popup → Identity Token → Backend validation → httpOnly cookies  
+**Nota:** Detecta Private Relay emails (`email_is_private_relay`) y muestra noticia opcional al usuario.
 
 ## Guards de Ruta
 

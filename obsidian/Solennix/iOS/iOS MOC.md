@@ -6,6 +6,8 @@
 > **Stack**: SwiftUI · @Observable · SPM · URLSession · SwiftData
 > **Min iOS**: 17.0 · **Swift**: 5.9
 > **Build**: XcodeGen (project.yml) · Xcode 15+
+> **Estado**: Producción (MVP + Google/Apple SSO ✅) · App Store ready
+> **Última actualización**: 2026-04-12
 
 ---
 
