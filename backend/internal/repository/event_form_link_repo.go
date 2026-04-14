@@ -192,13 +192,13 @@ func CreateClientTx(ctx context.Context, tx pgx.Tx, c *models.Client) error {
 // CreateEventTx creates an event within a transaction.
 func CreateEventTx(ctx context.Context, tx pgx.Tx, e *models.Event) error {
 	query := `
-		INSERT INTO events (user_id, client_id, event_date, start_time, end_time, service_type, num_people, status, location, city, notes)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO events (user_id, client_id, event_date, start_time, end_time, service_type, num_people, status, total_amount, location, city, notes)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id, created_at, updated_at`
 
 	return tx.QueryRow(ctx, query,
 		e.UserID, e.ClientID, e.EventDate, e.StartTime, e.EndTime,
-		e.ServiceType, e.NumPeople, e.Status, e.Location, e.City, e.Notes,
+		e.ServiceType, e.NumPeople, e.Status, e.TotalAmount, e.Location, e.City, e.Notes,
 	).Scan(&e.ID, &e.CreatedAt, &e.UpdatedAt)
 }
 
