@@ -198,6 +198,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 MoreMenuScreen(
                     onProductsClick = { navController.navigate("products") },
                     onInventoryClick = { navController.navigate("inventory") },
+                    onEventFormLinksClick = { navController.navigate("event_form_links") },
                     onSettingsClick = { navController.navigate("settings") }
                 )
             }
@@ -279,7 +280,6 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onContractDefaults = { navController.navigate("contract_defaults") },
                     onNotificationPreferences = { navController.navigate("notification_preferences") },
                     onPricing = { navController.navigate("pricing") },
-                    onEventFormLinks = { navController.navigate("event_form_links") },
                     onAbout = { navController.navigate("about") },
                     onPrivacy = { navController.navigate("privacy") },
                     onTerms = { navController.navigate("terms") },
@@ -430,6 +430,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
 fun MoreMenuScreen(
     onProductsClick: () -> Unit,
     onInventoryClick: () -> Unit,
+    onEventFormLinksClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     Scaffold(topBar = { SolennixTopAppBar(title = { Text("Más") }) }) { padding ->
@@ -451,6 +452,12 @@ fun MoreMenuScreen(
                 subtitle = "Stock y abastecimiento",
                 icon = Icons.Default.Inventory2,
                 onClick = onInventoryClick
+            )
+            MenuOptionItem(
+                title = "Enlaces de Formulario",
+                subtitle = "Compartir con clientes",
+                icon = Icons.Default.Link,
+                onClick = onEventFormLinksClick
             )
             MenuOptionItem(
                 title = "Configuración",
