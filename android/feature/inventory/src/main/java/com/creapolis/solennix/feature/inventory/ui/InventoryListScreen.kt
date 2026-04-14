@@ -286,6 +286,9 @@ fun InventoryListScreen(
                                         onDelete = { viewModel.deleteItem(item.id) }
                                     )
                                 }
+                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
                             }
                             item(span = { GridItemSpan(maxLineSpan) }) {
                                 Spacer(modifier = Modifier.height(80.dp))
@@ -306,6 +309,9 @@ fun InventoryListScreen(
                                         onDeleteWithConfirm = { viewModel.deleteItem(it) }
                                     )
                                 }
+                                item {
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
                             }
                             if (uiState.supplyItems.isNotEmpty()) {
                                 item {
@@ -320,6 +326,9 @@ fun InventoryListScreen(
                                         onDeleteItem = { viewModel.deleteItem(it) },
                                         onDeleteWithConfirm = { viewModel.deleteItem(it) }
                                     )
+                                }
+                                item {
+                                    Spacer(modifier = Modifier.height(16.dp))
                                 }
                             }
                             if (uiState.equipmentItems.isNotEmpty()) {
