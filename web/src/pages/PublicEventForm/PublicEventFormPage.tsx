@@ -52,7 +52,7 @@ const schema = z.object({
   client_email: z.string().email("Email inválido").optional().or(z.literal("")),
   event_date: z.string().min(1, "La fecha es requerida"),
   service_type: z.string().min(1, "El tipo de evento es requerido"),
-  num_people: z.coerce.number().min(1, "Mínimo 1 persona"),
+  num_people: z.string().min(1, "Mínimo 1 persona"),
   location: z.string().optional(),
   city: z.string().optional(),
   notes: z.string().optional(),
@@ -81,7 +81,7 @@ export const PublicEventFormPage: React.FC = () => {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      num_people: 50,
+      num_people: "50",
     },
   });
 
