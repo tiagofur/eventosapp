@@ -22,19 +22,21 @@ type EventFetcher interface {
 	GetUpcoming(ctx context.Context, userID uuid.UUID, limit int) ([]models.Event, error)
 }
 
-// NotificationService handles business-level push notification logic.
+// NotificationService handles business-level push and email notification logic.
 type NotificationService struct {
-	pushService *PushService
-	deviceRepo  DeviceTokenFetcher
-	pool        *pgxpool.Pool
+	pushService  *PushService
+	deviceRepo   DeviceTokenFetcher
+	emailService *EmailService
+	pool         *pgxpool.Pool
 }
 
 // NewNotificationService creates a new NotificationService.
-func NewNotificationService(pushService *PushService, deviceRepo DeviceTokenFetcher, pool *pgxpool.Pool) *NotificationService {
+func NewNotificationService(pushService *PushService, deviceRepo DeviceTokenFetcher, pool *pgxpool.Pool, emailService *EmailService) *NotificationService {
 	return &NotificationService{
-		pushService: pushService,
-		deviceRepo:  deviceRepo,
-		pool:        pool,
+		pushService:  pushService,
+		deviceRepo:   deviceRepo,
+		pool:         pool,
+		emailService: emailService,
 	}
 }
 
@@ -50,6 +52,21 @@ func (s *NotificationService) getUserPushPrefs(ctx context.Context, userID uuid.
 		userID).Scan(&enabled, &eventReminder, &paymentReceived)
 	if err != nil {
 		slog.Error("Failed to fetch push preferences", "user_id", userID, "error", err)
+	}
+	return
+}
+
+// getUserEmailPrefs returns email notification preferences for a user.
+func (s *NotificationService) getUserEmailPrefs(ctx context.Context, userID uuid.UUID) (eventReminder, paymentReceipt, subscriptionUpdates bool) {
+	eventReminder, paymentReceipt, subscriptionUpdates = true, true, true
+	if s.pool == nil {
+		return
+	}
+	err := s.pool.QueryRow(ctx,
+		`SELECT COALESCE(email_event_reminder, true), COALESCE(email_payment_receipt, true), COALESCE(email_subscription_updates, true) FROM users WHERE id = $1`,
+		userID).Scan(&eventReminder, &paymentReceipt, &subscriptionUpdates)
+	if err != nil {
+		slog.Error("Failed to fetch email preferences", "user_id", userID, "error", err)
 	}
 	return
 }
@@ -99,6 +116,39 @@ func (s *NotificationService) SendEventReminder(ctx context.Context, userID uuid
 
 	failed := s.pushService.SendToTokens(ctx, tokens, msg)
 	s.cleanupFailedTokens(ctx, userID, failed)
+	s.markAsSent(ctx, userID, event.ID, notifType)
+	return nil
+}
+
+// SendEventReminderEmail sends an email reminder about an upcoming event.
+func (s *NotificationService) SendEventReminderEmail(ctx context.Context, userID uuid.UUID, event models.Event, reminderType string) error {
+	// Check email preferences
+	emailEventRem, _, _ := s.getUserEmailPrefs(ctx, userID)
+	if !emailEventRem {
+		return nil
+	}
+
+	notifType := fmt.Sprintf("event_reminder_email_%s", reminderType)
+
+	// Check if already sent
+	if s.wasAlreadySent(ctx, event.ID, notifType) {
+		return nil
+	}
+
+	// Get user email and name
+	var email, name string
+	err := s.pool.QueryRow(ctx, `SELECT email, name FROM users WHERE id = $1`, userID).Scan(&email, &name)
+	if err != nil {
+		slog.Error("Failed to fetch user email", "user_id", userID, "error", err)
+		return err
+	}
+
+	eventLink := fmt.Sprintf("https://app.solennix.com/events/%s", event.ID.String())
+	if err := s.emailService.SendEventReminder(email, name, event.ServiceType, event.EventDate, eventLink); err != nil {
+		slog.Error("Failed to send event reminder email", "user_id", userID, "error", err)
+		return err
+	}
+
 	s.markAsSent(ctx, userID, event.ID, notifType)
 	return nil
 }
@@ -191,6 +241,131 @@ func (s *NotificationService) SendEventConfirmed(ctx context.Context, userID uui
 	return nil
 }
 
+// SendWeeklySummaryEmails sends a weekly summary to all users who enabled it.
+func (s *NotificationService) SendWeeklySummaryEmails(ctx context.Context) {
+	if s.emailService == nil {
+		return
+	}
+
+	// Get all users who want weekly summary emails
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, email, name FROM users
+		WHERE email_weekly_summary = true
+	`)
+	if err != nil {
+		slog.Error("Failed to query users for weekly summary", "error", err)
+		return
+	}
+	defer rows.Close()
+
+	sentCount := 0
+	for rows.Next() {
+		var userID uuid.UUID
+		var email, name string
+		if err := rows.Scan(&userID, &email, &name); err != nil {
+			continue
+		}
+
+		// Get upcoming events (next 7 days)
+		eventsRows, err := s.pool.Query(ctx, `
+			SELECT service_type, to_char(event_date, 'YYYY-MM-DD') as event_date
+			FROM events
+			WHERE user_id = $1 AND status = 'confirmed'
+			AND event_date >= CURRENT_DATE AND event_date <= CURRENT_DATE + INTERVAL '7 days'
+			ORDER BY event_date ASC
+			LIMIT 5
+		`, userID)
+		if err != nil {
+			continue
+		}
+
+		var nextEventsHTML string
+		for eventsRows.Next() {
+			var serviceType, eventDate string
+			if err := eventsRows.Scan(&serviceType, &eventDate); err != nil {
+				continue
+			}
+			nextEventsHTML += fmt.Sprintf(`<p style="margin: 4px 0;">• %s - %s</p>`, serviceType, eventDate)
+		}
+		eventsRows.Close()
+
+		// Get total payments this week
+		var paymentsHTML string
+		var totalAmount float64
+		var paymentCount int
+		err = s.pool.QueryRow(ctx, `
+			SELECT COALESCE(SUM(amount), 0), COUNT(*) FROM payments
+			WHERE user_id = $1
+			AND payment_date >= CURRENT_DATE - INTERVAL '7 days'
+		`, userID).Scan(&totalAmount, &paymentCount)
+		if err == nil && paymentCount > 0 {
+			paymentsHTML = fmt.Sprintf(`<p style="margin: 4px 0;">• %d pagos por $%.2f MXN esta semana</p>`, paymentCount, totalAmount)
+		} else {
+			paymentsHTML = `<p style="margin: 4px 0;">• Sin pagos registrados</p>`
+		}
+
+		if nextEventsHTML == "" {
+			nextEventsHTML = `<p style="margin: 4px 0;">• Sin eventos próximos</p>`
+		}
+
+		if err := s.emailService.SendWeeklySummary(email, name, nextEventsHTML, paymentsHTML); err != nil {
+			slog.Error("Failed to send weekly summary", "user_id", userID, "error", err)
+		} else {
+			sentCount++
+		}
+	}
+
+	if sentCount > 0 {
+		slog.Info("Sent weekly summary emails", "count", sentCount)
+	}
+}
+
+// SendMarketingEmails sends marketing/tips emails to all users who enabled it.
+func (s *NotificationService) SendMarketingEmails(ctx context.Context) {
+	if s.emailService == nil {
+		return
+	}
+
+	// Get all users who want marketing emails
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, email, name FROM users
+		WHERE email_marketing = true
+	`)
+	if err != nil {
+		slog.Error("Failed to query users for marketing emails", "error", err)
+		return
+	}
+	defer rows.Close()
+
+	// Static tips for this week (could be dynamic in the future)
+	tipsHTML := `
+	<div class="highlight">
+		<p style="margin: 0;"><strong>💡 Tip de la semana:</strong></p>
+		<p style="margin: 8px 0 0 0;">Utiliza los recordatorios automáticos de Solennix para nunca olvidar un evento importante. Los recordatorios por email y push te avisarán 24 horas y 1 hora antes de cada evento.</p>
+		<p style="margin: 8px 0 0 0;"><strong>⚡ Novedad:</strong> Ahora podés personalizar qué notificaciones recibir desde tu configuración de preferencias.</p>
+	</div>
+	`
+
+	sentCount := 0
+	for rows.Next() {
+		var userID uuid.UUID
+		var email, name string
+		if err := rows.Scan(&userID, &email, &name); err != nil {
+			continue
+		}
+
+		if err := s.emailService.SendMarketingUpdate(email, name, tipsHTML); err != nil {
+			slog.Error("Failed to send marketing email", "user_id", userID, "error", err)
+		} else {
+			sentCount++
+		}
+	}
+
+	if sentCount > 0 {
+		slog.Info("Sent marketing emails", "count", sentCount)
+	}
+}
+
 // ProcessPendingReminders checks for upcoming events and sends reminders.
 // Should be called periodically (e.g., every 15 minutes).
 func (s *NotificationService) ProcessPendingReminders(ctx context.Context) {
@@ -275,6 +450,8 @@ func (s *NotificationService) ProcessPendingReminders(ctx context.Context) {
 				if err := s.SendEventReminder(ctx, uid, event, "24h"); err == nil {
 					sentCount++
 				}
+				// Also send email if preferred
+				_ = s.SendEventReminderEmail(ctx, uid, event, "24h")
 			}
 
 			// 1h reminder: event is between 0.5-1.5 hours away
@@ -282,6 +459,8 @@ func (s *NotificationService) ProcessPendingReminders(ctx context.Context) {
 				if err := s.SendEventReminder(ctx, uid, event, "1h"); err == nil {
 					sentCount++
 				}
+				// Also send email if preferred
+				_ = s.SendEventReminderEmail(ctx, uid, event, "1h")
 			}
 		}
 	}

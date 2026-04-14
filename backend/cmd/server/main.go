@@ -88,7 +88,7 @@ func main() {
 	mw.SetTokenBlacklist(revokedTokenRepo)
 
 	// Initialize notification service
-	notificationService := services.NewNotificationService(pushService, deviceRepo, pool)
+	notificationService := services.NewNotificationService(pushService, deviceRepo, pool, emailService)
 
 	// Initialize Live Activity push service (iOS Dynamic Island updates)
 	liveActivityService := services.NewLiveActivityService(liveActivityRepo, pushService)
@@ -167,6 +167,62 @@ func main() {
 		for range ticker.C {
 			notificationService.ProcessPendingReminders(context.Background())
 		}
+	}()
+
+	// Background job: send weekly summary emails to users.
+	// Runs every Monday at 9:00 AM UTC.
+	go func() {
+		sendWeeklySummary := func() {
+			now := time.Now().UTC()
+			nextMonday := time.Now().UTC()
+			// Calculate next Monday at 9:00 AM
+			daysUntilMonday := (time.Monday - now.Weekday() + 7) % 7
+			if daysUntilMonday == 0 && now.Hour() >= 9 {
+				daysUntilMonday = 7
+			}
+			nextMonday = now.AddDate(0, 0, int(daysUntilMonday))
+			nextMonday = time.Date(nextMonday.Year(), nextMonday.Month(), nextMonday.Day(), 9, 0, 0, 0, time.UTC)
+
+			timer := time.NewTimer(nextMonday.Sub(now))
+			<-timer.C
+
+			// First send, then schedule for every week
+			notificationService.SendWeeklySummaryEmails(context.Background())
+			ticker := time.NewTicker(7 * 24 * time.Hour)
+			defer ticker.Stop()
+			for range ticker.C {
+				notificationService.SendWeeklySummaryEmails(context.Background())
+			}
+		}
+		go sendWeeklySummary()
+	}()
+
+	// Background job: send marketing emails to users.
+	// Runs every Friday at 9:00 AM UTC.
+	go func() {
+		sendMarketing := func() {
+			now := time.Now().UTC()
+			nextFriday := time.Now().UTC()
+			// Calculate next Friday at 9:00 AM
+			daysUntilFriday := (time.Friday - now.Weekday() + 7) % 7
+			if daysUntilFriday == 0 && now.Hour() >= 9 {
+				daysUntilFriday = 7
+			}
+			nextFriday = now.AddDate(0, 0, int(daysUntilFriday))
+			nextFriday = time.Date(nextFriday.Year(), nextFriday.Month(), nextFriday.Day(), 9, 0, 0, 0, time.UTC)
+
+			timer := time.NewTimer(nextFriday.Sub(now))
+			<-timer.C
+
+			// First send, then schedule for every week
+			notificationService.SendMarketingEmails(context.Background())
+			ticker := time.NewTicker(7 * 24 * time.Hour)
+			defer ticker.Stop()
+			for range ticker.C {
+				notificationService.SendMarketingEmails(context.Background())
+			}
+		}
+		go sendMarketing()
 	}()
 
 	// Background job: expire stale event form links.

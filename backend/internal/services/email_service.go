@@ -84,6 +84,25 @@ func (s *EmailService) SendSubscriptionConfirmation(email, userName, planName st
 	return s.sendEmail(email, fmt.Sprintf("Tu plan %s está activo - Solennix", planName), body)
 }
 
+// SendWeeklySummary sends a weekly summary of upcoming events and payments.
+func (s *EmailService) SendWeeklySummary(email, userName, nextEventsHTML, paymentsHTML string) error {
+	body := s.renderTemplate(weeklySummaryBody, map[string]string{
+		"UserName":      userName,
+		"NextEvents":    nextEventsHTML,
+		"PaymentsSummary": paymentsHTML,
+	})
+	return s.sendEmail(email, "Tu Resumen Semanal - Solennix", body)
+}
+
+// SendMarketingUpdate sends marketing/tips email.
+func (s *EmailService) SendMarketingUpdate(email, userName, tipsHTML string) error {
+	body := s.renderTemplate(marketingUpdateBody, map[string]string{
+		"UserName": userName,
+		"Tips":     tipsHTML,
+	})
+	return s.sendEmail(email, "Tips y Novedades - Solennix", body)
+}
+
 // ---------------------------------------------------------------------------
 // Base Layout & Template Rendering
 // ---------------------------------------------------------------------------
@@ -269,3 +288,22 @@ const subscriptionConfirmationBody = `
     <p style="margin: 4px 0;">✅ Gestión avanzada de inventario</p>
 </div>
 <p>Gracias por confiar en Solennix para gestionar tus eventos.</p>`
+
+const weeklySummaryBody = `
+<p>Hola {{.UserName}},</p>
+<p>Te compartimos tu resumen de la semana en Solennix:</p>
+<div class="highlight">
+    <p style="margin: 0;"><strong>📅 Tus próximos eventos:</strong></p>
+    {{.NextEvents}}
+</div>
+<div class="highlight">
+    <p style="margin: 0;"><strong>💰 Pagos registrados:</strong></p>
+    {{.PaymentsSummary}}
+</div>
+<p>¡Sigue adelante con tu negocio! 💪</p>`
+
+const marketingUpdateBody = `
+<p>Hola {{.UserName}},</p>
+<p>Tenemos algunos consejos y novedades para ti esta semana:</p>
+{{.Tips}}
+<p>Mantente atento a nuevas funciones en Solennix que te ayudarán a gestionar mejor tus eventos.</p>`
