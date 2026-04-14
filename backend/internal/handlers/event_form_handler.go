@@ -383,6 +383,7 @@ func (h *EventFormHandler) SubmitForm(w http.ResponseWriter, r *http.Request) {
 		ServiceType: req.ServiceType,
 		NumPeople:   req.NumPeople,
 		Status:      "quoted",
+		TotalAmount: 0,
 		Location:    req.Location,
 		City:        req.City,
 		Notes:       &formNotes,
