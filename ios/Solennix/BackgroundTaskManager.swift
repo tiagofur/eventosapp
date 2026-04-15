@@ -13,6 +13,37 @@ final class BackgroundTaskManager {
 
     static let refreshTaskIdentifier = "com.solennix.app.refresh"
 
+    // MARK: - Shared Instance
+
+    /// Shared reference used by the launch-time BG task handler to resolve dependencies
+    /// lazily. Set from SolennixApp once APIClient/CacheManager are ready.
+    nonisolated(unsafe) static weak var shared: BackgroundTaskManager?
+
+    // MARK: - Launch Handler Registration
+
+    /// Registers the BG task handler synchronously at app launch.
+    /// MUST be called from `AppDelegate.application(_:didFinishLaunchingWithOptions:)`
+    /// — iOS aborts with NSInternalInconsistencyException if registration happens
+    /// after launch completes.
+    static func registerLaunchHandler() {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: Self.refreshTaskIdentifier,
+            using: nil
+        ) { task in
+            guard let task = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            Task { @MainActor in
+                if let manager = BackgroundTaskManager.shared {
+                    await manager.handleAppRefresh(task)
+                } else {
+                    task.setTaskCompleted(success: false)
+                }
+            }
+        }
+    }
+
     // MARK: - Dependencies
 
     private let apiClient: APIClient
@@ -23,21 +54,6 @@ final class BackgroundTaskManager {
     init(apiClient: APIClient, cacheManager: CacheManager?) {
         self.apiClient = apiClient
         self.cacheManager = cacheManager
-    }
-
-    // MARK: - Registration
-
-    /// Register the background refresh task handler. Call once at app launch.
-    func registerTasks() {
-        BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.refreshTaskIdentifier,
-            using: nil
-        ) { [weak self] task in
-            guard let task = task as? BGAppRefreshTask else { return }
-            Task { @MainActor in
-                await self?.handleAppRefresh(task)
-            }
-        }
     }
 
     // MARK: - Scheduling
@@ -56,7 +72,7 @@ final class BackgroundTaskManager {
 
     // MARK: - Task Handling
 
-    private func handleAppRefresh(_ task: BGAppRefreshTask) async {
+    func handleAppRefresh(_ task: BGAppRefreshTask) async {
         // Schedule the next refresh before doing work
         scheduleAppRefresh()
 

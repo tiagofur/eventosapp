@@ -185,10 +185,13 @@ struct SolennixApp: App {
                     }
                 }
                 .task {
-                    // Initialize BackgroundTaskManager after CacheManager is ready
+                    // BG task handler is registered synchronously in AppDelegate
+                    // (iOS requires it before launch completes). Here we only wire up
+                    // the manager that resolves dependencies for that handler and
+                    // schedules the next refresh.
                     if backgroundTaskManager == nil {
                         let manager = BackgroundTaskManager(apiClient: apiClient, cacheManager: cacheManager)
-                        manager.registerTasks()
+                        BackgroundTaskManager.shared = manager
                         manager.scheduleAppRefresh()
                         backgroundTaskManager = manager
                     }

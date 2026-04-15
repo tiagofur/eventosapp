@@ -2,6 +2,7 @@ import UIKit
 import GoogleSignIn
 
 import UserNotifications
+import BackgroundTasks
 import SolennixFeatures
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
@@ -10,6 +11,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // MUST run synchronously before launch completes — iOS aborts the app
+        // with NSInternalInconsistencyException if any BGTaskScheduler handler
+        // is registered after didFinishLaunchingWithOptions returns.
+        BackgroundTaskManager.registerLaunchHandler()
+
         UNUserNotificationCenter.current().delegate = NotificationManager.shared
         NotificationManager.shared.configureCategories()
         return true
