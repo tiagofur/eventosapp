@@ -15,6 +15,8 @@ public struct EventDetailView: View {
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showDuplicateSheet = false
     @State private var duplicateViewModel: EventFormViewModel?
+    @Environment(AuthManager.self) private var authManager
+    @Environment(ToastManager.self) private var toastManager
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -107,6 +109,16 @@ public struct EventDetailView: View {
         }
         .sheet(isPresented: $viewModel.showActionsMenu) {
             pdfActionsSheet
+        }
+        .onChange(of: viewModel.generatingPdf) { _, newKey in
+            guard let key = newKey, let event = viewModel.event else { return }
+            // Defer slightly so the actions sheet finishes dismissing before we
+            // try to present the share sheet — otherwise iOS treats the root as
+            // still-presenting and silently drops the share controller.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                generateAndSharePDF(key: key, event: event)
+                viewModel.generatingPdf = nil
+            }
         }
         .task { await viewModel.loadData(eventId: eventId) }
         .sheet(isPresented: $showDuplicateSheet) {
@@ -1057,6 +1069,141 @@ public struct EventDetailView: View {
             ("pagos", "Pagos", "dollarsign.circle"),
             ("factura", "Factura", "doc.badge.arrow.up"),
         ]
+    }
+
+    // MARK: - PDF Generation & Share
+
+    private func generateAndSharePDF(key: String, event: Event) {
+        let profile = authManager.currentUser
+        let productNames = viewModel.productMap.mapValues { $0.name }
+        let filename: String
+        let pdfData: Data
+
+        switch key {
+        case "cotizacion":
+            guard let client = viewModel.client else {
+                toastManager.show(message: "Cliente no disponible", type: .error)
+                return
+            }
+            filename = "Cotizacion_\(event.serviceType).pdf"
+            pdfData = BudgetPDFGenerator.generate(
+                event: event,
+                client: client,
+                profile: profile,
+                products: viewModel.products,
+                extras: viewModel.extras,
+                productNames: productNames
+            )
+        case "contrato":
+            guard let client = viewModel.client else {
+                toastManager.show(message: "Cliente no disponible", type: .error)
+                return
+            }
+            filename = "Contrato_\(client.name.replacingOccurrences(of: " ", with: "_")).pdf"
+            pdfData = ContractPDFGenerator.generate(event: event, client: client, profile: profile)
+        case "insumos":
+            let ingredients = viewModel.supplies.map { s in
+                ShoppingListPDFGenerator.Ingredient(
+                    name: s.supplyName ?? "Insumo",
+                    quantity: s.quantity,
+                    unit: s.unit ?? ""
+                )
+            }
+            filename = "Insumos_\(event.serviceType).pdf"
+            pdfData = ShoppingListPDFGenerator.generate(
+                event: event,
+                profile: profile,
+                ingredients: ingredients
+            )
+        case "equipo":
+            filename = "Equipo_\(event.serviceType).pdf"
+            pdfData = EquipmentListPDFGenerator.generate(
+                event: event,
+                client: viewModel.client,
+                profile: profile,
+                equipment: viewModel.equipment
+            )
+        case "checklist":
+            let ingredients = viewModel.supplies.map { s in
+                ShoppingListPDFGenerator.Ingredient(
+                    name: s.supplyName ?? "Insumo",
+                    quantity: s.quantity,
+                    unit: s.unit ?? ""
+                )
+            }
+            filename = "Checklist_\(event.serviceType).pdf"
+            pdfData = ChecklistPDFGenerator.generate(
+                event: event,
+                client: viewModel.client,
+                profile: profile,
+                products: viewModel.products,
+                equipment: viewModel.equipment,
+                ingredients: ingredients,
+                extras: viewModel.extras,
+                productNames: productNames
+            )
+        case "pagos":
+            guard let client = viewModel.client else {
+                toastManager.show(message: "Cliente no disponible", type: .error)
+                return
+            }
+            filename = "Pagos_\(client.name.replacingOccurrences(of: " ", with: "_")).pdf"
+            pdfData = PaymentReportPDFGenerator.generate(
+                event: event,
+                client: client,
+                profile: profile,
+                payments: viewModel.payments
+            )
+        case "factura":
+            guard let client = viewModel.client else {
+                toastManager.show(message: "Cliente no disponible", type: .error)
+                return
+            }
+            filename = "Factura_\(client.name.replacingOccurrences(of: " ", with: "_")).pdf"
+            pdfData = InvoicePDFGenerator.generate(
+                event: event,
+                client: client,
+                profile: profile,
+                products: viewModel.products,
+                extras: viewModel.extras,
+                productNames: productNames
+            )
+        default:
+            return
+        }
+
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        do {
+            try pdfData.write(to: tempURL)
+        } catch {
+            toastManager.show(message: "No se pudo guardar el PDF", type: .error)
+            return
+        }
+
+        guard let presenter = topMostViewController() else {
+            toastManager.show(message: "No se pudo presentar el compartir", type: .error)
+            return
+        }
+
+        let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = presenter.view
+            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        presenter.present(activityVC, animated: true)
+    }
+
+    private func topMostViewController() -> UIViewController? {
+        guard let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive })
+              ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
+              let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
+        else { return nil }
+        var top = window.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        return top
     }
 
     // MARK: - Duplicate Event
