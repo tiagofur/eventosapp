@@ -6,6 +6,7 @@ import SolennixCore
 
 public struct AboutView: View {
 
+    @Environment(\.openURL) private var openURL
     @State private var legalSheetURL: IdentifiableURL?
 
     public init() {}
@@ -147,18 +148,20 @@ public struct AboutView: View {
                 .font(.headline)
 
             HStack(spacing: Spacing.lg) {
-                socialButton(icon: "globe", label: "Web")
-                socialButton(icon: "camera", label: "Instagram")
-                socialButton(icon: "message", label: "Twitter")
-                socialButton(icon: "play.rectangle", label: "YouTube")
+                socialButton(icon: "globe", label: "Web", urlString: "https://solennix.com")
+                socialButton(icon: "camera", label: "Instagram", urlString: "https://instagram.com/solennix")
+                socialButton(icon: "message", label: "Twitter", urlString: "https://x.com/solennix")
+                socialButton(icon: "play.rectangle", label: "YouTube", urlString: "https://youtube.com/@solennix")
             }
             .frame(maxWidth: .infinity)
         }
     }
 
-    private func socialButton(icon: String, label: String) -> some View {
+    private func socialButton(icon: String, label: String, urlString: String) -> some View {
         Button {
-            // TODO: Open social link
+            guard let url = URL(string: urlString) else { return }
+            HapticsHelper.play(.selection)
+            openURL(url)
         } label: {
             VStack(spacing: Spacing.xs) {
                 Image(systemName: icon)
