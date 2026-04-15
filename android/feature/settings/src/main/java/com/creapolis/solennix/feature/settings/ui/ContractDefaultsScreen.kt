@@ -25,6 +25,7 @@ import com.creapolis.solennix.core.designsystem.component.SolennixTopAppBar
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.feature.settings.viewmodel.ContractDefaultsViewModel
+import com.creapolis.solennix.feature.settings.viewmodel.DEFAULT_CONTRACT_TEMPLATE
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -291,14 +292,30 @@ fun ContractDefaultsScreen(
                         )
 
                         val tokens = listOf(
-                            "{nombre_cliente}" to "Cliente",
-                            "{fecha_evento}" to "Fecha",
-                            "{lugar}" to "Lugar",
-                            "{total}" to "Total",
-                            "{anticipo}" to "Anticipo",
-                            "{tipo_evento}" to "Tipo",
-                            "{num_personas}" to "Personas",
-                            "{nombre_negocio}" to "Negocio"
+                            "[Nombre del proveedor]" to "Proveedor",
+                            "[Nombre comercial del proveedor]" to "Nombre comercial",
+                            "[Email del proveedor]" to "Email proveedor",
+                            "[Fecha actual]" to "Fecha actual",
+                            "[Fecha del evento]" to "Fecha evento",
+                            "[Hora de inicio]" to "Hora inicio",
+                            "[Hora de fin]" to "Hora fin",
+                            "[Horario del evento]" to "Horario",
+                            "[Tipo de servicio]" to "Tipo servicio",
+                            "[Número de personas]" to "Personas",
+                            "[Lugar del evento]" to "Lugar",
+                            "[Ciudad del evento]" to "Ciudad evento",
+                            "[Servicios del evento]" to "Servicios",
+                            "[Monto total del evento]" to "Total",
+                            "[Porcentaje de anticipo]" to "% anticipo",
+                            "[Porcentaje de reembolso]" to "% reembolso",
+                            "[Días de cancelación]" to "Días cancelación",
+                            "[Total pagado]" to "Total pagado",
+                            "[Nombre del cliente]" to "Cliente",
+                            "[Teléfono del cliente]" to "Tel. cliente",
+                            "[Email del cliente]" to "Email cliente",
+                            "[Dirección del cliente]" to "Dir. cliente",
+                            "[Ciudad del cliente]" to "Ciudad cliente",
+                            "[Ciudad del contrato]" to "Ciudad contrato",
                         )
 
                         val chipScrollState = rememberScrollState()
@@ -336,6 +353,22 @@ fun ContractDefaultsScreen(
                                     border = BorderStroke(1.dp, SolennixTheme.colors.primary.copy(alpha = 0.3f))
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        TextButton(
+                            onClick = {
+                                textFieldValue = TextFieldValue(DEFAULT_CONTRACT_TEMPLATE)
+                                viewModel.contractTemplate = DEFAULT_CONTRACT_TEMPLATE
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = SolennixTheme.colors.primary
+                            )
+                        ) {
+                            Text(
+                                text = "Restaurar predeterminado",
+                                style = MaterialTheme.typography.labelMedium
+                            )
                         }
                     }
                 }
@@ -453,14 +486,30 @@ private fun ContractTemplatePreviewDialog(
     onDismiss: () -> Unit
 ) {
     val sampleData = mapOf(
-        "{nombre_cliente}" to "Maria Garcia Lopez",
-        "{fecha_evento}" to "15 de junio de 2026",
-        "{lugar}" to "Salon Royal, Guadalajara",
-        "{total}" to "$25,000.00",
-        "{anticipo}" to "$12,500.00",
-        "{tipo_evento}" to "Boda",
-        "{num_personas}" to "150",
-        "{nombre_negocio}" to "Eventos Brillantes"
+        "[Nombre del proveedor]" to "Juan Pérez",
+        "[Nombre comercial del proveedor]" to "Eventos Brillantes",
+        "[Email del proveedor]" to "juan@eventosbrillantes.com",
+        "[Fecha actual]" to "15 de abril de 2026",
+        "[Fecha del evento]" to "15 de junio de 2026",
+        "[Hora de inicio]" to "18:00",
+        "[Hora de fin]" to "23:00",
+        "[Horario del evento]" to "18:00 - 23:00",
+        "[Tipo de servicio]" to "Boda",
+        "[Número de personas]" to "150",
+        "[Lugar del evento]" to "Salón Royal, Guadalajara",
+        "[Ciudad del evento]" to "Guadalajara",
+        "[Servicios del evento]" to "1 Fotografía, 1 Video",
+        "[Monto total del evento]" to "$25,000.00",
+        "[Porcentaje de anticipo]" to "50",
+        "[Porcentaje de reembolso]" to "50",
+        "[Días de cancelación]" to "7",
+        "[Total pagado]" to "$12,500.00",
+        "[Nombre del cliente]" to "María García López",
+        "[Teléfono del cliente]" to "+52 33 1234 5678",
+        "[Email del cliente]" to "maria@gmail.com",
+        "[Dirección del cliente]" to "Av. Reforma 123",
+        "[Ciudad del cliente]" to "Guadalajara",
+        "[Ciudad del contrato]" to "Guadalajara",
     )
 
     var renderedText = template
