@@ -1191,13 +1191,13 @@ func (h *AuthHandler) AppleSignIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newUser := &models.User{
-		ID:          uuid.New(),
 		Email:       email,
 		Name:        name,
+		Plan:        "basic",
 		AppleUserID: &appleUserID,
 	}
 
-	if err := h.userRepo.Create(r.Context(), newUser); err != nil {
+	if err := h.userRepo.CreateWithOAuth(r.Context(), newUser); err != nil {
 		slog.Error("Failed to create user from Apple", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create account")
 		return
@@ -1353,7 +1353,12 @@ func (h *AuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userRepo.GetByAppleUserID(r.Context(), appleUserID)
 	if err == nil && user != nil {
-		tokens, _ := h.authService.GenerateTokenPair(user.ID, user.Email)
+		tokens, tokenErr := h.authService.GenerateTokenPair(user.ID, user.Email)
+		if tokenErr != nil {
+			slog.Error("Failed to generate tokens", "error", tokenErr)
+			writeError(w, http.StatusInternalServerError, "Internal server error")
+			return
+		}
 		h.storeRefreshToken(r.Context(), tokens.RefreshToken, user.ID)
 		setAuthCookie(w, r, tokens.AccessToken)
 		http.Redirect(w, r, h.cfg.FrontendURL+"/dashboard", http.StatusFound)
@@ -1364,7 +1369,12 @@ func (h *AuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 		user, err = h.userRepo.GetByEmail(r.Context(), email)
 		if err == nil && user != nil {
 			_ = h.userRepo.LinkAppleAccount(r.Context(), user.ID, appleUserID)
-			tokens, _ := h.authService.GenerateTokenPair(user.ID, user.Email)
+			tokens, tokenErr := h.authService.GenerateTokenPair(user.ID, user.Email)
+			if tokenErr != nil {
+				slog.Error("Failed to generate tokens", "error", tokenErr)
+				writeError(w, http.StatusInternalServerError, "Internal server error")
+				return
+			}
 			h.storeRefreshToken(r.Context(), tokens.RefreshToken, user.ID)
 			setAuthCookie(w, r, tokens.AccessToken)
 			http.Redirect(w, r, h.cfg.FrontendURL+"/dashboard", http.StatusFound)
@@ -1377,18 +1387,23 @@ func (h *AuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newUser := &models.User{
-		ID:          uuid.New(),
 		Email:       email,
 		Name:        fullName,
+		Plan:        "basic",
 		AppleUserID: &appleUserID,
 	}
-	if err := h.userRepo.Create(r.Context(), newUser); err != nil {
+	if err := h.userRepo.CreateWithOAuth(r.Context(), newUser); err != nil {
 		slog.Error("Failed to create user from Apple", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to create account")
 		return
 	}
 
-	tokens, _ := h.authService.GenerateTokenPair(newUser.ID, newUser.Email)
+	tokens, tokenErr := h.authService.GenerateTokenPair(newUser.ID, newUser.Email)
+	if tokenErr != nil {
+		slog.Error("Failed to generate tokens", "error", tokenErr)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
 	h.storeRefreshToken(r.Context(), tokens.RefreshToken, newUser.ID)
 	setAuthCookie(w, r, tokens.AccessToken)
 	http.Redirect(w, r, h.cfg.FrontendURL+"/dashboard", http.StatusFound)
