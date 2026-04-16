@@ -257,10 +257,11 @@ class OfflineFirstEventRepository @Inject constructor(
     override suspend fun syncEventItems(eventId: String) {
         val products: List<EventProduct> = apiService.get(Endpoints.eventProducts(eventId))
         val extras: List<EventExtra> = apiService.get(Endpoints.eventExtras(eventId))
-        eventItemDao.deleteProductsByEventId(eventId)
-        eventItemDao.deleteExtrasByEventId(eventId)
-        eventItemDao.insertProducts(products.map { it.asEntity() })
-        eventItemDao.insertExtras(extras.map { it.asEntity() })
+        eventItemDao.replaceEventItems(
+            eventId = eventId,
+            products = products.map { it.asEntity() },
+            extras = extras.map { it.asEntity() }
+        )
     }
 
     override suspend fun getEventsFromApi(): List<Event> =

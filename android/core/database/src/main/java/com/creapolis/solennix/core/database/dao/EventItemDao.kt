@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.creapolis.solennix.core.database.entity.CachedEventExtra
 import com.creapolis.solennix.core.database.entity.CachedEventProduct
 import kotlinx.coroutines.flow.Flow
@@ -33,4 +34,23 @@ interface EventItemDao {
 
     @Query("DELETE FROM event_extras")
     suspend fun deleteAllExtras()
+
+    /**
+     * Atomically replaces all cached products and extras for an event.
+     *
+     * Without `@Transaction`, Flow collectors observing [getProductsByEventId] or
+     * [getExtrasByEventId] would briefly emit empty lists between the DELETE and
+     * INSERT steps, flickering the UI to "0 items" mid-sync.
+     */
+    @Transaction
+    suspend fun replaceEventItems(
+        eventId: String,
+        products: List<CachedEventProduct>,
+        extras: List<CachedEventExtra>
+    ) {
+        deleteProductsByEventId(eventId)
+        deleteExtrasByEventId(eventId)
+        insertProducts(products)
+        insertExtras(extras)
+    }
 }
