@@ -304,7 +304,11 @@ public final class EventDetailViewModel {
     @MainActor
     public func removePhoto(at index: Int, eventId: String) async {
         guard index >= 0 && index < eventPhotos.count else { return }
-        eventPhotos.remove(at: index)
+        // Snapshot before mutating so we can restore on PUT failure — otherwise
+        // the UI and backend diverge permanently (photo hidden locally, still
+        // on the server). Mirrors the `softDeleteClient` undo pattern.
+        let snapshot = eventPhotos
+        let removed = eventPhotos.remove(at: index)
 
         do {
             let photosJson = try JSONEncoder().encode(eventPhotos)
@@ -312,6 +316,8 @@ public final class EventDetailViewModel {
             let body: [String: String] = ["photos": photosString]
             let _: Event = try await apiClient.put(Endpoint.event(eventId), body: body)
         } catch {
+            eventPhotos = snapshot
+            _ = removed
             errorMessage = "Error al eliminar la foto"
         }
     }
