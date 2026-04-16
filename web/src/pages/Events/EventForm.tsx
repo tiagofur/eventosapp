@@ -419,6 +419,12 @@ export const EventForm: React.FC = () => {
     };
 
     fetchMissingCosts();
+    // productUnitCosts is intentionally omitted from deps: it is read only
+    // inside fetchMissingCosts to skip products whose cost is already cached,
+    // and then written via the functional setProductUnitCosts updater. Including
+    // it here would re-fire the effect after every successful fetch and risks
+    // an infinite loop if any fetch consistently yields a still-missing entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedProducts,
     extras,
@@ -427,7 +433,6 @@ export const EventForm: React.FC = () => {
     requiresInvoiceValue,
     taxRateValue,
     setValue,
-    productUnitCosts,
   ]);
 
   useEffect(() => {
