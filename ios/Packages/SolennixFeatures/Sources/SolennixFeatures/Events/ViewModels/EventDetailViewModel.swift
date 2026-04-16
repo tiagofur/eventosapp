@@ -68,6 +68,15 @@ public final class EventDetailViewModel {
         remaining <= 0.01
     }
 
+    /// Reusable `yyyy-MM-dd` formatter. SwiftUI re-reads `canStartLiveActivity`
+    /// on every render, so allocating a new `DateFormatter` per access (as we
+    /// did previously) showed up as measurable render overhead on devices.
+    private static let isoDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     /// Indica si el evento es elegible para iniciar una Live Activity.
     /// Solo disponible para eventos confirmados del día de hoy.
     public var canStartLiveActivity: Bool {
@@ -75,10 +84,7 @@ public final class EventDetailViewModel {
         guard event.status == .confirmed else { return false }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return false }
 
-        // Verificar que el evento sea de hoy
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        let today = formatter.string(from: Date())
+        let today = Self.isoDayFormatter.string(from: Date())
         let eventDateStr = String(event.eventDate.prefix(10))
 
         return eventDateStr == today

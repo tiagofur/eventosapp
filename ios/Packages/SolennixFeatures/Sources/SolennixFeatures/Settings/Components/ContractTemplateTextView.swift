@@ -63,7 +63,9 @@ struct ContractTemplateTextView: UIViewRepresentable {
         var text: Binding<String>
         weak var textView: UITextView?
 
-        private static let variablePattern = try! NSRegularExpression(pattern: "\\[([^\\[\\]]+)\\]")
+        // Pattern is known-good today; using `try?` so a future edit that breaks
+        // the regex does not crash the app — we simply skip the styling pass.
+        private static let variablePattern = try? NSRegularExpression(pattern: "\\[([^\\[\\]]+)\\]")
 
         init(text: Binding<String>) {
             self.text = text
@@ -121,10 +123,10 @@ struct ContractTemplateTextView: UIViewRepresentable {
             )
 
             // Style [Variable] patterns as chips
-            let matches = Self.variablePattern.matches(
+            let matches = Self.variablePattern?.matches(
                 in: fullText,
                 range: NSRange(location: 0, length: (fullText as NSString).length)
-            )
+            ) ?? []
 
             let primaryColor = UIColor(SolennixColors.primary)
             let primaryLightColor = UIColor(SolennixColors.primaryLight)

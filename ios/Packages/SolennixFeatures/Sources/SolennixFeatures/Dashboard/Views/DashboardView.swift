@@ -109,14 +109,12 @@ public struct DashboardView: View {
             await viewModel?.refresh()
         }
         .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
-        .onAppear {
+        .task {
             if viewModel == nil {
                 viewModel = DashboardViewModel(apiClient: apiClient)
             }
-            Task {
-                await viewModel?.loadDashboard()
-                await planLimitsManager.checkLimits()
-            }
+            await viewModel?.loadDashboard()
+            await planLimitsManager.checkLimits()
         }
         .overlay {
             if viewModel?.isLoading == true && viewModel?.eventsThisMonth.isEmpty == true && viewModel?.errorMessage == nil {
