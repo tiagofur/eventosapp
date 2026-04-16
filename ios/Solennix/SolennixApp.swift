@@ -91,8 +91,18 @@ struct SolennixApp: App {
             SentryHelper.capture(message: "RevenueCat key missing: set REVENUECAT_PUBLIC_API_KEY in build settings.")
         }
 
-        // Configure SwiftData for offline caching
-        self.modelContainer = SolennixModelContainer.create()
+        // Configure SwiftData for offline caching. If the container cannot be
+        // created (persistent + in-memory both fail), report to Sentry before
+        // terminating so we get real diagnostics instead of an opaque crash.
+        do {
+            self.modelContainer = try SolennixModelContainer.create()
+        } catch {
+            SentryHelper.capture(
+                error: error,
+                context: "SwiftData container init failed (persistent + in-memory fallback)"
+            )
+            fatalError("[Solennix] SwiftData container init failed irrecoverably: \(error)")
+        }
     }
 
     // MARK: - Scene

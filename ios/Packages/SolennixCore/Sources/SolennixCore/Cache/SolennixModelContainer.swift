@@ -8,9 +8,10 @@ public enum SolennixModelContainer {
 
     /// Creates a configured `ModelContainer` for offline caching.
     ///
-    /// Includes all cached model types and persists data to disk.
-    /// Falls back to an in-memory store if the persistent store fails.
-    public static func create() -> ModelContainer {
+    /// Tries persistent storage first, falls back to in-memory. If BOTH fail,
+    /// throws so the caller can report the error (Sentry, analytics, alert)
+    /// before deciding how to terminate — avoids a silent `fatalError`.
+    public static func create() throws -> ModelContainer {
         let schema = Schema([
             CachedClient.self,
             CachedEvent.self,
@@ -31,19 +32,13 @@ public enum SolennixModelContainer {
                 configurations: [configuration]
             )
         } catch {
-            // If persistent storage fails, fall back to in-memory
-            // so the app doesn't crash on launch.
             print("[SolennixModelContainer] Error al crear el contenedor persistente: \(error). Usando almacenamiento en memoria.")
             let fallback = ModelConfiguration(
                 "SolennixCacheFallback",
                 schema: schema,
                 isStoredInMemoryOnly: true
             )
-            do {
-                return try ModelContainer(for: schema, configurations: [fallback])
-            } catch {
-                fatalError("[SolennixModelContainer] No se pudo crear el contenedor de datos: \(error)")
-            }
+            return try ModelContainer(for: schema, configurations: [fallback])
         }
     }
 }
