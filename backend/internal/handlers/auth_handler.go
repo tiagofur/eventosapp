@@ -1307,7 +1307,8 @@ func (h *AuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 	v.Set("grant_type", "authorization_code")
 	v.Set("redirect_uri", h.cfg.AppleRedirectURI)
 
-	resp, err := http.PostForm("https://appleid.apple.com/auth/token", v)
+	appleTokenClient := &http.Client{Timeout: 10 * time.Second}
+	resp, err := appleTokenClient.PostForm("https://appleid.apple.com/auth/token", v)
 	if err != nil {
 		slog.Error("Failed to call Apple token endpoint", "error", err)
 		writeError(w, http.StatusInternalServerError, "Failed to exchange Apple code")

@@ -65,7 +65,7 @@ func scanEventWithClient(row pgx.Row) (models.Event, error) {
 func (r *EventRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Event, error) {
 	query := fmt.Sprintf(`SELECT %s, c.name as client_name, c.phone as client_phone
 		FROM events e LEFT JOIN clients c ON e.client_id = c.id
-		WHERE e.user_id = $1 ORDER BY e.event_date DESC`, eventSelectFields)
+		WHERE e.user_id = $1 ORDER BY e.event_date DESC LIMIT %d`, eventSelectFields, GetAllSafetyLimit)
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err

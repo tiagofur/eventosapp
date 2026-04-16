@@ -22,8 +22,8 @@ func NewPaymentRepo(pool *pgxpool.Pool) *PaymentRepo {
 }
 
 func (r *PaymentRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Payment, error) {
-	query := `SELECT ` + paymentSelectFields + `
-		FROM payments WHERE user_id = $1 ORDER BY payment_date DESC`
+	query := fmt.Sprintf(`SELECT `+paymentSelectFields+`
+		FROM payments WHERE user_id = $1 ORDER BY payment_date DESC LIMIT %d`, GetAllSafetyLimit)
 	return r.queryPayments(ctx, query, userID)
 }
 

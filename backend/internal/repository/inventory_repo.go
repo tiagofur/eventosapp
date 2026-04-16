@@ -24,8 +24,8 @@ func (r *InventoryRepo) CountByUserID(ctx context.Context, userID uuid.UUID) (in
 }
 
 func (r *InventoryRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.InventoryItem, error) {
-	query := `SELECT id, user_id, ingredient_name, current_stock, minimum_stock, unit, unit_cost, type, last_updated
-		FROM inventory WHERE user_id = $1 ORDER BY ingredient_name`
+	query := fmt.Sprintf(`SELECT id, user_id, ingredient_name, current_stock, minimum_stock, unit, unit_cost, type, last_updated
+		FROM inventory WHERE user_id = $1 ORDER BY ingredient_name LIMIT %d`, GetAllSafetyLimit)
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err

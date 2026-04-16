@@ -24,8 +24,8 @@ func (r *ProductRepo) CountByUserID(ctx context.Context, userID uuid.UUID) (int,
 }
 
 func (r *ProductRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Product, error) {
-	query := `SELECT id, user_id, name, category, base_price, recipe, image_url, is_active, created_at, updated_at
-		FROM products WHERE user_id = $1 ORDER BY name`
+	query := fmt.Sprintf(`SELECT id, user_id, name, category, base_price, recipe, image_url, is_active, created_at, updated_at
+		FROM products WHERE user_id = $1 ORDER BY name LIMIT %d`, GetAllSafetyLimit)
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err

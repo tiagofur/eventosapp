@@ -24,9 +24,9 @@ func (r *ClientRepo) CountByUserID(ctx context.Context, userID uuid.UUID) (int, 
 }
 
 func (r *ClientRepo) GetAll(ctx context.Context, userID uuid.UUID) ([]models.Client, error) {
-	query := `SELECT id, user_id, name, phone, email, address, city, notes, photo_url,
+	query := fmt.Sprintf(`SELECT id, user_id, name, phone, email, address, city, notes, photo_url,
 		total_events, total_spent, created_at, updated_at
-		FROM clients WHERE user_id = $1 ORDER BY name`
+		FROM clients WHERE user_id = $1 ORDER BY name LIMIT %d`, GetAllSafetyLimit)
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
