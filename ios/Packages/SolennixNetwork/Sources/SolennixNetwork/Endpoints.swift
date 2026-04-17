@@ -57,6 +57,18 @@ public enum Endpoint {
     public static let equipmentSuggestions = "/events/equipment/suggestions"
     public static let supplySuggestions = "/events/supplies/suggestions"
 
+    public static func eventStaff(_ id: String) -> String {
+        "/events/\(id)/staff"
+    }
+
+    // MARK: - Staff (Personal / Colaboradores)
+
+    public static let staff = "/staff"
+
+    public static func staff(_ id: String) -> String {
+        "/staff/\(id)"
+    }
+
     // MARK: - Products
 
     public static let products = "/products"

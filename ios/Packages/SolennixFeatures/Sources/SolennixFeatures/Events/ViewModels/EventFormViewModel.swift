@@ -93,6 +93,36 @@ public struct FormSupplySuggestion: Identifiable, Hashable, Codable {
     public let unitCost: Double
 }
 
+// MARK: - Selected Staff Assignment
+
+/// Asignacion de staff tal como se usa dentro del form (costo por evento).
+/// Se envia en el body de `PUT /api/events/{id}/items` bajo la key `staff`.
+public struct SelectedStaffAssignment: Identifiable, Hashable {
+    public let id = UUID()
+    public var staffId: String
+    public var staffName: String
+    public var staffRoleLabel: String?
+    public var feeAmount: Double
+    public var roleOverride: String
+    public var notes: String
+
+    public init(
+        staffId: String,
+        staffName: String = "",
+        staffRoleLabel: String? = nil,
+        feeAmount: Double = 0,
+        roleOverride: String = "",
+        notes: String = ""
+    ) {
+        self.staffId = staffId
+        self.staffName = staffName
+        self.staffRoleLabel = staffRoleLabel
+        self.feeAmount = feeAmount
+        self.roleOverride = roleOverride
+        self.notes = notes
+    }
+}
+
 // MARK: - Event Form View Model
 
 @Observable
@@ -132,6 +162,10 @@ public final class EventFormViewModel {
     public var equipmentConflicts: [FormEquipmentConflict] = []
     public var equipmentSuggestions: [FormEquipmentSuggestion] = []
     public var supplySuggestions: [FormSupplySuggestion] = []
+
+    // Staff (Personal / Colaboradores)
+    public var staff: [Staff] = []
+    public var selectedStaff: [SelectedStaffAssignment] = []
 
     // MARK: - UI State
 
@@ -292,13 +326,17 @@ public final class EventFormViewModel {
             async let fetchClients: [Client] = apiClient.getAll(Endpoint.clients)
             async let fetchProducts: [Product] = apiClient.getAll(Endpoint.products)
             async let fetchInventory: [InventoryItem] = apiClient.getAll(Endpoint.inventory)
+            async let fetchStaff: [Staff] = apiClient.getAll(Endpoint.staff)
 
-            let (loadedClients, loadedProducts, loadedInventory) = try await (fetchClients, fetchProducts, fetchInventory)
+            let (loadedClients, loadedProducts, loadedInventory, loadedStaff) = try await (
+                fetchClients, fetchProducts, fetchInventory, fetchStaff
+            )
 
             clients = loadedClients
             products = loadedProducts.filter { $0.isActive }
             equipmentInventory = loadedInventory.filter { $0.type == .equipment }
             supplyInventory = loadedInventory.filter { $0.type == .supply }
+            staff = loadedStaff
         } catch {
             errorMessage = mapError(error)
         }
@@ -387,9 +425,10 @@ public final class EventFormViewModel {
             async let fetchExtras: [EventExtra] = apiClient.get(Endpoint.eventExtras(id))
             async let fetchEquipment: [EventEquipment] = apiClient.get(Endpoint.eventEquipment(id))
             async let fetchSupplies: [EventSupply] = apiClient.get(Endpoint.eventSupplies(id))
+            async let fetchStaff: [EventStaff] = apiClient.get(Endpoint.eventStaff(id))
 
-            let (eventProducts, eventExtras, eventEquipment, eventSupplies) = try await (
-                fetchProducts, fetchExtras, fetchEquipment, fetchSupplies
+            let (eventProducts, eventExtras, eventEquipment, eventSupplies, eventStaff) = try await (
+                fetchProducts, fetchExtras, fetchEquipment, fetchSupplies, fetchStaff
             )
 
             selectedProducts = eventProducts.map { ep in
@@ -428,6 +467,17 @@ public final class EventFormViewModel {
                     unitCost: es.unitCost,
                     source: es.source,
                     excludeCost: es.excludeCost
+                )
+            }
+
+            selectedStaff = eventStaff.map { es in
+                SelectedStaffAssignment(
+                    staffId: es.staffId,
+                    staffName: es.staffName ?? staff.first(where: { $0.id == es.staffId })?.name ?? "",
+                    staffRoleLabel: es.staffRoleLabel ?? staff.first(where: { $0.id == es.staffId })?.roleLabel,
+                    feeAmount: es.feeAmount ?? 0,
+                    roleOverride: es.roleOverride ?? "",
+                    notes: es.notes ?? ""
                 )
             }
 
@@ -536,6 +586,31 @@ public final class EventFormViewModel {
     public func removeSupply(at index: Int) {
         guard selectedSupplies.indices.contains(index) else { return }
         selectedSupplies.remove(at: index)
+    }
+
+    // MARK: - Staff Management
+
+    /// Agrega un colaborador a la lista. Si ya estaba asignado, no lo duplica.
+    public func addStaff(_ item: Staff) {
+        if selectedStaff.contains(where: { $0.staffId == item.id }) { return }
+        selectedStaff.append(
+            SelectedStaffAssignment(
+                staffId: item.id,
+                staffName: item.name,
+                staffRoleLabel: item.roleLabel
+            )
+        )
+    }
+
+    public func removeStaff(at index: Int) {
+        guard selectedStaff.indices.contains(index) else { return }
+        selectedStaff.remove(at: index)
+    }
+
+    /// Suma de costos de staff asignado (se muestra en el panel pero NO afecta
+    /// el total del evento en Phase 1 — es informativo).
+    public var staffCost: Double {
+        selectedStaff.reduce(0) { $0 + $1.feeAmount }
     }
 
     // MARK: - Equipment Conflicts
@@ -668,7 +743,7 @@ public final class EventFormViewModel {
             throw error
         }
 
-        // Update items (products, extras, equipment, supplies)
+        // Update items (products, extras, equipment, supplies, staff)
         let itemsBody: [String: Any] = [
             "products": selectedProducts.map { [
                 "product_id": $0.productId,
@@ -693,7 +768,22 @@ public final class EventFormViewModel {
                 "unit_cost": $0.unitCost,
                 "source": $0.source.rawValue,
                 "exclude_cost": $0.excludeCost
-            ] }
+            ] },
+            "staff": selectedStaff.map { assignment in
+                var dict: [String: Any] = [
+                    "staff_id": assignment.staffId,
+                    "fee_amount": assignment.feeAmount,
+                ]
+                let trimmedRole = assignment.roleOverride.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedRole.isEmpty {
+                    dict["role_override"] = trimmedRole
+                }
+                let trimmedNotes = assignment.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmedNotes.isEmpty {
+                    dict["notes"] = trimmedNotes
+                }
+                return dict
+            }
         ]
 
         let _: EmptyResponse = try await apiClient.put(

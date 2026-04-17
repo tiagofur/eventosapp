@@ -44,6 +44,7 @@ public enum SidebarSection: String, Hashable, CaseIterable {
     case calendar
     case events
     case clients
+    case personnel
     case products
     case inventory
     case settings
@@ -55,6 +56,7 @@ public enum SidebarSection: String, Hashable, CaseIterable {
         case .calendar:   return "calendar"
         case .events:     return "calendar.badge.clock"
         case .clients:    return "person.2.fill"
+        case .personnel:  return "person.3.fill"
         case .products:   return "shippingbox.fill"
         case .inventory:  return "archivebox.fill"
         case .settings:   return "gearshape.fill"
@@ -68,6 +70,7 @@ public enum SidebarSection: String, Hashable, CaseIterable {
         case .calendar:   return "Calendario"
         case .events:     return "Eventos"
         case .clients:    return "Clientes"
+        case .personnel:  return "Personal"
         case .products:   return "Productos"
         case .inventory:  return "Inventario"
         case .settings:   return "Ajustes"

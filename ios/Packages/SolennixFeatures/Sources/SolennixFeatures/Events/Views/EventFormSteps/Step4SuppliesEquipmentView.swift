@@ -16,12 +16,17 @@ struct Step4SuppliesEquipmentView: View {
 
     var body: some View {
         ScrollView {
-            AdaptiveDetailLayout {
-                // Supplies section
-                suppliesSection
-            } right: {
-                // Equipment section
-                equipmentSection
+            VStack(spacing: Spacing.lg) {
+                AdaptiveDetailLayout {
+                    // Supplies section
+                    suppliesSection
+                } right: {
+                    // Equipment section
+                    equipmentSection
+                }
+
+                // Personnel subpanel (below supplies + equipment)
+                Step4PersonnelPanel(viewModel: viewModel)
             }
             .padding(Spacing.md)
         }

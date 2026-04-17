@@ -41,6 +41,8 @@ struct RouteDestination: View {
             EventPhotosDetailView(eventId: id, apiClient: apiClient)
         case .eventContractPreview(let id):
             EventContractPreviewView(eventId: id, apiClient: apiClient)
+        case .eventStaff(let id):
+            EventStaffDetailView(eventId: id, apiClient: apiClient)
 
         // Clients
         case .clientList:
@@ -51,6 +53,14 @@ struct RouteDestination: View {
             ClientFormView(clientId: id, apiClient: apiClient)
         case .quickQuote:
             QuickQuoteView(apiClient: apiClient)
+
+        // Staff (Personal)
+        case .staffList:
+            StaffListView(apiClient: apiClient)
+        case .staffDetail(let id):
+            StaffDetailView(staffId: id, apiClient: apiClient)
+        case .staffForm(let id):
+            StaffFormView(staffId: id, apiClient: apiClient)
 
         // Products
         case .productList:

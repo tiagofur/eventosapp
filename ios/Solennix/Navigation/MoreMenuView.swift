@@ -33,6 +33,15 @@ struct MoreMenuView: View {
                         color: SolennixColors.warning
                     )
                 }
+
+                NavigationLink(value: Route.staffList) {
+                    menuRow(
+                        icon: "person.3.fill",
+                        title: "Personal",
+                        subtitle: "Colaboradores y equipo",
+                        color: SolennixColors.info
+                    )
+                }
             } header: {
                 Text("Catálogo")
                     .font(.caption)

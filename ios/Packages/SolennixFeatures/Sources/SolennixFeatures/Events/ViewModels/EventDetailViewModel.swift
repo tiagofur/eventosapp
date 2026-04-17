@@ -19,6 +19,7 @@ public final class EventDetailViewModel {
     public var supplies: [EventSupply] = []
     public var payments: [Payment] = []
     public var eventPhotos: [String] = []
+    public var eventStaff: [EventStaff] = []
 
     public var isLoading: Bool = false
     public var showDeleteConfirm: Bool = false
@@ -146,6 +147,11 @@ public final class EventDetailViewModel {
                 group.addTask { [apiClient] in
                     if let fetchedClient: Client = try? await apiClient.get(Endpoint.client(fetchedEvent.clientId)) {
                         await MainActor.run { self.client = fetchedClient }
+                    }
+                }
+                group.addTask { [apiClient] in
+                    if let result: [EventStaff] = try? await apiClient.get(Endpoint.eventStaff(eventId)) {
+                        await MainActor.run { self.eventStaff = result }
                     }
                 }
             }

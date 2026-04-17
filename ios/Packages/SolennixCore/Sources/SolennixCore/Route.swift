@@ -19,12 +19,18 @@ public enum Route: Hashable {
     case eventShoppingList(id: String)
     case eventPhotos(id: String)
     case eventContractPreview(id: String)
+    case eventStaff(id: String)
 
     // Clients
     case clientList
     case clientDetail(id: String)
     case clientForm(id: String? = nil)
     case quickQuote
+
+    // MARK: Staff (Personal / Colaboradores)
+    case staffList
+    case staffDetail(id: String)
+    case staffForm(id: String? = nil)
 
     // MARK: Products
     case productList

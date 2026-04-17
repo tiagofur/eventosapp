@@ -494,6 +494,14 @@ public struct EventDetailView: View {
                 route: Route.eventShoppingList(id: eventId)
             )
 
+            summaryNavCard(
+                icon: "person.3.fill",
+                title: "Personal",
+                count: viewModel.eventStaff.count,
+                color: SolennixColors.info,
+                route: Route.eventStaff(id: eventId)
+            )
+
             NavigationLink(value: Route.eventPhotos(id: eventId)) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
