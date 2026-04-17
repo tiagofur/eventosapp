@@ -17,7 +17,7 @@ status: active
 > [!tip] Este es tu punto de entrada diario
 > Abrí este archivo cada mañana para ver en **30 segundos** qué pasa con el producto. Todo lo demás se navega desde acá.
 
-**Última actualización:** 2026-04-16 · cierre de jornada intensa (28 commits).
+**Última actualización:** 2026-04-16 · cierre de jornada intensa (28+ commits). Feature **Personal / Colaboradores Phase 1** liberada en los 4 stacks.
 
 ---
 
@@ -39,6 +39,9 @@ status: active
 
 > [!info] 🚀 FEATURE NUEVA — Portal Cliente MVP entregado
 > Backend + Web live. iOS + Android pendientes (Sprint 8). Ver [[PRD/15_PORTAL_CLIENTE_TRACKER|tracker completo]].
+
+> [!success] 🤝 FEATURE NUEVA — Personal / Colaboradores Phase 1
+> Backend + Web + iOS + Android en paridad. Phase 1 sin gate de plan · Phase 2 (notifs email) = Pro+ · Phase 3 (login Business multi-user) = Business. Hooks Phase 2/3 ya en la migración 042. Ver [[PRD/17_PERSONAL_TRACKER|tracker completo]].
 
 > [!warning] ⏳ BLOQUEANTES externos
 > Stripe Dashboard · App Store Connect · Google Play Console · RevenueCat.

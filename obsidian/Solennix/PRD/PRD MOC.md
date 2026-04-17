@@ -16,6 +16,7 @@
 - 🏛️ [[../00_DASHBOARD|Dashboard Ejecutivo]] — visión global con progreso visual + gantt + pies
 - 📅 [[16_SPRINT_LOG_2026_04_16|Sprint Log de la jornada]] — los 7 sprints + 28 commits detallados
 - 🎁 [[15_PORTAL_CLIENTE_TRACKER|Portal Cliente Tracker]] — feature A estado end-to-end con mermaid de arquitectura
+- 🤝 [[17_PERSONAL_TRACKER|Personal / Colaboradores Tracker]] — feature nueva Phase 1 cerrada · scaffolding Phase 2/3 listo
 
 ---
 

@@ -281,6 +281,36 @@ Visualización + registro de pago por transferencia con approve/reject. Reemplaz
 
 ---
 
+## 13.ter Personal / Colaboradores (Phase 1 — 2026-04-16)
+
+Catálogo per-organizador de colaboradores (fotógrafo, DJ, coordinador, meseros) y asignación a eventos. El mismo colaborador puede cobrar distinto por evento (fee guardado en `event_staff`, no en `staff`).
+
+| Feature | iOS | Android | Web | Backend |
+|---|:-:|:-:|:-:|:-:|
+| CRUD catálogo `/staff` | ✅ | ✅ | ✅ `/staff` | ✅ `/api/staff` |
+| Búsqueda (nombre/rol/contacto) | ✅ | ✅ | ✅ | ✅ `?q=` |
+| Asignar en event form (Step 4) | ✅ | ✅ | ✅ | ✅ `PUT /events/{id}/items` acepta `staff[]` |
+| Ver asignados en EventDetail | ✅ | ✅ | ✅ | ✅ `GET /events/{id}/staff` |
+| Fee opcional por asignación | ✅ | ✅ | ✅ | ✅ `event_staff.fee_amount` |
+| Toggle "notificar por email al asignar" (guarda flag, no envía aún) | ✅ | ✅ | ✅ | ✅ `staff.notification_email_opt_in` |
+
+**Data model (migration 042):**
+- `staff` — catálogo per-user con `name`, `role_label`, `phone`, `email`, `notes`, `notification_email_opt_in`, `invited_user_id` (hook Phase 3, nullable FK a users).
+- `event_staff` — junction con `fee_amount`, `role_override`, `notes`, `notification_sent_at`, `notification_last_result`. UNIQUE `(event_id, staff_id)`.
+
+**Tier gating:** **sin gate en Phase 1 — todos los planes pueden usar el catálogo.** Phase 2 (Pro+) activará el email de notificación al asignar. Phase 3 (Business+) activará login del colaborador + scope de sus eventos + thread con gerente (reusa PRD/12 feature D).
+
+**Navegación:**
+- Web sidebar y iPad sidebar → entrada "Personal" con icono `UserCog` / `person.2.circle` entre Clientes y Productos.
+- iPhone → entra al overflow "Más" (no se agrega como 6º tab).
+- Android → va al overflow del bottom nav (no se agrega como 5º tab).
+
+**Phase 2 scaffolding ya en la migración** (no se implementa aún): columnas `staff.notification_email_opt_in`, `event_staff.notification_sent_at`, `event_staff.notification_last_result`. Phase 2 será goroutine en `UpdateEventItems` que manda email vía Resend cuando `notification_email_opt_in=true`.
+
+**Phase 3 scaffolding ya en la migración**: columna `staff.invited_user_id` (FK nullable a users). Phase 3 agregará migration adicional para `users.role='collaborator'`, `staff_invitations` table, y endpoints de invite/accept.
+
+---
+
 ## 14. Cotización rápida (Quick Quote)
 
 Feature para generar un presupuesto PDF sin crear evento en DB. Útil para prospects.

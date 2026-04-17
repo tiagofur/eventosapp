@@ -283,6 +283,17 @@ Alinear TODOS los límites server-side con `PRD/04` sección 3.
 - [ ] UI tests básicos en ambos (mockeando servicio).
 - [ ] Commit cross-platform con paridad verificada.
 
+### Sprint 8.bis — Personal / Colaboradores Phase 1 (✅ 2026-04-16)
+
+**Estado:** Phase 1 cerrada. Backend + Web + iOS + Android liberados en paridad cross-platform.
+
+- [x] Backend: migration 042 (staff + event_staff con hooks Phase 2/3) + models + repo + handler + router wiring.
+- [x] Web: `/staff` (list/form/detail) + panel Personal dentro del Step 4 de EventForm + nav sidebar.
+- [x] iOS: Staff module en `SolennixFeatures` + Step4PersonnelPanel + EventStaffDetailView + nav iPad/overflow iPhone.
+- [x] Android: `feature:staff` module + Room migration + panel en EventFormScreen + overflow nav.
+- [ ] Phase 2 (Pro+): notificación email al asignar — scaffold listo, goroutine pendiente.
+- [ ] Phase 3 (Business): login colaborador + scope eventos + thread con gerente (PRD/12 D).
+
 ### Sprint 9 — PRD/12 feature B: Pagos del cliente (visualización + registro por transferencia)
 
 **Decisión 2026-04-16:** reemplazamos el flujo "botón Pagar con Stripe" por registro de pago por transferencia con approve/reject. Solennix NO procesa pagos; el cliente reporta y el organizador aprueba.

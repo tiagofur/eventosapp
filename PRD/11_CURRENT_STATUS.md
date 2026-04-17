@@ -1,7 +1,7 @@
 # Current Status — Solennix
 
-**Last Updated:** 2026-04-16 (cierre de Sprint 7.A + Portal Cliente MVP).
-**Status:** 25 commits pusheados hoy. Audit 2026-04-16 cerrado (30/38 findings). Portal Cliente MVP live en backend + web. Pricing foundation listo, espera dashboards externos.
+**Last Updated:** 2026-04-16 (cierre de Sprint 7.A + Portal Cliente MVP + Personal/Colaboradores Phase 1).
+**Status:** 25+ commits pusheados hoy. Audit 2026-04-16 cerrado (30/38 findings). Portal Cliente MVP live en backend + web. Pricing foundation listo, espera dashboards externos. **Feature "Personal / Colaboradores" Phase 1 cerrada en los 4 stacks** (backend + web + iOS + Android) con hooks para Phase 2 (notifs Pro+) y Phase 3 (Business multi-user) ya en la migración 042 — pending deploy manual del backend + migración en la DB de producción.
 
 ---
 
