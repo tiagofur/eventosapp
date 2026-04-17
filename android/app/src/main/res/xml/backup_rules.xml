@@ -3,6 +3,5 @@
     <include domain="sharedpref" path="." />
     <include domain="database" path="." />
     <exclude domain="sharedpref" path="solennix_secure_prefs.xml" />
-    <exclude domain="file" path="cache/" />
-    <exclude domain="file" path="code_cache/" />
+
 </full-backup-content>
