@@ -60,14 +60,14 @@ describe('adminService', () => {
   });
 
   it('upgradeUser calls the correct endpoint with custom plan and date', async () => {
-    const mockUser = { id: '1', plan: 'premium' };
+    const mockUser = { id: '1', plan: 'business' };
     const expiresAt = '2025-01-01';
     vi.mocked(api.put).mockResolvedValue(mockUser);
 
-    const result = await adminService.upgradeUser('1', 'premium', expiresAt);
+    const result = await adminService.upgradeUser('1', 'business', expiresAt);
 
     expect(api.put).toHaveBeenCalledWith('/admin/users/1/upgrade', {
-      plan: 'premium',
+      plan: 'business',
       expires_at: expiresAt,
     });
     expect(result).toEqual(mockUser);

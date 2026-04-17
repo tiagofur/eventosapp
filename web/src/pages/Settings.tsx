@@ -59,7 +59,19 @@ const SUB_STATUS_LABEL: Record<string, { text: string; color: string }> = {
   trialing: { text: "Periodo de prueba", color: "text-info bg-info/10" },
 };
 
-const PROVIDER_LABEL: Record<string, { badge: string; cancelInstructions: string }> = {
+// Plan label mapping. 'premium' is a legacy DB value kept by migration 040
+// and always rendered as "Pro" — never surface the word "Premium".
+const PLAN_LABEL: Record<string, string> = {
+  basic: "Básico",
+  pro: "Pro",
+  business: "Business",
+  premium: "Pro",
+};
+
+// Fallback provider copy — used only when talking to an older backend that
+// did not yet return `source_badge` and `cancel_instructions`. Once the
+// backend is deployed with those fields, the server strings take over.
+const FALLBACK_PROVIDER_LABEL: Record<string, { badge: string; cancelInstructions: string }> = {
   stripe: {
     badge: "Suscrito vía Web",
     cancelInstructions: "Podés gestionar o cancelar tu suscripción desde el portal de pagos web.",
@@ -72,6 +84,16 @@ const PROVIDER_LABEL: Record<string, { badge: string; cancelInstructions: string
     badge: "Suscrito vía Google Play",
     cancelInstructions: "Tu suscripción fue realizada desde Android. Para cancelarla, abrí Google Play Store > Pagos y suscripciones.",
   },
+};
+
+/** Formats the renewal price when the backend exposes it (Stripe provider). */
+const formatSubPrice = (sub: { amount_cents?: number | null; currency?: string | null; billing_interval?: string | null } | null | undefined) => {
+  if (!sub?.amount_cents || !sub?.currency) return null;
+  const amount = (sub.amount_cents / 100).toFixed(2);
+  const interval = sub.billing_interval === "year" ? "/año"
+    : sub.billing_interval === "month" ? "/mes"
+    : "";
+  return `${sub.currency.toUpperCase()} ${amount}${interval}`;
 };
 
 export const Settings: React.FC = () => {
@@ -770,13 +792,13 @@ export const Settings: React.FC = () => {
                     <div className="inline-flex items-center gap-2 bg-surface-alt px-3 py-1 rounded-full text-xs font-medium text-text-secondary">
                       Plan Actual
                     </div>
-                    <h2 className="text-4xl font-bold tracking-tight capitalize text-text">
-                      {profile?.plan || "Básico"}
+                    <h2 className="text-4xl font-bold tracking-tight text-text">
+                      {PLAN_LABEL[profile?.plan ?? ""] ?? "Básico"}
                     </h2>
                     <p className="text-text-secondary font-medium text-sm max-w-md">
-                      {profile?.plan === "pro"
-                        ? "Disfrutas de acceso ilimitado a todas nuestras herramientas profesionales."
-                        : "Potencia tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
+                      {profile?.plan === "pro" || profile?.plan === "business" || profile?.plan === "premium"
+                        ? "Disfrutás de acceso ilimitado a todas nuestras herramientas profesionales."
+                        : "Potenciá tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
                     </p>
 
                     {/* Subscription details */}
@@ -790,9 +812,16 @@ export const Settings: React.FC = () => {
                             </span>
                           );
                         })()}
-                        {subStatus.subscription.provider && PROVIDER_LABEL[subStatus.subscription.provider] && (
+                        {subStatus.subscription.provider && (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-text-secondary bg-surface-alt">
-                            {PROVIDER_LABEL[subStatus.subscription.provider].badge}
+                            {subStatus.subscription.source_badge
+                              || FALLBACK_PROVIDER_LABEL[subStatus.subscription.provider]?.badge
+                              || subStatus.subscription.provider}
+                          </span>
+                        )}
+                        {formatSubPrice(subStatus.subscription) && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-text-secondary bg-surface-alt">
+                            {formatSubPrice(subStatus.subscription)}
                           </span>
                         )}
                         {subStatus.subscription.current_period_end && (
@@ -811,17 +840,22 @@ export const Settings: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Cross-platform cancellation instructions */}
-                    {subStatus?.subscription?.provider && subStatus.subscription.provider !== "stripe" && PROVIDER_LABEL[subStatus.subscription.provider] && (
+                    {/* Cross-platform cancellation instructions. Prefer the
+                        server-authored string; fall back to the hardcoded map
+                        only against older backend builds. */}
+                    {subStatus?.subscription?.provider && subStatus.subscription.provider !== "stripe" && (
                       <div className="mt-2 p-3 bg-info/10 border border-info/30 rounded-xl text-sm text-info flex items-start gap-2">
                         <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                        <span>{PROVIDER_LABEL[subStatus.subscription.provider].cancelInstructions}</span>
+                        <span>
+                          {subStatus.subscription.cancel_instructions
+                            || FALLBACK_PROVIDER_LABEL[subStatus.subscription.provider]?.cancelInstructions}
+                        </span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    {profile?.plan !== "pro" && (
+                    {profile?.plan === "basic" && (
                       <Link
                         to="/pricing"
                         className="bg-primary text-white px-6 py-3 rounded-md font-medium text-center shadow-sm hover:bg-primary-dark transition-colors"

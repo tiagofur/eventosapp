@@ -26,16 +26,11 @@ export type Json =
     | Json[]
 
 // ===== User =====
-// El spec define plan como enum [basic, pro]. El Web tenía 'basic' | 'premium'
-// — el valor 'premium' es legacy de cuando existían 3 tiers; hoy se usa
-// solamente para gifts (tracked en el backend como campos separados). Se
-// mantiene el override acá hasta que el spec o la UI se reconcilien; cambiar
-// uno u otro requiere refactor cross-platform (ver engram memory
-// 'Simplified Subscription Plans to Basic and Premium across platforms').
-type UserSchema = components['schemas']['User'];
-export type User = Omit<UserSchema, 'plan'> & {
-    plan: 'basic' | 'premium'
-}
+// Plan ladder aligned with backend/Stripe/RevenueCat: basic · pro · business.
+// 'premium' is a legacy DB value retained by migration 040 for pre-existing
+// rows; treat it as a paid-tier alias of 'pro' in UI (never render the word
+// "Premium"). See engram memory 'Plan label parity: use Pro everywhere'.
+export type User = components['schemas']['User']
 
 export type UserInsert = Omit<User, 'id' | 'created_at' | 'updated_at' | 'role'>
 export type UserUpdate = Partial<UserInsert>

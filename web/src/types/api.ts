@@ -1154,8 +1154,11 @@ export interface components {
             push_enabled?: boolean | null;
             push_event_reminder?: boolean | null;
             push_payment_received?: boolean | null;
-            /** @enum {string} */
-            plan: "basic" | "pro";
+            /**
+             * @description Current plan. 'premium' is a legacy value retained for backward compat.
+             * @enum {string}
+             */
+            plan: "basic" | "pro" | "business" | "premium";
             /** @enum {string} */
             role: "user" | "admin";
             stripe_customer_id?: string | null;
@@ -1252,13 +1255,26 @@ export interface components {
             status: "active" | "past_due" | "canceled" | "trialing";
             /** @enum {string} */
             provider: "stripe" | "apple" | "google";
+            /** @description Server-authored short label in Spanish identifying the subscription source (e.g. "Suscrito vía App Store"). Clients render this verbatim. */
+            source_badge: string;
+            /** @description Server-authored localized instructions explaining where the user must go to cancel, based on the origin provider. Single source of truth so iOS/Android/Web stay in sync. */
+            cancel_instructions: string;
             /** Format: date-time */
             current_period_end?: string | null;
             cancel_at_period_end: boolean;
+            /** @description Renewal amount in minor units (e.g. cents). Populated only when provider is stripe; mobile stores (apple/google) expose price at purchase time. */
+            amount_cents?: number | null;
+            /** @description ISO 4217 lowercase (e.g. "usd", "mxn"). Populated only for stripe provider. */
+            currency?: string | null;
+            /** @description Stripe recurring interval — "month" or "year". Null for apple/google. */
+            billing_interval?: string | null;
         };
         SubscriptionStatusResponse: {
-            /** @enum {string} */
-            plan: "basic" | "pro";
+            /**
+             * @description Current plan. 'premium' is a legacy value retained for backward compat.
+             * @enum {string}
+             */
+            plan: "basic" | "pro" | "business" | "premium";
             has_stripe_account: boolean;
             subscription?: components["schemas"]["SubscriptionInfo"] | null;
         };
@@ -1772,6 +1788,9 @@ export interface components {
             total_users: number;
             basic_users: number;
             pro_users: number;
+            /** @description Users on the Business tier (added in migration 040). */
+            business_users: number;
+            /** @description Legacy 'premium' plan rows. Zero in practice after migration 037; kept for backward compat. */
             premium_users: number;
             total_events: number;
             total_clients: number;
@@ -1788,8 +1807,11 @@ export interface components {
             email: string;
             name: string;
             business_name?: string | null;
-            /** @enum {string} */
-            plan: "basic" | "pro" | "premium";
+            /**
+             * @description Current plan. 'premium' is a legacy value retained for backward compat.
+             * @enum {string}
+             */
+            plan: "basic" | "pro" | "business" | "premium";
             role: string;
             stripe_customer_id?: string | null;
             has_paid_subscription: boolean;
@@ -1814,10 +1836,10 @@ export interface components {
         };
         AdminUpgradeRequest: {
             /**
-             * @description Target plan. Defaults to pro when omitted or empty.
+             * @description Target plan. Defaults to pro when omitted or empty. 'premium' is not accepted — legacy rows remain but new grants use pro or business.
              * @enum {string}
              */
-            plan?: "basic" | "pro" | "premium";
+            plan?: "basic" | "pro" | "business";
             /**
              * Format: date
              * @description Optional gift expiry date in YYYY-MM-DD format.

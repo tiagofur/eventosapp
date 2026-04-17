@@ -52,8 +52,13 @@ export const AdminDashboard: React.FC = () => {
     return sorted.slice(0, 5);
   }, [usersData]);
 
-  // Derived metrics
-  const paidUsers = (stats?.pro_users ?? 0) + (stats?.premium_users ?? 0);
+  // Derived metrics — sum every paid tier. Legacy 'premium' rows are
+  // included so pre-migration-037 data still counts as paid; expected 0 in
+  // practice.
+  const paidUsers =
+    (stats?.pro_users ?? 0) +
+    (stats?.business_users ?? 0) +
+    (stats?.premium_users ?? 0);
   const conversionRate =
     stats && stats.total_users > 0
       ? ((paidUsers / stats.total_users) * 100).toFixed(1)
@@ -73,15 +78,21 @@ export const AdminDashboard: React.FC = () => {
   const planDistribution = stats
     ? [
         {
-          name: "Basic",
+          name: "Básico",
           value: stats.basic_users,
           color: "var(--color-text-tertiary)",
         },
         { name: "Pro", value: stats.pro_users, color: "var(--color-primary)" },
         {
-          name: "Premium",
-          value: stats.premium_users,
+          name: "Business",
+          value: stats.business_users,
           color: "var(--color-info)",
+        },
+        // Legacy 'premium' rows are hidden when zero so the chart stays clean.
+        {
+          name: "Premium (legacy)",
+          value: stats.premium_users,
+          color: "var(--color-warning)",
         },
       ].filter((d) => d.value > 0)
     : [];
@@ -110,8 +121,19 @@ export const AdminDashboard: React.FC = () => {
     const styles: Record<string, string> = {
       basic: "bg-surface-alt text-text-secondary",
       pro: "bg-primary/10 text-primary",
-      premium: "bg-primary/15 text-primary-dark",
+      business: "bg-primary/15 text-primary-dark",
+      // Legacy rows render with the same palette as 'pro' since they are
+      // treated as a paid-tier alias (never surfaced as "Premium" elsewhere).
+      premium: "bg-primary/10 text-primary",
     };
+    // Legacy 'premium' rows display as "Pro" — never render the word "Premium".
+    const labels: Record<string, string> = {
+      basic: "Básico",
+      pro: "Pro",
+      business: "Business",
+      premium: "Pro",
+    };
+    const isPaid = plan === "pro" || plan === "business" || plan === "premium";
     return (
       <span
         className={clsx(
@@ -119,10 +141,8 @@ export const AdminDashboard: React.FC = () => {
           styles[plan] || styles.basic,
         )}
       >
-        {(plan === "pro" || plan === "premium") && (
-          <Crown className="h-3 w-3" />
-        )}
-        {plan.charAt(0).toUpperCase() + plan.slice(1)}
+        {isPaid && <Crown className="h-3 w-3" />}
+        {labels[plan] || plan}
       </span>
     );
   };

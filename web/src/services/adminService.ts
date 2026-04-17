@@ -5,6 +5,8 @@ export interface PlatformStats {
   total_users: number;
   basic_users: number;
   pro_users: number;
+  business_users: number;
+  /** Legacy 'premium' plan rows; zero in practice after migration 037. */
   premium_users: number;
   total_events: number;
   total_clients: number;
