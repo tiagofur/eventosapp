@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
+import com.creapolis.solennix.core.data.repository.StaffRepository
 import com.creapolis.solennix.core.data.util.ImageCompressor
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
@@ -16,6 +17,7 @@ import com.creapolis.solennix.core.model.EventEquipment
 import com.creapolis.solennix.core.model.EventExtra
 import com.creapolis.solennix.core.model.EventPhoto
 import com.creapolis.solennix.core.model.EventProduct
+import com.creapolis.solennix.core.model.EventStaff
 import com.creapolis.solennix.core.model.EventSupply
 import com.creapolis.solennix.core.model.Payment
 import com.creapolis.solennix.core.model.User
@@ -48,6 +50,7 @@ data class EventDetailUiState(
     val extras: List<EventExtra> = emptyList(),
     val equipment: List<EventEquipment> = emptyList(),
     val supplies: List<EventSupply> = emptyList(),
+    val staff: List<EventStaff> = emptyList(),
     val payments: List<Payment> = emptyList(),
     val photos: List<EventPhoto> = emptyList(),
     val totalPaid: Double = 0.0,
@@ -63,6 +66,7 @@ class EventDetailViewModel @Inject constructor(
     private val eventRepository: EventRepository,
     private val clientRepository: ClientRepository,
     private val paymentRepository: PaymentRepository,
+    private val staffRepository: StaffRepository,
     private val apiService: ApiService,
     private val authManager: AuthManager,
     private val eventDayNotificationManager: EventDayNotificationManager,
@@ -102,14 +106,16 @@ class EventDetailViewModel @Inject constructor(
             _photos,
             _isPhotosLoading,
             _isPhotoUploading,
-            ::Triple
-        ),
+            staffRepository.getEventStaff(eventId)
+        ) { photos, isPhotosLoading, isPhotoUploading, staff ->
+            PhotosAndStaff(photos, isPhotosLoading, isPhotoUploading, staff)
+        },
         combine(
             _isLoading,
             _errorMessage,
             ::Pair
         )
-    ) { (event, client), (products, extras), (payments, equipment, supplies), (photos, isPhotosLoading, isPhotoUploading), (isLoading, errorMessage) ->
+    ) { (event, client), (products, extras), (payments, equipment, supplies), photosAndStaff, (isLoading, errorMessage) ->
         EventDetailUiState(
             event = event,
             client = client,
@@ -117,13 +123,14 @@ class EventDetailViewModel @Inject constructor(
             extras = extras,
             equipment = equipment,
             supplies = supplies,
+            staff = photosAndStaff.staff,
             payments = payments,
-            photos = photos,
+            photos = photosAndStaff.photos,
             totalPaid = payments.sumOf { it.amount },
             currentUser = authManager.currentUser.value,
             isLoading = isLoading,
-            isPhotosLoading = isPhotosLoading,
-            isPhotoUploading = isPhotoUploading,
+            isPhotosLoading = photosAndStaff.isPhotosLoading,
+            isPhotoUploading = photosAndStaff.isPhotoUploading,
             errorMessage = errorMessage
         )
     }.stateIn(
@@ -171,6 +178,13 @@ class EventDetailViewModel @Inject constructor(
 
                 // Load equipment and supplies from API
                 loadEquipmentAndSupplies()
+
+                // Load staff assignments — non-fatal, UI cae al cache local
+                try {
+                    staffRepository.syncEventStaff(eventId)
+                } catch (_: Exception) {
+                    // El Flow ya emite lo que haya en Room
+                }
 
                 // Auto-mostrar notificacion persistente si el evento es hoy y confirmado
                 checkAndShowEventDayNotification(event, _client.value)
@@ -387,3 +401,15 @@ class EventDetailViewModel @Inject constructor(
         }
     }
 }
+
+/**
+ * Tuple interna para el `combine` de 5 fuentes. No queremos cambiar la
+ * estructura histórica del combine — lo más barato es extender la rama de
+ * photos con staff y mantener los otros grupos estables.
+ */
+private data class PhotosAndStaff(
+    val photos: List<EventPhoto>,
+    val isPhotosLoading: Boolean,
+    val isPhotoUploading: Boolean,
+    val staff: List<EventStaff>
+)

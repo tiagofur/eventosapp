@@ -1206,3 +1206,145 @@ EL CLIENTE se obliga a realizar los pagos en los plazos acordados y a proporcion
 
 Leído el presente contrato, ambas partes lo firman de conformidad."""
 
+// ==================== Event Staff Screen ====================
+//
+// Read-only: lista del personal asignado al evento. El form (add/edit/remove
+// assignments) vive en EventFormScreen.StaffAssignmentPanel — desde este
+// detalle el flujo es "ver → tocar Editar en el topbar → modificar → guardar".
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EventStaffScreen(
+    viewModel: EventDetailViewModel,
+    onNavigateBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    Scaffold(
+        topBar = {
+            SolennixTopAppBar(
+                title = { Text("Personal asignado") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        val staff = uiState.staff
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (staff.isEmpty()) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Sin personal asignado",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            } else {
+                val totalFee = staff.sumOf { it.feeAmount ?: 0.0 }
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = SolennixTheme.colors.primary.copy(alpha = 0.08f)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Text(
+                            "${staff.size} " + if (staff.size == 1) "colaborador asignado" else "colaboradores asignados",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = SolennixTheme.colors.primaryText,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        if (totalFee > 0.0) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "Costo total: ${totalFee.asMXN()}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = SolennixTheme.colors.primary
+                            )
+                        }
+                    }
+                }
+
+                staff.forEach { assignment ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        assignment.staffName ?: "Colaborador",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                    val role = assignment.roleOverride?.takeIf { it.isNotBlank() }
+                                        ?: assignment.staffRoleLabel?.takeIf { it.isNotBlank() }
+                                    if (!role.isNullOrBlank()) {
+                                        Text(
+                                            role,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = SolennixTheme.colors.primary
+                                        )
+                                    }
+                                }
+                                assignment.feeAmount?.let { fee ->
+                                    Surface(
+                                        shape = MaterialTheme.shapes.small,
+                                        color = SolennixTheme.colors.primary.copy(alpha = 0.12f)
+                                    ) {
+                                        Text(
+                                            fee.asMXN(),
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = SolennixTheme.colors.primary
+                                        )
+                                    }
+                                }
+                            }
+
+                            val contact = listOfNotNull(
+                                assignment.staffPhone?.takeIf { it.isNotBlank() },
+                                assignment.staffEmail?.takeIf { it.isNotBlank() }
+                            ).joinToString(" · ")
+                            if (contact.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    contact,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SolennixTheme.colors.secondaryText
+                                )
+                            }
+
+                            if (!assignment.notes.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    assignment.notes,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SolennixTheme.colors.secondaryText
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

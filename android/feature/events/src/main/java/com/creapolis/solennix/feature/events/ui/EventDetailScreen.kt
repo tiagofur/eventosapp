@@ -82,6 +82,7 @@ fun EventDetailScreen(
     onShoppingListClick: (String) -> Unit = {},
     onPhotosClick: (String) -> Unit = {},
     onContractPreviewClick: (String) -> Unit = {},
+    onStaffClick: (String) -> Unit = {},
     sharedElementKey: String? = null
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -295,7 +296,8 @@ fun EventDetailScreen(
                                 onPhotosClick = {
                                     viewModel.loadPhotos()
                                     showPhotoGallery = true
-                                }
+                                },
+                                onStaffClick = { onStaffClick(event.id) }
                             )
                         }
                     )
@@ -1346,7 +1348,8 @@ fun DocumentActionsGrid(
     context: android.content.Context,
     onSharePdf: (File) -> Unit,
     onChecklistClick: () -> Unit = {},
-    onPhotosClick: () -> Unit = {}
+    onPhotosClick: () -> Unit = {},
+    onStaffClick: () -> Unit = {}
 ) {
     val event = uiState.event ?: return
     val client = uiState.client ?: Client(
@@ -1542,6 +1545,20 @@ fun DocumentActionsGrid(
                 modifier = Modifier.weight(1f),
                 onClick = onPhotosClick
             )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // Fourth row — Personal asignado (Phase 1)
+        Row(modifier = Modifier.fillMaxWidth()) {
+            ActionButton(
+                icon = Icons.Default.Group,
+                label = "Personal",
+                modifier = Modifier.weight(1f),
+                onClick = onStaffClick
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 

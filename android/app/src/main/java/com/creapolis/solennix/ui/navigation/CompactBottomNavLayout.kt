@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Settings
@@ -64,6 +65,7 @@ import com.creapolis.solennix.feature.events.ui.EventPaymentsScreen
 import com.creapolis.solennix.feature.events.ui.EventPhotosScreen
 import com.creapolis.solennix.feature.events.ui.EventProductsScreen
 import com.creapolis.solennix.feature.events.ui.EventShoppingListScreen
+import com.creapolis.solennix.feature.events.ui.EventStaffScreen
 import com.creapolis.solennix.feature.events.ui.EventSuppliesScreen
 import com.creapolis.solennix.feature.inventory.ui.InventoryDetailScreen
 import com.creapolis.solennix.feature.inventory.ui.InventoryFormScreen
@@ -83,6 +85,9 @@ import com.creapolis.solennix.feature.settings.ui.SettingsScreen
 import com.creapolis.solennix.feature.settings.ui.SubscriptionScreen
 import com.creapolis.solennix.feature.settings.ui.EventFormLinksScreen
 import com.creapolis.solennix.feature.settings.ui.TermsScreen
+import com.creapolis.solennix.feature.staff.ui.StaffDetailScreen
+import com.creapolis.solennix.feature.staff.ui.StaffFormScreen
+import com.creapolis.solennix.feature.staff.ui.StaffListScreen
 
 @Composable
 fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
@@ -198,6 +203,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 MoreMenuScreen(
                     onProductsClick = { navController.navigate("products") },
                     onInventoryClick = { navController.navigate("inventory") },
+                    onStaffClick = { navController.navigate("staff") },
                     onEventFormLinksClick = { navController.navigate("event_form_links") },
                     onSettingsClick = { navController.navigate("settings") }
                 )
@@ -345,6 +351,43 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 )
             }
 
+            // ===== Staff (Personal / Colaboradores) =====
+            composable("staff") {
+                StaffListScreen(
+                    viewModel = hiltViewModel(),
+                    onStaffClick = { id -> navController.navigate("staff_detail/$id") },
+                    onAddStaffClick = { navController.navigate("staff_form") },
+                    onSearchClick = { navController.navigate(buildSearchRoute()) }
+                )
+            }
+            composable("staff_detail/{staffId}") {
+                StaffDetailScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() },
+                    onEditClick = { id -> navController.navigate("staff_form?staffId=$id") },
+                    onSearchClick = { navController.navigate(buildSearchRoute()) }
+                )
+            }
+            composable("staff_form?staffId={staffId}", arguments = listOf(navArgument("staffId") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            })) {
+                StaffFormScreen(
+                    viewModel = hiltViewModel(),
+                    onSearchClick = { navController.navigate(buildSearchRoute()) },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+            // `staff_form` sin query string — alias del anterior para el FAB del list screen
+            composable("staff_form") {
+                StaffFormScreen(
+                    viewModel = hiltViewModel(),
+                    onSearchClick = { navController.navigate(buildSearchRoute()) },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
             composable("quick_quote?clientId={clientId}", arguments = listOf(navArgument("clientId") {
                 type = NavType.StringType
                 nullable = true
@@ -373,7 +416,8 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onSuppliesClick = { id -> navController.navigate("event_supplies/$id") },
                     onShoppingListClick = { id -> navController.navigate("event_shopping/$id") },
                     onPhotosClick = { id -> navController.navigate("event_photos/$id") },
-                    onContractPreviewClick = { id -> navController.navigate("event_contract/$id") }
+                    onContractPreviewClick = { id -> navController.navigate("event_contract/$id") },
+                    onStaffClick = { id -> navController.navigate("event_staff/$id") }
                 )
             }
             composable("event_finances/{eventId}") {
@@ -393,6 +437,9 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
             composable("event_supplies/{eventId}") {
                 EventSuppliesScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
+            }
+            composable("event_staff/{eventId}") {
+                EventStaffScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
             }
             composable("event_shopping/{eventId}") {
                 EventShoppingListScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
@@ -430,6 +477,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
 fun MoreMenuScreen(
     onProductsClick: () -> Unit,
     onInventoryClick: () -> Unit,
+    onStaffClick: () -> Unit,
     onEventFormLinksClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
@@ -452,6 +500,12 @@ fun MoreMenuScreen(
                 subtitle = "Stock y abastecimiento",
                 icon = Icons.Default.Inventory2,
                 onClick = onInventoryClick
+            )
+            MenuOptionItem(
+                title = "Personal",
+                subtitle = "Colaboradores y tarifas",
+                icon = Icons.Default.Group,
+                onClick = onStaffClick
             )
             MenuOptionItem(
                 title = "Enlaces de Formulario",

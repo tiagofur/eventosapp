@@ -10,6 +10,7 @@ import com.creapolis.solennix.core.database.dao.EventItemDao
 import com.creapolis.solennix.core.database.dao.InventoryDao
 import com.creapolis.solennix.core.database.dao.PaymentDao
 import com.creapolis.solennix.core.database.dao.ProductDao
+import com.creapolis.solennix.core.database.dao.StaffDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,7 +31,11 @@ object DatabaseModule {
             SolennixDatabase::class.java,
             DATABASE_NAME
         )
-            .addMigrations(SolennixDatabase.MIGRATION_4_5, SolennixDatabase.MIGRATION_5_6)
+            .addMigrations(
+                SolennixDatabase.MIGRATION_4_5,
+                SolennixDatabase.MIGRATION_5_6,
+                SolennixDatabase.MIGRATION_6_7
+            )
             .build()
     }
 
@@ -51,4 +56,7 @@ object DatabaseModule {
 
     @Provides
     fun provideEventItemDao(database: SolennixDatabase): EventItemDao = database.eventItemDao()
+
+    @Provides
+    fun provideStaffDao(database: SolennixDatabase): StaffDao = database.staffDao()
 }

@@ -138,6 +138,7 @@ dependencies {
     implementation(project(":feature:products"))
     implementation(project(":feature:inventory"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:staff"))
     implementation(project(":feature:events"))
     implementation(project(":widget"))
 

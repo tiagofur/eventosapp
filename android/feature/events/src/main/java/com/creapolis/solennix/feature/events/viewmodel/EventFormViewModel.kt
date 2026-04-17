@@ -13,6 +13,7 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.data.repository.StaffRepository
 import com.creapolis.solennix.core.designsystem.event.UiEvent
 import com.creapolis.solennix.core.model.*
 import com.creapolis.solennix.core.network.ApiService
@@ -35,6 +36,7 @@ class EventFormViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
     private val productRepository: ProductRepository,
     private val inventoryRepository: InventoryRepository,
+    private val staffRepository: StaffRepository,
     private val apiService: ApiService,
     private val planLimitsManager: PlanLimitsManager,
     private val authManager: AuthManager,
@@ -154,6 +156,16 @@ class EventFormViewModel @Inject constructor(
     val supplySuggestions: StateFlow<List<SupplySuggestion>> = _supplySuggestions.asStateFlow()
     private val _availableSupplies = MutableStateFlow<List<InventoryItem>>(emptyList())
     val availableSupplies: StateFlow<List<InventoryItem>> = _availableSupplies.asStateFlow()
+
+    // Step 5b: Staff (Personal asignado)
+    //
+    // Se renderiza dentro de la página de equipamiento/supplies. No es un
+    // step propio en el pager porque Phase 1 no quiere subirle fricción al
+    // formulario. El fee_amount vive por asignación (no en el Staff) porque
+    // un mismo colaborador puede cobrar distinto por evento.
+    val selectedStaff = mutableStateListOf<SelectedStaffAssignment>()
+    private val _availableStaff = MutableStateFlow<List<Staff>>(emptyList())
+    val availableStaff: StateFlow<List<Staff>> = _availableStaff.asStateFlow()
 
     // Step 6: Location & Details (moved to GeneralInfo in UI)
     var location by mutableStateOf("")
@@ -324,6 +336,7 @@ class EventFormViewModel @Inject constructor(
 
     init {
         loadProductsCatalog()
+        loadStaffCatalog()
         viewModelScope.launch {
             inventoryRepository.getInventoryItems().collect { items ->
                 _availableEquipment.value = items.filter { it.type == InventoryType.EQUIPMENT }
@@ -486,6 +499,31 @@ class EventFormViewModel @Inject constructor(
                     _uiEvents.tryEmit(
                         UiEvent.Error(
                             message = "No se pudieron cargar los insumos del evento.",
+                            retryActionId = null,
+                        )
+                    )
+                }
+
+                // Load staff assignments — non-fatal
+                try {
+                    val eventStaff = staffRepository.syncEventStaff(id)
+                    selectedStaff.clear()
+                    eventStaff.forEach { assignment ->
+                        selectedStaff.add(
+                            SelectedStaffAssignment(
+                                staffId = assignment.staffId,
+                                feeAmount = assignment.feeAmount,
+                                roleOverride = assignment.roleOverride ?: "",
+                                notes = assignment.notes ?: "",
+                                staffName = assignment.staffName,
+                                staffRoleLabel = assignment.staffRoleLabel
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    _uiEvents.tryEmit(
+                        UiEvent.Error(
+                            message = "No se pudo cargar el personal asignado.",
                             retryActionId = null,
                         )
                     )
@@ -779,6 +817,63 @@ class EventFormViewModel @Inject constructor(
         }
     }
 
+    // ===== Staff helpers =====
+
+    private fun loadStaffCatalog() {
+        viewModelScope.launch {
+            staffRepository.getStaff().collect { list ->
+                _availableStaff.value = list
+            }
+        }
+        // Refresh remoto — non-fatal
+        viewModelScope.launch {
+            try {
+                staffRepository.syncStaff()
+            } catch (_: Exception) {
+                // Staff may fail to sync — UI cae al cache
+            }
+        }
+    }
+
+    fun addStaffAssignment(staff: Staff) {
+        if (selectedStaff.any { it.staffId == staff.id }) return
+        selectedStaff.add(
+            SelectedStaffAssignment(
+                staffId = staff.id,
+                feeAmount = null,
+                roleOverride = "",
+                notes = "",
+                staffName = staff.name,
+                staffRoleLabel = staff.roleLabel
+            )
+        )
+    }
+
+    fun removeStaffAssignment(staffId: String) {
+        selectedStaff.removeAll { it.staffId == staffId }
+    }
+
+    fun updateStaffFee(staffId: String, fee: Double?) {
+        val index = selectedStaff.indexOfFirst { it.staffId == staffId }
+        if (index < 0) return
+        selectedStaff[index] = selectedStaff[index].copy(feeAmount = fee)
+    }
+
+    fun updateStaffRoleOverride(staffId: String, role: String) {
+        val index = selectedStaff.indexOfFirst { it.staffId == staffId }
+        if (index < 0) return
+        selectedStaff[index] = selectedStaff[index].copy(roleOverride = role)
+    }
+
+    fun updateStaffNotes(staffId: String, notes: String) {
+        val index = selectedStaff.indexOfFirst { it.staffId == staffId }
+        if (index < 0) return
+        selectedStaff[index] = selectedStaff[index].copy(notes = notes)
+    }
+
+    /** Costo total del personal — suma de `feeAmount` (null cuenta como 0). */
+    val costStaff: Double get() = selectedStaff.sumOf { it.feeAmount ?: 0.0 }
+
     fun addSupplyFromSuggestion(suggestion: SupplySuggestion) {
         val existing = selectedSupplies.find { it.inventoryId == suggestion.id }
         if (existing == null) {
@@ -910,13 +1005,21 @@ class EventFormViewModel @Inject constructor(
                     eventRepository.createEvent(eventData)
                 }
 
-                // Save all items (products, extras, equipment, supplies) in one request
+                // Save all items (products, extras, equipment, supplies, staff) in one request
                 eventRepository.updateItems(
                     eventId = savedEvent.id,
                     products = selectedProducts.toList(),
                     extras = eventExtras.toList(),
                     equipment = selectedEquipment.toList(),
-                    supplies = selectedSupplies.toList()
+                    supplies = selectedSupplies.toList(),
+                    staff = selectedStaff.map {
+                        EventStaffAssignmentPayload(
+                            staffId = it.staffId,
+                            feeAmount = it.feeAmount,
+                            roleOverride = it.roleOverride.takeIf { s -> s.isNotBlank() },
+                            notes = it.notes.takeIf { s -> s.isNotBlank() }
+                        )
+                    }
                 )
 
                 saveSuccess = true
@@ -928,3 +1031,18 @@ class EventFormViewModel @Inject constructor(
         }
     }
 }
+
+/**
+ * Shape de una asignación de Staff mientras el evento se está editando en
+ * memoria. El `staffName` / `staffRoleLabel` son snapshots cacheados para
+ * pintar la lista sin hacer lookup al catálogo cada vez que se re-renderiza.
+ */
+data class SelectedStaffAssignment(
+    val staffId: String,
+    val feeAmount: Double?,
+    val roleOverride: String,
+    val notes: String,
+    val staffName: String?,
+    val staffRoleLabel: String?
+)
+

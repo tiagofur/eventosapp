@@ -38,4 +38,9 @@ interface DataModule {
     fun bindsSettingsRepository(
         repository: SettingsRepositoryImpl
     ): SettingsRepository
+
+    @Binds
+    fun bindsStaffRepository(
+        repository: OfflineFirstStaffRepository
+    ): StaffRepository
 }

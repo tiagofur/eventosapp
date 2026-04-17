@@ -15,13 +15,16 @@ import com.creapolis.solennix.core.database.dao.EventItemDao
 import com.creapolis.solennix.core.database.dao.InventoryDao
 import com.creapolis.solennix.core.database.dao.PaymentDao
 import com.creapolis.solennix.core.database.dao.ProductDao
+import com.creapolis.solennix.core.database.dao.StaffDao
 import com.creapolis.solennix.core.database.entity.CachedClient
 import com.creapolis.solennix.core.database.entity.CachedEvent
 import com.creapolis.solennix.core.database.entity.CachedEventExtra
 import com.creapolis.solennix.core.database.entity.CachedEventProduct
+import com.creapolis.solennix.core.database.entity.CachedEventStaff
 import com.creapolis.solennix.core.database.entity.CachedInventoryItem
 import com.creapolis.solennix.core.database.entity.CachedPayment
 import com.creapolis.solennix.core.database.entity.CachedProduct
+import com.creapolis.solennix.core.database.entity.CachedStaff
 
 const val DATABASE_NAME = "solennix-database"
 
@@ -33,9 +36,11 @@ const val DATABASE_NAME = "solennix-database"
         CachedInventoryItem::class,
         CachedPayment::class,
         CachedEventProduct::class,
-        CachedEventExtra::class
+        CachedEventExtra::class,
+        CachedStaff::class,
+        CachedEventStaff::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(JsonConverters::class)
@@ -46,6 +51,7 @@ abstract class SolennixDatabase : RoomDatabase() {
     abstract fun inventoryDao(): InventoryDao
     abstract fun paymentDao(): PaymentDao
     abstract fun eventItemDao(): EventItemDao
+    abstract fun staffDao(): StaffDao
 
     companion object {
         private const val TAG = "SolennixDatabase"
@@ -69,7 +75,62 @@ abstract class SolennixDatabase : RoomDatabase() {
             }
         }
 
-        private val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6)
+        /**
+         * v7 — Personal / Colaboradores (Phase 1).
+         *
+         * Crea dos tablas:
+         *   - `cached_staff`: catálogo de colaboradores del organizador.
+         *   - `cached_event_staff`: asignaciones por evento. Incluye columnas
+         *     denormalizadas (`staff_name`, `staff_role_label`, etc.) para
+         *     pintar la lista sin un join extra en el cliente — replica el
+         *     shape que devuelve el backend en `GET /events/{id}/staff`.
+         */
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                Log.d(TAG, "Running migration 6 -> 7: create cached_staff + cached_event_staff")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `cached_staff` (
+                        `id` TEXT NOT NULL,
+                        `user_id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `role_label` TEXT,
+                        `phone` TEXT,
+                        `email` TEXT,
+                        `notes` TEXT,
+                        `notification_email_opt_in` INTEGER NOT NULL,
+                        `invited_user_id` TEXT,
+                        `created_at` TEXT NOT NULL,
+                        `updated_at` TEXT NOT NULL,
+                        `sync_status` TEXT NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `cached_event_staff` (
+                        `id` TEXT NOT NULL,
+                        `event_id` TEXT NOT NULL,
+                        `staff_id` TEXT NOT NULL,
+                        `fee_amount` REAL,
+                        `role_override` TEXT,
+                        `notes` TEXT,
+                        `notification_sent_at` TEXT,
+                        `notification_last_result` TEXT,
+                        `created_at` TEXT NOT NULL,
+                        `staff_name` TEXT,
+                        `staff_role_label` TEXT,
+                        `staff_phone` TEXT,
+                        `staff_email` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val ALL_MIGRATIONS = arrayOf(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
 
         /**
          * Manual singleton for use in contexts without Hilt (e.g., Glance widgets).

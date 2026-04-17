@@ -54,7 +54,8 @@ interface EventRepository {
         products: List<EventProduct>,
         extras: List<EventExtra>,
         equipment: List<EventEquipment> = emptyList(),
-        supplies: List<EventSupply> = emptyList()
+        supplies: List<EventSupply> = emptyList(),
+        staff: List<EventStaffAssignmentPayload> = emptyList()
     )
     fun getEventProducts(eventId: String): Flow<List<EventProduct>>
     fun getEventExtras(eventId: String): Flow<List<EventExtra>>
@@ -212,7 +213,8 @@ class OfflineFirstEventRepository @Inject constructor(
         products: List<EventProduct>,
         extras: List<EventExtra>,
         equipment: List<EventEquipment>,
-        supplies: List<EventSupply>
+        supplies: List<EventSupply>,
+        staff: List<EventStaffAssignmentPayload>
     ) {
         val payload = UpdateItemsPayload(
             products = products.map {
@@ -246,7 +248,8 @@ class OfflineFirstEventRepository @Inject constructor(
                     source = it.source.name.lowercase(),
                     excludeCost = it.excludeCost
                 )
-            }
+            },
+            staff = staff
         )
         apiService.put<Any>(Endpoints.eventItems(eventId), payload)
         syncEventItems(eventId)
@@ -352,7 +355,8 @@ data class UpdateItemsPayload(
     val products: List<ProductItemPayload>,
     val extras: List<ExtraItemPayload>,
     val equipment: List<EquipmentItemPayload>,
-    val supplies: List<SupplyItemPayload>
+    val supplies: List<SupplyItemPayload>,
+    val staff: List<EventStaffAssignmentPayload> = emptyList()
 )
 
 @Serializable

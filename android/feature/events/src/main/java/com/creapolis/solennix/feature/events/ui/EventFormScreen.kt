@@ -37,6 +37,7 @@ import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.*
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.viewmodel.EventFormViewModel
+import com.creapolis.solennix.feature.events.viewmodel.SelectedStaffAssignment
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -966,7 +967,11 @@ fun StepEquipment(viewModel: EventFormViewModel) {
     val isWideScreen = LocalIsWideScreen.current
 
     AdaptiveCenteredContent(maxWidth = 800.dp) {
-        Column(modifier = Modifier.padding(24.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Equipamiento", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
                 IconButton(onClick = { showEquipmentPicker = true }) {
@@ -1045,11 +1050,14 @@ fun StepEquipment(viewModel: EventFormViewModel) {
                     onAction = { showEquipmentPicker = true }
                 )
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                // IMPORTANT: antes era LazyColumn.fillMaxSize(). Con el panel de
+                // Personal debajo y verticalScroll en el Column padre, no
+                // podemos anidar otro scroll vertical. El dataset es chico
+                // (equipo asignado a un evento), no amerita lazy.
+                Column(modifier = Modifier.fillMaxWidth()) {
                     if (isWideScreen) {
                         val chunked = viewModel.selectedEquipment.chunked(2)
-                        items(chunked.size) { index ->
-                            val pair = chunked[index]
+                        chunked.forEach { pair ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Box(modifier = Modifier.weight(1f)) {
                                     EquipmentCard(
@@ -1072,8 +1080,7 @@ fun StepEquipment(viewModel: EventFormViewModel) {
                             }
                         }
                     } else {
-                        items(viewModel.selectedEquipment.size) { index ->
-                            val eq = viewModel.selectedEquipment[index]
+                        viewModel.selectedEquipment.forEach { eq ->
                             EquipmentCard(
                                 equipment = eq,
                                 onQuantityChange = { viewModel.updateEquipmentQuantity(eq.inventoryId, it) },
@@ -1083,6 +1090,12 @@ fun StepEquipment(viewModel: EventFormViewModel) {
                     }
                 }
             }
+
+            // ===== Personal asignado =====
+            // Phase 1: todos los planes pueden asignar staff. El fee es por
+            // evento (no vive en Staff). Phase 2 activará el email notifier.
+            Spacer(modifier = Modifier.height(24.dp))
+            StaffAssignmentPanel(viewModel = viewModel)
         }
     }
 
@@ -1832,6 +1845,311 @@ fun ProductPickerSheet(
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== Staff Assignment Panel ====================
+// Se renderiza al final de la página de equipamiento dentro del EventFormScreen.
+// Phase 1: CRUD simple de asignaciones. El fee es por evento (vive en
+// EventStaff, no en Staff). El texto ACLARA que el email notifier es Phase 2.
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StaffAssignmentPanel(viewModel: EventFormViewModel) {
+    var showStaffPicker by remember { mutableStateOf(false) }
+    val availableStaff by viewModel.availableStaff.collectAsStateWithLifecycle()
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Group,
+                contentDescription = null,
+                tint = SolennixTheme.colors.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                "Personal asignado",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = { showStaffPicker = true }) {
+                Icon(
+                    Icons.Default.AddCircle,
+                    contentDescription = "Añadir colaborador",
+                    tint = SolennixTheme.colors.primary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Asigná colaboradores (fotógrafo, DJ, meseros, coordinador). El costo es opcional y se " +
+                "registra por evento — el mismo colaborador puede cobrar distinto en cada uno.",
+            style = MaterialTheme.typography.bodySmall,
+            color = SolennixTheme.colors.secondaryText
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (availableStaff.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = SolennixTheme.colors.primary.copy(alpha = 0.08f)
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Aún no tenés colaboradores en tu catálogo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.primaryText
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Agregá tu primer colaborador desde el menú Más → Personal.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            }
+        } else if (viewModel.selectedStaff.isEmpty()) {
+            OutlinedButton(
+                onClick = { showStaffPicker = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Asignar colaborador")
+            }
+        } else {
+            viewModel.selectedStaff.forEach { assignment ->
+                StaffAssignmentCard(
+                    assignment = assignment,
+                    onFeeChange = { viewModel.updateStaffFee(assignment.staffId, it) },
+                    onRoleChange = { viewModel.updateStaffRoleOverride(assignment.staffId, it) },
+                    onNotesChange = { viewModel.updateStaffNotes(assignment.staffId, it) },
+                    onRemove = { viewModel.removeStaffAssignment(assignment.staffId) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (viewModel.costStaff > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Costo total de personal: ${viewModel.costStaff.asMXN()}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SolennixTheme.colors.primary
+                )
+            }
+        }
+    }
+
+    if (showStaffPicker) {
+        StaffPickerSheet(
+            viewModel = viewModel,
+            onDismiss = { showStaffPicker = false }
+        )
+    }
+}
+
+@Composable
+private fun StaffAssignmentCard(
+    assignment: SelectedStaffAssignment,
+    onFeeChange: (Double?) -> Unit,
+    onRoleChange: (String) -> Unit,
+    onNotesChange: (String) -> Unit,
+    onRemove: () -> Unit
+) {
+    var feeText by remember(assignment.staffId) {
+        mutableStateOf(assignment.feeAmount?.let { "%.2f".format(it) } ?: "")
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        assignment.staffName ?: "Colaborador",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = SolennixTheme.colors.primaryText
+                    )
+                    if (!assignment.staffRoleLabel.isNullOrBlank()) {
+                        Text(
+                            assignment.staffRoleLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SolennixTheme.colors.primary
+                        )
+                    }
+                }
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Quitar",
+                        tint = SolennixTheme.colors.error
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            AdaptiveFormRow(
+                left = {
+                    OutlinedTextField(
+                        value = feeText,
+                        onValueChange = { newValue ->
+                            feeText = newValue
+                            onFeeChange(newValue.replace(",", ".").toDoubleOrNull())
+                        },
+                        label = { Text("Costo (opcional)") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                        ),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        prefix = { Text("$") }
+                    )
+                },
+                right = {
+                    OutlinedTextField(
+                        value = assignment.roleOverride,
+                        onValueChange = onRoleChange,
+                        label = { Text("Rol en este evento (opcional)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = assignment.notes,
+                onValueChange = onNotesChange,
+                label = { Text("Notas (opcional)") },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StaffPickerSheet(
+    viewModel: EventFormViewModel,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val availableStaff by viewModel.availableStaff.collectAsStateWithLifecycle()
+    var query by remember { mutableStateOf("") }
+
+    val selectedIds = remember(viewModel.selectedStaff.size) {
+        viewModel.selectedStaff.map { it.staffId }.toSet()
+    }
+
+    val filtered = remember(query, availableStaff, selectedIds) {
+        availableStaff.filter { staff ->
+            staff.id !in selectedIds && (
+                query.isBlank() ||
+                    staff.name.contains(query, ignoreCase = true) ||
+                    (staff.roleLabel?.contains(query, ignoreCase = true) == true)
+                )
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                "Seleccionar colaborador",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Buscar por nombre o rol...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (filtered.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (availableStaff.isEmpty())
+                            "Aún no tenés colaboradores. Agregalos desde Más → Personal."
+                        else
+                            "Sin resultados",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(filtered, key = { it.id }) { staff ->
+                        Card(
+                            onClick = {
+                                viewModel.addStaffAssignment(staff)
+                                onDismiss()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = SolennixTheme.colors.card
+                            ),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        staff.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = SolennixTheme.colors.primaryText
+                                    )
+                                    val subtitle = listOfNotNull(
+                                        staff.roleLabel?.takeIf { it.isNotBlank() },
+                                        staff.email?.takeIf { it.isNotBlank() }
+                                    ).joinToString(" · ")
+                                    if (subtitle.isNotBlank()) {
+                                        Text(
+                                            subtitle,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = SolennixTheme.colors.secondaryText
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Asignar",
+                                    tint = SolennixTheme.colors.primary
+                                )
                             }
                         }
                     }

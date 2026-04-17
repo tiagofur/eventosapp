@@ -1,0 +1,46 @@
+package com.creapolis.solennix.core.model
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+/**
+ * Asignación de un [Staff] a un evento.
+ *
+ * Los campos `staff_*` vienen del JOIN que hace el backend en
+ * `GET /api/events/{id}/staff` — permiten pintar la lista sin un round-trip
+ * adicional al catálogo.
+ *
+ * `notificationSentAt` / `notificationLastResult` se poblarán en Phase 2
+ * cuando el email de asignación sea real. En Phase 1 son null.
+ */
+@Serializable
+data class EventStaff(
+    val id: String = "",
+    @SerialName("event_id") val eventId: String = "",
+    @SerialName("staff_id") val staffId: String,
+    @SerialName("fee_amount") val feeAmount: Double? = null,
+    @SerialName("role_override") val roleOverride: String? = null,
+    val notes: String? = null,
+    @SerialName("notification_sent_at") val notificationSentAt: String? = null,
+    @SerialName("notification_last_result") val notificationLastResult: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+
+    // Campos joineados (populados por el backend en GET /events/{id}/staff)
+    @SerialName("staff_name") val staffName: String? = null,
+    @SerialName("staff_role_label") val staffRoleLabel: String? = null,
+    @SerialName("staff_phone") val staffPhone: String? = null,
+    @SerialName("staff_email") val staffEmail: String? = null
+)
+
+/**
+ * Payload que se manda dentro de `PUT /api/events/{id}/items` en la lista
+ * `staff`. No incluye id/event_id/created_at/notification_* — el backend
+ * los maneja.
+ */
+@Serializable
+data class EventStaffAssignmentPayload(
+    @SerialName("staff_id") val staffId: String,
+    @SerialName("fee_amount") val feeAmount: Double? = null,
+    @SerialName("role_override") val roleOverride: String? = null,
+    val notes: String? = null
+)

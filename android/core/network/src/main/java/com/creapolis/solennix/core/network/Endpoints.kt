@@ -17,6 +17,11 @@ object Endpoints {
     const val CLIENTS = "clients"
     fun client(id: String) = "clients/$id"
 
+    // Staff (Personal / Colaboradores)
+    const val STAFF = "staff"
+    fun staff(id: String) = "staff/$id"
+    fun eventStaff(eventId: String) = "events/$eventId/staff"
+
     // Events
     const val EVENTS = "events"
     const val UPCOMING_EVENTS = "events/upcoming"
