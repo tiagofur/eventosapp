@@ -14,6 +14,7 @@ import {
   DollarSign,
   Trash2,
   MoreVertical,
+  UserCog,
   Building,
   Zap,
   CreditCard,
@@ -64,13 +65,14 @@ import {
   useAddEventPhoto,
   useDeleteEventPhoto,
 } from "@/hooks/queries/useEventQueries";
+import { useEventStaff } from "@/hooks/queries/useStaffQueries";
 import { usePaymentsByEvent } from "@/hooks/queries/usePaymentQueries";
 import { queryKeys } from "@/hooks/queries/queryKeys";
 
 import clsx from "clsx";
 import { ContractTemplateError, renderContractTemplate } from "@/lib/contractTemplate";
 import { renderFormattedReact } from "@/lib/inlineFormatting";
-import type { Event, Client, User, EventExtra, EventEquipment, EventSupply, Payment, ProductIngredient } from "@/types/entities";
+import type { Event, Client, User, EventExtra, EventEquipment, EventSupply, EventStaff as EventStaffType, Payment, ProductIngredient } from "@/types/entities";
 
 // API response types — backend returns `client` (singular)
 type EventWithClient = Event & { client?: Client | null };
@@ -129,6 +131,7 @@ export const EventSummary: React.FC = () => {
   const { data: equipment = [] } = useEventEquipment(id);
   const { data: supplies = [] } = useEventSupplies(id);
   const { data: eventPhotos = [] } = useEventPhotos(id);
+  const { data: eventStaff = [] } = useEventStaff(id);
   const addEventPhotoMutation = useAddEventPhoto(id);
   const deleteEventPhotoMutation = useDeleteEventPhoto(id);
   const { data: payments = [] } = usePaymentsByEvent(id);
@@ -1029,6 +1032,50 @@ export const EventSummary: React.FC = () => {
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-alt text-text-secondary">
                       Sin costo
                     </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Staff section */}
+          {eventStaff.length > 0 && (
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border mt-8">
+              <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-text">
+                <UserCog className="h-5 w-5 text-primary" />
+                Personal Asignado
+              </h2>
+              <div className="space-y-3">
+                {eventStaff.map((s: EventStaffType) => (
+                  <div key={s.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                    <div>
+                      <span className="font-bold text-text">{s.staff_name || 'Colaborador'}</span>
+                      {(s.role_override || s.staff_role_label) && (
+                        <span className="text-text-secondary ml-2">· {s.role_override || s.staff_role_label}</span>
+                      )}
+                      {s.notes && (
+                        <p className="text-xs text-text-tertiary mt-0.5">{s.notes}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {s.staff_phone && (
+                        <a
+                          href={`tel:${s.staff_phone}`}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          {s.staff_phone}
+                        </a>
+                      )}
+                      {s.fee_amount != null && s.fee_amount > 0 ? (
+                        <span className="font-bold text-warning">
+                          ${s.fee_amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-alt text-text-secondary">
+                          Sin costo
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
