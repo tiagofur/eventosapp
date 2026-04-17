@@ -89,7 +89,8 @@ components:
           nullable: true
         plan:
           type: string
-          enum: [basic, pro]
+          enum: [basic, pro, business, premium]
+          description: Current plan. 'premium' is a legacy value retained for backward compat.
         role:
           type: string
           enum: [user, admin]
