@@ -1432,3 +1432,129 @@ cd /home/deploy/solennix && docker compose up -d --no-deps --force-recreate back
 rm /etc/nginx/conf.d/cloudflare-real-ip.conf
 nginx -t && systemctl reload nginx
 ```
+
+---
+
+## Post-flight cerrado — 2026-04-17 (tarde)
+
+> [!success] Propagación DNS completa + firewall Cloudflare-only activo
+> NS cambiados en IONOS, propagación verificada global (CF 1.1.1.1 + Google 8.8.8.8), HSTS activo en Cloudflare, firewall iptables/ipset restringiendo origin a rangos oficiales de Cloudflare. Primeros bloqueos registrados en counters (56 pkts dropped vs 2 pkts legítimos de CF en primer minuto).
+
+### Nameservers propagados
+
+```
+$ dig NS solennix.com +short
+cartman.ns.cloudflare.com.
+summer.ns.cloudflare.com.
+```
+
+Ambos resolvedores (Cloudflare + Google) retornan los NS de Cloudflare. Email de activación recibido en `tiagofur@gmail.com` — zona oficialmente activa.
+
+### HSTS Configure (Cloudflare → SSL/TLS → Edge Certificates)
+
+Config **conservadora** aplicada — **sin preload** (irreversible ~1 año):
+
+| Campo                                         | Valor                       |
+| --------------------------------------------- | --------------------------- |
+| Enable HSTS (Strict-Transport-Security)       | ON                          |
+| Max Age Header                                | `15552000` (6 meses)        |
+| Apply HSTS policy to subdomains               | ON (`includeSubDomains`)    |
+| Preload                                       | OFF                         |
+| No-Sniff Header (`X-Content-Type-Options`)    | ON                          |
+
+Header verificado: `strict-transport-security: max-age=15552000; includeSubDomains` en respuestas de `solennix.com`.
+
+**Cuando considerar preload:** después de 30 días de tráfico sin incidencias HTTPS, reevaluar subir a `max-age=31536000; includeSubDomains; preload` y enviar a [hstspreload.org](https://hstspreload.org). Preload tiene *lock-in* de ~1 año incluso si se revierte.
+
+### Firewall Cloudflare-only en VPS — aplicado 2026-04-17
+
+**Script idempotente:** `infra/firewall/cloudflare-only.sh` en el repo.
+
+Descarga rangos oficiales desde `https://www.cloudflare.com/ips-v{4,6}`, crea ipsets `cf_v4` (15 CIDRs IPv4) y `cf_v6` (7 CIDRs IPv6) con swap atómico, inserta chain `CF_WEB` que ACCEPT si src ∈ ipset y DROP resto. Jump desde `INPUT` solo para `tcp --dports 80,443`. Preserva loopback, `ESTABLISHED,RELATED`, SSH :22 y Plesk :8443.
+
+**Persistencia:** `netfilter-persistent` + `ipset-persistent` instalados, más systemd unit `ipset-restore.service` que corre antes de `netfilter-persistent.service` para rehidratar los sets al boot. `ufw` fue removido en el apt install (conflicto con `netfilter-persistent`) — sin impacto, ya estaba inactive.
+
+**Evidencia de que funciona (primer minuto post-apply):**
+
+```
+$ sudo iptables -L CF_WEB -n -v
+Chain CF_WEB (1 references)
+ pkts bytes target  prot opt  source       destination
+    2   120 ACCEPT  0   --   0.0.0.0/0    0.0.0.0/0    match-set cf_v4 src
+   56  3320 DROP    0   --   0.0.0.0/0    0.0.0.0/0
+
+$ sudo iptables -L INPUT -n -v
+Chain INPUT (policy ACCEPT)
+  292 lo ACCEPT
+  330 ctstate RELATED,ESTABLISHED ACCEPT
+   58 CF_WEB  tcp  dports 80,443
+```
+
+56 pkts DROP en primer minuto = escaneres aleatorios en internet pegándole a la IP del VPS, ahora bloqueados antes de llegar a nginx/Plesk.
+
+**Verificación externa (desde MacBook local, fuera del VPS):**
+
+```
+$ curl -I --max-time 5 -k https://74.208.234.244
+curl: (28) Connection timed out after 5004 milliseconds  ← bloqueado ✅
+
+$ curl -I https://solennix.com
+HTTP/2 200
+server: cloudflare
+strict-transport-security: max-age=15552000; includeSubDomains  ← HSTS activo ✅
+cf-ray: 9edea0b1dbf0fe0e-IAH
+
+$ curl -I https://api.solennix.com/api/health
+HTTP/2 404  ← backend responde, pero endpoint no existe (gap documentado abajo)
+server: cloudflare
+x-api-version: v1
+x-request-id: d440e385-d170-40a5-8e94-24d7ecd4f11a
+```
+
+### Gap descubierto: `GET /api/health` retorna 404
+
+El backend Go está vivo (responde con headers propios: `x-api-version: v1`, `x-request-id`, CSP, CORS) pero no hay ruta `/api/health` registrada. UptimeRobot está configurado para monitorear `https://api.solennix.com/health` asumiendo `200 OK` con body `ok`.
+
+**Fix pendiente** (nueva tarea, trackeada fuera de este batch):
+
+- Agregar handler `health.Get` en `backend/internal/router/router.go` que retorne `{"status":"ok","version":"..."}` sin auth
+- Ruta canónica: `/api/health` (mantener consistencia con prefijo `/api/`)
+- UptimeRobot: mantener keyword monitor con `"ok"` en el body
+
+### Rollback unificado (post-propagación)
+
+Orden de rollback de **menor a mayor impacto** si algo falla:
+
+| Paso | Comando                                                         | Deshace                              |
+| ---- | --------------------------------------------------------------- | ------------------------------------ |
+| 1    | `sudo bash infra/firewall/cloudflare-only.sh rollback`          | Firewall (abre 80/443 al mundo)      |
+| 2    | `rm /etc/nginx/conf.d/cloudflare-real-ip.conf && nginx -s reload` | Real-IP de Cloudflare en nginx      |
+| 3    | `cp backend/.env.bak-<timestamp> backend/.env && docker compose up -d backend` | TRUST_PROXY=true        |
+| 4    | Cloudflare Dashboard → SSL/TLS → Edge Certs → HSTS → Disable    | HSTS header (⚠️ browsers mantienen 6 meses) |
+| 5    | IONOS.MX → Nameservers → volver a `ns1074.ui-dns.{com,de,org,biz}` | Salir de Cloudflare completo     |
+
+**NOTA sobre paso 4:** una vez que un navegador recibió el HSTS header con `max-age=15552000`, respetará HTTPS-only durante 6 meses aun si se desactiva server-side. No hay manera de forzar downgrade remoto. Si se necesita serving HTTP mientras HSTS está cacheado, la única vía es emitir `max-age=0` al mismo navegador para invalidar.
+
+### Tareas cerradas en este batch
+
+- [x] #9 Add site solennix.com to Cloudflare
+- [x] #10 Change nameservers on IONOS.MX → Cloudflare (propagado global)
+- [x] #11 Configure SSL/TLS: Full (strict), HSTS 6m + includeSubDomains (sin preload)
+- [x] #12 Speed: Brotli + Early Hints + HTTP/3 ON, Rocket Loader OFF
+- [x] #13 Security: Medium + Bot Fight Mode + BIC
+- [x] #14 WAF: 5 Custom Rules + 1 Rate Limit (login)
+- [x] #15 Page Rules: 3/3 (assets cache, api bypass, always https)
+- [x] #16 Web Analytics ON
+- [x] #18 VPS: TRUST_PROXY=true activo en backend
+- [x] #19 VPS: nginx `set_real_ip_from` con 22 rangos de Cloudflare (15 IPv4 + 7 IPv6)
+- [x] #20 VPS: firewall iptables Cloudflare-only activo y persistido
+- [x] #17 Post-flight + rollback plan documentado
+
+### Pendientes de infra (fuera de este batch)
+
+- ⏳ `GET /api/health` endpoint en backend Go
+- ⏳ UptimeRobot: 2 monitors (`solennix.com` + `api.solennix.com/api/health`)
+- ⏳ Reboot del VPS para aplicar kernel `6.8.0-110-generic` (pendiente, no urgente)
+- ⏳ Validar que reglas de iptables sobreviven el reboot post-kernel-upgrade
+- ⏳ Re-evaluar HSTS preload después de 30 días estables
+- ⏳ Rotación llave CI → VPS (recordatorio: 2026-07-16)
