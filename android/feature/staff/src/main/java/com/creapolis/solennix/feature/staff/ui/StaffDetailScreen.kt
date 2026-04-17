@@ -138,7 +138,7 @@ fun StaffDetailScreen(
                                 )
                                 if (!staff.roleLabel.isNullOrBlank()) {
                                     Text(
-                                        text = staff.roleLabel,
+                                        text = staff.roleLabel!!,
                                         style = MaterialTheme.typography.titleMedium,
                                         color = SolennixTheme.colors.primary
                                     )
@@ -159,7 +159,7 @@ fun StaffDetailScreen(
                             )
                             if (!staff.roleLabel.isNullOrBlank()) {
                                 Text(
-                                    text = staff.roleLabel,
+                                    text = staff.roleLabel!!,
                                     style = MaterialTheme.typography.titleMedium,
                                     color = SolennixTheme.colors.primary
                                 )
@@ -198,7 +198,7 @@ fun StaffDetailScreen(
                                 InfoRow(
                                     icon = Icons.Default.Badge,
                                     label = "Rol",
-                                    value = staff.roleLabel
+                                    value = staff.roleLabel!!
                                 )
                             }
                         }
@@ -227,7 +227,7 @@ fun StaffDetailScreen(
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = staff.notes,
+                                    text = staff.notes!!,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = SolennixTheme.colors.secondaryText
                                 )

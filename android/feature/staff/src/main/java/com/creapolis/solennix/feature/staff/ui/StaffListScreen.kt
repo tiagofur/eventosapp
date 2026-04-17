@@ -200,7 +200,7 @@ fun StaffListItem(
             )
             if (!staff.roleLabel.isNullOrBlank()) {
                 Text(
-                    text = staff.roleLabel,
+                    text = staff.roleLabel!!,
                     style = MaterialTheme.typography.bodySmall,
                     color = SolennixTheme.colors.primary
                 )

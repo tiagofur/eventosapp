@@ -1336,7 +1336,7 @@ fun EventStaffScreen(
                             if (!assignment.notes.isNullOrBlank()) {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    assignment.notes,
+                                    assignment.notes!!,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = SolennixTheme.colors.secondaryText
                                 )
