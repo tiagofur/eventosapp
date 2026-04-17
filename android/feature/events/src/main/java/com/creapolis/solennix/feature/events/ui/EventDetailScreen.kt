@@ -92,6 +92,7 @@ fun EventDetailScreen(
     var paymentInitialAmount by remember { mutableStateOf<Double?>(null) }
     var showPhotoGallery by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showClientPortalSheet by remember { mutableStateOf(false) }
 
     val windowInfoTracker = WindowInfoTracker.getOrCreate(context)
     val windowLayoutInfo by (context as? android.app.Activity)?.let { activity ->
@@ -297,7 +298,8 @@ fun EventDetailScreen(
                                     viewModel.loadPhotos()
                                     showPhotoGallery = true
                                 },
-                                onStaffClick = { onStaffClick(event.id) }
+                                onStaffClick = { onStaffClick(event.id) },
+                                onClientPortalClick = { showClientPortalSheet = true }
                             )
                         }
                     )
@@ -330,6 +332,16 @@ fun EventDetailScreen(
                         Toast.makeText(context, "Pago registrado", Toast.LENGTH_SHORT).show()
                     }
                 )
+            }
+
+            if (showClientPortalSheet) {
+                val event = uiState.event
+                if (event != null) {
+                    ClientPortalShareBottomSheet(
+                        eventId = event.id,
+                        onDismiss = { showClientPortalSheet = false }
+                    )
+                }
             }
 
             if (showPhotoGallery) {
@@ -1349,7 +1361,8 @@ fun DocumentActionsGrid(
     onSharePdf: (File) -> Unit,
     onChecklistClick: () -> Unit = {},
     onPhotosClick: () -> Unit = {},
-    onStaffClick: () -> Unit = {}
+    onStaffClick: () -> Unit = {},
+    onClientPortalClick: () -> Unit = {}
 ) {
     val event = uiState.event ?: return
     val client = uiState.client ?: Client(
@@ -1547,7 +1560,7 @@ fun DocumentActionsGrid(
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        // Fourth row — Personal asignado (Phase 1)
+        // Fourth row — Personal asignado + Portal del cliente (PRD/12 feature A)
         Row(modifier = Modifier.fillMaxWidth()) {
             ActionButton(
                 icon = Icons.Default.Group,
@@ -1556,7 +1569,12 @@ fun DocumentActionsGrid(
                 onClick = onStaffClick
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Spacer(modifier = Modifier.weight(1f))
+            ActionButton(
+                icon = Icons.Default.Link,
+                label = "Portal",
+                modifier = Modifier.weight(1f),
+                onClick = onClientPortalClick
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Spacer(modifier = Modifier.weight(1f))
         }

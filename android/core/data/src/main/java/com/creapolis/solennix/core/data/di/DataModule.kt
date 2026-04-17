@@ -43,4 +43,9 @@ interface DataModule {
     fun bindsStaffRepository(
         repository: OfflineFirstStaffRepository
     ): StaffRepository
+
+    @Binds
+    fun bindsEventPublicLinkRepository(
+        repository: DefaultEventPublicLinkRepository
+    ): EventPublicLinkRepository
 }
