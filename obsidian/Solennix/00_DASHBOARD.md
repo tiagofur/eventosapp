@@ -37,8 +37,8 @@ status: active
 > - **P2 medio:** 8 / 11 resueltos · 3 diferidos con rationale
 > - **P3 bajo:** 4 / 7 resueltos · 3 diferidos con rationale
 
-> [!info] 🚀 FEATURE NUEVA — Portal Cliente MVP entregado
-> Backend + Web live. iOS + Android pendientes (Sprint 8). Ver [[PRD/15_PORTAL_CLIENTE_TRACKER|tracker completo]].
+> [!success] 🚀 FEATURE COMPLETA — Portal Cliente MVP cerrado cross-platform
+> Backend + Web + iOS + Android en paridad (Sprint 8 cerrado 2026-04-17). Ver [[PRD/15_PORTAL_CLIENTE_TRACKER|tracker completo]].
 
 > [!success] 🤝 FEATURE NUEVA — Personal / Colaboradores Phase 1
 > Backend + Web + iOS + Android en paridad. Phase 1 sin gate de plan · Phase 2 (notifs email) = Pro+ · Phase 3 (login Business multi-user) = Business. Hooks Phase 2/3 ya en la migración 042. Ver [[PRD/17_PERSONAL_TRACKER|tracker completo]].

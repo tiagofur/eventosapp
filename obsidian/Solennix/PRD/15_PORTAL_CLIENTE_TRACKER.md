@@ -9,8 +9,8 @@ aliases:
   - Portal Cliente Tracker
   - Client Portal Tracker
 date: 2026-04-16
-updated: 2026-04-16
-status: active
+updated: 2026-04-17
+status: mvp-complete
 feature: "PRD/12 A"
 ---
 
@@ -20,11 +20,38 @@ feature: "PRD/12 A"
 > El Portal del Cliente (PRD/12 feature A) es la puerta de entrada a toda la diferenciación "antojable" de Solennix vs. competidores LATAM. Este documento trackea su estado end-to-end.
 
 **Feature:** PRD/12 feature A — Portal público del cliente.
-**Status global:** 🚧 En desarrollo — Backend + Web shipped, Mobile pendiente.
-**Progreso:** `████████████░░░░░░░░` **60%**.
+**Status global:** ✅ MVP cerrado en los 4 stacks — Backend + Web + iOS + Android en paridad.
+**Progreso:** `████████████████████` **100%** (MVP). Extensiones (PIN, visibleToClient, archive permanente) siguen en backlog.
 
 > [!tip] Documentos relacionados
 > [[00_DASHBOARD|Dashboard Ejecutivo]] · [[12_SUBSCRIPTION_PLATFORM_ORIGIN|PRD/12 features A–L]] · [[02_FEATURES|Feature Matrix]] · [[04_MONETIZATION|Monetización §4.3]] · [[09_ROADMAP|Roadmap]] · [[16_SPRINT_LOG_2026_04_16|Sprint Log del día]]
+
+---
+
+## ✨ Sprint 8 cerrado 2026-04-17 — paridad mobile
+
+> [!success] iOS Portal Cliente — commit `1f76702`
+> 3 archivos nuevos + 2 modificados:
+> - `EventPublicLink.swift` (Codable + status enum)
+> - `ClientPortalShareViewModel.swift` (`@Observable`, 404 → empty state)
+> - `ClientPortalShareSheet.swift` (3 estados, native `ShareLink`, `confirmationDialog`)
+> - `Endpoints.swift` (+ `eventPublicLink(_:)`)
+> - `EventDetailView.swift` (+ `clientPortalCard` entre contract preview y documents)
+
+> [!success] Android Portal Cliente — commit `a884733`
+> 4 archivos nuevos + 3 modificados:
+> - `EventPublicLink.kt` (@Serializable + status enum)
+> - `EventPublicLinkRepository.kt` (Hilt @Singleton, 404 → null)
+> - `ClientPortalShareViewModel.kt` (@HiltViewModel, StateFlow UiState)
+> - `ClientPortalShareBottomSheet.kt` (ModalBottomSheet + ACTION_SEND + AlertDialog)
+> - `Endpoints.kt`, `DataModule.kt` (@Binds), `EventDetailScreen.kt` (shortcut "Portal" en DocumentActionsGrid)
+
+**Copy en español paridad iOS + Android + Web:**
+- Título · subtítulo
+- Botones: *Copiar enlace · Compartir · Rotar enlace · Deshabilitar*
+- Confirm rotate: *"Al rotar el enlace, el que ya compartiste dejará de funcionar. ¿Continuamos?"*
+- Confirm revoke: *"Se va a deshabilitar el enlace para el cliente. ¿Estás seguro?"*
+- Empty CTA: *"Generar enlace para el cliente"*
 
 ---
 
@@ -113,25 +140,29 @@ graph TB
 
 ## 📊 Matriz detallada por plataforma
 
-### 🍏 iOS
+### 🍏 iOS — ✅ Shipped (Sprint 8, commit `1f76702`)
 
-| Ítem | Status | Sprint |
+| Ítem | Status | Archivo |
 |---|:-:|---|
-| ShareSheet nativo en EventDetailView | 📋 | 8 |
-| Bottom sheet: Copy / WhatsApp / Rotate / Revoke | 📋 | 8 |
-| Fetch del link activo al abrir EventDetail | 📋 | 8 |
-| Mostrar URL actual del portal (read-only) | 📋 | 8 |
-| Confirm dialogs para Rotate/Revoke | 📋 | 8 |
+| `.sheet(isPresented:)` nativo en EventDetailView | ✅ | `EventDetailView.swift` |
+| Three-state UI: Loading / Has-link / No-link | ✅ | `ClientPortalShareSheet.swift` |
+| Fetch del link activo (404 → empty state) | ✅ | `ClientPortalShareViewModel.swift` |
+| Mostrar URL actual + copy con `UIPasteboard` | ✅ | `ClientPortalShareSheet.swift` |
+| Share nativo (WhatsApp/Mail/SMS/AirDrop via `ShareLink`) | ✅ | `ClientPortalShareSheet.swift` |
+| Confirm dialogs para Rotate/Revoke (`.confirmationDialog`) | ✅ | `ClientPortalShareSheet.swift` |
 | Tier gating: basic vs full shape (informativo) | 📋 | 7.C |
 
-### 🤖 Android
+### 🤖 Android — ✅ Shipped (Sprint 8, commit `a884733`)
 
-| Ítem | Status | Sprint |
+| Ítem | Status | Archivo |
 |---|:-:|---|
-| BottomSheetDialogFragment en EventDetailScreen | 📋 | 8 |
-| Fetch + render del link | 📋 | 8 |
-| Share vía Android ShareSheet (no WhatsApp-only) | 📋 | 8 |
-| Rotate/Revoke con AlertDialog | 📋 | 8 |
+| `ModalBottomSheet` en EventDetailScreen | ✅ | `ClientPortalShareBottomSheet.kt` |
+| Three-state UI: Loading / Has-link / No-link | ✅ | `ClientPortalShareBottomSheet.kt` |
+| Fetch + render del link (404 → empty state) | ✅ | `ClientPortalShareViewModel.kt` |
+| Share vía `Intent.ACTION_SEND` + createChooser | ✅ | `ClientPortalShareBottomSheet.kt` |
+| Rotate/Revoke con `AlertDialog` | ✅ | `ClientPortalShareBottomSheet.kt` |
+| Repository con Hilt (`@Binds`) | ✅ | `EventPublicLinkRepository.kt` |
+| Shortcut "Portal" en DocumentActionsGrid | ✅ | `EventDetailScreen.kt` |
 | Tier gating client-side | 📋 | 7.C |
 
 ### 🌐 Web — ✅ Shipped
@@ -254,10 +285,10 @@ graph LR
 - [ ] Footer "Powered by Solennix" como link activo solo en Gratis
 - [ ] Copy del paywall web actualizado a "requiere Plan Pro"
 
-### Sprint 8 — Mobile nativo
+### Sprint 8 — Mobile nativo (✅ 2026-04-17)
 
-- [ ] iOS `ClientPortalShareSheet.swift`
-- [ ] Android `ClientPortalShareBottomSheet.kt`
+- [x] iOS `ClientPortalShareSheet.swift` + `ClientPortalShareViewModel.swift` + `EventPublicLink.swift` — commit `1f76702`
+- [x] Android `ClientPortalShareBottomSheet.kt` + `ClientPortalShareViewModel.kt` + `EventPublicLinkRepository.kt` + `EventPublicLink.kt` — commit `a884733`
 - [ ] UI tests básicos con service mockeado
 - [ ] Commit cross-platform con paridad verificada
 
@@ -328,8 +359,8 @@ Cuando haya métricas reales, actualizar acá.
 
 - **Código backend:** [[../../Backend/Módulo Eventos]] (ampliar cuando se doc el portal link)
 - **Código web:** [[../../Web/Módulo Eventos]] (ampliar cuando se doc el Portal Cliente)
-- **Código iOS:** pendiente Sprint 8
-- **Código Android:** pendiente Sprint 8
+- **Código iOS:** ✅ Sprint 8 (commit `1f76702`)
+- **Código Android:** ✅ Sprint 8 (commit `a884733`)
 - **Spec completa original:** [[12_SUBSCRIPTION_PLATFORM_ORIGIN|PRD/12 feature A]]
 - **Tier matrix:** [[04_MONETIZATION#§4.3]]
 - **Decision record:** [[16_SPRINT_LOG_2026_04_16|Sprint Log del día]]

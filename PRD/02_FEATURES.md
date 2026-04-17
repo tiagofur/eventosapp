@@ -237,12 +237,12 @@ Portal privado per-evento para que el CLIENTE final (no el organizador) vea esta
 
 | Feature | iOS | Android | Web | Backend |
 |---|:-:|:-:|:-:|:-:|
-| Generar link por evento | 📋 | 📋 | ✅ *(share card en EventSummary)* | ✅ `POST /api/events/{id}/public-link` |
-| Consultar link activo | 📋 | 📋 | ✅ | ✅ `GET /api/events/{id}/public-link` |
-| Rotar link (revoca anterior) | 📋 | 📋 | ✅ | ✅ (mismo POST) |
-| Revocar link | 📋 | 📋 | ✅ | ✅ `DELETE /api/events/{id}/public-link` |
+| Generar link por evento | ✅ *(ShareSheet)* | ✅ *(BottomSheet)* | ✅ *(share card en EventSummary)* | ✅ `POST /api/events/{id}/public-link` |
+| Consultar link activo | ✅ | ✅ | ✅ | ✅ `GET /api/events/{id}/public-link` |
+| Rotar link (revoca anterior) | ✅ | ✅ | ✅ | ✅ (mismo POST) |
+| Revocar link | ✅ | ✅ | ✅ | ✅ `DELETE /api/events/{id}/public-link` |
 | Portal público (cliente sin login) | — | — | ✅ `/client/:token` | ✅ `/api/public/events/{token}` |
-| Copy + WhatsApp share desde UI organizador | 📋 | 📋 | ✅ | — |
+| Copy + share nativo (WhatsApp/Mail/SMS/AirDrop) desde UI organizador | ✅ *(ShareLink)* | ✅ *(ACTION_SEND)* | ✅ *(wa.me)* | — |
 | 410 Gone para revoked/expired | — | — | ✅ *(distinct copy)* | ✅ |
 | Auto-revoke si evento se borra | — | — | — | ✅ |
 | **Acceso perpetuo por default** (no TTL) | — | — | ✅ | ✅ |
@@ -273,7 +273,7 @@ Visualización + registro de pago por transferencia con approve/reject. Reemplaz
 
 **Leyenda:** ✅ Shipped · 📋 Planeado · — No aplica a esa plataforma.
 
-**Gap a cerrar en Sprint 8:** UI nativa en iOS + Android (bottom sheet con Copy/WhatsApp/Rotate/Revoke para feature A). El portal público del cliente es web-responsive por diseño; no se planea view nativa.
+**Sprint 8 ✅ cerrado 2026-04-17:** UI nativa shipped en iOS + Android con paridad total de acciones (Copy / Share nativo / Rotar / Revocar). El portal público del cliente sigue siendo web-responsive por diseño; no se planea view nativa.
 
 **Gap a cerrar en Sprint 9:** todo feature B de arriba — tabla `payment_submissions`, endpoints públicos y privados, UI cliente + organizer.
 

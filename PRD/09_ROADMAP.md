@@ -276,12 +276,14 @@ Alinear TODOS los límites server-side con `PRD/04` sección 3.
 - [ ] Plan expiry job (downgrade automático tras `plan_expires_at`) — pending.
 - [ ] Migrar copy de paywall web/mobile para decir "Esta feature requiere Plan Pro" cuando corresponda, no solo "alcanzaste el límite".
 
-### Sprint 8 — iOS + Android Portal Cliente (completar feature A)
+### Sprint 8 — iOS + Android Portal Cliente (✅ 2026-04-17)
 
-- [ ] iOS `ClientPortalShareSheet.swift` en EventDetailView.
-- [ ] Android `ClientPortalShareBottomSheet.kt` en EventDetailScreen.
-- [ ] UI tests básicos en ambos (mockeando servicio).
-- [ ] Commit cross-platform con paridad verificada.
+**Estado:** cerrado. Feature A queda con paridad total cross-platform (Web + Backend + iOS + Android).
+
+- [x] iOS `ClientPortalShareSheet.swift` en EventDetailView (native `ShareLink` + `confirmationDialog`). Commit `1f76702`.
+- [x] Android `ClientPortalShareBottomSheet.kt` en EventDetailScreen (`ModalBottomSheet` + `ACTION_SEND` + `AlertDialog`). Commit `a884733`.
+- [ ] UI tests básicos en ambos (diferidos — smoke manual primero, tests en próximo sprint si se mueve mucho el UI).
+- [x] Commit cross-platform con paridad verificada (model `EventPublicLink` idéntico en los 2 stacks, 3 estados de UI iguales, misma copy en español).
 
 ### Sprint 8.bis — Personal / Colaboradores Phase 1 (✅ 2026-04-16)
 
