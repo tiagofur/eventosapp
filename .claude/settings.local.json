@@ -294,7 +294,12 @@
       "Bash(export PATH=\"/opt/homebrew/opt/openjdk@21/bin:$PATH\")",
       "mcp__plugin_engram_engram__mem_get_observation",
       "Bash(xcodebuild -scheme Solennix -destination \"generic/platform=iOS Simulator\" -configuration Debug build)",
-      "Bash(./gradlew bundleRelease)"
+      "Bash(./gradlew bundleRelease)",
+      "Bash(eza -la /Users/tiagofur/dev/eventosapp/backend/migrations/)",
+      "Bash(eza -la /Users/tiagofur/dev/eventosapp/web/package.json)",
+      "Bash(eza /Users/tiagofur/dev/eventosapp/backend/internal/database/migrations/)",
+      "Bash(eza *)",
+      "Bash(git *)"
     ]
   }
 }

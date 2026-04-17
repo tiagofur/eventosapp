@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Solennix/Web/Roadmap Web.md",
+                "file": "Solennix/PRD/14_CLIENT_EXPERIENCE_IDEAS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Roadmap Web"
+              "title": "14_CLIENT_EXPERIENCE_IDEAS"
             }
           }
         ]
@@ -182,32 +182,32 @@
   },
   "active": "729561947342fd9a",
   "lastOpenFiles": [
+    "Solennix/PRD/17_PERSONAL_TRACKER.md",
+    "Solennix/PRD/15_PORTAL_CLIENTE_TRACKER.md",
+    "Solennix/PRD/14_CLIENT_EXPERIENCE_IDEAS.md",
+    "Solennix/PRD/PRD MOC.md",
+    "Solennix/PRD/16_SPRINT_LOG_2026_04_16.md",
+    "Solennix/00_DASHBOARD.md",
+    "Solennix/PRD/13_POST_MVP_ROADMAP.md",
+    "Solennix/PRD/12_SUBSCRIPTION_PLATFORM_ORIGIN.md",
+    "Solennix/PRD/11_CURRENT_STATUS.md",
+    "Solennix/PRD/10_COLLABORATION_GUIDE.md",
+    "Solennix/PRD/09_ROADMAP.md",
+    "Solennix/PRD/08_TECHNICAL_ARCHITECTURE_WEB.md",
+    "Solennix/PRD/07_TECHNICAL_ARCHITECTURE_BACKEND.md",
+    "Solennix/PRD/06_TECHNICAL_ARCHITECTURE_ANDROID.md",
+    "Solennix/PRD/05_TECHNICAL_ARCHITECTURE_IOS.md",
+    "Solennix/PRD/04_MONETIZATION.md",
+    "Solennix/PRD/03_COMPETITIVE_ANALYSIS.md",
+    "Solennix/PRD/02_FEATURES.md",
+    "Solennix/PRD/01_PRODUCT_VISION.md",
+    "Solennix/SUPER_PLAN/03_CROSS_PLATFORM_PARITY_MODEL.md",
+    "Solennix/SUPER_PLAN/02_PLATFORM_EXPERIENCE_PRINCIPLES.md",
+    "Solennix/SUPER_PLAN/01_VISUAL_EXECUTIVE_SUMMARY.md",
+    "Solennix/Web/Roadmap Web.md",
     "Solennix/Web/Routing y Guards.md",
     "Solennix/Android/Roadmap Android.md",
     "Solennix/Backend/Roadmap Backend.md",
-    "Solennix/iOS/Widgets y Live Activities.md",
-    "Solennix/iOS/Sistema de Tipos.md",
-    "Solennix/iOS/Testing.md",
-    "Solennix/iOS/Sistema de PDFs.md",
-    "Solennix/iOS/Siri Shortcuts.md",
-    "Solennix/iOS/Roadmap iOS.md",
-    "Solennix/iOS/Performance.md",
-    "Solennix/iOS/Navegación.md",
-    "Solennix/iOS/Módulo Clientes.md",
-    "Solennix/iOS/Módulo Calendario.md",
-    "Solennix/iOS/Manejo de Estado.md",
-    "Solennix/iOS/iOS MOC.md",
-    "Solennix/iOS/Design System.md",
-    "Solennix/iOS/Componentes Compartidos.md",
-    "Solennix/iOS/Capa de Red.md",
-    "Solennix/iOS/Caché y Offline.md",
-    "Solennix/iOS/Autenticación.md",
-    "Solennix/iOS/Arquitectura General.md",
-    "Solennix/iOS/Accesibilidad.md",
-    "Solennix/Web/Web MOC.md",
-    "Solennix/Web/Testing.md",
-    "Solennix/Web/Sistema de Tipos.md",
-    "Solennix/Web/Sistema de PDFs.md",
     "Solennix/Backend"
   ]
 }
