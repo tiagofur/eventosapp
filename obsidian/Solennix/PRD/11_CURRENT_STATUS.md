@@ -1209,10 +1209,138 @@ Refactors planificados para lograr paridad total entre las 6 plataformas (iPhone
 
 ### Pendientes inmediatos (observabilidad + seguridad)
 
-- ⏳ Configurar Cloudflare: nameservers, Full (strict) SSL, WAF rules, page rules de cache, bot fight mode
 - ⏳ Crear cuenta Sentry + 2 proyectos (solennix-web, solennix-backend) y pegar DSNs en `.env` del repo y en `backend/.env` del VPS
 - ⏳ Crear UptimeRobot free + 2 monitors (`https://solennix.com` y `https://api.solennix.com/health` con keyword "ok")
 - ⏳ Self-host GoatCounter para analytics de producto (subdominio `stats.solennix.com`)
 - ⏳ Instalar CrowdSec agent en VPS + collection nginx + collection Go
 - ⏳ Tabla `audit_logs` ya existe — auditar qué eventos sensibles quedan sin registrar (acceso a pagos, contratos, datos de cliente)
 - ⏳ Rate limiting por endpoint más fino en Chi (hoy solo auth/register tienen límites específicos)
+
+---
+
+## Cloudflare Free — configuración completa (2026-04-17)
+
+> [!success] Cloudflare Free desplegado
+> Zone `solennix.com` activa en Cloudflare Free. Nameservers cambiados en IONOS.MX (propagando). SSL/TLS Full (strict), Speed optimizado, Security Medium + Bot Fight Mode, 5 WAF Custom Rules + 1 Rate Limit, 3 Page Rules, Web Analytics ON.
+
+### SSL/TLS
+
+- **Modo:** Full (strict) — Cloudflare valida el cert de origen (Let's Encrypt en VPS)
+- **Edge Certificates:** Universal SSL automático (Cloudflare emite cert del edge)
+- **Always Use HTTPS:** ON (vía Page Rule)
+- **HSTS con preload:** pendiente — activar post-propagación con `max-age=31536000; includeSubDomains; preload`
+
+### Speed
+
+| Ajuste          | Estado | Nota                                                  |
+| --------------- | ------ | ----------------------------------------------------- |
+| Brotli          | ON     | Compresión edge → browser                             |
+| Early Hints     | ON     | 103 Early Hints para CSS/JS críticos                  |
+| HTTP/3 (QUIC)   | ON     | Negociación H3 en clientes compatibles                |
+| Rocket Loader   | OFF    | Incompatible con React/Vite SPA — mantener apagado    |
+| Auto Minify     | OFF    | Vite ya minifica en build; Cloudflare Auto Minify está deprecated de todos modos |
+
+### Security
+
+- **Security Level:** Medium
+- **Bot Fight Mode:** ON (Super Bot Fight Mode Free tier — bloquea bots definitivamente malos)
+- **Browser Integrity Check (BIC):** ON
+- **Challenge Passage:** default 30 min
+
+### WAF — 5 Custom Rules (Free: 5/5 used)
+
+| # | Nombre                          | Expresión                                                                                               | Acción               |
+| - | ------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------- |
+| 1 | Block scanner user agents       | `(lower(http.user_agent) contains "sqlmap") or (... "nikto") or (... "nmap") or (... "masscan") or (... "zgrab")` | Block                |
+| 2 | Block path traversal            | `http.request.uri.path matches "\\.\\./" or http.request.uri.path contains "/etc/passwd"`              | Block                |
+| 3 | Block SQLi patterns             | `http.request.uri.query matches "(union.*select\|select.*from\|drop\s+table)"`                         | Block                |
+| 4 | Challenge empty UA on /api/     | `(starts_with(http.request.uri.path, "/api/") and not starts_with(http.request.uri.path, "/api/public/") and http.user_agent eq "")` | Managed Challenge    |
+| 5 | Block admin path probes         | `starts_with(http.request.uri.path, "/wp-admin") or starts_with(http.request.uri.path, "/phpmyadmin") or starts_with(http.request.uri.path, "/.env")` | Block                |
+
+### Rate Limit (Free: 1/1 used)
+
+- **Rate limit login** — `api.solennix.com` + `starts_with(http.request.uri.path, "/api/auth/login")`
+- Límite: **5 requests / 10 seg** por IP (~30 req/min, más estricto que lo originalmente planeado gracias al constraint de Free tier)
+- Acción al superar: **Block 10 seg**
+
+### Page Rules (Free: 3/3 used)
+
+| Position | URL pattern              | Setting                                                         |
+| -------- | ------------------------ | --------------------------------------------------------------- |
+| 1        | `solennix.com/assets/*`  | Cache Level: Cache Everything + Edge Cache TTL: 1 month         |
+| 2        | `api.solennix.com/*`     | Cache Level: Bypass                                             |
+| 3        | `solennix.com/*`         | Always Use HTTPS                                                |
+
+### Analytics
+
+- **HTTP Traffic** (siempre ON en Free): requests, bytes saved, threats, top countries
+- **Web Analytics / RUM:** Enable Globally clickeado; datos aparecerán cuando DNS propague y haya tráfico real por el edge
+
+### Post-flight checks (ejecutar cuando propagación DNS termine)
+
+```bash
+# 1. Verificar nameservers
+dig NS solennix.com +short
+# Esperado: 2 nameservers de Cloudflare (*.ns.cloudflare.com)
+
+# 2. Verificar que solennix.com resuelve a IP de Cloudflare (proxied = orange cloud)
+dig A solennix.com +short
+dig A api.solennix.com +short
+# Esperado: IPs de Cloudflare (104.*, 172.*), NO la IP real del VPS (74.208.234.244)
+
+# 3. Verificar que headers cf-ray / cf-cache-status aparecen
+curl -sI https://solennix.com/ | grep -i "cf-\|server:\|strict-transport"
+curl -sI https://api.solennix.com/health | grep -i "cf-\|server:"
+# Esperado: cf-ray: <hex>-<pop>, server: cloudflare, cf-cache-status: DYNAMIC|HIT|MISS|BYPASS
+
+# 4. Verificar SSL Labs grade
+# Abrir: https://www.ssllabs.com/ssltest/analyze.html?d=solennix.com
+# Esperado: A o A+
+
+# 5. Smoke test del backend real (bypass de Cloudflare, ir directo al origen por IP)
+curl -sI --resolve api.solennix.com:443:74.208.234.244 https://api.solennix.com/health
+# Esperado: 200 OK desde el VPS directamente (valida que Cloudflare NO es un SPOF)
+
+# 6. Verificar que assets tienen cache correcto (después de 1er hit)
+curl -sI https://solennix.com/assets/index.js | grep -i "cf-cache-status\|cache-control"
+# Esperado segunda llamada: cf-cache-status: HIT
+
+# 7. Test de WAF — probar que un user-agent sospechoso es bloqueado
+curl -sI -A "sqlmap/1.0" https://solennix.com/ | head -1
+# Esperado: HTTP/2 403 (Forbidden)
+
+# 8. Test de rate limit — 6 llamadas seguidas a /auth/login deben gatillar 429
+for i in {1..6}; do curl -sI -X POST https://api.solennix.com/api/auth/login -o /dev/null -w "%{http_code}\n"; done
+# Esperado: primeras 5 responden 400/401, la 6a → 429 Too Many Requests
+```
+
+### Rollback plan (si Cloudflare rompe algo en producción)
+
+**Estrategia:** revertir nameservers a los de IONOS original.
+
+```
+1. Entrar a IONOS.MX → Dominios → solennix.com → Nameservers
+2. Cambiar de:
+     ns1.*.ns.cloudflare.com / ns2.*.ns.cloudflare.com
+   A (valores originales de IONOS):
+     ns1074.ui-dns.com / ns1074.ui-dns.de / ns1074.ui-dns.org / ns1074.ui-dns.biz
+3. Guardar. Propagación: ~10 min a 24 h.
+4. (Opcional) Pausar el site en Cloudflare mientras se revierte:
+   Dashboard → solennix.com → Overview → "Pause Cloudflare on Site" (DNS only, sin proxy)
+```
+
+**Rollback parcial (pausar solo una pieza):**
+- Page Rule rompe producción → desactivar toggle verde en `Rules → Page Rules`
+- WAF rule bloquea tráfico legítimo → desactivar toggle en `Security → Security rules`
+- Rate limit muy agresivo → ajustar threshold o desactivar en `Security → Security rules → Rate limiting`
+- SSL Full (strict) falla por cert origen → bajar a Full (sin strict) temporalmente en `SSL/TLS → Overview`
+
+**Rollback total (deshacer zone en Cloudflare):**
+- Cloudflare Dashboard → solennix.com → Advanced Actions → **Remove Site from Cloudflare**
+- DNS queda roto hasta que IONOS tenga los registros originales — tener respaldo de DNS de IONOS antes de borrar la zone.
+
+### Nota operativa
+
+- El cambio de nameservers a Cloudflare se hizo en IONOS.MX el 2026-04-17. Propagación esperada: 1-24 h.
+- Cloudflare emite email `activation OK` cuando detecta los NS propagados — mantener revisada la casilla `tiagofur@gmail.com`.
+- Mientras propaga: tráfico sigue yendo al IP directo del VPS (74.208.234.244), sin Cloudflare en el medio. No hay downtime.
