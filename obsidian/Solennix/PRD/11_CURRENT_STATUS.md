@@ -1345,23 +1345,32 @@ for i in {1..6}; do curl -sI -X POST https://api.solennix.com/api/auth/login -o 
 - Cloudflare emite email `activation OK` cuando detecta los NS propagados — mantener revisada la casilla `tiagofur@gmail.com`.
 - Mientras propaga: tráfico sigue yendo al IP directo del VPS (74.208.234.244), sin Cloudflare en el medio. No hay downtime.
 
-### Configuración requerida en el VPS (no en el repo)
+### Configuración aplicada en el VPS (2026-04-17)
 
-Cloudflare inserta un proxy entre el cliente y el VPS — sin ajustar nginx + backend, el rate limiter del backend ve todos los requests viniendo de la IP de nginx (o peor, de Cloudflare) y limita a todos los usuarios como uno.
+> [!success] VPS configurado vía terminal SSH de Plesk
+> TRUST_PROXY activo, nginx con Cloudflare real-IP cargado (22 directivas, módulo http_realip confirmado), backend reiniciado y `https://api.solennix.com/health` responde 200. Firewall Cloudflare-only diferido hasta post-propagación DNS.
 
-**1. `backend/.env` en el VPS → `TRUST_PROXY=true`**
+**Infra descubierta:**
+- Deploy path: `/home/deploy/solennix/` (no `/opt/...`)
+- Backend corre en Docker (container `solennix-backend`, imagen build desde `./backend`)
+- Compose file: `/home/deploy/solennix/docker-compose.yml`, backend usa `env_file: ./backend/.env`
+- Host nginx (Plesk-managed) termina SSL y proxy-pass a `localhost:8080` (backend) y `localhost:3000` (frontend)
+- Firewall: iptables con `INPUT DROP` policy + fail2ban (13 jails, incluyendo `plesk-modsecurity`). UFW inactive.
+
+**1. `backend/.env` en el VPS → `TRUST_PROXY=true` (HECHO)**
 
 ```bash
-# editar /opt/solennix/backend/.env (o equivalente)
-TRUST_PROXY=true
-CORS_ALLOWED_ORIGINS=https://solennix.com,https://www.solennix.com
-# reiniciar
-sudo systemctl restart solennix-backend   # o: docker compose restart backend
+# Ejecutado 2026-04-17:
+cp /home/deploy/solennix/backend/.env /home/deploy/solennix/backend/.env.bak-YYYYMMDD-HHMMSS
+echo "TRUST_PROXY=true" >> /home/deploy/solennix/backend/.env
+cd /home/deploy/solennix && docker compose up -d --no-deps --force-recreate backend
+# Verificado: docker exec solennix-backend env | grep TRUST_PROXY → TRUST_PROXY=true
+# CORS_ALLOWED_ORIGINS ya estaba correcto: https://solennix.com,https://www.solennix.com
 ```
 
-**2. nginx en el VPS → `set_real_ip_from` + `real_ip_header CF-Connecting-IP`**
+**2. nginx en el VPS → `set_real_ip_from` + `real_ip_header CF-Connecting-IP` (HECHO)**
 
-Crear `/etc/nginx/snippets/cloudflare-real-ip.conf` con los 15 rangos IPv4 + 7 IPv6 de Cloudflare, luego `include snippets/cloudflare-real-ip.conf;` dentro de cada `server {}` de `solennix.com` y `api.solennix.com`. Validar `sudo nginx -t && sudo systemctl reload nginx`. Rangos vigentes en https://www.cloudflare.com/ips/ (revisar c/mes).
+Plesk gestiona vhosts per-dominio, así que en lugar de editar cada `server {}`, se creó el snippet en `/etc/nginx/conf.d/cloudflare-real-ip.conf` que se aplica a nivel http (incluido por `nginx.conf` línea 40: `include /etc/nginx/conf.d/*.conf;`) y afecta a todos los server blocks. Verificado: `nginx -T | grep -c set_real_ip_from` = 22 (15 IPv4 + 7 IPv6).
 
 ```nginx
 # /etc/nginx/snippets/cloudflare-real-ip.conf
@@ -1391,23 +1400,35 @@ real_ip_header CF-Connecting-IP;
 real_ip_recursive on;
 ```
 
-**3. Firewall UFW → solo tráfico desde Cloudflare (opcional, recomendado)**
+**3. Firewall Cloudflare-only (DIFERIDO hasta post-propagación DNS)**
 
-Evita que un atacante bypasee el WAF/rate limit pegándole directo al IP del VPS.
+El VPS NO usa ufw (inactive). Firewall real es iptables gestionado por Plesk + fail2ban (13 jails). Enforcar Cloudflare-only ahora bloquearía tráfico legítimo mientras IONOS/Cloudflare terminan de propagar.
 
-```bash
-sudo ufw delete allow 80
-sudo ufw delete allow 443
-for cidr in 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 \
-             141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 \
-             197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 \
-             104.24.0.0/14 172.64.0.0/13 131.0.72.0/22; do
-  sudo ufw allow from $cidr to any port 443 proto tcp
-  sudo ufw allow from $cidr to any port 80  proto tcp
-done
-sudo ufw reload
+Post-propagación hacerlo vía Plesk UI: **Tools & Settings → Firewall → Firewall Rules → Add Custom Rule**. Regla nueva para cada CIDR de Cloudflare con `Action: Allow`, `Direction: Incoming`, `Ports: 80,443`, `Source: <cidr>`. Al final, una regla `Deny` para `Ports: 80,443` desde `Any`. Alternativa CLI: editar `/etc/iptables/rules.v4` y `systemctl reload iptables`, o `plesk bin firewall --reconfigure`.
+
+Rangos Cloudflare (vigentes 2026-04-17, revisar mensual en https://www.cloudflare.com/ips/):
+
+```
+IPv4: 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22
+      141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20
+      197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13
+      104.24.0.0/14 172.64.0.0/13 131.0.72.0/22
+IPv6: 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32
+      2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
 ```
 
-Dejar `22/tcp` (SSH) abierto. Cuidado si usas Plesk: verificar que sus puertos de admin no se bloqueen.
+No bloquear `22/tcp` (SSH), `8443/tcp`+`8447/tcp` (Plesk admin), `5678` (otro servicio identificado).
 
 **Frontend:** no requiere cambios. `VITE_API_URL=https://api.solennix.com` sigue intacto.
+
+### Rollback del VPS (si algo rompe)
+
+```bash
+# Revertir TRUST_PROXY
+cp /home/deploy/solennix/backend/.env.bak-YYYYMMDD-HHMMSS /home/deploy/solennix/backend/.env
+cd /home/deploy/solennix && docker compose up -d --no-deps --force-recreate backend
+
+# Revertir nginx Cloudflare real-IP
+rm /etc/nginx/conf.d/cloudflare-real-ip.conf
+nginx -t && systemctl reload nginx
+```
