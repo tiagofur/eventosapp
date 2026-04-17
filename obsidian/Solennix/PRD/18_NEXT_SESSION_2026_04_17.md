@@ -20,7 +20,12 @@ status: queued
 
 ## 🎯 Objetivo de mañana
 
-**Llevar Personal Phase 1 de "código commiteado" a "vivo en producción y verificado manualmente"**, y decidir qué sigue: Phase 2 (notifs Pro+), Sprint 9 (pagos transferencia), o Sprint 8 (Portal Cliente mobile).
+**Dos frentes planeados para mañana:**
+
+1. **Cerrar Personal Phase 1 en producción** — deploy + migration 042 + smoke test cross-platform.
+2. **Seguir con Portal Cliente Sprint 8** — completar la paridad en iOS + Android (share sheets). Feature A quedó en Web + Backend ayer.
+
+Después de esos dos, si queda hueco, arrancamos Personal Phase 2 (notifs email Pro+, 1-2h).
 
 ---
 
@@ -51,27 +56,54 @@ status: queued
     - CRUD funciona · EventForm panel en page Equipment
     - EventDetail tiene shortcut "Personal"
 
-### 3. Elegir próximo sprint (5 min · **decisión tuya**)
+### 3. Sprint 8 — Portal Cliente iOS + Android (~1 sesión corta)
 
-Presentame estas 3 opciones y eligen una:
+> [!success] Decidido ayer a la noche
+> Seguimos con Portal Cliente para cerrar paridad cross-platform. Feature A quedó live en Web + Backend. Falta mobile.
 
-#### Opción A — Phase 2 (notifs email al colaborador · Pro+)
-- **Esfuerzo:** 1-2 h · scaffolding ya está, es hook puro en `CRUDHandler.UpdateEventItems`.
-- **Valor:** activa el "wow" real del feature — el colaborador recibe email automático cuando lo asignás.
-- **Requiere:** nada externo. Resend ya está configurado.
+**Qué hay que hacer:**
 
-#### Opción B — Sprint 9 feature B (pagos transferencia del cliente)
-- **Esfuerzo:** 2-3 sesiones · es grande (backend + 3 clientes).
-- **Valor:** alto — reemplazamos el botón "Pagar con Stripe" que vos querés quitar.
-- **Requiere:** nada externo.
+- [ ] **iOS** — `ClientPortalShareSheet.swift` en `EventDetailView`:
+    - Reusa `eventPublicLinkService` que agregamos ayer en backend.
+    - Botón "Compartir con el cliente" que abre sheet con: URL actual · botones "Copiar" · "Compartir" (iOS share sheet nativo) · "Rotar token" · "Revocar".
+    - Estado vacío: "Generar link" cuando no hay activo.
+- [ ] **Android** — `ClientPortalShareBottomSheet.kt` en `EventDetailScreen`:
+    - Misma UX que iOS pero con `ModalBottomSheet` de Compose.
+    - Reusa `eventPublicLinkRepository` (si no existe, crearlo siguiendo patrón de `staffRepository` de ayer).
+- [ ] **UI tests básicos** en ambos (mockeando el servicio).
+- [ ] **Commit cross-platform** con paridad verificada.
 
-#### Opción C — Sprint 8 (Portal Cliente en iOS + Android)
-- **Esfuerzo:** 1 sesión corta · solo las share sheets.
-- **Valor:** cierra la paridad cross-platform que quedó pendiente ayer.
-- **Requiere:** nada externo.
+**Referencias (del commit de ayer):**
+- Backend endpoints: `POST/GET/DELETE /api/events/{id}/public-link` + `GET /api/public/events/{token}`
+- Web component: `web/src/pages/Events/components/ClientPortalShareCard.tsx` — es el patrón visual a copiar
+- Web service: `web/src/services/eventPublicLinkService.ts` — es la API shape que debe tener el iOS/Android service
 
-> [!info] Recomendación mía
-> **Opción A primero** (Phase 2) porque cierra un loop mental — el feature queda "completo para Pro" y te da confianza para venderlo. Después Opción C para cerrar el portal mobile. Opción B la hacemos cuando quieras meter un sprint largo.
+### 4. Si queda tiempo — Personal Phase 2 (notifs email Pro+)
+
+> [!info] Bonus si terminamos rápido
+> 1-2 h · el scaffolding ya está en la migración 042.
+
+**Qué hay que hacer:**
+
+- [ ] Backend: goroutine en `CRUDHandler.UpdateEventItems` que después de persistir `event_staff`:
+    - Filtra los nuevos staff donde `staff.notification_email_opt_in = true` y `staff.email != null`.
+    - Llama a `emailService.SendCollaboratorAssigned(email, eventName, eventDate, roleOverride, feeAmount)`.
+    - Escribe `event_staff.notification_sent_at = NOW()` y `notification_last_result = 'sent' | 'failed'`.
+    - **Gate:** `if user.Plan == "basic" { skip }`. Pro+ pasa.
+- [ ] Email template nuevo en `services/email_service.go` con copy friendly en español.
+- [ ] Test de integración que verifica dedup (no reenviar si `notification_sent_at IS NOT NULL` con el mismo `(event_id, staff_id)` y fecha sin cambios).
+- [ ] Settings page: toggle organizer-level "Enviar notificaciones al personal al asignar" (opt-out global).
+- [ ] PRD/02 §13.ter — marcar Phase 2 ✅ en la matriz. PRD/04 §3 — activar el badge Pro+.
+
+---
+
+## 🔀 Sprints alternativos (si querés cambiar el rumbo)
+
+Si al arrancar mañana preferís otro camino, estos están en cola:
+
+- **Sprint 9 — Pagos por transferencia del cliente** (2-3 sesiones · grande). Reemplaza el botón "Pagar con Stripe" que querés quitar. Ver `PRD/09` §Sprint 9 para el scope completo.
+- **Sprint 10 — Reseñas post-evento** (1-2 sesiones). Email automático 48h post-evento + portfolio público.
+- **Personal Phase 3 — Business multi-user** (2-3 sprints · el más grande). Login del colaborador + scope de eventos + thread con gerente.
 
 ---
 
