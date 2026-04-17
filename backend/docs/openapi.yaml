@@ -336,6 +336,18 @@ components:
           nullable: true
         cancel_at_period_end:
           type: boolean
+        amount_cents:
+          type: integer
+          nullable: true
+          description: Renewal amount in minor units (e.g. cents). Populated only when provider is stripe; mobile stores (apple/google) expose price at purchase time.
+        currency:
+          type: string
+          nullable: true
+          description: ISO 4217 lowercase (e.g. "usd", "mxn"). Populated only for stripe provider.
+        billing_interval:
+          type: string
+          nullable: true
+          description: Stripe recurring interval — "month" or "year". Null for apple/google.
     SubscriptionStatusResponse:
       type: object
       required:

@@ -614,6 +614,9 @@ func (h *SubscriptionHandler) DebugDowngrade(w http.ResponseWriter, r *http.Requ
 type stripeSubCacheEntry struct {
 	cancelAtPeriodEnd bool
 	currentPeriodEnd  int64
+	amountCents       int64
+	currency          string
+	billingInterval   string
 	fetchedAt         time.Time
 }
 
@@ -663,6 +666,13 @@ func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *ht
 		CancelInstructions string  `json:"cancel_instructions"`
 		CurrentPeriodEnd   *string `json:"current_period_end,omitempty"`
 		CancelAtPeriodEnd  bool    `json:"cancel_at_period_end"`
+		// Pricing info — currently only populated for Stripe-originated subs.
+		// Apple/Google price data lives in the respective stores and is not
+		// fetched here to avoid extra round-trips; clients can display the
+		// price at purchase time instead.
+		AmountCents     *int    `json:"amount_cents,omitempty"`
+		Currency        *string `json:"currency,omitempty"`
+		BillingInterval *string `json:"billing_interval,omitempty"`
 	}
 
 	type planStatus struct {
@@ -691,7 +701,8 @@ func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *ht
 				info.CurrentPeriodEnd = &formatted
 			}
 
-			// Check cancel_at_period_end from Stripe (with caching to avoid rate limits)
+			// Fetch authoritative Stripe data (cancel flag, renewal date, price).
+			// Cached to avoid hitting Stripe on every status call.
 			if user.StripeCustomerID != nil && *user.StripeCustomerID != "" && sub.ProviderSubID != nil {
 				subID := *sub.ProviderSubID
 
@@ -700,25 +711,48 @@ func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *ht
 				cached, ok := stripeSubCache.entries[subID]
 				stripeSubCache.mu.RUnlock()
 
-				if ok && time.Since(cached.fetchedAt) < stripeSubCacheTTL {
-					// Use cached data
-					info.CancelAtPeriodEnd = cached.cancelAtPeriodEnd
-					end := time.Unix(cached.currentPeriodEnd, 0).Format(time.RFC3339)
+				applyCache := func(c *stripeSubCacheEntry) {
+					info.CancelAtPeriodEnd = c.cancelAtPeriodEnd
+					end := time.Unix(c.currentPeriodEnd, 0).Format(time.RFC3339)
 					info.CurrentPeriodEnd = &end
+					if c.amountCents > 0 {
+						amount := int(c.amountCents)
+						info.AmountCents = &amount
+					}
+					if c.currency != "" {
+						curr := c.currency
+						info.Currency = &curr
+					}
+					if c.billingInterval != "" {
+						bi := c.billingInterval
+						info.BillingInterval = &bi
+					}
+				}
+
+				if ok && time.Since(cached.fetchedAt) < stripeSubCacheTTL {
+					applyCache(cached)
 				} else {
 					// Fetch from Stripe and cache
 					if stripeSubData, err := h.stripe.GetSubscription(subID, nil); err == nil {
-						info.CancelAtPeriodEnd = stripeSubData.CancelAtPeriodEnd
-						end := time.Unix(stripeSubData.CurrentPeriodEnd, 0).Format(time.RFC3339)
-						info.CurrentPeriodEnd = &end
-
-						// Update cache
-						stripeSubCache.mu.Lock()
-						stripeSubCache.entries[subID] = &stripeSubCacheEntry{
+						entry := &stripeSubCacheEntry{
 							cancelAtPeriodEnd: stripeSubData.CancelAtPeriodEnd,
 							currentPeriodEnd:  stripeSubData.CurrentPeriodEnd,
 							fetchedAt:         time.Now(),
 						}
+						if stripeSubData.Items != nil && len(stripeSubData.Items.Data) > 0 {
+							price := stripeSubData.Items.Data[0].Price
+							if price != nil {
+								entry.amountCents = price.UnitAmount
+								entry.currency = string(price.Currency)
+								if price.Recurring != nil {
+									entry.billingInterval = string(price.Recurring.Interval)
+								}
+							}
+						}
+						applyCache(entry)
+
+						stripeSubCache.mu.Lock()
+						stripeSubCache.entries[subID] = entry
 						stripeSubCache.mu.Unlock()
 					}
 				}
