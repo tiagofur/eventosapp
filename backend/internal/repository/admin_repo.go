@@ -19,10 +19,17 @@ func NewAdminRepo(pool *pgxpool.Pool) *AdminRepo {
 }
 
 // PlatformStats holds global platform KPIs.
+//
+// Note on plan counters: PremiumUsers counts the legacy 'premium' plan rows
+// still allowed by migration 040 for backward compat; in practice this will
+// be zero after migration 037. BusinessUsers is the current paid tier added
+// in migration 040. Both are exposed so admin dashboards can show the full
+// breakdown.
 type PlatformStats struct {
 	TotalUsers          int `json:"total_users"`
 	BasicUsers          int `json:"basic_users"`
 	ProUsers            int `json:"pro_users"`
+	BusinessUsers       int `json:"business_users"`
 	PremiumUsers        int `json:"premium_users"`
 	TotalEvents         int `json:"total_events"`
 	TotalClients        int `json:"total_clients"`
@@ -80,6 +87,11 @@ func (r *AdminRepo) GetPlatformStats(ctx context.Context) (*PlatformStats, error
 	err = r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE plan = 'pro'`).Scan(&stats.ProUsers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count pro users: %w", err)
+	}
+
+	err = r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE plan = 'business'`).Scan(&stats.BusinessUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count business users: %w", err)
 	}
 
 	err = r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE plan = 'premium'`).Scan(&stats.PremiumUsers)

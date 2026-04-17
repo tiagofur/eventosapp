@@ -63,7 +63,7 @@ func TestSubscriptionRepoUpsertAndGetByUserID(t *testing.T) {
 	}
 
 	// Upsert (update same user+provider)
-	sub.Plan = "premium"
+	sub.Plan = "business"
 	sub.Status = "trialing"
 	if err := repo.Upsert(context.Background(), sub); err != nil {
 		t.Fatalf("Upsert(update) error = %v", err)
@@ -73,8 +73,8 @@ func TestSubscriptionRepoUpsertAndGetByUserID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetByUserID() after upsert error = %v", err)
 	}
-	if got.Plan != "premium" {
-		t.Fatalf("GetByUserID() after upsert plan = %q, want %q", got.Plan, "premium")
+	if got.Plan != "business" {
+		t.Fatalf("GetByUserID() after upsert plan = %q, want %q", got.Plan, "business")
 	}
 	if got.Status != "trialing" {
 		t.Fatalf("GetByUserID() after upsert status = %q, want %q", got.Status, "trialing")
@@ -216,7 +216,7 @@ func TestSubscriptionRepoProviderPriority(t *testing.T) {
 		UserID:             userID,
 		Provider:           "stripe",
 		ProviderSubID:      &stripeSubID,
-		Plan:               "premium",
+		Plan:               "business",
 		Status:             "active",
 		CurrentPeriodStart: &now,
 		CurrentPeriodEnd:   &periodEnd,
@@ -531,18 +531,18 @@ func TestAdminRepoUpdateUserPlan(t *testing.T) {
 		t.Fatalf("PlanExpiresAt should be nil for permanent plan, got %v", user.PlanExpiresAt)
 	}
 
-	// Update to premium with expiry (gifted plan)
+	// Update to business with expiry (gifted plan)
 	expiry := time.Now().Add(7 * 24 * time.Hour).UTC().Truncate(time.Second)
-	if err := repo.UpdateUserPlan(context.Background(), userID, "premium", &expiry); err != nil {
-		t.Fatalf("UpdateUserPlan(premium+expiry) error = %v", err)
+	if err := repo.UpdateUserPlan(context.Background(), userID, "business", &expiry); err != nil {
+		t.Fatalf("UpdateUserPlan(business+expiry) error = %v", err)
 	}
 
 	user, err = repo.GetUserByID(context.Background(), userID)
 	if err != nil {
 		t.Fatalf("GetUserByID() after gifted plan error = %v", err)
 	}
-	if user.Plan != "premium" {
-		t.Fatalf("Plan after gifted update = %q, want %q", user.Plan, "premium")
+	if user.Plan != "business" {
+		t.Fatalf("Plan after gifted update = %q, want %q", user.Plan, "business")
 	}
 	if user.PlanExpiresAt == nil {
 		t.Fatal("PlanExpiresAt should be set for gifted plan")

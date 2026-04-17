@@ -399,7 +399,7 @@ func (h *SubscriptionHandler) StripeWebhook(w http.ResponseWriter, r *http.Reque
 		} else {
 			slog.Info("User downgraded to basic after Stripe subscription cancellation", "customer_id", sub.Customer.ID)
 
-			// Revoke RevenueCat entitlement so mobile apps lose premium
+			// Revoke RevenueCat entitlement so mobile apps lose pro access
 			if h.rcService != nil {
 				// Look up user ID from stripe customer ID to revoke RC entitlement
 				if user, err := h.userRepo.GetByStripeCustomerID(r.Context(), sub.Customer.ID); err == nil {

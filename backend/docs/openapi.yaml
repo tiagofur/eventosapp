@@ -1536,6 +1536,7 @@ components:
         - total_users
         - basic_users
         - pro_users
+        - business_users
         - premium_users
         - total_events
         - total_clients
@@ -1551,8 +1552,12 @@ components:
           type: integer
         pro_users:
           type: integer
+        business_users:
+          type: integer
+          description: Users on the Business tier (added in migration 040).
         premium_users:
           type: integer
+          description: Legacy 'premium' plan rows. Zero in practice after migration 037; kept for backward compat.
         total_events:
           type: integer
         total_clients:
@@ -1595,7 +1600,8 @@ components:
           nullable: true
         plan:
           type: string
-          enum: [basic, pro, premium]
+          enum: [basic, pro, business, premium]
+          description: Current plan. 'premium' is a legacy value retained for backward compat.
         role:
           type: string
         stripe_customer_id:
@@ -1649,8 +1655,8 @@ components:
       properties:
         plan:
           type: string
-          enum: [basic, pro, premium]
-          description: Target plan. Defaults to pro when omitted or empty.
+          enum: [basic, pro, business]
+          description: Target plan. Defaults to pro when omitted or empty. 'premium' is not accepted — legacy rows remain but new grants use pro or business.
         expires_at:
           type: string
           format: date

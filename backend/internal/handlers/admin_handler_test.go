@@ -37,11 +37,12 @@ func TestAdminHandler_GetStats(t *testing.T) {
 		handler := NewAdminHandler(repo)
 
 		stats := &repository.PlatformStats{
-			TotalUsers:  42,
-			BasicUsers:  30,
-			ProUsers:    10,
-			PremiumUsers: 2,
-			TotalEvents: 100,
+			TotalUsers:    42,
+			BasicUsers:    30,
+			ProUsers:      8,
+			BusinessUsers: 2,
+			PremiumUsers:  2,
+			TotalEvents:   100,
 		}
 		repo.On("GetPlatformStats", mock.Anything).Return(stats, nil)
 
@@ -453,19 +454,19 @@ func TestAdminHandler_UpgradeUser(t *testing.T) {
 		repo.AssertExpectations(t)
 	})
 
-	t.Run("upgrade to premium plan", func(t *testing.T) {
+	t.Run("upgrade to business plan", func(t *testing.T) {
 		repo := new(MockAdminRepo)
 		handler := NewAdminHandler(repo)
 
 		userID := uuid.New()
 		user := &repository.AdminUser{ID: userID, Plan: "basic", HasPaidSub: false}
-		updatedUser := &repository.AdminUser{ID: userID, Plan: "premium", HasPaidSub: false}
+		updatedUser := &repository.AdminUser{ID: userID, Plan: "business", HasPaidSub: false}
 
 		repo.On("GetUserByID", mock.Anything, userID).Return(user, nil).Once()
-		repo.On("UpdateUserPlan", mock.Anything, userID, "premium", (*time.Time)(nil)).Return(nil)
+		repo.On("UpdateUserPlan", mock.Anything, userID, "business", (*time.Time)(nil)).Return(nil)
 		repo.On("GetUserByID", mock.Anything, userID).Return(updatedUser, nil).Once()
 
-		req := buildReq(userID, map[string]string{"plan": "premium"})
+		req := buildReq(userID, map[string]string{"plan": "business"})
 		w := httptest.NewRecorder()
 
 		handler.UpgradeUser(w, req)
@@ -473,8 +474,23 @@ func TestAdminHandler_UpgradeUser(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		var resp repository.AdminUser
 		json.Unmarshal(w.Body.Bytes(), &resp)
-		assert.Equal(t, "premium", resp.Plan)
+		assert.Equal(t, "business", resp.Plan)
 		repo.AssertExpectations(t)
+	})
+
+	t.Run("reject legacy premium plan", func(t *testing.T) {
+		repo := new(MockAdminRepo)
+		handler := NewAdminHandler(repo)
+
+		userID := uuid.New()
+
+		req := buildReq(userID, map[string]string{"plan": "premium"})
+		w := httptest.NewRecorder()
+
+		handler.UpgradeUser(w, req)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "Must be 'basic', 'pro', or 'business'")
 	})
 
 	t.Run("downgrade to basic allowed when no paid sub", func(t *testing.T) {

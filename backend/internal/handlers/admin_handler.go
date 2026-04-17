@@ -98,9 +98,11 @@ func (h *AdminHandler) UpgradeUser(w http.ResponseWriter, r *http.Request) {
 		req.Plan = "pro"
 	}
 
-	// Validate target plan
-	if req.Plan != "pro" && req.Plan != "premium" && req.Plan != "basic" {
-		writeError(w, http.StatusBadRequest, "Invalid plan. Must be 'basic', 'pro', or 'premium'")
+	// Validate target plan. 'premium' is a legacy DB value kept by migration
+	// 040 for pre-existing rows but is NOT a currently sellable tier in Stripe
+	// or RevenueCat, so the admin gift flow no longer accepts it.
+	if req.Plan != "pro" && req.Plan != "business" && req.Plan != "basic" {
+		writeError(w, http.StatusBadRequest, "Invalid plan. Must be 'basic', 'pro', or 'business'")
 		return
 	}
 
