@@ -47,6 +47,7 @@ const InventoryDetails = React.lazy(() => import("@/pages/Inventory/InventoryDet
 const CalendarView = React.lazy(() => import("@/pages/Calendar/CalendarView").then((m) => ({ default: m.CalendarView })));
 const QuickQuotePage = React.lazy(() => import("@/pages/QuickQuote/QuickQuotePage").then((m) => ({ default: m.QuickQuotePage })));
 const PublicEventFormPage = React.lazy(() => import("@/pages/PublicEventForm/PublicEventFormPage").then((m) => ({ default: m.PublicEventFormPage })));
+const ClientPortalPage = React.lazy(() => import("@/pages/ClientPortal/ClientPortalPage").then((m) => ({ default: m.ClientPortalPage })));
 
 const EventFormLinksPage = React.lazy(() => import("@/pages/EventForms/EventFormLinksPage").then((m) => ({ default: m.EventFormLinksPage })));
 
@@ -80,6 +81,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/form/:token" element={<PublicEventFormPage />} />
+              <Route path="/client/:token" element={<ClientPortalPage />} />
 
               <Route
                 element={

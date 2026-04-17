@@ -49,6 +49,7 @@ import { logError } from "@/lib/errorHandler";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { getEventTotalCharged, getEventTaxAmount, getEventNetSales } from "@/lib/finance";
 import { Payments } from "./components/Payments";
+import { ClientPortalShareCard } from "./components/ClientPortalShareCard";
 import { StatusDropdown, EventStatus } from "@/components/StatusDropdown";
 import { SkeletonLine } from "@/components/Skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -776,6 +777,9 @@ export const EventSummary: React.FC = () => {
 
       {viewMode === "summary" && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Client portal share link (PRD/12 feature A) */}
+          {id && <ClientPortalShareCard eventId={id} />}
+
           {/* KPI Cards */}
           <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
             <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
