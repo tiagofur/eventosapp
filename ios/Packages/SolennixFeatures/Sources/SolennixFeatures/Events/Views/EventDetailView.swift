@@ -739,13 +739,22 @@ public struct EventDetailView: View {
     private func actionButtonsRow1(_ event: Event) -> some View {
         Group {
             if viewModel.remaining > 0.01 {
-                HStack(spacing: Spacing.sm) {
-                    PremiumButton(title: "Registrar Pago", fullWidth: true) {
-                        viewModel.showPaymentSheet = true
+                VStack(spacing: Spacing.sm) {
+                    HStack(spacing: Spacing.sm) {
+                        PremiumButton(title: "Registrar Pago", fullWidth: true) {
+                            viewModel.showPaymentSheet = true
+                        }
+
+                        PremiumButton(title: "Liquidar \(viewModel.remaining.asMXN)", fullWidth: true) {
+                            viewModel.payRemaining()
+                        }
                     }
 
-                    PremiumButton(title: "Liquidar \(viewModel.remaining.asMXN)", fullWidth: true) {
-                        viewModel.payRemaining()
+                    if let depositPct = event.depositPercent, depositPct > 0, viewModel.totalPaid < 0.01 {
+                        let depositAmount = (event.totalAmount * depositPct) / 100.0
+                        PremiumButton(title: "Registrar Anticipo (\(Int(depositPct))%) - \(depositAmount.asMXN)", fullWidth: true) {
+                            viewModel.payDeposit()
+                        }
                     }
                 }
             }
@@ -1042,10 +1051,10 @@ public struct EventDetailView: View {
 
     private var paymentMethods: [(key: String, label: String)] {
         [
-            ("efectivo", "Efectivo"),
-            ("transferencia", "Transferencia"),
-            ("tarjeta", "Tarjeta"),
-            ("cheque", "Cheque"),
+            ("cash", "Efectivo"),
+            ("transfer", "Transferencia"),
+            ("card", "Tarjeta"),
+            ("check", "Cheque"),
         ]
     }
 

@@ -327,6 +327,6 @@ public struct EventPaymentsDetailView: View {
     }
 
     private var paymentMethods: [(key: String, label: String)] {
-        [("efectivo", "Efectivo"), ("transferencia", "Transferencia"), ("tarjeta", "Tarjeta"), ("cheque", "Cheque")]
+        [("cash", "Efectivo"), ("transfer", "Transferencia"), ("card", "Tarjeta"), ("check", "Cheque")]
     }
 }

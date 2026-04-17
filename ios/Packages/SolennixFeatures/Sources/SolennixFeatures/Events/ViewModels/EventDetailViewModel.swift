@@ -27,7 +27,7 @@ public final class EventDetailViewModel {
     public var showPaymentSheet: Bool = false
 
     public var paymentAmount: String = ""
-    public var paymentMethod: String = "efectivo"
+    public var paymentMethod: String = "cash"
     public var paymentNotes: String = ""
     public var isSavingPayment: Bool = false
     public var isUploadingPhoto: Bool = false
@@ -235,7 +235,7 @@ public final class EventDetailViewModel {
 
             // Reset form
             paymentAmount = ""
-            paymentMethod = "efectivo"
+            paymentMethod = "cash"
             paymentNotes = ""
             showPaymentSheet = false
         } catch {
@@ -250,6 +250,17 @@ public final class EventDetailViewModel {
         let formatted = String(format: "%.2f", remaining)
         paymentAmount = formatted
         showPaymentSheet = true
+    }
+
+    public func payDeposit() {
+        guard let event else { return }
+        let depositPct = event.depositPercent ?? 0.0
+        if depositPct > 0 {
+            let depositAmount = (event.totalAmount * depositPct) / 100.0
+            let formatted = String(format: "%.2f", depositAmount)
+            paymentAmount = formatted
+            showPaymentSheet = true
+        }
     }
 
     @MainActor

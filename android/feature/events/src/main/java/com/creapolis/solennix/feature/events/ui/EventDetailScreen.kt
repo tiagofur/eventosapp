@@ -1703,7 +1703,7 @@ fun PaymentModal(
 
             Text("M\u00e9todo de Pago", style = MaterialTheme.typography.labelMedium)
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("cash" to "Efectivo", "transfer" to "Transferencia", "card" to "Tarjeta", "check" to "Cheque", "other" to "Otro").forEach { (key, label) ->
+                listOf("cash" to "Efectivo", "transfer" to "Transferencia", "card" to "Tarjeta").forEach { (key, label) ->
                     FilterChip(
                         selected = method == key,
                         onClick = { method = key },
@@ -1712,7 +1712,7 @@ fun PaymentModal(
                 }
             }
             Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("cheque" to "Cheque", "otro" to "Otro").forEach { (key, label) ->
+                listOf("check" to "Cheque", "other" to "Otro").forEach { (key, label) ->
                     FilterChip(
                         selected = method == key,
                         onClick = { method = key },
