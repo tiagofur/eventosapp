@@ -177,3 +177,81 @@ Ver `PRD/09_ROADMAP.md` para detalle.
 - ¿Cupones para miembros de AEM (Asociación de Empresarios de Eventos) u otras gremiales por país?
 - ¿Tier "Gratis permanente con marca Solennix visible" vs "Gratis 30 días y después downgrade a read-only"?
 - ¿Team-pricing transparente (ej. Business = $49 base + $10/staff adicional) o flat?
+
+---
+
+## 11. Keys y secrets — no confundir (lectura obligatoria antes de tocar billing)
+
+Cada integración de cobro tiene **varias keys** en lugares distintos. Confundirlas es la causa #1 de bugs tipo "el pago se cobró pero el usuario no ve el upgrade" o "en iOS ves ofertas de test aunque el backend ya está en producción".
+
+### 11.1 Stripe
+
+| Key | Dónde vive | Prefix | Quién lo usa |
+|---|---|---|---|
+| Secret API Key | Backend `.env` → `STRIPE_SECRET_KEY` | `sk_live_...` / `sk_test_...` | Backend: crea checkout sessions, lee subscriptions. **Nunca** en el frontend. |
+| Webhook Signing Secret | Backend `.env` → `STRIPE_WEBHOOK_SECRET` | `whsec_...` | Backend: valida firma de los eventos webhook de Stripe. |
+| Price IDs | Backend `.env` → `STRIPE_PRO_PRICE_ID`, `STRIPE_BUSINESS_PRICE_ID` | `price_...` | Backend: identifica qué tier comprar al crear la checkout session. |
+| Billing Portal Config | Backend `.env` → `STRIPE_PORTAL_CONFIG_ID` (opcional) | `bpc_...` | Backend: variante custom del Customer Portal. Si omitís, usa la default del account. |
+
+**El web NO necesita ninguna key de Stripe.** El flujo es: web → tu backend → Stripe Checkout redirect. La `sk_...` nunca sale del servidor.
+
+Distinguir test vs live: Stripe explicita el modo en el prefix (`sk_test_` vs `sk_live_`, `whsec_` vs `whsec_test_` en algunos casos, los price IDs comparten prefix pero el dashboard los separa por modo). **Siempre confirmá que las 4 keys son del mismo modo (todas live o todas test) antes de deployar.**
+
+### 11.2 RevenueCat — 3 keys DISTINTAS (confusión típica)
+
+RevenueCat es especial porque usa **3 keys separadas, una por superficie**:
+
+| Key | Dónde vive | Prefix | Quién lo usa |
+|---|---|---|---|
+| **Secret API Key** (server REST) | Backend `.env` → `REVENUECAT_API_KEY` | `sk_...` | Backend: grant/revoke de entitlements (ej. cuando Stripe web cobra, el backend llama a RC para que mobile vea el entitlement). |
+| **Public App Key iOS** | iOS build → `ios/Config/Secrets.xcconfig` → `REVENUECAT_PUBLIC_API_KEY` | `appl_...` | iOS SDK: `Purchases.configure(withAPIKey:)` — consulta offerings, ejecuta purchases. |
+| **Public App Key Android** | Android build → env var o `~/.gradle/gradle.properties` → `REVENUECAT_API_KEY` | `goog_...` | Android SDK: misma función que iOS pero distinto key. |
+
+**Confusión más típica:** asumir que "si el backend está en producción, todas las keys son de prod". **FALSO.** Cada una se configura por separado; es perfectamente posible tener el backend apuntando a live y la iOS apuntando a la Test Store de RC.
+
+#### ⚠️ El prefix `appl_` NO indica test vs live
+
+Dentro de un Project de RevenueCat hay múltiples "apps":
+- **Test Store app** — genera key con prefix `appl_` para simular compras sin App Store.
+- **Apple App Store app (live)** — la app real; genera OTRA key también con prefix `appl_`.
+
+**Ambas empiezan con `appl_`.** El formato NO te dice cuál es cuál — hay que verificar en el dashboard. Mismo para Android (`goog_` en test y live).
+
+#### Cómo verificar que la key mobile actual es la correcta
+
+1. https://app.revenuecat.com → tu Project.
+2. **Project Settings** → **API Keys**.
+3. Comparar el valor que tenés en `Secrets.xcconfig` (iOS) / gradle properties (Android) contra la lista del dashboard:
+   ```
+   Apps:
+     • Solennix iOS (App Store)        → appl_XXXX…   ← esta es la que querés en prod
+     • Solennix iOS (Test Store)       → appl_YYYY…   ← solo para dev local
+     • Solennix Android (Play Store)   → goog_ZZZZ…
+     • Solennix Android (Test Store)   → goog_WWWW…
+   ```
+4. Si tu `Secrets.xcconfig` tiene la del App Store (live) → prod OK. Si tiene la de Test Store → reemplazar.
+
+**Estado actual (2026-04-16):** el comentario de `ios/Config/Secrets.xcconfig:12` dice explícitamente "Current value is the Test Store key — replace with `appl_...` once the Apple App Store app is connected in RevenueCat." Si ya la reemplazaste pero olvidaste actualizar el comentario, perfecto; si no, **es un pendiente activo**.
+
+### 11.3 App Store Connect + Google Play (no son "keys" pero van juntos)
+
+- **App Store Connect** no provee una key consumible por el cliente — la integración se hace por **bundle ID** + productos/subscriptions creados en el dashboard. RC absorbe los productos vía la conexión "Apple App Store" del project.
+- **Google Play Console** idem: bundle + products en Play Console, RC absorbe.
+
+**El error típico:** crear los productos en App Store Connect / Play pero olvidar conectarlos en RC. Síntoma: `Purchases.shared.offerings()` devuelve vacío en mobile aunque el store sí los muestre.
+
+### 11.4 Checklist rápido antes de cobrar en prod
+
+- [ ] `STRIPE_SECRET_KEY` es `sk_live_...` (no `sk_test_...`) en VPS `.env`.
+- [ ] `STRIPE_WEBHOOK_SECRET` matchea el endpoint LIVE registrado en Stripe Dashboard.
+- [ ] `STRIPE_PRO_PRICE_ID` apunta a un price visible en modo Live del Stripe Dashboard.
+- [ ] `STRIPE_BUSINESS_PRICE_ID` idem (si querés Business habilitado).
+- [ ] `REVENUECAT_API_KEY` es la Secret key del Project de RC, no una public key.
+- [ ] `REVENUECAT_WEBHOOK_SECRET` matchea el Authorization Header configurado en el webhook de RC.
+- [ ] `ios/Config/Secrets.xcconfig` `REVENUECAT_PUBLIC_API_KEY` es la key de la app "Apple App Store" (live) en RC, no la Test Store.
+- [ ] Android gradle property `REVENUECAT_API_KEY` es la key de la app "Google Play Store" (live) en RC, no la Test Store.
+- [ ] App Store Connect: productos `solennix_premium_monthly` y `solennix_premium_yearly` en estado "Approved" (no "Waiting for Review").
+- [ ] Google Play Console: productos idénticos publicados en al menos closed testing track.
+- [ ] RevenueCat Dashboard: entitlement `pro_access` asociado a los productos de ambas stores + default offering activo.
+
+**Si TODOS estos tildes están ✓ → listo para cobrar.** Si uno falta, el síntoma varía (404 en checkout, offerings vacío en mobile, webhook que no llega, etc).

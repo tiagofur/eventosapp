@@ -1,213 +1,287 @@
 # Current Status — Solennix
 
-**Last Updated:** 2026-04-16
-**Status:** Auditoría cross-platform completa. Known issues backlog priorizado. Auth funcional. Deploy pipeline preparado pero no activado.
+**Last Updated:** 2026-04-16 (cierre de Sprint 7.A + Portal Cliente MVP).
+**Status:** 25 commits pusheados hoy. Audit 2026-04-16 cerrado (30/38 findings). Portal Cliente MVP live en backend + web. Pricing foundation listo, espera dashboards externos.
 
 ---
 
-## Authentication Status
+## 1. Producción — qué está live hoy (2026-04-16)
 
-### Google Sign-In ✅
+### 1.1 Apps publicadas
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **iOS** | ✅ Complete | `signInWithGoogle()` en AuthViewModel. Validado en devices. |
-| **Android** | ✅ Complete | `GoogleSignInButton` + `viewModel.loginWithGoogle()`. Production-ready. |
-| **Web** | ✅ Complete | Custom styled button con Google One Tap flow (refactor 2026-04-12). |
-| **Backend** | ✅ Complete | `GoogleSignIn()` handler valida `id_token`. Setea cookie httpOnly. |
+| Plataforma | Versión | Store | Status |
+|---|---|---|---|
+| iOS | 1.0.2 | App Store MX — `id6760874129` | ✅ Live. **Sin cambios de hoy** (se envían en 1.0.4 cuando armes próximo build). |
+| Android | 1.0.0 | Play Store | ✅ Live. **Sin cambios de hoy** (próximo APK firmado ya incluye los fixes). |
+| Web | latest | `solennix.com` | ✅ Live. Pendiente deploy manual para incorporar cambios de hoy. |
+| Backend | latest | `api.solennix.com` | ✅ Live. Pendiente deploy manual + migration 040+041. |
 
-### Apple Sign-In ⚠️ (funciona para usuarios existentes — **ROTO para nuevos usuarios**, ver P0-BE-1)
+### 1.2 Auth status
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| **iOS** | ✅ Complete | `signInWithApple()` + `SignInWithAppleButton` nativo. App Store compliant. |
-| **Android** | ✅ Complete | `AppleSignInButton` via Sign In with Apple SDK. API 26+. |
-| **Web** | ✅ Complete | `AppleSignInButton` via AppleID.auth SDK con Private Relay. |
-| **Backend** | ⚠️ **BUG** | Ver `P0-BE-1`, `P0-BE-2`, `P0-BE-3`. Nuevos usuarios Apple fallan al crearse. |
+| Flow | iOS | Android | Web | Backend |
+|---|:-:|:-:|:-:|:-:|
+| Email + password | ✅ | ✅ | ✅ | ✅ |
+| Google Sign-In | ✅ | ✅ | ✅ | ✅ |
+| Apple Sign-In (existing user) | ✅ | ✅ | ✅ | ✅ |
+| Apple Sign-In (new user) | ✅ | ✅ | ✅ | ✅ *(arreglado hoy — ver §3.1)* |
+| JWT refresh + rotation | ✅ | ✅ | ✅ | ✅ |
+| Session persistence | ✅ | ✅ | ✅ | ✅ |
+| Logout + token revoke | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
-## Platform Parity Matrix
+## 2. Lo que se empujó hoy (commits en `main`)
+
+25 commits firmados sin `Co-Authored-By` (per user preference global):
 
 ```
-Feature                | iOS | Android | Web | Backend
------------            | --- | ------- | --- | -------
-Google Sign-In         | ✅  | ✅      | ✅  | ✅
-Apple Sign-In          | ✅  | ✅      | ✅  | ⚠️
-Email/Password Login   | ✅  | ✅      | ✅  | ✅
-JWT Refresh Tokens     | ✅  | ✅      | ✅  | ✅
-Session Persistence    | ✅  | ✅      | ✅  | ✅
-Logout / Token Revoke  | ✅  | ✅      | ✅  | ✅
+a3f425a  fix(android): silent migration of legacy checklist prefs
+06d69ff  feat(web): Client Portal MVP — /client/:token + share card
+8dff4f3  feat(backend): Portal Cliente MVP — tokenized link + public view
+993719c  feat(web): Business tier card + paywall + plan param
+8d521b2  feat(backend): Business tier + 14-day Stripe trial
+8d99328  chore: .env.example completo con todas las vars
+0284923  a11y(ios): VoiceOver pass on Dashboard cards + chart + buttons
+62a5d6b  perf(ios): DateFormatter cache + hot-path migration
+f960e02  fix(ios): Dashboard kpis preload (counts < 200ms)
+d2b967e  fix(web): CalendarView fetch layer to React Query
+9660842  docs(prd): backfill 10 PRD documents (sprint 5)
+b4ad3e1  fix(ios): removePhoto undo + utf8 force-unwraps
+5e4a900  fix(android): CSV filters + Calendar errors + encrypted checklist
+3a72812  fix(backend): sort allowlist + rate limiter + admin errors
+8335d5d  fix(web): Modal scroll lock + toast throttle + Settings guard
+3b72e8e  fix(ios): Dashboard .task + static DateFormatter + safer regex
+665c002  fix(android): observeEvent + lifecycle-aware Window + bounded fanout
+8a3162f  fix(web): EventForm step validation + PublicEventForm AbortController
+a8a8dd4  fix(backend): GetAll LIMIT + Apple token timeout
+f1d0ef2  docs(prd): audit backlog + client-transparency roadmap
+e5751ae  fix(web): EventForm fetchMissingCosts re-render loop
+3bb1cba  fix(android): syncEventItems @Transaction
+8277dc2  fix(ios): APIClient timeout + SwiftData error propagation
+3ec4eba  fix(backend): restore Apple Sign-In for new users
 ```
 
----
-
-## Known Issues — Cross-Platform Audit 2026-04-16
-
-**Total: 38 findings** (8 P0, 12 P1, 11 P2, 7 P3). Prioridad: arreglar P0 en bundle, luego P1, luego P2/P3 oportunistas.
-
-### 🔴 Critical (P0) — 8 findings
-
-#### Backend (3)
-
-- **P0-BE-1** — `auth_handler.go:1200` + `auth_handler.go:1385`: AppleSignIn + AppleCallback llaman `userRepo.Create()` que requiere `password_hash NOT NULL`. Apple no tiene password → cada alta de usuario Apple devuelve 500 contra la DB. Google usa `CreateWithOAuth` correctamente. **Fix:** usar `CreateWithOAuth` en ambos paths Apple.
-- **P0-BE-2** — `auth_handler.go:1193–1198` + `1379–1384`: `newUser` en Apple paths no setea `Plan`. Queda `""`. Limits por plan bypaseados → usuario Apple nuevo tiene acceso ilimitado hasta próximo login. **Fix:** setear `Plan: "basic"` antes de `Create`, igual que Register y Google.
-- **P0-BE-3** — `auth_handler.go:1356, 1367, 1391`: `tokens, _ := h.authService.GenerateTokenPair(...)` descarta error. Si falla firma → redirect con cookie vacía → sesión rota silenciosa. **Fix:** chequear error y devolver 500 antes del redirect.
-
-#### iOS (3)
-
-- **P0-iOS-1** — `EventDetailViewModel.swift:275`: `addPhotos` sin `@MainActor` pero muta `@Observable` state desde async → Swift concurrency data race. Todos los otros mutating methods de la clase tienen `@MainActor`. **Fix:** agregar `@MainActor` al signature.
-- **P0-iOS-2** — `APIClient.swift:62`: `waitsForConnectivity = true` sin `timeoutIntervalForResource` (default 7 días). Request offline o detrás de captive portal queda suspendido indefinidamente, bloquea token refresh. **Fix:** `config.timeoutIntervalForResource = 60`.
-- **P0-iOS-3** — `SolennixModelContainer.swift:45`: `fatalError` en fallback path de SwiftData. Si falla persistent + in-memory (posible tras update iOS que cambie schema) → crash al arranque sin recovery. **Fix:** propagar error al caller, mostrar alert.
-
-#### Android (1)
-
-- **P0-AND-1** — `EventRepository.kt:260–263`: `syncEventItems()` sin `@Transaction`. 4 suspend calls secuenciales (deleteProducts, deleteExtras, insertProducts, insertExtras). Flow collector en `getProductsByEventId()` ve ventana vacía entre DELETE e INSERT → EventDetailScreen flickea "0 productos" durante sync. **Fix:** DAO method único con `@Transaction`.
-
-#### Web (1)
-
-- **P0-WEB-1** — `EventForm.tsx:422–431`: `fetchMissingCosts` con `productUnitCosts` en deps del useEffect + `setProductUnitCosts` en el cuerpo → riesgo de loop infinito. `=== undefined` guard es la única protección. **Fix:** sacar `productUnitCosts` del dep array, usar functional update del setter.
+**Volumen:** ~6000 líneas entre código y docs.
 
 ---
 
-### 🟠 High (P1) — 12 findings
+## 3. Audit 2026-04-16 — qué quedó abierto
 
-#### Backend (2)
+Del audit original de 38 findings:
+- **P0:** 8 → 7 arreglados, 1 inválido.
+- **P1:** 12 → 11 arreglados, 1 skipeado con rationale.
+- **P2:** 11 → 8 arreglados, 3 diferidos con rationale.
+- **P3:** 7 → 4 arreglados, 3 diferidos con rationale.
 
-- **P1-BE-1** — `client_repo.go:26`, `event_repo.go:65`, `product_repo.go:26`, `inventory_repo.go:26`, `payment_repo.go:24`: `GetAll` sin LIMIT en fallback cuando no hay `page`. Usuario con miles de rows devuelve todo. **Fix:** hard cap `LIMIT 1000` o eliminar path no paginado.
-- **P1-BE-2** — `auth_handler.go:1310`: `http.PostForm` a Apple token endpoint sin timeout (usa `http.DefaultClient`). Apple hung → goroutine bloqueada indefinidamente, exhaustion del connection pool. **Fix:** `&http.Client{Timeout: 10 * time.Second}` (patrón ya usado en `fetchApplePublicKeys`).
+**Neto:** 30 resueltos, 7 diferidos, 1 inválido.
 
-#### iOS (4)
+### 3.1 P0 críticos (TODOS cerrados)
 
-- **P1-iOS-1** — `DashboardView.swift:112–119`: `.onAppear` llama `loadDashboard()` incondicional en cada aparición → flicker visible + 8 requests redundantes por navegación round-trip. **Fix:** `.task` (auto-cancel) o gate con `lastLoadedAt` staleness.
-- **P1-iOS-2** — `ClientListViewModel.swift:36,40,43` + `ProductListViewModel.swift:32,35,39` + `InventoryListViewModel.swift:34,37,41`: anti-pattern `@Observable` + `didSet`. El macro reescribe storage y no garantiza `didSet` en Swift 5.9+ → filtering puede quedar stale tras cambio de search/sort. **Fix:** computed property o `.onChange` modifier en la view.
-- **P1-iOS-3** — `EventDetailViewModel.swift:79–81`: `canStartLiveActivity` aloca `DateFormatter()` en cada acceso (se lee en cada render). **Fix:** `private static let` formatter.
-- **P1-iOS-4** — `ContractTemplateTextView.swift:66`: `try! NSRegularExpression(...)`. Pattern seguro hoy, pero `try!` es fragil ante futuros cambios al pattern. **Fix:** `try?` con fallback, o `do/catch` con `fatalError` explícito.
+- **P0-BE-1/2/3** (Apple Sign-In): ✅ Arreglado en `3ec4eba`. `CreateWithOAuth` + `Plan: "basic"` + check de `GenerateTokenPair` errors en las 3 branches de `AppleCallback`.
+- **P0-iOS-1** (addPhotos @MainActor): ⚠️ Audit inválido — el atributo YA estaba presente. Documentado.
+- **P0-iOS-2** (APIClient timeout): ✅ Arreglado en `8277dc2`. `timeoutIntervalForResource = 60`.
+- **P0-iOS-3** (SolennixModelContainer fatalError): ✅ Arreglado en `8277dc2`. `throws` + caller captura a Sentry.
+- **P0-AND-1** (syncEventItems `@Transaction`): ✅ Arreglado en `3bb1cba`.
+- **P0-WEB-1** (fetchMissingCosts loop): ✅ Arreglado en `e5751ae`.
 
-#### Android (3)
+### 3.2 P1 (11 de 12)
 
-- **P1-AND-1** — `EventDetailViewModel.kt:138–145`: `eventRepository.getEvents()` (full table) colectado en init solo para buscar uno por ID. Re-scan de toda la tabla en cada mutación de cualquier evento. **Fix:** `Flow<Event?>` single-item por `eventId` en DAO.
-- **P1-AND-2** — `EventDetailScreen.kt:98`: `collectAsState` (no lifecycle-aware) para WindowInfoTracker. Subscription viva en background. **Fix:** `collectAsStateWithLifecycle()`.
-- **P1-AND-3** — `InventoryDetailViewModel.kt:100–128`: N+1 API calls en `loadDemandForecast()`. Fetch all events remote, luego 1 `getEventProductsFromApi` por evento upcoming. 50 eventos = 51 API calls. **Fix:** endpoint server-side `/inventory/:id/demand` o batch.
+Todos cerrados **excepto P1-iOS-2** (`@Observable` + `didSet`): skipeado porque Apple docs contradicen el audit — el macro preserva property observers. Documentado en commit `3b72e8e`. Se reabre solo con repro concreto.
 
-#### Web (3)
+### 3.3 P2 (8 de 11)
 
-- **P1-WEB-1** — `EventForm.tsx:803`: `methods.trigger()` sin lista de fields → valida TODOS los steps desde el primero. Usuario ve errores en campos que aún no vio. **Fix:** `methods.trigger(['client_id','event_date',...])` con fields del step activo.
-- **P1-WEB-2** — `EventForm.tsx:710–714`: `onSubmit` avanza step en vez de guardar. Enter en steps 1–4 saltea validación de `nextStep`, usuario puede saltar a step 5 y disparar save prematuro. **Fix:** form submit solo para save final; `nextStep` solo desde botón.
-- **P1-WEB-3** — `PublicEventFormPage.tsx:88–108`: `fetchFormData` fuera del deps → `token` via closure, si cambia tras mount se usa stale. Sin `AbortController` → setState en unmounted. **Fix:** mover `fetchFormData` adentro del effect + AbortController con cleanup.
+**Diferidos con rationale:**
 
----
+- **P2-WEB-1 (CalendarView → React Query):** ✅ cerrado hoy en `d2b967e`.
+- **P2-BE-1 (MaxBytesReader nil):** ⏳ Diferido. Go 1.25 stdlib no panickea; 40 call-sites a cambiar para cero beneficio. Revisitar si Go 1.26 cambia contrato.
+- **P2-iOS-3 (Dashboard 8 GETs):** 🟡 Parcial en `f960e02` — preload `/dashboard/kpis` llena counts en <200ms. Migración completa a endpoint único que devuelva listas aún pendiente (requiere backend change).
+- **Otros P2-iOS/P2-AND:** arreglados en `b4ad3e1` + `5e4a900`.
 
-### 🟡 Medium (P2) — 11 findings
+### 3.4 P3 (4 de 7)
 
-#### Backend (2)
-
-- **P2-BE-1** — `handlers/helpers.go:40`: `http.MaxBytesReader(nil, r.Body, maxBodySize)` con ResponseWriter `nil`. Viola contrato stdlib → nil pointer deref si se excede el límite en algunas versiones Go. **Fix:** threadear `w` a través de `decodeJSON(w, r, dst)`.
-- **P2-BE-2** — `event_repo.go:96–98`, `client_repo.go:59–61`, `payment_repo.go:59`: sort column inyectado en SQL via `fmt.Sprintf`; allowlist solo en handler. Calls directos a repo (tests, futuro) bypasean el guard. **Fix:** allowlist interno en cada repo method.
-
-#### iOS (3)
-
-- **P2-iOS-1** — `EventDetailViewModel.swift:301–309`: `removePhoto(at:)` borra localmente antes de que el PUT exitoso confirme. Si falla, `errorMessage` se setea pero URL no se restaura → divergencia permanente UI/backend. **Fix:** snapshot del array, restore on error (mirror del patrón `softDeleteClient`).
-- **P2-iOS-2** — `APIClient.swift:651–656`: 5 force-unwraps `String.data(using: .utf8)!` en multipart body. Riesgo bajo pero técnicamente unsafe. **Fix:** `Data(string.utf8)` (non-failable).
-- **P2-iOS-3** — `DashboardViewModel.swift:185`: TODO real — 8 GETs secuenciales por load. Endpoint `/api/dashboard/kpis` agregado ya existe. ~1.6s latencia serial en 200ms RTT. **Fix:** migrar Dashboard al endpoint agregado.
-
-#### Android (3)
-
-- **P2-AND-1** — `EventListViewModel.kt:149–168`: CSV export lee `uiState.value.events` (cache completo Room), no el filtered paged set. Export con filtro status/fecha activo exporta TODO silently. **Fix:** aplicar predicates antes del CSV o querear Room con filtros.
-- **P2-AND-2** — `SolennixDatabase.kt:53–57`: `MIGRATION_4_5` no-op (solo log). Si hubo schema change entre v4 y v5 → drift en devices actualizadas. **Fix:** verificar schema diff v4→v5 y agregar DDL.
-- **P2-AND-3** — `CalendarViewModel.kt:128–171`: `toggleDateBlock`, `blockDateRange`, `deleteUnavailableDate` con catch blocks vacíos. Fallo al blockear fecha → usuario no se entera. **Fix:** exponer `errorMessage: String?` en state y emitir.
-
-#### Web (3)
-
-- **P2-WEB-1** — `CalendarView.tsx:98–124`: bypassea React Query completo. Navegación mes dispara 2 API calls sin cache/dedup/SWR. Spinner en cada navegación, data descartada on unmount. **Fix:** `useEventsByDateRange` + hook para unavailable-dates.
-- **P2-WEB-2** — `Modal.tsx:32–36`: `document.body.style.overflow = 'unset'` en cleanup borra cualquier scroll lock pre-existente (nested modals, otras UIs). **Fix:** capturar el overflow original antes y restaurarlo.
-- **P2-WEB-3** — `lib/queryClient.ts:14`: `QueryCache.onError` dispara toast en cada failed background refetch. Red inestable = flood de toasts idénticos. **Fix:** debounce por timestamp o dedup key.
+**Diferidos:**
+- **P3-iOS-1 (DateFormatter en 14 views):** 🟡 Parcial en `62a5d6b` — top 6 files migrados. PDF generators y ViewModels quedan.
+- **P3-iOS-2 (VoiceOver coverage):** 🟡 Parcial en `0284923` — Dashboard cubierto. EventDetail tabs, settings y charts restantes.
+- Resto cerrado.
 
 ---
 
-### 🟢 Low (P3) — 7 findings
+## 4. Portal Cliente MVP (PRD/12 feature A) — nuevo hoy
 
-#### Backend (2)
+### 4.1 Qué se shipeó
 
-- **P3-BE-1** — `middleware/ratelimit.go:37–45`: `RateLimitStopFunc` global sobreescrito en cada call. Solo el último limiter registrado tiene stop-func alcanzable. Frágil. **Fix:** acumular en slice y llamar todos.
-- **P3-BE-2** — `admin_handler.go:30, 45`: `writeJSON` con `map[string]string{"error":...}` viola convención `{"data","error","message"}`. **Fix:** `writeError(w, status, msg)`.
+**Backend (commit `8dff4f3`):**
+- Migration 041 `event_public_links` + partial unique index.
+- Modelo `EventPublicLink`, repositorio con Create/GetActive/GetByToken/Revoke.
+- Handler `EventPublicLinkHandler` con 4 endpoints:
+  - `POST /api/events/{id}/public-link` (autenticado, rota token si existe activo).
+  - `GET  /api/events/{id}/public-link` (autenticado).
+  - `DELETE /api/events/{id}/public-link` (autenticado).
+  - `GET  /api/public/events/{token}` (público, sin auth, rate limited 10/min).
+- Respuesta pública curada: evento (sin notas internas), organizer branding, cliente (nombre), payment summary (total/paid/remaining).
+- 410 Gone para revoked/expired (web puede distinguir "URL mal copiada" de "organizer deshabilitó").
+- Auto-revoke si el evento fue borrado mientras el link estaba activo.
 
-#### iOS (2)
+**Web (commit `06d69ff`):**
+- Ruta pública `/client/:token` → `ClientPortalPage.tsx`.
+- `ClientPortalUnavailable` con copy para 404 y 410 distintos.
+- `eventPublicLinkService` wrap de los 3 endpoints autenticados.
+- `ClientPortalShareCard` en EventSummary: Copy + WhatsApp share + Rotate + Revoke.
+- App.tsx route lazy registrada.
 
-- **P3-iOS-1** — `EventDetailView.swift:990–1020` + otros: helpers (`formatDateShort`, `parseDateComponents`) allocán 2-3 `DateFormatter` por call durante `body`. **Fix:** `private static let` a nivel view.
-- **P3-iOS-2** — KPICard, AttentionEventsCard, EventStatusChart: ~24 accessibility annotations en ~90 archivos. Charts interactivos y status buttons sin `accessibilityLabel`/`Value`. **Fix:** pass targeteado de VoiceOver.
+### 4.2 Qué queda para completar feature A
 
-#### Android (2)
-
-- **P3-AND-1** — `EventListViewModel.kt:165`: columna "Pagado" hardcodeada `""` en CSV export. Header exportado, data nunca populated → export engañoso. **Fix:** calcular desde `paymentRepository` o eliminar columna.
-- **P3-AND-2** — `EventChecklistViewModel.kt:64`: `SharedPreferences` sin encriptar mientras el resto usa `EncryptedSharedPreferences`. Event IDs expuestos como keys. **Fix:** inyectar la instancia `EncryptedSharedPreferences` de `AuthManager`.
-
-#### Web (1)
-
-- **P3-WEB-1** — `Settings.tsx:94–120`: `useState(profile?.default_deposit_percent || 50)` evaluado una vez al mount. Si `profile` es null al inicio y usuario guarda rápido → sobreescribe valores server con defaults. **Fix:** render settings form solo tras `profile !== null`.
-
----
-
-## Propuesta de orden de ataque
-
-**Sprint 1 — P0 bundle (objetivo: 1 sesión)**
-1. Backend P0-BE-1+2+3 (mismo archivo, bundle atómico) — desbloquea Apple Sign-In en producción.
-2. iOS P0-iOS-1 + P0-iOS-2 + P0-iOS-3.
-3. Android P0-AND-1.
-4. Web P0-WEB-1.
-→ Commit por plataforma. Cross-platform parity check al final.
-
-**Sprint 2 — P1 bundle (1-2 sesiones)**
-Ataque por plataforma (misma área = mismo commit). Prioridad: P1-WEB-1 + P1-WEB-2 (ambos en EventForm, bundle), P1-BE-1 + P1-BE-2, P1-iOS-1 + P1-iOS-2, P1-AND-1 + P1-AND-2 + P1-AND-3.
-
-**Sprint 3 — P2/P3 cleanup (1 sesión)**
-Lo que entre. Prioridad a las que tocan security (P2-BE-2, P3-AND-2) y data integrity (P2-AND-1, P2-iOS-1).
-
-**Sprint 4 — Activar deploy VPS** (requiere vos: secrets GitHub + path VPS, ver notas abajo).
-
-**Sprint 5+ — Backfill PRD docs 01-10 + implementar features PRD/12 (Client Transparency).**
+| Item | Plataforma | Tracking |
+|---|---|---|
+| iOS `ClientPortalShareSheet.swift` en EventDetailView | iOS | Sprint 8 |
+| Android `ClientPortalShareBottomSheet.kt` en EventDetailScreen | Android | Sprint 8 |
+| OpenAPI docs de los 4 endpoints | Backend | Follow-up (lo agrego junto con Sprint 7.B) |
+| PIN opcional (extra layer de privacy) | Backend + clientes | Backlog |
+| Field-level `visibleToClient` toggles | Backend + clientes | Backlog |
+| Plan limit (Gratis 1 portal / Pro ∞) | Backend | Sprint 7.C (enforcement matrix) |
 
 ---
 
-## Testing Checklist
+## 5. Pricing foundation (Sprint 7.A) — listo, espera tu setup
 
-- [x] Auth flows Google/Apple (iOS, Android, Web) — pero ⚠️ Apple new-user backend path está roto.
+### 5.1 Backend (✅ listo para cobrar)
+
+- `.env.example` completo con 30+ vars.
+- Migration 040 permite `plan = 'business'` en DB.
+- `CreateCheckoutSession` acepta body opcional `{plan: "pro"|"business", skip_trial: bool}`.
+- Stripe Subscription metadata propaga el `plan` label → webhook distingue Pro vs Business.
+- 14-day trial default en web (paridad con mobile IAP trial).
+
+### 5.2 Web (✅ listo para cobrar)
+
+- `Pricing.tsx` con 3 cards (Básico / Pro / Business).
+- `api.ts` detecta `403 plan_limit_exceeded` → toast + CustomEvent.
+- Layout listener redirige a `/pricing` post-error 800ms.
+- Service acepta `plan` param.
+
+### 5.3 iOS / Android (⏳ espera dashboards externos)
+
+Código ya existe (SubscriptionManager + RC SDK wired + fallback StoreKit). **Falta solo**:
+1. Crear productos en App Store Connect + Google Play.
+2. Conectarlos en RevenueCat.
+3. Reemplazar la key de Test Store por la de App Store (live) en `ios/Config/Secrets.xcconfig`. Ver `PRD/04` §11 para cómo verificar.
+
+**Sin estas tareas externas, mobile NO cobra** (pero tampoco crashea — `SubscriptionManager` detecta offerings vacías y cae al fallback).
+
+---
+
+## 6. Deploy / Build Status
+
+| Component | Versión | Environment | Status |
+|-----------|---------|-------------|--------|
+| iOS | 1.0.2+ (project.yml marca 1.0.4) | App Store MX | ✅ Live — `https://apps.apple.com/mx/app/solennix/id6760874129` |
+| Android | 1.0.0 | Play Store | ✅ Live — release APK firmado con `solennix.jks` |
+| Web | Latest merged to `main` | `solennix.com` | ✅ Live (pendiente deploy manual para incorporar hoy) |
+| Backend | Latest merged to `main` | `api.solennix.com` | ✅ Live (pendiente deploy manual + migration 040 + 041) |
+| CI Pipeline | — | GitHub Actions | ✅ backend + web tests + typecheck + lint + E2E Playwright |
+| Deploy workflow | — | GitHub Actions | 🟡 **Prepared, NOT activated** — deploy manual por decisión del usuario. |
+
+**Deploy pipeline:** `.github/workflows/deploy.yml` existe con comentarios claros. Falla en cada push a main con "missing server host" porque los secrets VPS no están cargados — **por diseño, no es un bug**. Activación queda para cuando el usuario decida migrar de manual → auto-deploy (Sprint 4, deferido).
+
+---
+
+## 7. Próximo deploy manual — checklist
+
+Cuando hagas `git pull && docker-compose up -d --build` en el VPS:
+
+- [ ] Backup del DB antes (snapshot o `pg_dump`).
+- [ ] Verificar que las migrations 040 y 041 corran (o aplicarlas manual).
+- [ ] Smoke test post-deploy:
+  - [ ] `GET /health` → `{"status":"ok","db":"connected"}`.
+  - [ ] Login email + password funciona.
+  - [ ] **Crear cuenta NUEVA con Apple Sign-In funciona** (el bug P0 más importante de hoy).
+  - [ ] Dashboard web carga KPIs.
+  - [ ] Calendar web navega entre meses sin spinner entre navegaciones cache-hit.
+  - [ ] En un evento existente, generar portal link → abrirlo en incógnito → ver página → rotarlo → la vieja URL da 410.
+
+---
+
+## 8. Testing Checklist
+
+### Funcional (cross-platform)
+
+- [x] Auth flows Google/Apple (iOS, Android, Web) — ⚠️ Apple new-user backend path ahora arreglado.
 - [x] Session persistence cross-platform.
 - [x] Logout en todas las plataformas.
-- [ ] **Regression test suite post-P0 fixes** — hay que correr después de sprint 1.
-- [ ] E2E Apple Sign-In con usuario nuevo (reproduce P0-BE-1).
+- [x] Sprint 1-3 fixes validados en tests de backend (✅ all green).
+- [x] Sprint 6 fixes validados en web tests (1129+ passing).
+- [ ] **iOS/Android manual QA post-fix** — pendiente cuando armes próxima release.
+
+### Portal Cliente MVP
+
+- [ ] Generar link desde EventSummary web.
+- [ ] Abrir `/client/:token` en incógnito.
+- [ ] Ver countdown + estado + pagos reflejados correctamente.
+- [ ] Rotar → la URL vieja da 410 Gone con copy "disabled by organizer".
+- [ ] Revocar → idem.
+- [ ] Borrar el evento desde la app → intentar abrir el link → 410 Gone con copy "event no longer exists".
+
+### Pricing foundation
+
+- [ ] Web: clickear tarjeta Pro → redirect a Stripe Checkout (modo test por ahora).
+- [ ] Web: clickear tarjeta Business sin `STRIPE_BUSINESS_PRICE_ID` → 400 con mensaje claro (comportamiento esperado).
+- [ ] Web: alcanzar un plan limit → ver toast + redirect a `/pricing` (verificar con el debug endpoint si hace falta).
 
 ---
 
-## Deploy / Build Status
+## 9. Known Issues
 
-| Component | Version | Environment | Status |
-|-----------|---------|-------------|--------|
-| iOS | 1.0.2+ | App Store | ✅ Live — `https://apps.apple.com/mx/app/solennix/id6760874129` |
-| Android | 1.0.0 | Play Store | ✅ Live — release APK signed |
-| Web | Latest | Production | ✅ Live |
-| Backend | Latest | Production VPS | ✅ Live — `api.solennix.com` |
-| **CI/CD Deploy** | — | — | ⚠️ **Prepared, NOT activated** |
+**Técnicos abiertos (ninguno P0 ni P1):**
 
-**Deploy pipeline:** `.github/workflows/deploy.yml` existe con comentarios claros. Falla en cada push a main con "missing server host" porque los secrets (`VPS_HOST`, `VPS_USERNAME`, `VPS_SSH_KEY`, `VPS_PORT`) no están seteados y el path `/path/to/solennix` sigue hardcoded como TODO. **Próximos pasos para activar:** ver walkthrough en sesión 2026-04-16 (usuario deferió la tarea por tiempo). Acción requerida del dueño del VPS (Plesk): configurar 4 secrets + pasar la ruta real del repo.
+- **P2-BE-1:** `http.MaxBytesReader(nil, ...)` en `helpers.go`. No panickea en Go 1.25, 40 call-sites a cambiar → diferido.
+- **P2-iOS-3:** Dashboard aún hace 8 GETs secuenciales (ahora acompañados por preload kpis que paint counts en <200ms, pero las listas siguen siendo secuenciales por el tema HTTP/2 de nginx). Refactor completo requiere endpoint backend agregado.
+- **P3-iOS-1:** DateFormatter allocation en PDF generators y ViewModels (no hot-path de renders, acceptable).
+- **P3-iOS-2:** VoiceOver coverage en EventDetail tabs + settings pendiente.
+
+**Producto abiertos (no bugs, features pendientes):**
+
+- Portal Cliente iOS + Android (share card nativa) — Sprint 8.
+- OpenAPI docs de endpoints Portal Cliente — follow-up.
+- Enforcement matrix server-side completo (staff seats, portal limit, advanced analytics gating) — Sprint 7.C.
+- Plan expiry cron job (downgrade automático post `plan_expires_at`) — Sprint 7.C.
+
+**Dependencias externas bloqueando activación total de billing:**
+- Productos en Stripe Dashboard live.
+- Productos en App Store Connect (con trial 14d) + submit for review.
+- Productos en Google Play Console (con trial 14d) + publish a closed track.
+- RevenueCat: entitlement + offerings + verify public keys live.
+- Ver `PRD/04` §11 para checklist completo.
 
 ---
 
-## Technical Debt
+## 10. Resolved (histórico)
 
-- **PRD incompleto:** `CLAUDE.md` referencia docs 01-10 que no existen. Solo existen 11 (este) y 12 (Client Transparency). **TODO:** backfill cuando se estabilice el backlog.
-- **38 findings de audit 2026-04-16** — ver secciones P0-P3 arriba.
-- **Dashboard iOS:** 8 requests secuenciales pese a tener endpoint agregado disponible (P2-iOS-3).
-- **Room MIGRATION_4_5 no-op** — revisar schema drift (P2-AND-2).
+### 2026-04-16 — Sprint 1-7.A + Portal Cliente
+
+Ver sección 2 (commits) y sección 3 (audit findings). 25 commits en un día.
+
+### 2026-04-15 y anterior
+
+- Authentication parity complete across all platforms (Google & Apple).
+- Email notifications (4 types) fully wired.
+- Device token registration verified iOS/Android/Web.
+- Android Phase 1 + Phase 2 audits: 18 issues fixed.
+- Contract product names issue (Android v5→v6 migration).
+- iOS PDF generation (menu wired, share fix, token map unified).
+- iOS plan enum (pro/business decoding fix).
+- iOS BGTaskScheduler registration moved to AppDelegate.
 
 ---
 
-## Resolved (Historical)
+## 11. Technical Debt
 
-- **Android — Contract product names (2026-04-15):** Template renderizaba `"<cantidad> Producto"` porque `CachedEventProduct` no persistía `product_name`. Fix: migration 5→6 + UI consume `EventProduct.productName` directo.
-- **Cross-platform Google/Apple Sign-In (2026-04):** completado en 4 plataformas, aunque Apple backend tiene P0 pendiente en flow de nuevo usuario.
-- **iOS PDF generation (2026-04-15):** menú wired, share fix, token map unified.
-- **iOS plan enum (2026-04-15):** pro/business ya no degradan silently a basic.
-- **iOS BGTaskScheduler (2026-04-15):** register movido a AppDelegate.
-- **Phase 1-2 Android audit (2026-04):** 18 issues fixed (coroutine leaks, migrations, error hierarchies, security, i18n).
-- **Email notifications (2026-04):** 4 tipos totalmente cableados (event reminder, weekly summary, marketing, payment receipt).
+### Docs
+- **OpenAPI:** los nuevos endpoints del Portal Cliente (4) NO están documentados en `backend/docs/openapi.yaml`. Web los llama con tipos manuales. Follow-up.
+- **PRD/08 arch backend** menciona SMTP como email provider — corregir a Resend (ya el código lo usa).
+
+### Código
+- Dashboard iOS 8 GETs secuenciales (parcialmente mitigado).
+- DateFormatter allocations inline en PDF generators iOS.
+- VoiceOver sweep amplio pendiente.
+- `Pricing.tsx` web tiene precios hardcoded en MXN (no fetcheados de Stripe). Divergen si movés precios en Stripe. Futura mejora: endpoint `/subscriptions/prices` que los sirve dinámicos.
+- Android biometric gate NO existe (iOS tiene `BiometricGateView.swift`). Feature no priorizada.

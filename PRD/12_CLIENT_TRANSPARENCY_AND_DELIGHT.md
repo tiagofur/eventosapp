@@ -1,8 +1,32 @@
 # 12 — Client Transparency & Delight Features
 
-**Estado:** Borrador / ideación — no implementar hasta cerrar fix + estabilidad.
+**Estado:** Feature A **en desarrollo** (backend + web shipped 2026-04-16). Features B-L en estado de diseño.
 **Autor:** Sesión 2026-04-16.
+**Última actualización:** 2026-04-16 (cierre Portal Cliente MVP).
 **Objetivo:** Features que hacen que tanto el **organizador** (usuario pagante) como su **cliente** sientan la app como insustituible. Foco en transparencia, comunicación y momentos "antojables" que diferencian a Solennix de hojas de cálculo + WhatsApp.
+
+---
+
+## Status tracker de features
+
+| Feature | Estado | Plataformas |
+|---|---|---|
+| **A. Portal público del cliente** | 🚧 **En desarrollo** | ✅ Backend + ✅ Web · 📋 iOS + Android (Sprint 8) |
+| B. Transparencia de pagos (cronograma + botón Pagar) | 📋 Planeado | Q3 2026 (Sprint 9) |
+| C. Notificaciones por etapa (configurable) | 📋 Planeado | Q3 2026 (Sprint 11) |
+| D. Thread de comunicación organizador↔cliente | 📋 Planeado | Q3 2026 (Sprint 12) |
+| E. Bandeja "Requiere tu decisión" | 📋 Planeado | Q3 2026 (Sprint 13) |
+| F. Subida de contenido del cliente | 📋 Planeado | Q1 2027 |
+| G. Firma digital de contratos | 📋 Planeado | Q4 2026 (Sprint 16) |
+| H. RSVP de invitados | 📋 Planeado | Q3 2026 (Sprint 14) |
+| I. Reseñas post-evento | 📋 Planeado | Q2 2026 (Sprint 10) |
+| J. Branding del organizador (dominio custom + DKIM) | 📋 Planeado | Q4 2026 (Sprint 17) |
+| K. Multi-idioma cliente | 📋 Planeado | Q1 2027 |
+| L. Resumen de valor post-evento | 📋 Planeado | Q1 2027 |
+
+Ver `PRD/09_ROADMAP.md` para alineación con sprints.
+
+---
 
 ---
 
@@ -30,11 +54,13 @@ La propuesta: abrir una **ventana controlada** al cliente — el organizador dec
 
 ## 3. Feature Groups
 
-### A. Portal público del cliente (`/client/:eventSlug`)
+### A. Portal público del cliente (`/client/:token`) — 🚧 EN DESARROLLO
 
-**Qué:** URL única por evento (slug + token firmado, opcional PIN). No requiere cuenta ni instalación.
+**Estado:** MVP backend + web **shipped 2026-04-16** (commits `8dff4f3` + `06d69ff` + `a3f425a`). Faltan share cards iOS/Android nativas (Sprint 8) y funciones avanzadas listadas abajo.
 
-**Contenido por tarjetas:**
+**Qué (vision original):** URL única por evento (token de 256 bits, opcional PIN). No requiere cuenta ni instalación.
+
+**Contenido por tarjetas (vision completa):**
 - Header con branding del organizador (logo, colores, nombre).
 - Countdown al evento.
 - Resumen: fecha, hora, ubicación (mapa), dress code (opcional), invitados.
@@ -42,12 +68,43 @@ La propuesta: abrir una **ventana controlada** al cliente — el organizador dec
 - Equipo asignado (coordinador, fotógrafo, DJ) con foto y rol — opcional.
 - Progress bar agregado: "Tu evento está 72% listo".
 
-**Implementación:**
-- Backend: `GET /api/public/events/:slug` (sin auth, valida token firmado HMAC). Retorna subset del evento, ya filtrado por flags `visibleToClient`.
-- Web: ruta pública en `web/src/pages/client/ClientEventView.tsx`. Responsive mobile-first.
-- iOS/Android: no hay view nativa — el link abre en navegador del cliente. Los organizadores comparten el link desde la app con botón "Copiar link del cliente" o "Enviar por WhatsApp".
+**Qué se shipeó en el MVP (2026-04-16):**
 
-**Tier:** Gratis (1 portal activo) · Pro (ilimitado + branding) · Business (white-label completo + dominio custom).
+✅ Backend:
+- Migration 041 `event_public_links` table (partial unique index garantiza 1 link activo por evento).
+- Endpoints autenticados: `POST/GET/DELETE /api/events/{id}/public-link`.
+- Endpoint público sin auth: `GET /api/public/events/{token}` con rate limit 10/min IP.
+- Response curada (`PublicEventView`) con: event basics, organizer branding, client name, payment summary (total/paid/remaining).
+- 410 Gone para revoked/expired → el frontend distingue "URL mal copiada" de "organizer deshabilitó".
+- Auto-revoke si el evento fue borrado mientras el link estaba activo.
+- Generación del token con `crypto/rand` (256 bits de entropía).
+
+✅ Web:
+- Ruta pública `/client/:token` → `ClientPortalPage.tsx` con hero + countdown + details grid + payment progress bar (con `role="progressbar"` aria-accessible).
+- `ClientPortalUnavailable` component con copy diferente para 404 vs 410.
+- Branding del organizer aplicado en vivo (color de marca + logo) con validación regex para evitar CSS injection.
+- `ClientPortalShareCard` en EventSummary tab Resumen: Copy + Compartir por WhatsApp + Rotar + Deshabilitar.
+- `eventPublicLinkService` wrappea los 3 endpoints autenticados.
+
+**Qué queda de la vision original (pendiente):**
+
+📋 **Timeline de etapas:** requiere nuevo schema para milestones. Va con feature C.
+📋 **Equipo asignado:** requiere nuevo schema `event_staff`. Backlog.
+📋 **Progress bar agregado ("72% listo"):** requiere definir métricas de completitud. Backlog.
+📋 **PIN opcional:** extra layer de privacy para links sensibles. Backlog.
+📋 **Field-level `visibleToClient`:** hoy la respuesta del backend es un subset fijo; el organizador aún no puede togglear campo por campo. Backlog.
+📋 **Mapa integrado:** Google Maps embed en ubicación. Backlog.
+📋 **Dress code:** requiere nuevo campo en Event. Backlog (baja prioridad).
+📋 **iOS share card nativa:** Sprint 8.
+📋 **Android share card nativa:** Sprint 8.
+📋 **OpenAPI docs:** los 4 endpoints aún no están en `backend/docs/openapi.yaml`. Follow-up.
+
+**Implementación actual (diferente de la vision):**
+- Backend: `GET /api/public/events/{token}` (sin auth, validación por UUID lookup en DB — NO HMAC como decía la vision original; la revocación/rotación vía UUID en DB es más flexible).
+- Web: ruta pública en `web/src/pages/ClientPortal/ClientPortalPage.tsx` (no `client/ClientEventView.tsx` como decía la vision, renombrado por coherencia con el directorio `ClientPortal/`).
+- iOS/Android: compartir desde la app aún no implementado — por ahora el organizador comparte el link que pegue manualmente desde el web si no está en desktop. Gap real a cerrar en Sprint 8.
+
+**Tier (según PRD/04):** Gratis (1 portal activo) · Pro (ilimitado + branding) · Business (white-label completo + dominio custom). **Enforcement pendiente en Sprint 7.C** — hoy cualquiera puede generar sin límite.
 
 ---
 
@@ -354,8 +411,12 @@ El portal del cliente **NO necesita view nativa** — se consume en browser. Lo 
 
 ## 10. Siguientes pasos
 
-1. **No implementar todavía.** Primero cerrar fix + estabilidad (fase actual).
-2. Validar con el usuario cuáles features son P0 vs P1 vs descartables. Esta matriz es propuesta, no dogma.
-3. Para las P0 (A+B), abrir cambio SDD (`/sdd-new client-portal`) cuando se decida implementar.
-4. Prototipar el diseño del portal en Figma antes de código — consistencia con la paleta `#C4A265` / `#1B2A4A` y la personalidad "elegante profesional cálida".
-5. Investigar regulación de firma digital por país (MX, AR, CO, CL, PE) antes de diseñar G.
+1. ✅ **Feature A MVP backend + web shipped** — ver commits `8dff4f3`, `06d69ff`, `a3f425a` del 2026-04-16.
+2. 🚧 **Sprint 8 — Completar feature A nativa:** iOS + Android share sheets (Copy + WhatsApp + Rotate + Revoke).
+3. 📋 **Sprint 7.C — Enforcement de límites por tier:** gate del "1 portal activo" Gratis vs "∞" Pro/Business en el backend.
+4. 📋 **Sprint 9 — Feature B (Transparencia de pagos):** cronograma de cuotas + botón "Pagar ahora" desde el portal del cliente.
+5. 📋 **Sprint 10 — Feature I (Reseñas post-evento):** cron job + UI pública + portfolio público del organizer.
+6. 📋 **Sprint 11 — Feature C (Notificaciones por etapa).**
+7. Prototipar el diseño del portal completo con timeline + team en Figma — consistencia con la paleta `#C4A265` / `#1B2A4A` y la personalidad "elegante profesional cálida".
+8. Investigar regulación de firma digital por país (MX, AR, CO, CL, PE) antes de diseñar feature G (Q4 2026).
+9. Validar con usuarios reales (5 organizadores MX) el flujo del Portal Cliente MVP tras el deploy para detectar fricciones de UX antes de Sprint 9.

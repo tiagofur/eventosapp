@@ -1,8 +1,8 @@
 # 02 — Features & Paridad Cross-Platform
 
 **Estado:** Vivo — actualizar cuando se agrega / remueve una feature.
-**Última actualización:** 2026-04-16.
-**Fuente de verdad:** `PRD/05..08` (inventarios por plataforma).
+**Última actualización:** 2026-04-16 (post Sprint 7.A + Portal Cliente MVP backend + web).
+**Fuente de verdad:** `PRD/05..08` (inventarios por plataforma) + `PRD/11_CURRENT_STATUS.md` (deuda abierta).
 
 ---
 
@@ -220,12 +220,36 @@ Todos los PDFs se generan **client-side** (iOS con `UIGraphicsPDFRenderer`, Andr
 | Feature | iOS | Android | Web | Backend |
 |---|:-:|:-:|:-:|:-:|
 | Gestión de links de formulario | ✅ | ❌ | ✅ | ✅ `/event-forms` |
-| Portal público (cliente sin login) | — | — | ✅ `/form/:token` | ✅ `/public/event-forms/{token}` |
+| Portal público lead-capture (cliente sin login) | — | — | ✅ `/form/:token` | ✅ `/public/event-forms/{token}` |
 | Submit desde portal público | — | — | ✅ | ✅ |
 
 **Brecha:** Android no tiene UI de gestión de event-form-links.
 
-**Futuro (PRD/12):** portal del cliente más completo con transparencia de pagos, milestones, decisiones pendientes, thread de comunicación, firma digital, RSVP, reseñas — todos pendientes para Q3-Q4 2026.
+---
+
+## 13.bis Portal Cliente (PRD/12 feature A) — NUEVO 2026-04-16
+
+Portal privado per-evento para que el CLIENTE final (no el organizador) vea estado de su evento en read-only. Distinto del portal de captura (13) — este es post-venta.
+
+| Feature | iOS | Android | Web | Backend |
+|---|:-:|:-:|:-:|:-:|
+| Generar link por evento | 📋 | 📋 | ✅ *(share card en EventSummary)* | ✅ `POST /api/events/{id}/public-link` |
+| Consultar link activo | 📋 | 📋 | ✅ | ✅ `GET /api/events/{id}/public-link` |
+| Rotar link (revoca anterior) | 📋 | 📋 | ✅ | ✅ (mismo POST) |
+| Revocar link | 📋 | 📋 | ✅ | ✅ `DELETE /api/events/{id}/public-link` |
+| Portal público (cliente sin login) | — | — | ✅ `/client/:token` | ✅ `/api/public/events/{token}` |
+| Copy + WhatsApp share desde UI organizador | 📋 | 📋 | ✅ | — |
+| 410 Gone para revoked/expired | — | — | ✅ *(distinct copy)* | ✅ |
+| Auto-revoke si evento se borra | — | — | — | ✅ |
+| PIN opcional (capa extra) | 📋 | 📋 | 📋 | 📋 |
+| Toggles `visibleToClient` por campo | 📋 | 📋 | 📋 | 📋 |
+| Plan limit (Gratis=1 / Pro=∞) | — | — | — | 📋 *(Sprint 7.C)* |
+
+**Leyenda:** ✅ Shipped · 📋 Planeado · — No aplica a esa plataforma.
+
+**Gap a cerrar en Sprint 8:** UI nativa en iOS + Android (bottom sheet con Copy/WhatsApp/Rotate/Revoke, equivalente al share card web). El portal público del cliente es web-responsive por diseño; no se planea view nativa.
+
+**Futuro (PRD/12 features B-L):** portal del cliente más completo con transparencia de pagos (B), milestones (C), thread de comunicación (D), decisiones pendientes (E), firma digital (G), RSVP (H), reseñas (I), etc. — todos pendientes para Q3-Q4 2026.
 
 ---
 
