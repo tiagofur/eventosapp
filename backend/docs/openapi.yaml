@@ -314,6 +314,8 @@ components:
       required:
         - status
         - provider
+        - source_badge
+        - cancel_instructions
         - cancel_at_period_end
       properties:
         status:
@@ -322,6 +324,12 @@ components:
         provider:
           type: string
           enum: [stripe, apple, google]
+        source_badge:
+          type: string
+          description: Server-authored short label in Spanish identifying the subscription source (e.g. "Suscrito vía App Store"). Clients render this verbatim.
+        cancel_instructions:
+          type: string
+          description: Server-authored localized instructions explaining where the user must go to cancel, based on the origin provider. Single source of truth so iOS/Android/Web stay in sync.
         current_period_end:
           type: string
           format: date-time
@@ -336,7 +344,8 @@ components:
       properties:
         plan:
           type: string
-          enum: [basic, pro]
+          enum: [basic, pro, business, premium]
+          description: Current plan. 'premium' is a legacy value retained for backward compat.
         has_stripe_account:
           type: boolean
         subscription:

@@ -112,6 +112,8 @@ func TestOpenAPISpec_SubscriptionsContract(t *testing.T) {
 		{name: "stripe webhook operation", fragment: "operationId: stripeWebhook"},
 		{name: "revenuecat webhook operation", fragment: "operationId: revenueCatWebhook"},
 		{name: "subscription info schema", fragment: "SubscriptionInfo:"},
+		{name: "subscription source badge field", fragment: "source_badge:"},
+		{name: "subscription cancel instructions field", fragment: "cancel_instructions:"},
 		{name: "checkout response schema", fragment: "CheckoutSessionResponse:"},
 		{name: "stripe webhook invalid signature", fragment: "description: Invalid signature or payload"},
 		{name: "portal no customer response", fragment: "description: No associated Stripe customer"},

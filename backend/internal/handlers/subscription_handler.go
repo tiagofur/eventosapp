@@ -626,6 +626,26 @@ var stripeSubCache = struct {
 
 const stripeSubCacheTTL = 5 * time.Minute
 
+// subscriptionProviderCopy returns the user-facing badge and cancel
+// instructions for a given provider value. Server-authored so that the
+// iOS, Android and Web clients all render the same copy — and a single
+// backend deploy can tweak wording without app releases.
+func subscriptionProviderCopy(provider string) (badge, cancelInstructions string) {
+	switch provider {
+	case "stripe":
+		return "Suscrito vía Web",
+			"Tu suscripción fue realizada desde la web. Para cancelarla, ingresá a solennix.com > Configuración > Suscripción."
+	case "apple":
+		return "Suscrito vía App Store",
+			"Tu suscripción fue realizada desde iOS. Para cancelarla, abrí Configuración > tu Apple ID > Suscripciones en tu iPhone o iPad."
+	case "google":
+		return "Suscrito vía Google Play",
+			"Tu suscripción fue realizada desde Android. Para cancelarla, abrí Google Play Store > Pagos y suscripciones."
+	default:
+		return "", ""
+	}
+}
+
 // GetSubscriptionStatus returns the current plan info for the authenticated user.
 // GET /api/subscriptions/status
 func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *http.Request) {
@@ -639,6 +659,8 @@ func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *ht
 	type subscriptionInfo struct {
 		Status             string  `json:"status"`
 		Provider           string  `json:"provider"`
+		SourceBadge        string  `json:"source_badge"`
+		CancelInstructions string  `json:"cancel_instructions"`
 		CurrentPeriodEnd   *string `json:"current_period_end,omitempty"`
 		CancelAtPeriodEnd  bool    `json:"cancel_at_period_end"`
 	}
@@ -657,9 +679,12 @@ func (h *SubscriptionHandler) GetSubscriptionStatus(w http.ResponseWriter, r *ht
 	// Try to get subscription details from DB
 	if h.subRepo != nil {
 		if sub, err := h.subRepo.GetByUserID(r.Context(), userID); err == nil {
+			badge, cancelInstructions := subscriptionProviderCopy(sub.Provider)
 			info := &subscriptionInfo{
-				Status:   sub.Status,
-				Provider: sub.Provider,
+				Status:             sub.Status,
+				Provider:           sub.Provider,
+				SourceBadge:        badge,
+				CancelInstructions: cancelInstructions,
 			}
 			if sub.CurrentPeriodEnd != nil {
 				formatted := sub.CurrentPeriodEnd.Format(time.RFC3339)
