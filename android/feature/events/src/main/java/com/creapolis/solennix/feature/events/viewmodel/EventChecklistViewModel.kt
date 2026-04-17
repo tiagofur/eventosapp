@@ -67,17 +67,25 @@ class EventChecklistViewModel @Inject constructor(
     // Checklist progress is persisted per-event; event IDs end up as preference
     // keys. Keep the file encrypted so a rooted device or backup extraction
     // cannot enumerate the user's event IDs from plain preference files.
+    //
+    // On first launch after the encrypted-prefs change, any data written to the
+    // legacy plaintext file (`checklist_prefs`) is silently migrated into the
+    // new encrypted file and the old file is deleted. This preserves the user's
+    // ticked checklist items across the upgrade. Gated by an internal flag so
+    // it only runs once per install.
     private val prefs: SharedPreferences = run {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
-        EncryptedSharedPreferences.create(
+        val encrypted = EncryptedSharedPreferences.create(
             context,
-            "checklist_prefs_encrypted",
+            ENCRYPTED_PREFS_NAME,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
+        migrateLegacyChecklistPrefs(context, encrypted)
+        encrypted
     }
 
     private val _uiState = MutableStateFlow(EventChecklistUiState(eventId = eventId))
@@ -239,5 +247,68 @@ class EventChecklistViewModel @Inject constructor(
         _uiState.update { it.copy(checkedIds = emptySet()) }
         val key = "checklist_$eventId"
         prefs.edit().remove(key).apply()
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Legacy checklist prefs migration (one-shot on first launch after the
+// encrypted-prefs change landed).
+//
+// Before: `checklist_prefs` (MODE_PRIVATE, plaintext on disk).
+// After : `checklist_prefs_encrypted` (EncryptedSharedPreferences).
+//
+// Users who had ticked items in the old file would otherwise see their
+// checklist progress reset to zero on first launch after the update.
+// The migration copies every entry from the legacy file, sets a flag so
+// it never runs again, and deletes the orphan file so no plaintext data
+// lingers on disk post-upgrade.
+// ─────────────────────────────────────────────────────────────────────────
+
+private const val LEGACY_PREFS_NAME = "checklist_prefs"
+private const val ENCRYPTED_PREFS_NAME = "checklist_prefs_encrypted"
+private const val MIGRATION_FLAG_KEY = "__migrated_from_plaintext_v1__"
+
+private fun migrateLegacyChecklistPrefs(
+    context: Context,
+    encrypted: SharedPreferences
+) {
+    // Fast-path: idempotent. Subsequent ViewModel inits short-circuit here.
+    if (encrypted.getBoolean(MIGRATION_FLAG_KEY, false)) return
+
+    val legacy = context.getSharedPreferences(LEGACY_PREFS_NAME, Context.MODE_PRIVATE)
+    val legacyAll = legacy.all
+
+    if (legacyAll.isNotEmpty()) {
+        val editor = encrypted.edit()
+        legacyAll.forEach { (key, value) ->
+            when (value) {
+                is String -> editor.putString(key, value)
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Set<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    editor.putStringSet(key, value as Set<String>)
+                }
+                // Unknown types are skipped rather than crashing — the
+                // checklist feature only writes strings today, so this
+                // branch exists only for forward-compat paranoia.
+                else -> Unit
+            }
+        }
+        editor.putBoolean(MIGRATION_FLAG_KEY, true).apply()
+
+        // Wipe the legacy file on disk so plaintext event IDs don't stay
+        // readable in backups / rooted device dumps after the migration.
+        // minSdk = 26 so Context.deleteSharedPreferences is always
+        // available on this codebase.
+        legacy.edit().clear().apply()
+        context.deleteSharedPreferences(LEGACY_PREFS_NAME)
+    } else {
+        // Nothing to migrate — still persist the flag so we don't reopen
+        // the legacy file on every cold start looking for data that
+        // isn't there.
+        encrypted.edit().putBoolean(MIGRATION_FLAG_KEY, true).apply()
     }
 }
