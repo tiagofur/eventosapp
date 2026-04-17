@@ -61,6 +61,13 @@ public enum Endpoint {
         "/events/\(id)/staff"
     }
 
+    /// Organizer-facing endpoint for the client-portal share link of an event
+    /// (PRD/12 feature A). Used by GET (fetch active), POST (create or rotate)
+    /// and DELETE (revoke) — same path, different verbs.
+    public static func eventPublicLink(_ id: String) -> String {
+        "/events/\(id)/public-link"
+    }
+
     // MARK: - Staff (Personal / Colaboradores)
 
     public static let staff = "/staff"

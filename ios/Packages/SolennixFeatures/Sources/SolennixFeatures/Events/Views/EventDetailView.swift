@@ -15,6 +15,7 @@ public struct EventDetailView: View {
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showDuplicateSheet = false
     @State private var duplicateViewModel: EventFormViewModel?
+    @State private var showClientPortalSheet = false
     @Environment(AuthManager.self) private var authManager
     @Environment(ToastManager.self) private var toastManager
     @Environment(\.dismiss) private var dismiss
@@ -115,6 +116,10 @@ public struct EventDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showClientPortalSheet) {
+            ClientPortalShareSheet(apiClient: apiClient, eventId: eventId)
+                .presentationDetents([.medium, .large])
+        }
     }
 
     // MARK: - Scroll Content (Hub Layout)
@@ -137,6 +142,7 @@ public struct EventDetailView: View {
                     actionButtonsRow1(event)
                     checklistCard
                     contractPreviewCard
+                    clientPortalCard
                     documentsCard(event)
                     actionButtonsRow3
                 }
@@ -695,6 +701,34 @@ public struct EventDetailView: View {
             .padding(Spacing.md)
             .frame(maxWidth: .infinity)
             .background(SolennixColors.info.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Client Portal Card (PRD/12 feature A)
+
+    /// Opens a sheet that lets the organizer generate, copy, share, rotate
+    /// or revoke the client-portal share link for this event.
+    private var clientPortalCard: some View {
+        Button {
+            showClientPortalSheet = true
+        } label: {
+            HStack {
+                Image(systemName: "person.2.circle")
+                    .font(.body)
+                Text("Portal del cliente")
+                    .font(.body)
+                    .fontWeight(.medium)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textTertiary)
+            }
+            .foregroundStyle(SolennixColors.primary)
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity)
+            .background(SolennixColors.primaryLight)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         }
         .buttonStyle(.plain)
