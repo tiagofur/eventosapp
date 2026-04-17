@@ -195,7 +195,7 @@ public final class EventDetailViewModel {
 
     @MainActor
     public func addPayment(eventId: String) async {
-        guard let amount = Double(paymentAmount), amount > 0 else { return }
+        guard let amount = Double(paymentAmount.replacingOccurrences(of: ",", with: ".")), amount > 0 else { return }
         isSavingPayment = true
 
         do {
