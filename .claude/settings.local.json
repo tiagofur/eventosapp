@@ -301,7 +301,13 @@
       "Bash(eza *)",
       "Bash(git *)",
       "Bash(rg -E '\\(FAIL |✗ |Error|TypeError\\)')",
-      "Bash(rg -n \"MockClientRepo|newTestHandler|makeReqWithUserID|makeReqWithIDParam\" /Users/tiagofur/dev/eventosapp/backend/internal/handlers/mocks_test.go /Users/tiagofur/dev/eventosapp/backend/internal/handlers/*helper*)"
+      "Bash(rg -n \"MockClientRepo|newTestHandler|makeReqWithUserID|makeReqWithIDParam\" /Users/tiagofur/dev/eventosapp/backend/internal/handlers/mocks_test.go /Users/tiagofur/dev/eventosapp/backend/internal/handlers/*helper*)",
+      "Read(//Users/tiagofur/Library/Android/sdk/emulator/**)",
+      "Read(//Users/tiagofur/Library/Android/sdk/platform-tools/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/tiagofur/Library/Android/sdk/**)",
+      "Bash(rg -n \"^@Composable$|^private fun |^fun \" /Users/tiagofur/dev/eventosapp/android/feature/events/src/main/java/com/creapolis/solennix/feature/events/ui/EventDetailScreen.kt)",
+      "Bash(rg -n \"^@Composable$|^private fun Checklist|^private fun Contract\" /Users/tiagofur/dev/eventosapp/android/feature/events/src/main/java/com/creapolis/solennix/feature/events/ui/EventDetailScreen.kt)"
     ]
   }
 }
