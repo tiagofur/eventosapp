@@ -72,12 +72,12 @@ struct SolennixApp: App {
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
 
-        // Configure Navigation Bar appearance globally
-        let navBarAppearance = UINavigationBarAppearance()
-        navBarAppearance.configureWithOpaqueBackground()
-        navBarAppearance.backgroundColor = UIColor(SolennixColors.surfaceGrouped)
-        UINavigationBar.appearance().standardAppearance = navBarAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
+        // Navigation bar appearance is intentionally left to SwiftUI defaults.
+        // A global UINavigationBarAppearance with opaque background + equal
+        // standard/scrollEdge appearances breaks large-title rendering and the
+        // collapse-to-inline behavior on scroll. SwiftUI's default gives us the
+        // Apple-native look (transparent at rest with large title, blurred when
+        // scrolled) across every tab.
 
         // Configure TipKit for Onboarding
         TipsHelper.configure()

@@ -8,7 +8,7 @@ aliases:
   - Estado Actual
   - Current Status
 date: 2026-03-20
-updated: 2026-04-17
+updated: 2026-04-18
 status: active
 ---
 
@@ -16,6 +16,13 @@ status: active
 
 **Fecha:** Abril 2026
 **Version:** 1.2
+
+> [!info] 2026-04-18 — iOS Navigation Bar Appearance Fix (root cause)
+> Cierra el hilo abierto el 2026-04-17: a pesar de tener los tab roots con `.searchable` + `.large` + `.safeAreaInset`, el large title seguía sin aparecer en la mayoría de los tabs y Eventos no colapsaba a inline. La causa raíz era **global, no por vista**: en `SolennixApp.swift` se configuraba `UINavigationBar.appearance()` con `configureWithOpaqueBackground()` y el **mismo** appearance asignado a `standardAppearance` y `scrollEdgeAppearance` — eso rompía el rendering del large title y el fade/collapse on-scroll (la nav bar quedaba visualmente idéntica at-rest y scrolled).
+> - **Fix 1 — SolennixApp.swift**: eliminada la configuración global de `UINavigationBar.appearance()`. Se deja que SwiftUI use el default de Apple (transparente con large title at rest, blur cuando scrolea). El `UITabBar.appearance()` se mantiene porque el tab bar custom sí tiene paleta propia (surface grouped warm).
+> - **Fix 2 — CalendarView.swift**: el body estaba envuelto en `Group { if iPad { ... } else { ScrollView } }`. Aunque Group es "transparente" teóricamente, en combinación con el appearance global roto no dejaba que SwiftUI trackee el ScrollView compact como primary scroll view. Refactorizado a un `calendarBody` computed `@ViewBuilder` que es el direct body.
+> - **Fix 3 — DashboardView.swift**: removido `.ignoresSafeArea()` del background (`SolennixColors.surfaceGrouped`). Con `ignoresSafeArea`, el background se extendía al área del nav bar large title y visualmente lo "comía".
+> - **Resultado**: las 5 tab roots (Inicio, Calendario, Eventos, Clientes, Más) + las 3 list views secundarias (Productos, Inventario, Personal) ahora muestran el large title at rest y colapsan a inline correctamente al scrollear. Las 30+ detail/form/settings views mantienen su `.inline` explícito — no requirieron cambios.
 
 > [!info] 2026-04-17 — iOS Navigation Bar Standardization
 > App bar de iOS unificada al default de Apple con paridad cross-platform mantenida:

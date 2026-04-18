@@ -29,16 +29,10 @@ public struct CalendarView: View {
     // MARK: - Body
 
     public var body: some View {
-        Group {
-            if sizeClass == .regular {
-                iPadCalendarContent
-            } else {
-                calendarModeContent
-            }
-        }
-        .background(SolennixColors.surfaceGrouped)
-        .navigationTitle("Calendario")
-        .navigationBarTitleDisplayMode(.large)
+        calendarBody
+            .background(SolennixColors.surfaceGrouped)
+            .navigationTitle("Calendario")
+            .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Spacing.sm) {
@@ -123,6 +117,17 @@ public struct CalendarView: View {
                     .controlSize(.large)
                     .tint(SolennixColors.primary)
             }
+        }
+    }
+
+    // MARK: - Body Dispatcher
+
+    @ViewBuilder
+    private var calendarBody: some View {
+        if sizeClass == .regular {
+            iPadCalendarContent
+        } else {
+            calendarModeContent
         }
     }
 

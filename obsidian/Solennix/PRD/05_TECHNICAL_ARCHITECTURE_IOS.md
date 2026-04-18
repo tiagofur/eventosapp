@@ -732,6 +732,17 @@ La app sigue el patrón default de Apple para la navigation bar:
 | Android  | Ícono 🔍 en `SolennixTopAppBar` → `SearchScreen` dedicada (Material 3)      |
 | Web      | `Ctrl/Cmd+K` → `CommandPalette` → `SearchPage` (`/search?q=`)               |
 
+**Appearance global (no configurar):**
+
+`UINavigationBar.appearance()` **no se configura** en `SolennixApp.swift` — se deja el default de SwiftUI/UIKit. Configurar `standardAppearance` y `scrollEdgeAppearance` con el mismo `UINavigationBarAppearance.configureWithOpaqueBackground()` rompe dos comportamientos críticos:
+
+1. **Large title no renderiza** — al no haber diferencia entre el appearance at-rest y el scrolled, UIKit no activa el layout del large title y el título se ve siempre como inline.
+2. **Collapse-on-scroll desaparece** — el fade que UIKit hace entre large y inline depende de que `scrollEdgeAppearance` sea distinto (transparente) del `standardAppearance` (blur). Con ambos iguales no hay transición.
+
+Si se necesita un background personalizado para la nav bar (ej. matchear surface grouped), usar `.toolbarBackground(color, for: .navigationBar)` por vista — no el appearance global.
+
+El `UITabBar.appearance()` sí se configura globalmente porque la paleta del tab bar es custom (surface grouped warm) y el tab bar no tiene el comportamiento de "large title collapse" que rompería.
+
 ### Deep Linking
 
 `DeepLinkHandler` maneja dos fuentes de navegacion profunda:

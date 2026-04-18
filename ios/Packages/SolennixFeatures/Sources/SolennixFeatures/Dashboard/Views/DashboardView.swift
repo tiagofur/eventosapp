@@ -108,7 +108,7 @@ public struct DashboardView: View {
         .refreshable {
             await viewModel?.refresh()
         }
-        .background(SolennixColors.surfaceGrouped.ignoresSafeArea())
+        .background(SolennixColors.surfaceGrouped)
         .task {
             if viewModel == nil {
                 viewModel = DashboardViewModel(apiClient: apiClient)
