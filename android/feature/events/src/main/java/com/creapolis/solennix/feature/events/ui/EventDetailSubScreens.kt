@@ -1,6 +1,7 @@
 package com.creapolis.solennix.feature.events.ui
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -1216,7 +1217,8 @@ Leído el presente contrato, ambas partes lo firman de conformidad."""
 @Composable
 fun EventStaffScreen(
     viewModel: EventDetailViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onStaffClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -1281,7 +1283,9 @@ fun EventStaffScreen(
 
                 staff.forEach { assignment ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onStaffClick(assignment.staffId) },
                         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
                         shape = MaterialTheme.shapes.medium
                     ) {

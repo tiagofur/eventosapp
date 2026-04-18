@@ -72,7 +72,10 @@ public struct EventStaffDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
 
                     ForEach(assignments) { assignment in
-                        assignmentRow(assignment)
+                        NavigationLink(value: Route.staffDetail(id: assignment.staffId)) {
+                            assignmentRow(assignment)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }

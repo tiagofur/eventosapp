@@ -439,7 +439,11 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                 EventSuppliesScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
             }
             composable("event_staff/{eventId}") {
-                EventStaffScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })
+                EventStaffScreen(
+                    viewModel = hiltViewModel(),
+                    onNavigateBack = { navController.popBackStack() },
+                    onStaffClick = { id -> navController.navigate("staff_detail/$id") }
+                )
             }
             composable("event_shopping/{eventId}") {
                 EventShoppingListScreen(viewModel = hiltViewModel(), onNavigateBack = { navController.popBackStack() })

@@ -1047,7 +1047,12 @@ export const EventSummary: React.FC = () => {
               </h2>
               <div className="space-y-3">
                 {eventStaff.map((s: EventStaffType) => (
-                  <div key={s.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => navigate(`/staff/${s.staff_id}`)}
+                    className="w-full flex items-center justify-between py-3 border-b border-border last:border-0 text-left hover:bg-surface-alt/50 rounded-md px-2 -mx-2 transition-colors cursor-pointer print:pointer-events-none print:hover:bg-transparent"
+                  >
                     <div>
                       <span className="font-bold text-text">{s.staff_name || 'Colaborador'}</span>
                       {(s.role_override || s.staff_role_label) && (
@@ -1061,6 +1066,7 @@ export const EventSummary: React.FC = () => {
                       {s.staff_phone && (
                         <a
                           href={`tel:${s.staff_phone}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="text-xs text-primary hover:underline"
                         >
                           {s.staff_phone}
@@ -1076,7 +1082,7 @@ export const EventSummary: React.FC = () => {
                         </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
