@@ -30,7 +30,9 @@ android {
 
         buildConfigField("String", "API_BASE_URL", "\"https://api.solennix.com/api/\"")
         buildConfigField("String", "API_HOST", "\"api.solennix.com\"")
-        buildConfigField("String", "SSL_PINS", "\"$sslPins\"")
+        // Empty by default — release overrides below with the real pins. Debug builds stay
+        // unpinned so local dev survives Let's Encrypt cert rotations without regenerating.
+        buildConfigField("String", "SSL_PINS", "\"\"")
     }
 
     buildTypes {
@@ -40,6 +42,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "SSL_PINS", "\"$sslPins\"")
         }
     }
     compileOptions {
