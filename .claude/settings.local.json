@@ -307,7 +307,10 @@
       "Read(//opt/homebrew/bin/**)",
       "Read(//Users/tiagofur/Library/Android/sdk/**)",
       "Bash(rg -n \"^@Composable$|^private fun |^fun \" /Users/tiagofur/dev/eventosapp/android/feature/events/src/main/java/com/creapolis/solennix/feature/events/ui/EventDetailScreen.kt)",
-      "Bash(rg -n \"^@Composable$|^private fun Checklist|^private fun Contract\" /Users/tiagofur/dev/eventosapp/android/feature/events/src/main/java/com/creapolis/solennix/feature/events/ui/EventDetailScreen.kt)"
+      "Bash(rg -n \"^@Composable$|^private fun Checklist|^private fun Contract\" /Users/tiagofur/dev/eventosapp/android/feature/events/src/main/java/com/creapolis/solennix/feature/events/ui/EventDetailScreen.kt)",
+      "Bash('/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/jarsigner' -verify -verbose -certs /Users/tiagofur/dev/eventosapp/android/release-apks/solennix-v1.1.0-2026-04-18-signed.aab)",
+      "Bash('/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/jarsigner' -verify /Users/tiagofur/dev/eventosapp/android/release-apks/solennix-v1.1.0-2026-04-18-signed.aab)",
+      "Bash(rg -rn \"statusBarColor|navigationBarColor|setStatusBarColor|setNavigationBarColor\" /Users/tiagofur/dev/eventosapp/android --type xml --type kotlin)"
     ]
   }
 }
