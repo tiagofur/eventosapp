@@ -14,8 +14,11 @@
     <string name="nav_clients">Clientes</string>
     <string name="nav_more">Más</string>
     
-    <!-- Google Sign-In: Replace with your Web Client ID from Google Cloud Console -->
-    <string name="google_web_client_id">43149798972-vt94megos248oc0r6h0fp7hbls0mauu4.apps.googleusercontent.com</string>
+    <!-- Google Sign-In: Web Client ID from Firebase project solennix-c193f (606927500645).
+         This is the project that owns the Android OAuth client registered for
+         com.solennix.app + SHA-1 Play App Signing. Do not replace with a Web Client ID
+         from a different GCP project or Credential Manager will fail. -->
+    <string name="google_web_client_id">606927500645-cq1jh4vk1jtqq3s461qdfjmqup7kv4nd.apps.googleusercontent.com</string>
 
     <!-- General -->
     <string name="ok">Aceptar</string>
