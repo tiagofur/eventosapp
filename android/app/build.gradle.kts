@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,8 +9,6 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.baselineprofile)
 }
-
-import java.util.Properties
 
 // Release signing config — see obsidian/Solennix/Android/Firma y Secretos de Release.md
 //
