@@ -676,7 +676,7 @@ Un **FAB (Floating Action Button)** con gradiente premium se superpone al tab ba
 
 | Columna | Contenido                                                                                |
 | ------- | ---------------------------------------------------------------------------------------- |
-| Sidebar | Secciones: Inicio, Calendario, Eventos, Clientes, Productos, Inventario, Buscar, Ajustes |
+| Sidebar | Secciones: Inicio, Calendario, Eventos, Clientes, Personal, Productos, Inventario, Formularios, Ajustes |
 | Content | Lista de la seccion seleccionada                                                         |
 | Detail  | `NavigationStack` con `Route`-based navigation                                           |
 

@@ -890,12 +890,21 @@ Sistema de upload de imagenes para fotos de eventos, productos y logos de negoci
 
 | Funcion | iOS | Android | Web | Backend |
 |---------|-----|---------|-----|---------|
-| Crear enlace | 🔄 | 🔄 | ✅ | ✅ |
-| Listar enlaces | 🔄 | 🔄 | ✅ | ✅ |
-| Revocar enlace | 🔄 | 🔄 | ✅ | ✅ |
-| Compartir enlace | 🔄 | 🔄 | ✅ | ➖ |
+| Crear enlace | ✅ | ✅ | ✅ | ✅ |
+| Listar enlaces | ✅ | ✅ | ✅ | ✅ |
+| Revocar enlace | ✅ | ✅ | ✅ | ✅ |
+| Compartir enlace | ✅ | ✅ | ✅ | ➖ |
 | Formulario publico | ➖ | ➖ | ✅ | ✅ |
-| Copiar al portapapeles | 🔄 | 🔄 | ✅ | ➖ |
+| Copiar al portapapeles | ✅ | ✅ | ✅ | ➖ |
+
+#### Ubicacion de la entrada en la UI
+
+| Plataforma | Acceso |
+|------------|--------|
+| Web | Sidebar principal → "Formularios" |
+| Android | Tab "Más" → "Enlaces de Formulario" |
+| iOS iPhone | Tab "Más" → seccion "Catálogo" → "Enlaces de Formulario" (desde 2026-04-18) |
+| iOS iPad | Sidebar → seccion "Principal" → "Formularios" |
 
 **Tier:** FREE (3 enlaces activos) / PRO (ilimitados)
 

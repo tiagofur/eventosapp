@@ -160,10 +160,6 @@ public struct SettingsView: View {
         NavigationLink(value: Route.contractDefaults) {
             Label("Valores del Contrato", systemImage: "doc.text")
         }
-
-        NavigationLink(value: Route.eventFormLinks) {
-            Label("Links de Formulario", systemImage: "link")
-        }
     }
 
     @ViewBuilder

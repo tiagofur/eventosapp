@@ -205,6 +205,8 @@ struct SidebarSplitLayout: View {
             ProductListView(apiClient: apiClient)
         case .inventory:
             InventoryListView(apiClient: apiClient)
+        case .eventFormLinks:
+            EventFormLinksView(apiClient: apiClient)
         case .settings:
             SettingsView(apiClient: apiClient, authManager: authManager)
         }
@@ -218,7 +220,7 @@ extension SidebarSection {
 
     /// Main navigation sections (displayed first in the sidebar).
     static let mainSections: [SidebarSection] = [
-        .dashboard, .calendar, .events, .clients, .personnel, .products, .inventory
+        .dashboard, .calendar, .events, .clients, .personnel, .products, .inventory, .eventFormLinks
     ]
 }
 

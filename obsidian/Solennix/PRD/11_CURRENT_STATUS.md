@@ -17,6 +17,11 @@ status: active
 **Fecha:** Abril 2026
 **Version:** 1.2
 
+> [!info] 2026-04-18 — iOS "Enlaces de Formulario" relocated to tab "Más" (Android parity)
+> La entrada al feature Event Form Links (sección 15 del [[02_FEATURES]]) se movió de `Ajustes → Negocio → "Links de Formulario"` al tab `Más → Catálogo → "Enlaces de Formulario"`, inmediatamente después de "Personal". Match exacto con la ubicación en Android (`CompactBottomNavLayout` → tab Más). En iPad, se agregó `SidebarSection.eventFormLinks` a `mainSections` del sidebar con ícono `link`.
+> - **Archivos tocados**: `MoreMenuView.swift` (nuevo row), `SettingsView.swift` (removida entrada duplicada en `businessContent`), `Route.swift` (nuevo case en enum `SidebarSection`), `SidebarSplitLayout.swift` (case en `sectionListView` + `mainSections`).
+> - **Sin cambios de feature**: `EventFormLinksView` / `EventFormLinksViewModel` / `Route.eventFormLinks` / endpoints intactos — solo re-ubicación de la entrada de navegación.
+
 > [!info] 2026-04-18 — iOS Navigation Bar Appearance Fix (root cause)
 > Cierra el hilo abierto el 2026-04-17: a pesar de tener los tab roots con `.searchable` + `.large` + `.safeAreaInset`, el large title seguía sin aparecer en la mayoría de los tabs y Eventos no colapsaba a inline. La causa raíz era **global, no por vista**: en `SolennixApp.swift` se configuraba `UINavigationBar.appearance()` con `configureWithOpaqueBackground()` y el **mismo** appearance asignado a `standardAppearance` y `scrollEdgeAppearance` — eso rompía el rendering del large title y el fade/collapse on-scroll (la nav bar quedaba visualmente idéntica at-rest y scrolled).
 > - **Fix 1 — SolennixApp.swift**: eliminada la configuración global de `UINavigationBar.appearance()`. Se deja que SwiftUI use el default de Apple (transparente con large title at rest, blur cuando scrolea). El `UITabBar.appearance()` se mantiene porque el tab bar custom sí tiene paleta propia (surface grouped warm).

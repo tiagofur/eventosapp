@@ -42,6 +42,15 @@ struct MoreMenuView: View {
                         color: SolennixColors.info
                     )
                 }
+
+                NavigationLink(value: Route.eventFormLinks) {
+                    menuRow(
+                        icon: "link",
+                        title: "Enlaces de Formulario",
+                        subtitle: "Formularios para clientes nuevos",
+                        color: SolennixColors.success
+                    )
+                }
             } header: {
                 Text("Catálogo")
                     .font(.caption)
