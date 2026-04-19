@@ -185,7 +185,15 @@ public final class PendingEventsViewModel {
             return
         }
 
-        let shouldAutoComplete = pendingEvent.reason == .overdueEvent && pendingEvent.hasPendingPayment
+        // Auto-complete only when the entered amount actually settles the
+        // pending balance (within an epsilon). Without this guard a partial
+        // payment of an "overdue with balance" event would mark it as
+        // completed while still leaving an outstanding balance.
+        let paymentCompletionEpsilon = 0.01
+        let shouldAutoComplete =
+            pendingEvent.reason == .overdueEvent
+            && pendingEvent.hasPendingPayment
+            && amount >= (pendingEvent.pendingAmount - paymentCompletionEpsilon)
 
         isSavingPayment = true
         updatingEventId = pendingEvent.event.id
@@ -206,12 +214,17 @@ public final class PendingEventsViewModel {
             let payment: Payment = try await apiClient.post(Endpoint.payments, body: AnyCodable(body))
 
             HapticsHelper.play(.success)
+            // `client_name` is required by NotificationManager (the receipt
+            // observer early-returns without it). We don't have client data
+            // on the dashboard VM, so fall back to "Cliente" — same default
+            // EventDetailViewModel.addPayment uses when client is nil.
             NotificationCenter.default.post(
                 name: .solennixPaymentRegistered,
                 object: nil,
                 userInfo: [
                     "payment_id": payment.id,
                     "event_id": pendingEvent.event.id,
+                    "client_name": "Cliente",
                     "amount": payment.amount
                 ]
             )
@@ -227,6 +240,10 @@ public final class PendingEventsViewModel {
                 }
             } else {
                 transientMessage = "Pago registrado correctamente"
+                // Reload to reflect the new balance: the affected pending
+                // event may now be fully paid (and should drop off the list)
+                // or simply show a smaller pendingAmount on the next open.
+                await loadPendingEvents()
             }
 
             if pendingEvents.isEmpty {

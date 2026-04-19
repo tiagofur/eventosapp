@@ -66,7 +66,7 @@ public struct PaymentEntrySheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("Metodo de pago")
+                    Text("Método de pago")
                         .font(.caption)
                         .foregroundStyle(SolennixColors.textSecondary)
 
