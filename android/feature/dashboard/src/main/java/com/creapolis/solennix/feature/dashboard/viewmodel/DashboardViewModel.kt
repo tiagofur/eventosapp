@@ -318,6 +318,12 @@ class DashboardViewModel @Inject constructor(
             _transientMessage.value = "Monto y método de pago son requeridos"
             return
         }
+        // Auto-complete only when the entered amount actually settles the
+        // pending balance. Without this guard a partial payment in a
+        // "Pagar y completar" flow would mark the event as completed while
+        // still leaving an outstanding balance.
+        val shouldAutoComplete =
+            autoComplete && amount >= (pendingEvent.pendingAmount - MIN_PENDING_AMOUNT)
         viewModelScope.launch {
             _updatingEventId.value = pendingEvent.event.id
             try {
@@ -333,7 +339,7 @@ class DashboardViewModel @Inject constructor(
                 )
                 paymentRepository.createPayment(newPayment)
 
-                if (autoComplete) {
+                if (shouldAutoComplete) {
                     try {
                         val refreshed = eventRepository.getEvent(pendingEvent.event.id) ?: pendingEvent.event
                         eventRepository.updateEvent(refreshed.copy(status = EventStatus.COMPLETED))
