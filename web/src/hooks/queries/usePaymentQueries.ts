@@ -17,7 +17,7 @@ export function usePaymentsByEvent(eventId: string | undefined) {
 
 export function usePaymentsByEventIds(eventIds: string[]) {
   return useQuery({
-    queryKey: ['payments', 'byEventIds', ...eventIds.sort()] as const,
+    queryKey: queryKeys.payments.byEventIds(eventIds),
     queryFn: () => paymentService.getByEventIds(eventIds),
     enabled: eventIds.length > 0,
   });
@@ -33,20 +33,6 @@ export function usePaymentsByDateRange(start: string, end: string) {
 
 // ── Mutations ──
 
-// Invalidates every matching `usePaymentsByEventIds` query (key shape:
-// `['payments', 'byEventIds', ...sortedEventIds]`). Active matches will
-// refetch according to React Query defaults. Necessary because the
-// dashboard's saldo pendiente depends on this aggregated cache and the
-// per-event `byEvent` invalidation alone leaves it stale.
-function invalidatePaymentsByEventIds(queryClient: ReturnType<typeof useQueryClient>) {
-  queryClient.invalidateQueries({
-    predicate: (q) =>
-      Array.isArray(q.queryKey)
-      && q.queryKey[0] === 'payments'
-      && q.queryKey[1] === 'byEventIds',
-  });
-}
-
 export function useCreatePayment() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
@@ -57,7 +43,12 @@ export function useCreatePayment() {
       paymentService.create(data),
     onSuccess: (_result, { event_id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.payments.byEvent(event_id) });
-      invalidatePaymentsByEventIds(queryClient);
+      // Prefix invalidation reaches every active usePaymentsByEventIds
+      // query regardless of its specific id list. TanStack Query v5
+      // invalidateQueries matches partial keys from the start by default.
+      // Required because the dashboard's saldo pendiente reads from this
+      // aggregated cache and per-event invalidation alone leaves it stale.
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.byEventIdsPrefix });
       addToast('Pago registrado correctamente.', 'success');
     },
     onError: (error) => {
@@ -77,7 +68,7 @@ export function useDeletePayment() {
       paymentService.delete(id),
     onSuccess: (_result, { eventId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.payments.byEvent(eventId) });
-      invalidatePaymentsByEventIds(queryClient);
+      queryClient.invalidateQueries({ queryKey: queryKeys.payments.byEventIdsPrefix });
       addToast('Pago eliminado correctamente.', 'success');
     },
     onError: (error) => {
