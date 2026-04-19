@@ -11,10 +11,10 @@ final class EventDetailViewModelTests: XCTestCase {
         depositPercent: Double?,
         totalAmount: Double = 1000,
         paidAmounts: [Double] = []
-    ) -> EventDetailViewModel {
+    ) throws -> EventDetailViewModel {
         let vm = EventDetailViewModel(apiClient: APIClient())
         vm.event = makeEvent(depositPercent: depositPercent, totalAmount: totalAmount)
-        vm.payments = paidAmounts.enumerated().map { idx, amount in makePayment(id: "p\(idx)", amount: amount) }
+        vm.payments = try paidAmounts.enumerated().map { idx, amount in try makePayment(id: "p\(idx)", amount: amount) }
         return vm
     }
 
@@ -39,7 +39,7 @@ final class EventDetailViewModelTests: XCTestCase {
         )
     }
 
-    private func makePayment(id: String, amount: Double) -> Payment {
+    private func makePayment(id: String, amount: Double) throws -> Payment {
         let json = """
         {
           "id": "\(id)",
@@ -53,14 +53,14 @@ final class EventDetailViewModelTests: XCTestCase {
         """.data(using: .utf8)!
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        return try! decoder.decode(Payment.self, from: json)
+        return try decoder.decode(Payment.self, from: json)
     }
 
     // MARK: - payDeposit()
 
     @MainActor
-    func testPayDeposit_prefillsFullBalance_whenNoPaymentsYet() {
-        let vm = makeViewModel(depositPercent: 30, totalAmount: 1000)
+    func testPayDeposit_prefillsFullBalance_whenNoPaymentsYet() throws {
+        let vm = try makeViewModel(depositPercent: 30, totalAmount: 1000)
 
         vm.payDeposit()
 
@@ -70,9 +70,9 @@ final class EventDetailViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testPayDeposit_prefillsRemainingBalance_whenPartialPaymentExists() {
+    func testPayDeposit_prefillsRemainingBalance_whenPartialPaymentExists() throws {
         // deposit = 300, already paid 100 → remaining = 200
-        let vm = makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [100])
+        let vm = try makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [100])
 
         vm.payDeposit()
 
@@ -82,9 +82,9 @@ final class EventDetailViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testPayDeposit_isNoOp_whenDepositCovered() {
+    func testPayDeposit_isNoOp_whenDepositCovered() throws {
         // deposit = 300, already paid 300 → balance = 0 → no-op
-        let vm = makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [300])
+        let vm = try makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [300])
 
         vm.payDeposit()
 
@@ -94,8 +94,8 @@ final class EventDetailViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testPayDeposit_isNoOp_whenDepositPercentIsNil() {
-        let vm = makeViewModel(depositPercent: nil, totalAmount: 1000)
+    func testPayDeposit_isNoOp_whenDepositPercentIsNil() throws {
+        let vm = try makeViewModel(depositPercent: nil, totalAmount: 1000)
 
         vm.payDeposit()
 
@@ -105,8 +105,8 @@ final class EventDetailViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testPayDeposit_isNoOp_whenDepositPercentIsZero() {
-        let vm = makeViewModel(depositPercent: 0, totalAmount: 1000)
+    func testPayDeposit_isNoOp_whenDepositPercentIsZero() throws {
+        let vm = try makeViewModel(depositPercent: 0, totalAmount: 1000)
 
         vm.payDeposit()
 
@@ -116,26 +116,26 @@ final class EventDetailViewModelTests: XCTestCase {
     // MARK: - depositAmount / depositBalance
 
     @MainActor
-    func testDepositAmount_computesFromPercentAndTotal() {
-        let vm = makeViewModel(depositPercent: 40, totalAmount: 2500)
+    func testDepositAmount_computesFromPercentAndTotal() throws {
+        let vm = try makeViewModel(depositPercent: 40, totalAmount: 2500)
         XCTAssertEqual(vm.depositAmount, 1000, accuracy: 0.001)
     }
 
     @MainActor
-    func testDepositAmount_isZero_whenDepositPercentIsNil() {
-        let vm = makeViewModel(depositPercent: nil, totalAmount: 2500)
+    func testDepositAmount_isZero_whenDepositPercentIsNil() throws {
+        let vm = try makeViewModel(depositPercent: nil, totalAmount: 2500)
         XCTAssertEqual(vm.depositAmount, 0)
     }
 
     @MainActor
-    func testDepositBalance_subtractsTotalPaid() {
-        let vm = makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [50, 75])
+    func testDepositBalance_subtractsTotalPaid() throws {
+        let vm = try makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [50, 75])
         XCTAssertEqual(vm.depositBalance, 175, accuracy: 0.001)
     }
 
     @MainActor
-    func testDepositBalance_clampedAtZero_whenOverpaid() {
-        let vm = makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [500])
+    func testDepositBalance_clampedAtZero_whenOverpaid() throws {
+        let vm = try makeViewModel(depositPercent: 30, totalAmount: 1000, paidAmounts: [500])
         XCTAssertEqual(vm.depositBalance, 0)
     }
 }

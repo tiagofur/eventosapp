@@ -260,12 +260,14 @@ public final class EventDetailViewModel {
         isSavingPayment = false
     }
 
+    @MainActor
     public func payRemaining() {
         let formatted = String(format: "%.2f", remaining)
         paymentAmount = formatted
         showPaymentSheet = true
     }
 
+    @MainActor
     public func payDeposit() {
         let balance = depositBalance
         guard balance > 0.01 else { return }
