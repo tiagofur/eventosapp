@@ -337,6 +337,8 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 ### Paginas Protegidas
 
 - ✅ Dashboard (KPIs, resumen)
+  - ✅ Alertas de Atencion (DashboardAttentionSection) — 3 categorias paridad cross-platform: cobro por cerrar, evento vencido, cotizacion urgente
+  - ⏸️ Acciones inline en alertas: planeadas (Completar / Cancelar / "Pagar y completar" / "Solo completar"), pero **revertidas** tras la primera entrega (PR #72 reverted via PR #76) por un bug financiero compartido con mobile (auto-complete sin verificar monto). Mientras tanto, las acciones se ejecutan desde el detalle del evento. La invalidacion de cache `byEventIds` que surgio del review **sí** quedo en main (PR #78). Re-implementacion del feature inline pendiente.
 - ✅ Busqueda global
 - ✅ Calendario con vista de eventos
 - ✅ Lista de eventos (EventList) con filtros: Todos, Proximos, Pasados, Borradores
@@ -470,7 +472,8 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 - ✅ Tarjetas KPI — 8 KPIs (KPICardView)
 - ✅ Grafico de estado de eventos (EventStatusChart)
 - ✅ Grafico de comparativa financiera (FinancialComparisonChart)
-- ✅ Alertas de Atencion (AttentionEventsCard) — 3 tipos: vencido, pago pendiente, sin confirmar
+- ✅ Alertas de Atencion (PendingEventsModalView) — 3 categorias paridad cross-platform: cobro por cerrar, evento vencido, cotizacion urgente
+- ✅ Acciones inline en alertas (2026-04): Completar / Cancelar / "Pagar y completar" / "Solo completar" (en evento vencido con saldo se muestran las 3 ultimas; "Pagar y completar" auto-completa el evento solo si el monto cubre el saldo). Sheet reusable `PaymentEntrySheet` en `Common/Views/`
 - ✅ Quick Actions — 2 botones: Nuevo Evento + Nuevo Cliente
 - ✅ Alertas de Stock Bajo — regla: `minimumStock > 0 && currentStock < minimumStock` (caso 0/0 sin alerta)
 - ✅ Proximos Eventos con dropdown de estado
@@ -639,7 +642,8 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 
 - ✅ Dashboard principal (DashboardScreen)
 - ✅ Tarjetas KPI — 8 KPIs
-- ✅ Alertas de Atencion (PendingEventsBanner) — 3 tipos: vencido, pago pendiente, sin confirmar
+- ✅ Alertas de Atencion (PendingEventItem en banner) — 3 categorias paridad cross-platform: cobro por cerrar, evento vencido, cotizacion urgente
+- ✅ Acciones inline en alertas (2026-04): Completar / Cancelar / "Pagar y completar" / "Solo completar" (Material `Button` por categoria, `ModalBottomSheet` para registrar pago; en evento vencido con saldo se muestran las 3 ultimas y "Pagar y completar" solo auto-completa cuando el monto cubre el saldo). `PaymentModal` extraido a `core:designsystem` para reuso entre dashboard y detalle de evento
 - ✅ Quick Actions — 2 botones: Nuevo Evento + Nuevo Cliente
 - ✅ Grafico de estado de eventos + Comparativa financiera
 - ✅ Alertas de Inventario
@@ -864,7 +868,8 @@ Commits del slice en rama `super-plan`: `0fd6aac`, `42124d0`, `2c23dd6`, `af85e4
 | Dashboard principal           | ✅  | ✅      | ✅  | ✅      |                                                                                          |
 | Header (saludo + fecha)       | ✅  | ✅      | ✅  | ➖      | Todas las plataformas tienen saludo + fecha                                              |
 | KPI cards (8)                 | ✅  | ✅      | ✅  | ✅      | Labels consistentes. Web: "Cobrado (mes)" vs mobile: "Cobrado" (menor)                   |
-| Alertas de Atencion           | ✅  | ✅      | ✅  | ✅      | 3 tipos: vencido, pago pendiente, sin confirmar. Implementado en las 3 plataformas       |
+| Alertas de Atencion           | ✅  | ✅      | ✅  | ✅      | 3 categorias paridad cross-platform: cobro por cerrar, evento vencido, cotizacion urgente |
+| Acciones inline en alertas    | ⏸️  | ✅      | ✅  | ➖      | Completar / Cancelar / "Pagar y completar" / "Solo completar" (esta ultima solo en evento vencido con saldo). Form/sheet reusable: android `PaymentModal` (core:designsystem), iOS `PaymentEntrySheet` (Common/Views). **Web: revertido tras PR #76** por bug financiero (auto-complete sin verificar monto); pendiente re-implementacion. La invalidacion de cache `byEventIds` que surgio del review se mergeo aparte (PR #78). |
 | Quick Actions (2)             | ✅  | ✅      | ✅  | ➖      | Nuevo Evento + Nuevo Cliente en las 3 plataformas                                        |
 | Chart: Distribucion estados   | ✅  | ✅      | ✅  | ➖      |                                                                                          |
 | Chart: Comparacion financiera | ✅  | ✅      | ✅  | ➖      |                                                                                          |

@@ -443,15 +443,23 @@ Cada producto puede tener una receta que vincula items del inventario como ingre
 
 #### Alertas de Atencion (widget)
 
-Muestra eventos que necesitan accion inmediata del organizador. Si no hay alertas, la seccion no se muestra.
+Muestra eventos que necesitan accion inmediata del organizador. Si no hay alertas, la seccion no se muestra. Las tres plataformas comparten las mismas categorias y reglas de deteccion (paridad cross-platform).
 
-| Tipo de alerta | Criterio                                                                 |
-| -------------- | ------------------------------------------------------------------------ |
-| Pago pendiente | Eventos confirmados con fecha dentro de 7 dias, no completamente pagados |
-| Evento vencido | Eventos con fecha pasada en estado "cotizado" o "confirmado"             |
-| Sin confirmar  | Eventos cotizados con fecha dentro de 14 dias sin confirmacion           |
+| Tipo de alerta       | Criterio                                                                 |
+| -------------------- | ------------------------------------------------------------------------ |
+| Cobro por cerrar     | Eventos confirmados con fecha dentro de 7 dias, no completamente pagados |
+| Evento vencido       | Eventos con fecha pasada en estado "cotizado" o "confirmado"             |
+| Cotizacion urgente   | Eventos cotizados con fecha dentro de 14 dias sin confirmacion           |
 
-Cada alerta muestra: nombre del evento, fecha, razon (badge), monto pendiente. Tap → detalle del evento.
+Cada alerta muestra: nombre del evento, fecha, razon (badge), monto pendiente cuando aplica. Las acciones inline se ofrecen segun la categoria:
+
+| Categoria          | Acciones inline                                                                                                                                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cobro por cerrar   | "Registrar pago" (abre form con saldo pendiente pre-llenado)                                                                                                                                                         |
+| Evento vencido     | Si tiene saldo: "Pagar y completar" (atajo: registra pago + marca completado en una sola accion), "Cancelar", "Solo completar". Si no tiene saldo: "Completar", "Cancelar". El saldo se pre-llena en el form de pago |
+| Cotizacion urgente | Solo navegacion al detalle (no requiere accion rapida)                                                                                                                                                               |
+
+**"Pagar y completar"** ejecuta dos llamadas secuenciales: `POST /api/payments` para crear el pago y, si tuvo exito, `PUT /api/events/{id}` con `{"status": "completed"}`. El auto-complete solo dispara cuando el monto ingresado cubre el saldo pendiente (`amount >= pendingAmount - 0.01`) — un pago parcial no marca el evento como completado. Si falla la segunda llamada, se muestra un mensaje de recuperacion para que el organizador complete el evento manualmente desde el detalle.
 
 #### Quick Actions (2 botones)
 
@@ -478,9 +486,14 @@ Cada alerta muestra: nombre del evento, fecha, razon (badge), monto pendiente. T
 
 **Vistas por plataforma:**
 
-- **[iOS]**: `DashboardView`, `KPICardView`, `EventStatusChart`, `AttentionEventsCard` (nuevo)
-- **[Android]**: `DashboardScreen`, `PendingEventsBanner` (expandido con criterio "sin confirmar")
-- **[Web]**: `Dashboard`, `AttentionEventsCard` (nuevo)
+- **[iOS]**: `DashboardView`, `KPICardView`, `EventStatusChart`, `PendingEventsModalView` (modal bloqueante con CTAs por categoria), `PaymentEntrySheet` (sheet reusable para registrar pago)
+- **[Android]**: `DashboardScreen`, `PendingEventItem` (banner inline en LazyColumn con CTAs por categoria), `PaymentModal` (extraido a `core:designsystem` para reuso)
+- **[Web]**: `Dashboard`, `DashboardAttentionSection` (seccion inline con las 3 categorias y navegacion al detalle del evento). Las acciones rapidas inline (Registrar pago / Completar / Cancelar / Pagar y completar / Solo completar) estan **pendientes de re-implementacion** — la version inicial fue reverted por bugs financieros (ver tarea cross-platform "Bug 5: auto-complete sin verificar monto" para el contexto). Mientras tanto, las acciones se ejecutan desde el detalle del evento.
+
+**Endpoints usados por las acciones inline:**
+
+- `PUT /api/events/{id}` con `{ status }` — para "Completar" / "Cancelar" / "Solo completar".
+- `POST /api/payments` + `PUT /api/events/{id}` (secuenciales) — para "Pagar y completar".
 
 **Endpoint:** `GET /api/events/upcoming` — retorna eventos proximos y pendientes.
 

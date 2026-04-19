@@ -200,7 +200,7 @@ web/src/
 │   ├── QuickActionsFAB.tsx           # FAB de acciones rapidas solo para smartphones (<768px)
 │   ├── UpgradeBanner.tsx             # Banner de upgrade a plan PRO
 │   ├── OnboardingChecklist.tsx       # Checklist de onboarding para nuevos usuarios
-│   ├── PendingEventsModal.tsx        # Modal de eventos pendientes de confirmacion
+│   ├── PendingEventsModal.tsx        # Modal de eventos pendientes de confirmacion (orfano post-refactor de marzo 2026; pendiente decidir reemplazo definitivo tras revert PR #76)
 │   ├── SetupRequired.tsx             # Pantalla de configuracion inicial requerida
 │   └── ContractTemplateEditor.tsx    # Editor de plantillas de contrato
 │
