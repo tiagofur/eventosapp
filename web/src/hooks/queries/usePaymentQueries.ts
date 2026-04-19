@@ -33,8 +33,9 @@ export function usePaymentsByDateRange(start: string, end: string) {
 
 // ── Mutations ──
 
-// Invalidates every active `usePaymentsByEventIds` query (key shape:
-// `['payments', 'byEventIds', ...sortedEventIds]`). Necessary because the
+// Invalidates every matching `usePaymentsByEventIds` query (key shape:
+// `['payments', 'byEventIds', ...sortedEventIds]`). Active matches will
+// refetch according to React Query defaults. Necessary because the
 // dashboard's saldo pendiente depends on this aggregated cache and the
 // per-event `byEvent` invalidation alone leaves it stale.
 function invalidatePaymentsByEventIds(queryClient: ReturnType<typeof useQueryClient>) {
