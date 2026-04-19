@@ -45,6 +45,7 @@ import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
 import com.creapolis.solennix.feature.dashboard.viewmodel.DashboardViewModel
+import com.creapolis.solennix.feature.dashboard.viewmodel.MIN_PENDING_AMOUNT
 import com.creapolis.solennix.feature.dashboard.viewmodel.PendingEvent
 import com.creapolis.solennix.feature.dashboard.viewmodel.PendingEventReason
 import com.creapolis.solennix.feature.dashboard.viewmodel.StatusCount
@@ -315,7 +316,7 @@ fun DashboardScreen(
 
         uiState.paymentModalEvent?.let { pe ->
             val isOverdueWithBalance =
-                pe.reason == PendingEventReason.OVERDUE_EVENT && pe.pendingAmount > 0.01
+                pe.reason == PendingEventReason.OVERDUE_EVENT && pe.pendingAmount > MIN_PENDING_AMOUNT
             val (modalTitle, confirmLabel) = if (isOverdueWithBalance) {
                 "Registrar pago y completar" to "Pagar y completar"
             } else {
@@ -444,22 +445,21 @@ fun PendingEventItem(
     onCancel: () -> Unit = {},
     onRegisterPayment: () -> Unit = {}
 ) {
-    val hasPending = pendingEvent.pendingAmount > 0.01
+    val hasPending = pendingEvent.pendingAmount > MIN_PENDING_AMOUNT
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .semantics(mergeDescendants = true) {
                 contentDescription = pendingEventTalkBackLabel(pendingEvent)
-            },
+            }
+            .clickable(enabled = !isUpdating, onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onClick),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(

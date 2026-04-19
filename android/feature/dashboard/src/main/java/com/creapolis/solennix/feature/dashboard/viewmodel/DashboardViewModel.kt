@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.dashboard.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
@@ -20,6 +21,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "DashboardViewModel"
+
+// Cutoff used to decide whether an event still has a pending payment balance.
+// Centralized so detection logic and any UI threshold checks stay in sync.
+internal const val MIN_PENDING_AMOUNT: Double = 0.01
 
 private data class DataSnapshot(
     val upcoming: List<Event>,
@@ -128,6 +135,12 @@ class DashboardViewModel @Inject constructor(
 
         val cashCollected = paymentsThisMonth.sumOf { it.amount }
 
+        // Precompute paid-per-event once: O(payments) instead of O(events × payments)
+        // when reused across vatOutstanding and pendingEvents detection below.
+        val paidByEvent: Map<String, Double> = data.allPayments
+            .groupingBy { it.eventId }
+            .fold(0.0) { acc, payment -> acc + payment.amount }
+
         // VAT Collected: tax portion of payments received this month
         val eventMap = data.allEvents.associateBy { it.id }
         val vatCollected = paymentsThisMonth.sumOf { payment ->
@@ -143,9 +156,7 @@ class DashboardViewModel @Inject constructor(
         val vatOutstanding = data.allEvents
             .filter { it.status != EventStatus.COMPLETED && it.status != EventStatus.CANCELLED }
             .sumOf { event ->
-                val totalPaid = data.allPayments
-                    .filter { it.eventId == event.id }
-                    .sumOf { it.amount }
+                val totalPaid = paidByEvent[event.id] ?: 0.0
                 val unpaidBalance = (event.totalAmount - totalPaid).coerceAtLeast(0.0)
                 if (event.taxRate > 0) {
                     unpaidBalance * event.taxRate / (1 + event.taxRate)
@@ -167,11 +178,9 @@ class DashboardViewModel @Inject constructor(
         data.allEvents.forEach { event ->
             try {
                 val eventDate = parseFlexibleDate(event.eventDate) ?: return@forEach
-                val totalPaid = data.allPayments
-                    .filter { it.eventId == event.id }
-                    .sumOf { it.amount }
+                val totalPaid = paidByEvent[event.id] ?: 0.0
                 val pendingAmount = (event.totalAmount - totalPaid).coerceAtLeast(0.0)
-                val hasPending = pendingAmount > 0.01
+                val hasPending = pendingAmount > MIN_PENDING_AMOUNT
 
                 if (event.status == EventStatus.CONFIRMED &&
                     !eventDate.isBefore(now) && !eventDate.isAfter(sevenDaysFromNow) &&
@@ -289,7 +298,8 @@ class DashboardViewModel @Inject constructor(
                     else -> null
                 }
             } catch (e: Exception) {
-                _transientMessage.value = "Error al actualizar el estado: ${e.message}"
+                Log.e(TAG, "updateEventStatus failed for event=$eventId", e)
+                _transientMessage.value = "No pudimos actualizar el estado del evento. Reintentá en un momento."
             } finally {
                 _updatingEventId.value = null
             }
@@ -329,6 +339,7 @@ class DashboardViewModel @Inject constructor(
                         eventRepository.updateEvent(refreshed.copy(status = EventStatus.COMPLETED))
                         _transientMessage.value = "Pago registrado y evento completado"
                     } catch (statusErr: Exception) {
+                        Log.w(TAG, "Auto-complete after payment failed for event=${pendingEvent.event.id}", statusErr)
                         _transientMessage.value = "Pago registrado. Marcá el evento como completado manualmente."
                     }
                 } else {
@@ -336,7 +347,8 @@ class DashboardViewModel @Inject constructor(
                 }
                 _paymentModalEvent.value = null
             } catch (e: Exception) {
-                _transientMessage.value = "Error al registrar el pago: ${e.message}"
+                Log.e(TAG, "registerPayment failed for event=${pendingEvent.event.id}", e)
+                _transientMessage.value = "No pudimos registrar el pago. Reintentá en un momento."
             } finally {
                 _updatingEventId.value = null
             }
