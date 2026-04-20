@@ -998,9 +998,15 @@ Visualización + registro de pago por transferencia con approve/reject. Reemplaz
 - **Disponibilidad:** endpoint `GET /api/staff/availability?date=YYYY-MM-DD` (o rango con `start`/`end`). Devuelve solo staff con asignaciones en la ventana (ausencia = libre). Se consume dentro del Step 4 del EventForm — indicador "Ocupado ese día" al lado del nombre en el selector. **Sin pantalla nueva.**
 - **UPSERT resiliente:** el patrón de `notification_sent_at` (preservar en re-save) se extiende a `status` vía `COALESCE($status, event_staff.status)` — clientes viejos que no envían `status` en el payload NO sobreescriben el RSVP actual. Ver [backend/internal/repository/event_repo.go](../../backend/internal/repository/event_repo.go) método `UpdateEventItems`.
 
+**Ola 2 — Equipos (shipped 2026-04-19):**
+- **Tablas (migration 044):** `staff_teams` (id, user_id, name, role_label, notes, timestamps) + `staff_team_members` (team_id, staff_id, is_lead BOOL, position INT) con PK compuesta. Cascade por FK a ambos lados.
+- **Endpoints CRUD:** `GET/POST /api/staff/teams`, `GET/PUT/DELETE /api/staff/teams/{id}`. Update reemplaza miembros atómicamente (no hay estado por miembro que preservar). Validación de tenant: cada `staff_id` debe pertenecer al mismo user antes de insertar.
+- **UI (iOS · Android · Web):** Entrada "Equipos" dentro de la lista de Personal (NO un tab nuevo). CRUD completo con nombre, rol default, notas + selector de miembros multi-select desde el catálogo existente. Miembro con `is_lead = true` muestra badge (corona).
+- **Asignación al evento:** nuevo botón "Agregar equipo completo" en Step 4 del EventForm. Expande los miembros del equipo a N filas en `event_staff` reusando el UPSERT de Ola 1 — no hay endpoint nuevo. Miembros ya asignados se saltean. El usuario puede editar fee/turno/estado por fila después de expandir.
+- **Sin plan gating:** disponible para todos los planes (igual que Ola 1).
+
 **Roadmap siguiente (no implementado):**
-- **Ola 2 — Equipos:** tabla `staff_teams` + `staff_team_members` para asignar cuadrillas en bloque (un equipo de N meseros). Team lead como badge visual, no rol técnico.
-- **Ola 3 — Staff como servicio vendible:** `Product.staff_team_id` opcional para cobrar al cliente con markup vs. costo interno. Reutiliza Products/Quotes (no un tercer tipo de item).
+- **Ola 3 — Staff como servicio vendible:** `Product.staff_team_id` opcional para cobrar al cliente con markup vs. costo interno. Reutiliza Products/Quotes (no un tercer tipo de item). Requiere decisiones de negocio: cómo se congela el team al agregar al Quote, cómo se muestra el margen (price − sum(fees)), qué pasa al editar el team tras asignarlo.
 - **Phase 3:** login del colaborador vía `invited_user_id` — intacto como estaba planeado.
 
 **Navegación:**

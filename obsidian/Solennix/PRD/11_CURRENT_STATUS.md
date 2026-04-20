@@ -17,6 +17,17 @@ status: active
 **Fecha:** Abril 2026
 **Version:** 1.2
 
+> [!info] 2026-04-19 — Personal Ola 2: equipos (staff_teams + staff_team_members) para asignar cuadrillas en bloque
+> Segunda ola de expansión de Personal (después de Ola 1 del mismo día). Motivación: sin equipos, el mismo organizador que tiene una plantilla recurrente de 10 meseros tiene que agregarlos uno por uno a cada evento. Con Ola 2 los agrupa una vez y los asigna a un evento con un solo toque. Escala el modelo a empresas de catering sin cambiar el flujo base de Staff catalog.
+> - **Backend (migration 044)**: `staff_teams` (user_id, name, role_label, notes, timestamps) + `staff_team_members` (team_id, staff_id, is_lead, position) con PK compuesta. Cascade a ambos lados; miembros sin fee/status (esos siguen viviendo per-assignment en `event_staff`, así un equipo puede asignarse a varios eventos con distintos costos/RSVPs).
+> - **Repo `StaffTeamRepo`**: GetAll con `member_count` barato (sub-SELECT COUNT) para la lista; GetByID con miembros joined con staff name/role/phone/email; Create/Update/Delete transaccionales; Update reemplaza miembros atómicamente (no hay estado por miembro que preservar). Validación de tenant antes de insertar cada miembro.
+> - **Endpoints** bajo `/api/staff/teams`: `GET`, `POST`, `GET/{id}`, `PUT/{id}`, `DELETE/{id}`. Integrado como subprefijo estático del `/api/staff` existente — chi resuelve "teams" antes de `/{id}`.
+> - **iOS / Android / Web**: CRUD de equipos con pantalla propia accesible desde la lista de Personal (sin tab nuevo). Miembros se eligen desde el catálogo existente con toggle `is_lead` por fila. Badge de corona para el team lead.
+> - **Integración con EventForm**: botón "Agregar equipo completo" en el Step 4 del formulario. Expande los miembros a N filas en `event_staff` usando el mismo UPSERT de Ola 1 — no hay endpoint nuevo. Miembros ya asignados se saltean (sin duplicados). Después de expandir, fee/turno/estado son editables por fila.
+> - **Sin gating de plan** en esta ola (todos los planes).
+> - **Decisiones clave**: team no guarda fee ni status (esos viven per-assignment); miembros upsert via DELETE + INSERT en transacción (no hay estado a preservar). Validación de tenant por miembro evita que un cliente malicioso adjunte staff de otro user.
+> - **Ola 3 (no incluida)**: `Product.staff_team_id` para vender staffing al cliente con markup — requiere decisiones de producto abiertas (snapshot vs dynamic team, cálculo de margen visible).
+
 > [!info] 2026-04-19 — Personal Ola 1: turnos + estado RSVP + disponibilidad (paridad iOS · Android · Web · Backend)
 > Feature Personal (shipped 2026-04-16 como catálogo plano + costo por evento) expandida con la capa operativa. Motivación del usuario: escalar el uso para equipos de meseros / empresas de catering, sin cerrar la puerta a que el mismo modelo sirva al organizador con plantilla propia. Phase 3 (login del colaborador) se mantiene intacto como roadmap futuro.
 > - **Backend (migration 043)**: `event_staff` recibe `shift_start`, `shift_end` (TIMESTAMPTZ nullables — pueden cruzar medianoche) y `status` (enum `pending | confirmed | declined | cancelled`, default `confirmed`). Constraint `shift_end > shift_start`. Todo aditivo — filas existentes siguen válidas.
