@@ -331,9 +331,12 @@ fun CalendarViewContent(
                             }
                         }
                     } else {
+                        // Tablet events panel — add horizontal padding here
+                        // (the card no longer carries its own) so items don't
+                        // touch the Surface edges.
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
                         ) {
                             items(uiState.eventsForSelectedDate) { event ->
                                 CalendarEventItem(event = event, onClick = { onEventClick(event.id) })
@@ -621,10 +624,15 @@ fun CalendarEventItem(
     event: Event,
     onClick: () -> Unit
 ) {
+    // No horizontal padding here — the LazyColumn that hosts these cards
+    // already applies `contentPadding(horizontal = 12.dp)` (phone mode) or
+    // sits inside a Surface with its own inset (tablet mode). Adding more
+    // horizontal padding on the card itself made the event list narrower
+    // than the calendar grid beside it.
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .padding(vertical = 4.dp)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         shape = MaterialTheme.shapes.medium

@@ -404,7 +404,8 @@ public struct CalendarView: View {
         .padding(.horizontal, Spacing.md)
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .padding(.horizontal, Spacing.md)
+        // Align with the event card + calendar grid (both at Spacing.sm).
+        .padding(.horizontal, Spacing.sm)
     }
 
     private func eventCard(_ event: Event) -> some View {
@@ -448,7 +449,10 @@ public struct CalendarView: View {
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .shadowSm()
-        .padding(.horizontal, Spacing.md)
+        // Match the calendar grid's horizontal inset (`Spacing.sm`) — previously
+        // the card lived at `Spacing.md`, making the event list visibly narrower
+        // than the calendar above it on iPhone.
+        .padding(.horizontal, Spacing.sm)
     }
 
     // MARK: - Long Press Handler
