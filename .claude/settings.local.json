@@ -320,7 +320,19 @@
       "Read(//Library/Java/JavaVirtualMachines/**)",
       "Bash(export JAVA_HOME=/opt/homebrew/opt/openjdk@17)",
       "Bash(./gradlew :feature:dashboard:testDebugUnitTest)",
-      "Bash(./gradlew :app:compileDebugKotlin)"
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(lsof -iTCP:8080 -sTCP:LISTEN)",
+      "Bash(~/Library/Android/sdk/emulator/emulator -list-avds)",
+      "Bash(break)",
+      "Bash(docker exec *)",
+      "Bash(DATABASE_URL=\"postgres://solennix_user:solennix_password@localhost:5433/solennix?sslmode=disable\" JWT_SECRET=\"testsecret-32-bytes-long-for-testing12\" PORT=8080 ENV=development go run ./cmd/server)",
+      "Bash(DATABASE_URL=\"postgres://solennix_user:solennix_password@localhost:5433/solennix?sslmode=disable\" JWT_SECRET=\"testsecret-32-bytes-long-for-testing12\" PORT=8090 ENV=development go run ./cmd/server)",
+      "Bash(~/Library/Android/sdk/emulator/emulator -avd Pixel_10_Pro -no-snapshot -no-boot-anim)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb devices *)",
+      "Bash(bash /tmp/poll_prod.sh)",
+      "Bash(xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'platform=iOS Simulator,id=4277DB83-2869-41E5-8F8E-4410D01D8C95' -derivedDataPath /tmp/solennix-ios-build -configuration Debug build)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb exec-out *)",
+      "Bash(osascript -e 'tell application \"System Events\" to tell process \"Simulator\" to key code 126 using {command down}')"
     ]
   }
 }
