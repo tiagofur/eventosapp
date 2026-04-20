@@ -310,7 +310,17 @@
       "Bash(rg -n \"^@Composable$|^private fun Checklist|^private fun Contract\" /Users/tiagofur/dev/eventosapp/android/feature/events/src/main/java/com/creapolis/solennix/feature/events/ui/EventDetailScreen.kt)",
       "Bash('/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/jarsigner' -verify -verbose -certs /Users/tiagofur/dev/eventosapp/android/release-apks/solennix-v1.1.0-2026-04-18-signed.aab)",
       "Bash('/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/jarsigner' -verify /Users/tiagofur/dev/eventosapp/android/release-apks/solennix-v1.1.0-2026-04-18-signed.aab)",
-      "Bash(rg -rn \"statusBarColor|navigationBarColor|setStatusBarColor|setNavigationBarColor\" /Users/tiagofur/dev/eventosapp/android --type xml --type kotlin)"
+      "Bash(rg -rn \"statusBarColor|navigationBarColor|setStatusBarColor|setNavigationBarColor\" /Users/tiagofur/dev/eventosapp/android --type xml --type kotlin)",
+      "Bash(xcodebuild -scheme Solennix -destination 'platform=iOS Simulator,id=4277DB83-2869-41E5-8F8E-4410D01D8C95' build)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb shell *)",
+      "Bash(xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'generic/platform=iOS Simulator' build -quiet)",
+      "Bash(xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'generic/platform=iOS Simulator' build)",
+      "Bash(./gradlew :feature:dashboard:compileDebugKotlin)",
+      "Read(//opt/homebrew/opt/**)",
+      "Read(//Library/Java/JavaVirtualMachines/**)",
+      "Bash(export JAVA_HOME=/opt/homebrew/opt/openjdk@17)",
+      "Bash(./gradlew :feature:dashboard:testDebugUnitTest)",
+      "Bash(./gradlew :app:compileDebugKotlin)"
     ]
   }
 }
