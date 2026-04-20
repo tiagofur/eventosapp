@@ -11,6 +11,10 @@ import Foundation
 /// are scoped to events with `event_date` in the current calendar month
 /// AND status ∈ {confirmed, completed}. VAT is prorated per event by paid
 /// ratio. Cash collected is scoped by `payment_date` in the current month.
+///
+/// Key decoding relies on `APIClient`'s global `.convertFromSnakeCase`
+/// strategy — do NOT add explicit `CodingKeys`, they'd shadow the
+/// converter and cause `keyNotFound` errors at runtime.
 public struct DashboardKPIs: Codable, Sendable, Hashable {
     public let totalRevenue: Double
     public let eventsThisMonth: Int
@@ -23,20 +27,6 @@ public struct DashboardKPIs: Codable, Sendable, Hashable {
     public let cashCollectedThisMonth: Double
     public let vatCollectedThisMonth: Double
     public let vatOutstandingThisMonth: Double
-
-    enum CodingKeys: String, CodingKey {
-        case totalRevenue = "total_revenue"
-        case eventsThisMonth = "events_this_month"
-        case pendingQuotes = "pending_quotes"
-        case lowStockItems = "low_stock_items"
-        case upcomingEvents = "upcoming_events"
-        case totalClients = "total_clients"
-        case averageEventValue = "average_event_value"
-        case netSalesThisMonth = "net_sales_this_month"
-        case cashCollectedThisMonth = "cash_collected_this_month"
-        case vatCollectedThisMonth = "vat_collected_this_month"
-        case vatOutstandingThisMonth = "vat_outstanding_this_month"
-    }
 
     public init(
         totalRevenue: Double,
@@ -67,16 +57,11 @@ public struct DashboardKPIs: Codable, Sendable, Hashable {
 
 /// One data point returned by `GET /api/dashboard/revenue-chart`.
 /// Mirrors `backend/internal/repository/RevenueDataPoint`.
+/// Relies on APIClient's `.convertFromSnakeCase` — no explicit CodingKeys.
 public struct DashboardRevenuePoint: Codable, Sendable, Hashable {
     public let month: String        // "YYYY-MM"
     public let revenue: Double
     public let eventCount: Int
-
-    enum CodingKeys: String, CodingKey {
-        case month
-        case revenue
-        case eventCount = "event_count"
-    }
 
     public init(month: String, revenue: Double, eventCount: Int) {
         self.month = month
