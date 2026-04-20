@@ -1,0 +1,61 @@
+{
+  "title": "Calendar",
+  "today": "Today",
+  "previous_month": "Previous month",
+  "next_month": "Next month",
+  "new_event": "New Event",
+  "quick_quote": "Quick Quote",
+  "manage_blocks": "Manage blocked dates",
+  "select_date": "Select a date",
+  "no_events_scheduled": "No events scheduled",
+  "no_events_for_day": "No events on this day",
+  "overflow_more": "+{{count}} more",
+  "create_event_for_date": "Create event on this date",
+  "create_new": "New",
+  "block": {
+    "title": "Block date",
+    "range_title": "Block date range",
+    "reason_label": "Reason (optional)",
+    "reason_placeholder_single": "E.g. Vacation, personal day…",
+    "reason_placeholder_range": "E.g. Vacation, maintenance…",
+    "start_date": "From",
+    "end_date": "To",
+    "add_range": "Add range",
+    "save": "Block",
+    "range_invalid": "End date cannot be before start date"
+  },
+  "unblock": {
+    "title": "Unblock date",
+    "confirm": "Unblock",
+    "reason_prefix": "Reason: {{reason}}"
+  },
+  "blocked_dates": {
+    "title": "Unavailable Dates",
+    "empty": "No blocked dates",
+    "empty_subtitle": "All dates are available"
+  },
+  "filter": {
+    "all": "All",
+    "quoted": "Quoted",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "status": {
+    "quoted": "Quoted",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "error": {
+    "load_failed": "Failed to load events",
+    "block_failed": "Failed to block date",
+    "unblock_failed": "Failed to unblock date",
+    "retry": "Retry"
+  },
+  "action": {
+    "cancel": "Cancel",
+    "ok": "OK",
+    "delete": "Delete"
+  }
+}

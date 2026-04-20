@@ -1,0 +1,61 @@
+{
+  "title": "Calendario",
+  "today": "Hoy",
+  "previous_month": "Mes anterior",
+  "next_month": "Mes siguiente",
+  "new_event": "Nuevo Evento",
+  "quick_quote": "Cotización Rápida",
+  "manage_blocks": "Gestionar Bloqueos",
+  "select_date": "Selecciona una fecha",
+  "no_events_scheduled": "No hay eventos programados",
+  "no_events_for_day": "No hay eventos para este día",
+  "overflow_more": "+{{count}} más",
+  "create_event_for_date": "Crear evento para esta fecha",
+  "create_new": "Nuevo",
+  "block": {
+    "title": "Bloquear fecha",
+    "range_title": "Bloquear rango de fechas",
+    "reason_label": "Motivo (opcional)",
+    "reason_placeholder_single": "Ej: Vacaciones, día personal…",
+    "reason_placeholder_range": "Ej: Vacaciones, mantenimiento…",
+    "start_date": "Desde",
+    "end_date": "Hasta",
+    "add_range": "Agregar rango",
+    "save": "Bloquear",
+    "range_invalid": "La fecha fin no puede ser anterior a la fecha inicio"
+  },
+  "unblock": {
+    "title": "Desbloquear fecha",
+    "confirm": "Desbloquear",
+    "reason_prefix": "Motivo: {{reason}}"
+  },
+  "blocked_dates": {
+    "title": "Fechas No Disponibles",
+    "empty": "No hay fechas bloqueadas",
+    "empty_subtitle": "Todas las fechas están disponibles"
+  },
+  "filter": {
+    "all": "Todos",
+    "quoted": "Cotizados",
+    "confirmed": "Confirmados",
+    "completed": "Completados",
+    "cancelled": "Cancelados"
+  },
+  "status": {
+    "quoted": "Cotizado",
+    "confirmed": "Confirmado",
+    "completed": "Completado",
+    "cancelled": "Cancelado"
+  },
+  "error": {
+    "load_failed": "No se pudieron cargar los eventos",
+    "block_failed": "No se pudo bloquear la fecha",
+    "unblock_failed": "No se pudo desbloquear",
+    "retry": "Reintentar"
+  },
+  "action": {
+    "cancel": "Cancelar",
+    "ok": "Aceptar",
+    "delete": "Eliminar"
+  }
+}

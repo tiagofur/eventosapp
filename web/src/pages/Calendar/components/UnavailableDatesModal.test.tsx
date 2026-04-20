@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@tests/customRender';
-import { MemoryRouter } from 'react-router-dom';
 
 import { UnavailableDatesModal } from './UnavailableDatesModal';
 
@@ -29,6 +28,8 @@ const defaultProps = {
   onDelete: vi.fn(),
 };
 
+// Strings now come from the i18n catalog (src/i18n/locales/es/calendar.json).
+// Tests assert against the Spanish copy because setup.ts pins i18n to 'es'.
 describe('UnavailableDatesModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -37,43 +38,47 @@ describe('UnavailableDatesModal', () => {
 
   it('does not render when closed', () => {
     render(<UnavailableDatesModal {...defaultProps} isOpen={false} />);
-    expect(screen.queryByText('Fechas Bloqueadas')).not.toBeInTheDocument();
+    expect(screen.queryByText('Fechas No Disponibles')).not.toBeInTheDocument();
   });
 
   it('renders modal title when open', () => {
     render(<UnavailableDatesModal {...defaultProps} />);
-    expect(screen.getByText('Fechas Bloqueadas')).toBeInTheDocument();
+    expect(screen.getByText('Fechas No Disponibles')).toBeInTheDocument();
   });
 
   it('calls onClose when close button clicked', () => {
     const onClose = vi.fn();
     render(<UnavailableDatesModal {...defaultProps} onClose={onClose} />);
-    fireEvent.click(screen.getByLabelText('Cerrar'));
+    // Close (X) button — aria-label is t('action.cancel') = "Cancelar".
+    // getAllBy because the footer Close button carries the same label.
+    fireEvent.click(screen.getAllByLabelText('Cancelar')[0]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows empty state when no blocks', async () => {
     render(<UnavailableDatesModal {...defaultProps} />);
     await waitFor(() => {
-      expect(screen.getByText('No hay fechas bloqueadas.')).toBeInTheDocument();
+      expect(screen.getByText('No hay fechas bloqueadas')).toBeInTheDocument();
     });
   });
 
   it('shows add block button', async () => {
     render(<UnavailableDatesModal {...defaultProps} />);
     await waitFor(() => {
-      expect(screen.getByText('Agregar Bloqueo')).toBeInTheDocument();
+      expect(screen.getByText('Agregar rango')).toBeInTheDocument();
     });
   });
 
   it('shows form when add block button clicked', async () => {
     render(<UnavailableDatesModal {...defaultProps} />);
     await waitFor(() => {
-      expect(screen.getByText('Agregar Bloqueo')).toBeInTheDocument();
+      expect(screen.getByText('Agregar rango')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText('Agregar Bloqueo'));
-    expect(screen.getByText('Agregar Bloqueo')).toBeInTheDocument();
-    expect(screen.getByText('Bloquear')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Agregar rango'));
+    // After clicking, the form appears with title "Bloquear rango de fechas"
+    // and a submit button "Bloquear".
+    expect(screen.getByText('Bloquear rango de fechas')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bloquear' })).toBeInTheDocument();
   });
 
   it('renders existing blocks', async () => {

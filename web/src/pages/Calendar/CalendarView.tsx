@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query";
 import { DayPicker, type DayButtonProps } from "react-day-picker";
 import "react-day-picker/style.css";
+import { useTranslation } from "react-i18next";
 import {
   unavailableDatesService,
   UnavailableDate,
@@ -24,6 +25,7 @@ import {
   DollarSign as DollarIcon,
   Lock,
   Unlock,
+  AlertTriangle,
 } from "lucide-react";
 import { useToast } from "../../hooks/useToast";
 import { logError } from "../../lib/errorHandler";
@@ -33,13 +35,16 @@ import {
   endOfMonth,
   isSameDay,
   startOfDay,
+  type Locale,
 } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import { Event } from "../../types/entities";
 
 type EventWithClient = Event & {
   client?: { name: string; phone: string };
 };
+
+type StatusFilter = Event["status"] | null;
 
 // Parse a yyyy-MM-dd date string as LOCAL date (avoids UTC midnight shifting day in negative-offset timezones)
 const parseLocalDate = (dateStr: string): Date => {
@@ -47,12 +52,23 @@ const parseLocalDate = (dateStr: string): Date => {
   return startOfDay(new Date(y, m - 1, d));
 };
 
+/**
+ * Pick the date-fns locale that matches i18next's current language.
+ * Falls back to Spanish so monthly date labels don't suddenly flip to
+ * English for unsupported locales. `lang` is optional because the
+ * i18next instance may not have resolved a language yet in some
+ * test environments where the config module isn't initialized.
+ */
+const pickDateFnsLocale = (lang: string | undefined): Locale =>
+  lang?.startsWith("en") ? enUS : es;
+
 function makeDayButton(
   onCtxMenu: (date: Date, e: React.MouseEvent) => void,
-  getDots: (date: Date) => string[],
+  getDayInfo: (date: Date) => { dots: string[]; overflow: number },
+  overflowLabel: (count: number) => string,
 ) {
   return function CustomDayButton({ day, children, ...props }: DayButtonProps) {
-    const dots = getDots(day.date);
+    const { dots, overflow } = getDayInfo(day.date);
     return (
       <button
         {...props}
@@ -71,12 +87,17 @@ function makeDayButton(
             />
           ))}
         </span>
+        {overflow > 0 && (
+          <span className="rdp-day-overflow">{overflowLabel(overflow)}</span>
+        )}
       </button>
     );
   };
 }
 
 export const CalendarView: React.FC = () => {
+  const { t, i18n } = useTranslation("calendar");
+  const dfnsLocale = useMemo(() => pickDateFnsLocale(i18n.language), [i18n.language]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const normalizedToday = startOfDay(new Date());
@@ -91,6 +112,7 @@ export const CalendarView: React.FC = () => {
   const [isConfirmingUnblock, setIsConfirmingUnblock] = useState(false);
   const [contextMenuDate, setContextMenuDate] = useState<string | undefined>();
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(null);
   const createMenuRef = useRef<HTMLDivElement>(null);
 
   // Month boundaries as yyyy-MM-dd strings — used as both query args and
@@ -115,11 +137,30 @@ export const CalendarView: React.FC = () => {
   const loading = eventsLoading || unavailableLoading;
   const isFetching = eventsFetching || unavailableFetching;
 
+  // Filtered event list respects the active status chip. Filtering
+  // happens client-side from the cached React Query data — no refetch,
+  // matching iOS & Android behavior.
+  const filteredEvents = useMemo(
+    () => (statusFilter === null ? events : events.filter((e) => e.status === statusFilter)),
+    [events, statusFilter],
+  );
+
   // Surface query errors via toast (once per transition).
   useEffect(() => {
     if (eventsError) logError("CalendarView:events", eventsError);
     if (unavailableError) logError("CalendarView:unavailable", unavailableError);
   }, [eventsError, unavailableError]);
+
+  const hasError = !!eventsError || !!unavailableError;
+
+  const handleRetry = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.events.dateRange(rangeStart, rangeEnd),
+    });
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.unavailableDates.byRange(rangeStart, rangeEnd),
+    });
+  }, [queryClient, rangeStart, rangeEnd]);
 
   // Invalidate both month windows whenever a mutation changes availability,
   // so the UI stays in sync without a manual refresh.
@@ -140,20 +181,33 @@ export const CalendarView: React.FC = () => {
     setSelectedDate(today);
   };
 
-  const modifiers: { unavailable: Date[] } = {
-    unavailable: (unavailableDates || []).flatMap((d) => {
-      const dates: Date[] = [];
-      const currentDate = parseLocalDate(d.start_date);
+  // Pre-compute a Set of "YYYY-MM-DD" strings covering every blocked day
+  // in the current month view. Previously we iterated each range
+  // day-by-day inside `modifiers` (O(ranges × days)) and re-built an
+  // array of Date objects; now we build a Set once and expose both the
+  // Date[] needed by react-day-picker's `modifiers` and a fast lookup
+  // via the Set itself.
+  const { blockedDateSet, blockedDateList } = useMemo(() => {
+    const set = new Set<string>();
+    const list: Date[] = [];
+    for (const d of unavailableDates) {
+      const current = parseLocalDate(d.start_date);
       const end = parseLocalDate(d.end_date);
-      while (currentDate <= end) {
-        dates.push(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
+      while (current <= end) {
+        const key = format(current, "yyyy-MM-dd");
+        if (!set.has(key)) {
+          set.add(key);
+          list.push(new Date(current));
+        }
+        current.setDate(current.getDate() + 1);
       }
-      return dates;
-    }),
-  };
+    }
+    return { blockedDateSet: set, blockedDateList: list };
+  }, [unavailableDates]);
 
-  const selectedEvents = (events || []).filter(
+  const modifiers: { unavailable: Date[] } = { unavailable: blockedDateList };
+
+  const selectedEvents = (filteredEvents || []).filter(
     (e) =>
       selectedDate && isSameDay(parseLocalDate(e.event_date), selectedDate),
   );
@@ -169,11 +223,11 @@ export const CalendarView: React.FC = () => {
     try {
       await unavailableDatesService.removeDate(selectedUnavailable.id);
       refreshUnavailableRange();
-      addToast("Fechas desbloqueadas exitosamente", "success");
+      addToast(t("unblock.confirm"), "success");
       setSelectedDate(undefined);
     } catch (error) {
       logError("CalendarView:handleUnblock", error);
-      addToast("Error al desbloquear las fechas", "error");
+      addToast(t("error.unblock_failed"), "error");
     } finally {
       setIsConfirmingUnblock(false);
     }
@@ -188,26 +242,38 @@ export const CalendarView: React.FC = () => {
     [],
   );
 
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const event of events) {
-      const existing = map.get(event.event_date) ?? [];
-      if (existing.length < 3) {
-        map.set(event.event_date, [...existing, event.status]);
+  // Group events by date into { dots: [up to 3 statuses], total count } so
+  // the CustomDayButton can render both the dots and a +N overflow badge.
+  const dayInfoByDate = useMemo(() => {
+    const map = new Map<string, { dots: string[]; total: number }>();
+    for (const event of filteredEvents) {
+      const existing = map.get(event.event_date) ?? { dots: [], total: 0 };
+      existing.total += 1;
+      if (existing.dots.length < 3) {
+        existing.dots.push(event.status);
       }
+      map.set(event.event_date, existing);
     }
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
-  const getDots = useCallback(
-    (date: Date): string[] =>
-      eventsByDate.get(format(date, "yyyy-MM-dd")) ?? [],
-    [eventsByDate],
+  const getDayInfo = useCallback(
+    (date: Date): { dots: string[]; overflow: number } => {
+      const info = dayInfoByDate.get(format(date, "yyyy-MM-dd"));
+      if (!info) return { dots: [], overflow: 0 };
+      return { dots: info.dots, overflow: Math.max(0, info.total - 3) };
+    },
+    [dayInfoByDate],
+  );
+
+  const overflowLabel = useCallback(
+    (count: number) => t("overflow_more", { count }),
+    [t],
   );
 
   const CustomDayButton = useMemo(
-    () => makeDayButton(handleContextMenu, getDots),
-    [handleContextMenu, getDots],
+    () => makeDayButton(handleContextMenu, getDayInfo, overflowLabel),
+    [handleContextMenu, getDayInfo, overflowLabel],
   );
 
   useEffect(() => {
@@ -225,11 +291,28 @@ export const CalendarView: React.FC = () => {
     ? format(selectedDate, "yyyy-MM-dd")
     : format(new Date(), "yyyy-MM-dd");
 
+  const filterOptions: { key: StatusFilter; label: string }[] = [
+    { key: null, label: t("filter.all") },
+    { key: "quoted", label: t("filter.quoted") },
+    { key: "confirmed", label: t("filter.confirmed") },
+    { key: "completed", label: t("filter.completed") },
+    { key: "cancelled", label: t("filter.cancelled") },
+  ];
+
+  const statusLabel = (status: string): string => {
+    switch (status) {
+      case "confirmed": return t("status.confirmed");
+      case "completed": return t("status.completed");
+      case "cancelled": return t("status.cancelled");
+      default: return t("status.quoted");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-text">Calendario</h1>
-        <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold text-text">{t("title")}</h1>
+        <div className="flex items-center gap-3 flex-wrap">
           {/* Create event / quick quote dropdown — mirrors iOS Menu(+) */}
           <div ref={createMenuRef} className="relative">
             <button
@@ -238,10 +321,10 @@ export const CalendarView: React.FC = () => {
               className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
               aria-haspopup="menu"
               aria-expanded={showCreateMenu}
-              aria-label="Crear nuevo evento o cotización"
+              aria-label={t("new_event")}
             >
               <CalendarPlus className="h-4 w-4 mr-2" aria-hidden="true" />
-              Nuevo
+              {t("create_new")}
               <ChevronDown
                 className={`h-3.5 w-3.5 ml-1.5 transition-transform duration-200 ${showCreateMenu ? "rotate-180" : ""}`}
                 aria-hidden="true"
@@ -261,11 +344,11 @@ export const CalendarView: React.FC = () => {
                 >
                   <CalendarPlus className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
                   <span>
-                    <span className="font-medium block">Nuevo Evento</span>
+                    <span className="font-medium block">{t("new_event")}</span>
                     <span className="text-xs text-text-secondary">
                       {selectedDate
-                        ? format(selectedDate, "d 'de' MMMM", { locale: es })
-                        : "Selecciona una fecha"}
+                        ? format(selectedDate, "d MMMM", { locale: dfnsLocale })
+                        : t("select_date")}
                     </span>
                   </span>
                 </Link>
@@ -278,8 +361,7 @@ export const CalendarView: React.FC = () => {
                 >
                   <FileSearch className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
                   <span>
-                    <span className="font-medium block">Cotización Rápida</span>
-                    <span className="text-xs text-text-secondary">Sin crear evento</span>
+                    <span className="font-medium block">{t("quick_quote")}</span>
                   </span>
                 </Link>
               </div>
@@ -293,22 +375,73 @@ export const CalendarView: React.FC = () => {
               setIsManagingBlocks(true);
             }}
             className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text bg-surface hover:bg-surface-alt shadow-sm transition-colors"
-            aria-label="Gestionar bloqueos de fechas"
+            aria-label={t("manage_blocks")}
           >
             <Lock className="h-4 w-4 mr-2" aria-hidden="true" />
-            Gestionar Bloqueos
+            {t("manage_blocks")}
           </button>
           <button
             type="button"
             onClick={goToToday}
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
-            aria-label="Ir a hoy"
+            aria-label={t("today")}
           >
             <CalendarDays className="h-4 w-4 mr-2" aria-hidden="true" />
-            Hoy
+            {t("today")}
           </button>
         </div>
       </div>
+
+      {/* Status filter pills — mirror Android's M3 FilterChip row and iOS's
+          toolbar Menu. Best-of-class web pattern: pill buttons with an
+          active background, wrapping on narrow viewports. */}
+      <div
+        className="flex flex-wrap gap-2"
+        role="tablist"
+        aria-label={t("filter.all")}
+      >
+        {filterOptions.map((opt) => {
+          const active = statusFilter === opt.key;
+          return (
+            <button
+              key={opt.key ?? "all"}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setStatusFilter(opt.key)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors ${
+                active
+                  ? "bg-primary text-white border-primary"
+                  : "bg-card text-text-secondary border-border hover:bg-surface-alt"
+              }`}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Inline error banner with retry — React Query already retried on its
+          own, so this is the user-visible recovery affordance for a sticky
+          network failure. */}
+      {hasError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 px-4 py-3 bg-error/10 border border-error/30 rounded-xl text-sm"
+        >
+          <div className="flex items-center gap-2 text-error">
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{t("error.load_failed")}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="text-error font-semibold hover:underline shrink-0"
+          >
+            {t("error.retry")}
+          </button>
+        </div>
+      )}
 
       <div
         className="relative flex flex-col xl:flex-row gap-8 fade-in"
@@ -318,7 +451,7 @@ export const CalendarView: React.FC = () => {
           <div
             className="absolute inset-0 flex items-center justify-center bg-card/70 z-10 rounded-2xl"
             role="status"
-            aria-label="Cargando eventos..."
+            aria-label={loading ? t("title") : undefined}
           >
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent" />
           </div>
@@ -352,19 +485,19 @@ export const CalendarView: React.FC = () => {
               color: var(--color-text);
               text-transform: capitalize;
           }
-          /* Day button: flex column to hold number circle + status dots */
+          /* Day button: flex column to hold number circle + status dots + overflow caption */
           .rdp-day_button {
               display: flex !important;
               flex-direction: column !important;
               align-items: center !important;
               justify-content: flex-start !important;
-              height: 52px !important;
+              height: 56px !important;
               width: var(--rdp-cell-size) !important;
               padding: 5px 0 0 !important;
               background: transparent !important;
               border: none !important;
               border-radius: 0 !important;
-              gap: 3px;
+              gap: 2px;
               cursor: pointer;
           }
           .rdp-day_button:disabled { cursor: default; opacity: 0.4; }
@@ -430,6 +563,14 @@ export const CalendarView: React.FC = () => {
               border-radius: 50%;
               flex-shrink: 0;
           }
+          /* "+N más" overflow badge — subtle caption under the dots for
+             days with more events than the 3 rendered status colors. */
+          .rdp-day-overflow {
+              font-size: 9px;
+              line-height: 1;
+              color: var(--color-text-secondary);
+              font-weight: 500;
+          }
           `}</style>
           <DayPicker
             mode="single"
@@ -443,6 +584,11 @@ export const CalendarView: React.FC = () => {
             }}
             className="flex justify-center"
             components={{ DayButton: CustomDayButton }}
+            locale={dfnsLocale}
+            labels={{
+              labelPrevious: () => t("previous_month"),
+              labelNext: () => t("next_month"),
+            }}
           />
         </div>
 
@@ -450,15 +596,13 @@ export const CalendarView: React.FC = () => {
         <div className="bg-card shadow-sm rounded-2xl p-6 xl:flex-1 xl:min-w-0 border border-border flex flex-col transition-colors">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-text">
-              Eventos del{" "}
               {selectedDate
-                ? format(selectedDate, "d 'de' MMMM", { locale: es })
-                : "día"}
+                ? format(selectedDate, "EEEE d MMMM", { locale: dfnsLocale }).replace(/^\w/, (c) => c.toUpperCase())
+                : t("select_date")}
             </h2>
             {selectedEvents.length > 0 && (
               <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full">
-                {selectedEvents.length}{" "}
-                {selectedEvents.length === 1 ? "Evento" : "Eventos"}
+                {selectedEvents.length}
               </span>
             )}
           </div>
@@ -476,17 +620,17 @@ export const CalendarView: React.FC = () => {
                   <Lock className="h-8 w-8 text-error" aria-hidden="true" />
                 </div>
                 <p className="text-text font-semibold text-sm mb-1">
-                  Fecha Bloqueada
+                  {t("blocked_dates.title")}
                 </p>
                 <p className="text-text-secondary text-xs">
                   {selectedUnavailable.start_date ===
                   selectedUnavailable.end_date
                     ? format(
                         parseLocalDate(selectedUnavailable.start_date),
-                        "d 'de' MMMM yyyy",
-                        { locale: es },
+                        "d MMMM yyyy",
+                        { locale: dfnsLocale },
                       )
-                    : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: es })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: es })}`}
+                    : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: dfnsLocale })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: dfnsLocale })}`}
                 </p>
                 {selectedUnavailable.reason && (
                   <p className="text-text-tertiary text-xs italic mt-2">
@@ -498,7 +642,7 @@ export const CalendarView: React.FC = () => {
                   onClick={() => setIsConfirmingUnblock(true)}
                   className="mt-4 text-error text-sm font-semibold hover:underline"
                 >
-                  Desbloquear
+                  {t("unblock.confirm")}
                 </button>
               </div>
             ) : selectedEvents.length === 0 ? (
@@ -516,15 +660,14 @@ export const CalendarView: React.FC = () => {
                   />
                 </div>
                 <p className="text-text-secondary text-sm font-medium">
-                  No hay eventos para este día.
+                  {t("no_events_for_day")}
                 </p>
                 {selectedDate && (
                   <Link
                     to={`/events/new?date=${format(selectedDate, "yyyy-MM-dd")}`}
                     className="mt-4 inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
-                    aria-label="Crear evento para esta fecha"
                   >
-                    Crear evento para esta fecha
+                    {t("create_event_for_date")}
                   </Link>
                 )}
               </div>
@@ -543,7 +686,7 @@ export const CalendarView: React.FC = () => {
                         navigate(`/events/${event.id}/summary`);
                       }
                     }}
-                    aria-label={`Ver detalles del evento de ${event.client?.name} - ${event.service_type}`}
+                    aria-label={`${event.client?.name} - ${event.service_type}`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="min-w-0 flex-1 mr-2">
@@ -565,13 +708,7 @@ export const CalendarView: React.FC = () => {
                                 : "bg-status-quoted/10 text-status-quoted"
                         }`}
                       >
-                        {event.status === "confirmed"
-                          ? "Confirmado"
-                          : event.status === "completed"
-                            ? "Completado"
-                            : event.status === "cancelled"
-                              ? "Cancelado"
-                              : "Cotizado"}
+                        {statusLabel(event.status)}
                       </span>
                     </div>
 
@@ -583,7 +720,7 @@ export const CalendarView: React.FC = () => {
                             aria-hidden="true"
                           />
                           <span className="truncate">
-                            {event.start_time || "S/H"}
+                            {event.start_time || "—"}
                             {event.start_time && event.end_time ? " - " : ""}
                             {event.end_time || ""}
                           </span>
@@ -613,15 +750,20 @@ export const CalendarView: React.FC = () => {
                             className="h-3 w-3 mr-1"
                             aria-hidden="true"
                           />
-                          <span>{event.client?.phone || "Sin tel."}</span>
+                          <span>{event.client?.phone || "—"}</span>
                         </div>
                         <div className="flex items-center text-xs font-bold text-text">
                           <DollarIcon
                             className="h-3 w-3 mr-0.5 text-success"
                             aria-hidden="true"
                           />
+                          {/* MXN amounts always use es-MX thousand separators
+                              (comma) regardless of app language — the business
+                              is Mexico-based and users recognize that format
+                              on their bank statements. */}
                           {event.total_amount?.toLocaleString("es-MX", {
                             minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
                           })}
                         </div>
                       </div>
@@ -632,9 +774,8 @@ export const CalendarView: React.FC = () => {
                   <Link
                     to={`/events/new?date=${format(selectedDate, "yyyy-MM-dd")}`}
                     className="flex items-center justify-center pt-2 text-xs text-text-tertiary hover:text-primary transition-colors"
-                    aria-label="Agregar otro evento para esta fecha"
                   >
-                    + Agregar evento
+                    + {t("new_event")}
                   </Link>
                 )}
               </div>
@@ -668,26 +809,23 @@ export const CalendarView: React.FC = () => {
                 <Unlock className="h-7 w-7 text-error" />
               </div>
               <h3 className="text-lg font-bold text-text mb-2">
-                Desbloquear Fechas
+                {t("unblock.title")}
               </h3>
               <p className="text-sm text-text-secondary mb-1">
                 {selectedUnavailable.start_date === selectedUnavailable.end_date
                   ? format(
                       parseLocalDate(selectedUnavailable.start_date),
-                      "d 'de' MMMM yyyy",
-                      { locale: es },
+                      "d MMMM yyyy",
+                      { locale: dfnsLocale },
                     )
-                  : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: es })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: es })}`}
+                  : `${format(parseLocalDate(selectedUnavailable.start_date), "d MMM", { locale: dfnsLocale })} — ${format(parseLocalDate(selectedUnavailable.end_date), "d MMM yyyy", { locale: dfnsLocale })}`}
               </p>
               {selectedUnavailable.reason && (
                 <p className="text-xs text-text-tertiary italic mb-4">
-                  {selectedUnavailable.reason}
+                  {t("unblock.reason_prefix", { reason: selectedUnavailable.reason })}
                 </p>
               )}
               {!selectedUnavailable.reason && <div className="mb-4" />}
-              <p className="text-sm text-text-secondary">
-                Estas fechas volverán a estar disponibles para eventos.
-              </p>
             </div>
             <div className="flex gap-3 p-4 border-t border-border bg-surface-alt/50">
               <button
@@ -695,14 +833,14 @@ export const CalendarView: React.FC = () => {
                 onClick={() => setIsConfirmingUnblock(false)}
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-text-secondary hover:text-text bg-surface-alt hover:bg-surface border border-border rounded-xl transition-colors"
               >
-                Cancelar
+                {t("action.cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleUnblock}
                 className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-error hover:bg-error/90 rounded-xl transition-colors shadow-sm"
               >
-                Desbloquear
+                {t("unblock.confirm")}
               </button>
             </div>
           </div>

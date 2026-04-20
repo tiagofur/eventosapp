@@ -1,6 +1,13 @@
 /// <reference types="@testing-library/jest-dom" />
 
 import '@testing-library/jest-dom/vitest';
+// Initialize i18next before any component imports so `useTranslation`
+// returns real Spanish strings in tests (matching production default).
+import '../src/i18n/config';
+import i18n from 'i18next';
+// Pin tests to Spanish so string assertions don't flip to English based
+// on the host's navigator.language (CI runners often default to en-US).
+void i18n.changeLanguage('es');
 import { vi, afterEach, beforeAll, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from './mocks/server';

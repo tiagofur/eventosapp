@@ -1,16 +1,20 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { X, Calendar as CalendarIcon, Plus, Trash2, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '../../../hooks/useToast';
 import { unavailableDatesService, UnavailableDate } from '../../../services/unavailableDatesService';
 import clsx from 'clsx';
 import { logError } from '../../../lib/errorHandler';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { format, type Locale } from 'date-fns';
+import { es, enUS } from 'date-fns/locale';
 
 const parseLocalDate = (dateStr: string): Date => {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, m - 1, d);
 };
+
+const pickDateFnsLocale = (lang: string | undefined): Locale =>
+  lang?.startsWith('en') ? enUS : es;
 
 interface UnavailableDatesModalProps {
   isOpen: boolean;
@@ -27,6 +31,8 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
   onDelete,
   initialDate,
 }) => {
+  const { t, i18n } = useTranslation('calendar');
+  const dfnsLocale = useMemo(() => pickDateFnsLocale(i18n.language), [i18n.language]);
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetchingBlocks, setFetchingBlocks] = useState(false);
@@ -67,10 +73,10 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
       await unavailableDatesService.removeDate(id);
       setBlocks((prev) => prev.filter((b) => b.id !== id));
       onDelete(id);
-      addToast('Bloqueo eliminado', 'success');
+      addToast(t('action.delete'), 'success');
     } catch (error) {
       logError('Error deleting date block', error);
-      addToast('Error al eliminar el bloqueo', 'error');
+      addToast(t('error.unblock_failed'), 'error');
     } finally {
       setDeletingId(null);
     }
@@ -81,14 +87,14 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
     try {
       setLoading(true);
       const newDate = await unavailableDatesService.addDates(formData);
-      addToast('Fechas bloqueadas exitosamente', 'success');
+      addToast(t('block.save'), 'success');
       setBlocks((prev) => [...prev, newDate].sort((a, b) => a.start_date.localeCompare(b.start_date)));
       onSave(newDate);
       setFormData({ start_date: today, end_date: today, reason: '' });
       setShowForm(false);
     } catch (error) {
       logError('Error blocking dates', error);
-      addToast('Error al bloquear las fechas', 'error');
+      addToast(t('error.block_failed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -98,9 +104,9 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
 
   const formatBlockRange = (block: UnavailableDate) => {
     if (block.start_date === block.end_date) {
-      return format(parseLocalDate(block.start_date), "d 'de' MMM yyyy", { locale: es });
+      return format(parseLocalDate(block.start_date), 'd MMM yyyy', { locale: dfnsLocale });
     }
-    return `${format(parseLocalDate(block.start_date), 'd MMM', { locale: es })} — ${format(parseLocalDate(block.end_date), "d MMM yyyy", { locale: es })}`;
+    return `${format(parseLocalDate(block.start_date), 'd MMM', { locale: dfnsLocale })} — ${format(parseLocalDate(block.end_date), 'd MMM yyyy', { locale: dfnsLocale })}`;
   };
 
   return (
@@ -111,13 +117,13 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-border bg-surface-alt/50 shrink-0">
           <h2 className="text-xl font-bold flex items-center text-text">
             <Lock className="h-5 w-5 mr-3 text-primary" />
-            Fechas Bloqueadas
+            {t('blocked_dates.title')}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="text-text-secondary hover:text-text transition-colors p-2 hover:bg-surface rounded-full"
-            aria-label="Cerrar"
+            aria-label={t('action.cancel')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -136,7 +142,8 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
               <div className="h-12 w-12 bg-surface-alt rounded-full flex items-center justify-center mx-auto mb-3">
                 <CalendarIcon className="h-6 w-6 text-text-tertiary" />
               </div>
-              <p className="text-text-secondary text-sm">No hay fechas bloqueadas.</p>
+              <p className="text-text-secondary text-sm">{t('blocked_dates.empty')}</p>
+              <p className="text-text-tertiary text-xs mt-1">{t('blocked_dates.empty_subtitle')}</p>
             </div>
           ) : (
             blocks.length > 0 && (
@@ -161,7 +168,7 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
                       onClick={() => handleDelete(block.id)}
                       disabled={deletingId === block.id}
                       className="ml-3 p-1.5 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors shrink-0 disabled:opacity-50"
-                      aria-label="Eliminar bloqueo"
+                      aria-label={t('action.delete')}
                     >
                       {deletingId === block.id ? (
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-error border-t-transparent" />
@@ -178,12 +185,12 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
           {/* Add new block form / button */}
           {showForm ? (
             <div className="border border-border rounded-xl p-4 space-y-4 bg-surface-alt/30">
-              <h3 className="text-sm font-semibold text-text">Agregar Bloqueo</h3>
+              <h3 className="text-sm font-semibold text-text">{t('block.range_title')}</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-text mb-1.5">
-                      Fecha Inicio *
+                      {t('block.start_date')} *
                     </label>
                     <input
                       type="date"
@@ -197,7 +204,7 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-text mb-1.5">
-                      Fecha Fin *
+                      {t('block.end_date')} *
                     </label>
                     <input
                       type="date"
@@ -213,11 +220,11 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-text mb-1.5">
-                    Motivo (Opcional)
+                    {t('block.reason_label')}
                   </label>
                   <input
                     type="text"
-                    placeholder="Ej: Vacaciones, Mantenimiento..."
+                    placeholder={t('block.reason_placeholder_range')}
                     value={formData.reason}
                     onChange={(e) =>
                       setFormData({ ...formData, reason: e.target.value })
@@ -231,7 +238,7 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
                     onClick={() => setShowForm(false)}
                     className="flex-1 px-4 py-2 text-sm font-medium text-text-secondary bg-surface-alt border border-border rounded-xl hover:bg-surface transition-colors"
                   >
-                    Cancelar
+                    {t('action.cancel')}
                   </button>
                   <button
                     type="submit"
@@ -243,7 +250,7 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
                         : 'premium-gradient hover:opacity-90',
                     )}
                   >
-                    {loading ? 'Guardando...' : 'Bloquear'}
+                    {t('block.save')}
                   </button>
                 </div>
               </form>
@@ -255,7 +262,7 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-dashed border-border text-sm font-medium text-text-secondary rounded-xl hover:border-primary hover:text-primary transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Agregar Bloqueo
+              {t('block.add_range')}
             </button>
           )}
         </div>
@@ -267,7 +274,7 @@ export const UnavailableDatesModal: React.FC<UnavailableDatesModalProps> = ({
             onClick={onClose}
             className="w-full px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text bg-surface-alt hover:bg-surface border border-border rounded-xl transition-colors"
           >
-            Cerrar
+            {t('action.cancel')}
           </button>
         </div>
       </div>
