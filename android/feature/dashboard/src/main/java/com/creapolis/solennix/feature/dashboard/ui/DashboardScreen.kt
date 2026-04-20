@@ -219,6 +219,14 @@ fun DashboardScreen(
                             }
                         }
                     } else {
+                        // Fixed-width cards in the horizontal-scroll row so every
+                        // card has identical width and short values (e.g. "3") stay
+                        // visually centered. The prior `defaultMinSize` on KPICard
+                        // was letting content with a narrow intrinsic size collapse
+                        // and anchor to the start edge inside the scroll.
+                        val isLargeFontScale = LocalDensity.current.fontScale >= 1.3f
+                        val scrollCardWidth = if (isLargeFontScale) 180.dp else 160.dp
+                        val cardModifier = Modifier.width(scrollCardWidth)
                         Row(
                             modifier = Modifier
                                 .horizontalScroll(rememberScrollState())
@@ -226,14 +234,14 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Spacer(modifier = Modifier.width(4.dp))
-                            KPICard(title = "Ventas Netas", value = uiState.revenueThisMonth.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, subtitle = "Eventos confirmados y completados")
-                            KPICard(title = "Cobrado", value = uiState.cashCollected.asMXN(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = "Este mes")
-                            KPICard(title = "IVA Cobrado", value = uiState.vatCollected.asMXN(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Este mes")
-                            KPICard(title = "IVA Pendiente", value = uiState.vatOutstanding.asMXN(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Por cobrar")
-                            KPICard(title = "Eventos del Mes", value = uiState.eventsThisMonth.toString(), icon = Icons.Default.CalendarMonth, iconColor = SolennixTheme.colors.kpiOrange)
-                            KPICard(title = "Stock Bajo", value = uiState.lowStockCount.toString(), icon = Icons.Default.Inventory2, iconColor = if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen)
-                            KPICard(title = "Clientes", value = uiState.totalClients.toString(), icon = Icons.Default.People, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Total")
-                            KPICard(title = "Cotizaciones", value = uiState.pendingQuotes.toString(), icon = Icons.Default.RequestQuote, iconColor = SolennixTheme.colors.kpiOrange)
+                            KPICard(title = "Ventas Netas", value = uiState.revenueThisMonth.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, subtitle = "Eventos confirmados y completados", modifier = cardModifier)
+                            KPICard(title = "Cobrado", value = uiState.cashCollected.asMXN(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = "Este mes", modifier = cardModifier)
+                            KPICard(title = "IVA Cobrado", value = uiState.vatCollected.asMXN(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Este mes", modifier = cardModifier)
+                            KPICard(title = "IVA Pendiente", value = uiState.vatOutstanding.asMXN(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Por cobrar", modifier = cardModifier)
+                            KPICard(title = "Eventos del Mes", value = uiState.eventsThisMonth.toString(), icon = Icons.Default.CalendarMonth, iconColor = SolennixTheme.colors.kpiOrange, modifier = cardModifier)
+                            KPICard(title = "Stock Bajo", value = uiState.lowStockCount.toString(), icon = Icons.Default.Inventory2, iconColor = if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen, modifier = cardModifier)
+                            KPICard(title = "Clientes", value = uiState.totalClients.toString(), icon = Icons.Default.People, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Total", modifier = cardModifier)
+                            KPICard(title = "Cotizaciones", value = uiState.pendingQuotes.toString(), icon = Icons.Default.RequestQuote, iconColor = SolennixTheme.colors.kpiOrange, modifier = cardModifier)
                             Spacer(modifier = Modifier.width(4.dp))
                         }
                     }
@@ -268,6 +276,16 @@ fun DashboardScreen(
                                 )
                             }
                         )
+                    }
+                }
+
+                // Premium: 6-month revenue trend. Only rendered for Pro/Business
+                // plans to match iOS and Web. Non-premium users do not see an
+                // upsell here — upsell surfaces live elsewhere in the app.
+                if (!uiState.isBasicPlan && uiState.monthlyRevenueTrend.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        MonthlyRevenueTrendCard(points = uiState.monthlyRevenueTrend)
                     }
                 }
 
@@ -694,6 +712,73 @@ private fun DateBox(dateString: String, modifier: Modifier = Modifier) {
                 color = SolennixTheme.colors.primary, fontWeight = FontWeight.SemiBold)
             Text(day, style = MaterialTheme.typography.titleMedium,
                 color = SolennixTheme.colors.primary, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun MonthlyRevenueTrendCard(points: List<com.creapolis.solennix.core.model.DashboardRevenuePoint>) {
+    val maxRevenue = points.maxOfOrNull { it.revenue }?.takeIf { it > 0 } ?: 1.0
+    val monthLabelFormatter = remember {
+        java.time.format.DateTimeFormatter.ofPattern("MMM", java.util.Locale("es", "MX"))
+    }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "Ingresos — Últimos 6 meses",
+                style = MaterialTheme.typography.titleSmall,
+                color = SolennixTheme.colors.primaryText,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                points.forEach { point ->
+                    val fraction = (point.revenue / maxRevenue).coerceIn(0.0, 1.0).toFloat()
+                    val monthLabel = try {
+                        val parsed = java.time.YearMonth.parse(point.month) // "YYYY-MM"
+                        parsed.format(monthLabelFormatter).replaceFirstChar { it.uppercase() }
+                    } catch (_: Exception) {
+                        point.month
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Bottom
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .fillMaxHeight(fraction.coerceAtLeast(0.02f))
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(SolennixTheme.colors.primary)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            monthLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = SolennixTheme.colors.secondaryText
+                        )
+                    }
+                }
+            }
         }
     }
 }

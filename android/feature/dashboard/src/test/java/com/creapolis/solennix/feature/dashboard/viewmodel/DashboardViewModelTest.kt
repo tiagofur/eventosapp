@@ -1,11 +1,13 @@
 package com.creapolis.solennix.feature.dashboard.viewmodel
 
 import com.creapolis.solennix.core.data.repository.ClientRepository
+import com.creapolis.solennix.core.data.repository.DashboardRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.model.DashboardKPIs
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.InventoryItem
@@ -45,6 +47,7 @@ class DashboardViewModelTest {
     private val clientRepository = mockk<ClientRepository>(relaxed = true)
     private val paymentRepository = mockk<PaymentRepository>(relaxed = true)
     private val productRepository = mockk<ProductRepository>(relaxed = true)
+    private val dashboardRepository = mockk<DashboardRepository>(relaxed = true)
     private val authManager = mockk<AuthManager>(relaxed = true)
 
     private val dispatcher = StandardTestDispatcher()
@@ -145,6 +148,13 @@ class DashboardViewModelTest {
         coEvery { clientRepository.syncClients() } returns Unit
         coEvery { paymentRepository.syncPayments() } returns Unit
         coEvery { productRepository.syncProducts() } returns Unit
+        coEvery { dashboardRepository.getKPIs() } returns DashboardKPIs(
+            eventsThisMonth = 2,
+            totalClients = 2,
+            pendingQuotes = 1,
+            cashCollectedThisMonth = 500.0
+        )
+        coEvery { dashboardRepository.getRevenueChart(any()) } returns emptyList()
 
         val viewModel = DashboardViewModel(
             eventRepository,
@@ -152,6 +162,7 @@ class DashboardViewModelTest {
             clientRepository,
             paymentRepository,
             productRepository,
+            dashboardRepository,
             authManager
         )
         val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
@@ -219,6 +230,7 @@ class DashboardViewModelTest {
             clientRepository,
             paymentRepository,
             productRepository,
+            dashboardRepository,
             authManager
         )
         val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
@@ -285,6 +297,7 @@ class DashboardViewModelTest {
             clientRepository,
             paymentRepository,
             productRepository,
+            dashboardRepository,
             authManager
         )
         val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
@@ -343,6 +356,7 @@ class DashboardViewModelTest {
             clientRepository,
             paymentRepository,
             productRepository,
+            dashboardRepository,
             authManager
         )
         val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
@@ -381,6 +395,7 @@ class DashboardViewModelTest {
             clientRepository,
             paymentRepository,
             productRepository,
+            dashboardRepository,
             authManager
         )
         val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }

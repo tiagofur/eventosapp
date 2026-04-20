@@ -4,11 +4,14 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
+import com.creapolis.solennix.core.data.repository.DashboardRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Client
+import com.creapolis.solennix.core.model.DashboardKPIs
+import com.creapolis.solennix.core.model.DashboardRevenuePoint
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
@@ -79,7 +82,9 @@ data class DashboardUiState(
     val hasEvents: Boolean = false,
     val updatingEventId: String? = null,
     val paymentModalEvent: PendingEvent? = null,
-    val transientMessage: String? = null
+    val transientMessage: String? = null,
+    /** Last 6 months of revenue — populated from /dashboard/revenue-chart?period=year. Premium users only. */
+    val monthlyRevenueTrend: List<DashboardRevenuePoint> = emptyList()
 )
 
 @HiltViewModel
@@ -89,6 +94,7 @@ class DashboardViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
     private val paymentRepository: PaymentRepository,
     private val productRepository: ProductRepository,
+    private val dashboardRepository: DashboardRepository,
     private val authManager: AuthManager
 ) : ViewModel() {
 
@@ -96,6 +102,11 @@ class DashboardViewModel @Inject constructor(
     private val _updatingEventId = MutableStateFlow<String?>(null)
     private val _paymentModalEvent = MutableStateFlow<PendingEvent?>(null)
     private val _transientMessage = MutableStateFlow<String?>(null)
+
+    // Backend-aggregated KPIs (monetary, counts). Refreshed alongside
+    // `refresh()`. Null while the first fetch is in flight.
+    private val _kpis = MutableStateFlow<DashboardKPIs?>(null)
+    private val _monthlyRevenueTrend = MutableStateFlow<List<DashboardRevenuePoint>>(emptyList())
 
     private val dataFlow = combine(
         eventRepository.getUpcomingEvents(5),
@@ -114,58 +125,29 @@ class DashboardViewModel @Inject constructor(
         data.copy(allProducts = allProducts)
     }
 
+    // Bundle the two backend aggregates into one flow so the main combine
+    // stays under the 5-arg overload ceiling.
+    private val dashboardAggregatesFlow: Flow<Pair<DashboardKPIs?, List<DashboardRevenuePoint>>> =
+        combine(_kpis, _monthlyRevenueTrend) { kpis, trend -> kpis to trend }
+
     val uiState: StateFlow<DashboardUiState> = combine(
         enrichedDataFlow,
+        dashboardAggregatesFlow,
         _isRefreshing,
         _updatingEventId,
-        _paymentModalEvent,
-        _transientMessage
-    ) { data, isRefreshing, updatingEventId, paymentModalEvent, transientMessage ->
-        // Basic KPI calculation for this month
+        combine(_paymentModalEvent, _transientMessage) { modal, msg -> modal to msg }
+    ) { data, aggregates, isRefreshing, updatingEventId, modalAndMsg ->
+        val (kpis, revenueTrend) = aggregates
+        val (paymentModalEvent, transientMessage) = modalAndMsg
+
         val now = java.time.LocalDate.now()
-        val eventsThisMonthList = data.allEvents.filter {
-            val date = parseFlexibleDate(it.eventDate)
-            date != null && date.month == now.month && date.year == now.year
-        }
 
-        val paymentsThisMonth = data.allPayments.filter {
-            val date = parseFlexibleDate(it.paymentDate)
-            date != null && date.month == now.month && date.year == now.year
-        }
-
-        val cashCollected = paymentsThisMonth.sumOf { it.amount }
-
-        // Precompute paid-per-event once: O(payments) instead of O(events × payments)
-        // when reused across vatOutstanding and pendingEvents detection below.
+        // Precompute paid-per-event once: O(payments) instead of O(events × payments).
+        // Still needed here to build the `pendingEvents` alert cards below —
+        // monetary KPIs themselves now come from the backend.
         val paidByEvent: Map<String, Double> = data.allPayments
             .groupingBy { it.eventId }
             .fold(0.0) { acc, payment -> acc + payment.amount }
-
-        // VAT Collected: tax portion of payments received this month
-        val eventMap = data.allEvents.associateBy { it.id }
-        val vatCollected = paymentsThisMonth.sumOf { payment ->
-            val event = eventMap[payment.eventId]
-            if (event != null && event.taxRate > 0) {
-                payment.amount * event.taxRate / (1 + event.taxRate)
-            } else {
-                0.0
-            }
-        }
-
-        // VAT Outstanding: tax amount from unpaid balances on active events
-        val vatOutstanding = data.allEvents
-            .filter { it.status != EventStatus.COMPLETED && it.status != EventStatus.CANCELLED }
-            .sumOf { event ->
-                val totalPaid = paidByEvent[event.id] ?: 0.0
-                val unpaidBalance = (event.totalAmount - totalPaid).coerceAtLeast(0.0)
-                if (event.taxRate > 0) {
-                    unpaidBalance * event.taxRate / (1 + event.taxRate)
-                } else {
-                    0.0
-                }
-            }
-
-        val pendingQuotes = data.allEvents.count { it.status == EventStatus.QUOTED }
 
         // Pending events — three categories aligned with web Dashboard:
         //   PAYMENT_DUE: confirmed in next 7 days with pending balance
@@ -225,16 +207,20 @@ class DashboardViewModel @Inject constructor(
         DashboardUiState(
             upcomingEvents = data.upcoming,
             lowStockItems = data.lowStock,
-            lowStockCount = data.lowStock.size,
+            // Prefer backend count once the kpis call lands. Fall back to the
+            // local low-stock list size while it's still in flight so the
+            // card isn't empty at first paint.
+            lowStockCount = kpis?.lowStockItems ?: data.lowStock.size,
             isLoading = false,
             isRefreshing = isRefreshing,
-            revenueThisMonth = eventsThisMonthList.sumOf { it.totalAmount },
-            eventsThisMonth = eventsThisMonthList.size,
-            totalClients = data.allClients.size,
-            cashCollected = cashCollected,
-            vatCollected = vatCollected,
-            vatOutstanding = vatOutstanding,
-            pendingQuotes = pendingQuotes,
+            // Monetary + count KPIs: single source of truth is the backend.
+            revenueThisMonth = kpis?.netSalesThisMonth ?: 0.0,
+            eventsThisMonth = kpis?.eventsThisMonth ?: 0,
+            totalClients = kpis?.totalClients ?: data.allClients.size,
+            cashCollected = kpis?.cashCollectedThisMonth ?: 0.0,
+            vatCollected = kpis?.vatCollectedThisMonth ?: 0.0,
+            vatOutstanding = kpis?.vatOutstandingThisMonth ?: 0.0,
+            pendingQuotes = kpis?.pendingQuotes ?: 0,
             isBasicPlan = currentPlan == Plan.BASIC,
             pendingEvents = pendingEvents,
             statusDistribution = statusDistribution,
@@ -245,7 +231,10 @@ class DashboardViewModel @Inject constructor(
             hasEvents = data.allEvents.isNotEmpty(),
             updatingEventId = updatingEventId,
             paymentModalEvent = paymentModalEvent,
-            transientMessage = transientMessage
+            transientMessage = transientMessage,
+            // Backend returns up to 12 months (period=year). Slice the tail
+            // to match the "Ingresos — Últimos 6 meses" card everywhere.
+            monthlyRevenueTrend = revenueTrend.takeLast(6)
         )
     }.stateIn(
         scope = viewModelScope,
@@ -270,6 +259,24 @@ class DashboardViewModel @Inject constructor(
                 // Network sync errors are non-fatal
             } finally {
                 _isRefreshing.value = false
+            }
+        }
+
+        // Pull the backend-aggregated KPIs + revenue trend independently so a
+        // slow list sync doesn't block the header cards from painting, and a
+        // single failed aggregate doesn't wipe the whole dashboard.
+        viewModelScope.launch {
+            try {
+                _kpis.value = dashboardRepository.getKPIs()
+            } catch (e: Exception) {
+                Log.w(TAG, "dashboard KPIs fetch failed", e)
+            }
+        }
+        viewModelScope.launch {
+            try {
+                _monthlyRevenueTrend.value = dashboardRepository.getRevenueChart("year")
+            } catch (e: Exception) {
+                Log.w(TAG, "revenue-chart fetch failed", e)
             }
         }
     }

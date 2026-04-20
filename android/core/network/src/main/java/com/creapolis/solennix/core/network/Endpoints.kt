@@ -73,6 +73,10 @@ object Endpoints {
     // Subscriptions
     const val SUBSCRIPTION_STATUS = "subscriptions/status"
 
+    // Dashboard (aggregated, server-computed)
+    const val DASHBOARD_KPIS = "dashboard/kpis"
+    const val DASHBOARD_REVENUE_CHART = "dashboard/revenue-chart"
+
     // Event Form Links
     const val EVENT_FORM_LINKS = "event-forms"
     fun eventFormLink(id: String) = "event-forms/$id"
