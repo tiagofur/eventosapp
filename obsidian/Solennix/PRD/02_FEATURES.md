@@ -430,16 +430,19 @@ Cada producto puede tener una receta que vincula items del inventario como ingre
 
 #### KPI Cards (8 tarjetas)
 
-| #   | KPI                     | Color         | Subtitulo                                                                                                                                      |
-| --- | ----------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Ventas Netas            | Verde         | "Eventos confirmados y completados"                                                                                                            |
-| 2   | Cobrado (mes)           | Dorado        | "Este mes"                                                                                                                                     |
-| 3   | IVA Cobrado             | Azul          | "Proporcional al % pagado"                                                                                                                     |
-| 4   | IVA Pendiente           | Rojo          | "Por cobrar"                                                                                                                                   |
-| 5   | Eventos del Mes         | Naranja       | Cantidad + link "Ver calendario" (tablet)                                                                                                      |
-| 6   | Stock Bajo              | Naranja/Verde | "X items bajos" o "Todo en orden" + link "Ver inventario" (tablet). Solo cuenta items con `minimum_stock > 0 && current_stock < minimum_stock` |
-| 7   | Clientes                | Azul          | "Total" + link "Ver clientes" (tablet)                                                                                                         |
-| 8   | Cotizaciones Pendientes | Naranja       | "Pendientes de confirmar"                                                                                                                      |
+> [!info] Single source of truth
+> **Todos los valores vienen del backend**. iOS, Android y Web consumen `GET /api/dashboard/kpis` — ningun cliente agrega valores desde listas crudas. Esto garantiza que los tres muestren numeros identicos para el mismo usuario y mes.
+
+| #   | KPI                     | Color         | Campo backend (`kpis.*`)      | Regla SQL                                                                                                 |
+| --- | ----------------------- | ------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------- |
+| 1   | Ventas Netas            | Verde         | `net_sales_this_month`        | `SUM(events.total_amount)` WHERE `status IN ('confirmed','completed')` AND `event_date` en mes actual     |
+| 2   | Cobrado (mes)           | Dorado        | `cash_collected_this_month`   | `SUM(payments.amount)` WHERE `payment_date` en mes actual                                                 |
+| 3   | IVA Cobrado             | Azul          | `vat_collected_this_month`    | Proporcional: `SUM(tax_amount × paid_ratio)` sobre eventos del mes, con `paid_ratio = total_paid / total_amount` (cap 1.0) |
+| 4   | IVA Pendiente           | Rojo          | `vat_outstanding_this_month`  | `SUM(tax_amount)` − `vat_collected` sobre los mismos eventos                                              |
+| 5   | Eventos del Mes         | Naranja       | `events_this_month`           | `COUNT(events)` WHERE `event_date` en mes actual                                                          |
+| 6   | Stock Bajo              | Naranja/Verde | `low_stock_items`             | `COUNT(inventory_items)` WHERE `current_stock <= minimum_stock`                                           |
+| 7   | Clientes                | Azul          | `total_clients`               | `COUNT(clients)` por usuario                                                                              |
+| 8   | Cotizaciones Pendientes | Naranja       | `pending_quotes`              | `COUNT(events)` WHERE `status = 'quoted'`                                                                 |
 
 #### Alertas de Atencion (widget)
 
@@ -472,10 +475,11 @@ Cada alerta muestra: nombre del evento, fecha, razon (badge), monto pendiente cu
 
 #### Charts
 
-| Chart                   | Tipo                        | Detalle                                                             |
-| ----------------------- | --------------------------- | ------------------------------------------------------------------- |
-| Distribucion de Estados | Barra horizontal segmentada | Cotizado, Confirmado, Completado, Cancelado con conteo y porcentaje |
-| Comparacion Financiera  | Barras horizontales         | Ventas Netas (verde), Cobrado Real (dorado), IVA por Cobrar (rojo)  |
+| Chart                     | Tipo                        | Detalle                                                                                                       | Disponibilidad |
+| ------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- | -------------- |
+| Distribucion de Estados   | Barra horizontal segmentada | Cotizado, Confirmado, Completado, Cancelado con conteo y porcentaje                                           | Todos          |
+| Comparacion Financiera    | Barras horizontales         | Ventas Netas (verde), Cobrado Real (dorado), IVA por Cobrar (rojo)                                            | Todos          |
+| Ingresos — Ultimos 6 meses | Barras verticales           | Revenue (eventos confirmados + completados) por mes, ultimos 6. Fuente: `GET /api/dashboard/revenue-chart?period=year` → slice last 6. | **Solo Premium** (Pro / Business). En no-premium no se renderiza — sin blur ni upsell; los upsells viven en otras pantallas |
 
 #### Layout por form factor
 

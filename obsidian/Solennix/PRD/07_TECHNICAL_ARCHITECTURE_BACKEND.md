@@ -741,6 +741,44 @@ Estas rutas ya forman parte del contrato en `backend/docs/openapi.yaml` y quedan
 | `POST` | `/api/subscriptions/debug-upgrade`   | `SubscriptionHandler.DebugUpgrade`   | Upgrade manual de plan (solo dev)   |
 | `POST` | `/api/subscriptions/debug-downgrade` | `SubscriptionHandler.DebugDowngrade` | Downgrade manual de plan (solo dev) |
 
+### 6.19 Rutas Protegidas — Dashboard (aggregated analytics)
+
+> [!info] Single source of truth
+> El dashboard de iOS, Android y Web consume **estos endpoints** para todos sus KPIs y charts. Cero agregacion client-side. Si alguien cambia una formula, la cambia aca y las 3 apps ven el nuevo numero al mismo tiempo.
+
+| Metodo | Ruta                                  | Handler                            | Descripcion                                                                  |
+| ------ | ------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------- |
+| `GET`  | `/api/dashboard/kpis`                 | `DashboardHandler.GetKPIs`         | 11 campos agregados (ver contrato abajo)                                     |
+| `GET`  | `/api/dashboard/revenue-chart`        | `DashboardHandler.GetRevenueChart` | Revenue por mes. Query `?period=month\|quarter\|year` (default `year`)       |
+| `GET`  | `/api/dashboard/events-by-status`     | `DashboardHandler.GetEventsByStatus`| Conteo de eventos agrupado por `status`                                      |
+| `GET`  | `/api/dashboard/top-clients`          | `DashboardHandler.GetTopClients`   | Top clientes por `total_spent`. Query `?limit=N` (1-50, default 10)          |
+| `GET`  | `/api/dashboard/product-demand`       | `DashboardHandler.GetProductDemand`| Productos mas usados (usos + revenue). Limit 10 hardcoded                    |
+| `GET`  | `/api/dashboard/forecast`             | `DashboardHandler.GetForecast`     | Revenue proyectado de eventos confirmed/quoted futuros, agrupado por mes     |
+
+**Contrato `GET /api/dashboard/kpis`** (`DashboardKPIs`):
+
+```json
+{
+  "total_revenue": 125000.00,                // lifetime de pagos
+  "events_this_month": 5,                    // COUNT(events) en mes actual
+  "pending_quotes": 3,                       // COUNT(events) con status='quoted'
+  "low_stock_items": 2,                      // COUNT(inventory) con current_stock <= minimum_stock
+  "upcoming_events": 4,                      // COUNT(events) en los proximos 7 dias
+  "total_clients": 42,                       // COUNT(clients)
+  "average_event_value": 8500.00,            // AVG(events.total_amount)
+  "net_sales_this_month": 32000.00,          // SUM(events.total_amount) WHERE status IN ('confirmed','completed') AND event_date en mes actual
+  "cash_collected_this_month": 18000.00,     // SUM(payments.amount) WHERE payment_date en mes actual
+  "vat_collected_this_month": 2480.00,       // Prorateado: SUM(tax_amount × min(total_paid/total_amount, 1.0)) sobre eventos del mes realized
+  "vat_outstanding_this_month": 2640.00      // SUM(tax_amount × max(1 − total_paid/total_amount, 0)) sobre los mismos eventos
+}
+```
+
+**Notas de implementacion** (`backend/internal/repository/dashboard_repo.go`):
+
+- Los 4 campos monetarios del mes usan una CTE unica (`month_events`) con `DATE_TRUNC('month', event_date) = DATE_TRUNC('month', CURRENT_DATE)` para no duplicar el scan de la tabla.
+- `LEAST(total_paid/total_amount, 1.0)` y `GREATEST(1 - ratio, 0.0)` evitan que un sobrepago envenene el `vat_collected` (y su espejo `vat_outstanding`).
+- `cash_collected_this_month` usa `payment_date` (no `event_date`) — refleja la caja del mes, no la facturacion del mes.
+
 ---
 
 ## 7. Middleware Stack

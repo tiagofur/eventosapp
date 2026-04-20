@@ -441,6 +441,12 @@ Capa de acceso a datos que combina API remota + cache local:
 | `OnboardingScreen`    | —                    | Onboarding de primera vez (5 páginas) |
 | `OnboardingChecklist` | —                    | Checklist post-onboarding             |
 
+> [!info] KPIs desde backend — single source of truth
+> `DashboardViewModel` inyecta `DashboardRepository` (en `core:data`), que llama `GET /api/dashboard/kpis` y `GET /api/dashboard/revenue-chart?period=year`. Los 8 KPI cards monetarios y de conteo leen directo de `kpis?.*` — el ViewModel **no** agrega desde listas como antes (se eliminaron los `sumOf` client-side sobre pagos/eventos). El card "Ingresos — Ultimos 6 meses" consume `revenue-chart` y se renderiza solo cuando `!uiState.isBasicPlan` (paridad con iOS y Web). Ver `07_TECHNICAL_ARCHITECTURE_BACKEND.md#619-rutas-protegidas--dashboard-aggregated-analytics` para el contrato.
+
+> [!note] Fix de centrado del `KPICard` en row horizontal
+> En el scroll horizontal de KPI cards (modo phone), el `KPICard` usaba `defaultMinSize(minWidth = 155.dp)` que dejaba el contenido alineado al start cuando el value era corto (ej. "3"). Ahora el sitio de llamada (`DashboardScreen.kt`) le pasa `Modifier.width(160.dp)` (o 180.dp en `fontScale >= 1.3f`) asegurando ancho fijo uniforme y centrado visual consistente. En modo tablet/grid se sigue usando `Modifier.weight(1f).fillMaxHeight()` sin cambios.
+
 ### 5.3 `feature:events` — Gestión de Eventos
 
 | Pantalla               | ViewModel                 | Descripción                                                                           |

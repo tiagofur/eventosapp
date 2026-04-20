@@ -489,6 +489,10 @@ public struct Payment: Codable, Identifiable, Sendable, Hashable {
 | `ProductIngredient` | Relacion producto-ingrediente para recetas                                   |
 | `UnavailableDate`   | Fechas bloqueadas del usuario                                                |
 
+### DashboardKPIs + DashboardRevenuePoint (aggregates)
+
+Modelos solo-lectura consumidos desde `GET /api/dashboard/kpis` y `GET /api/dashboard/revenue-chart`. **Backend es la unica fuente de verdad** para los 8 KPI cards del dashboard — `DashboardViewModel` expone los valores monetarios como computed properties sobre `kpis?.*` y ya no recalcula desde listas. El chart de "Ingresos — Ultimos 6 meses" toma `suffix(6)` sobre la respuesta de `revenue-chart?period=year` y solo se renderiza para usuarios no-basicos (`!planLimitsManager.isBasicPlan`). Ver `07_TECHNICAL_ARCHITECTURE_BACKEND.md#619-rutas-protegidas--dashboard-aggregated-analytics` para el contrato completo.
+
 ---
 
 ## 6. Capa de Red (SolennixNetwork)

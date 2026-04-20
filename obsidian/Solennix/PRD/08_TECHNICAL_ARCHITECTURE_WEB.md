@@ -480,16 +480,25 @@ const {
 
 **recharts** (v3.7.0): libreria de graficos declarativos para React, basada en D3.
 
-### Dashboard Principal
+### Dashboard Principal — Single source of truth
+
+> [!info] Cero agregacion client-side
+> El Dashboard consume **`GET /api/dashboard/kpis`** y **`GET /api/dashboard/revenue-chart`** via los hooks `useDashboardKpis()` y `useDashboardRevenueChart(period)` (ver `web/src/hooks/queries/useDashboardQueries.ts`). Los 8 KPI cards + comparativa financiera leen directo del payload del backend. iOS, Android y Web muestran numeros identicos para el mismo usuario y mes. Ver `07_TECHNICAL_ARCHITECTURE_BACKEND.md#619-rutas-protegidas--dashboard-aggregated-analytics` para el contrato.
 
 El componente `Dashboard.tsx` presenta:
 
-| Componente             | Tipo                     | Datos                                                                     |
-| ---------------------- | ------------------------ | ------------------------------------------------------------------------- |
-| **KPIs**               | Tarjetas numericas       | Eventos del mes, ingresos del mes, clientes totales, tasa de confirmacion |
-| **Ingresos Mensuales** | Grafico de barras/lineas | Ingresos agrupados por mes (ultimos 6-12 meses)                           |
-| **Eventos por Estado** | Grafico de dona/pie      | Distribucion: pendiente, confirmado, completado, cancelado                |
-| **Proximos Eventos**   | Lista                    | Eventos de los proximos 7 dias con fecha, cliente y monto                 |
+| Componente                      | Tipo                        | Fuente                                                                                    |
+| ------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------- |
+| **8 KPI cards**                 | Tarjetas numericas          | `kpis.*` de `/api/dashboard/kpis`                                                         |
+| **Comparativa Financiera**      | Barras horizontales         | `kpis.net_sales_this_month` + `cash_collected_this_month` + `vat_outstanding_this_month`  |
+| **Estado de Eventos**           | Barra horizontal segmentada | Derivada de `eventsThisMonthList` (sigue viniendo de `/events` con rango mensual)         |
+| **Ingresos — Ultimos 6 meses**  | Barras verticales           | `GET /api/dashboard/revenue-chart?period=year` → `slice(-6)`. **Solo premium** (Pro/Business). En `isBasicPlan=true` no se renderiza — sin blur ni upsell. |
+| **Requieren Atencion**          | Seccion con alertas         | Combinacion de `/events` + `/payments/by-event-ids` para las 3 categorias de alerta       |
+| **Proximos Eventos**            | Lista                       | `/events/upcoming?limit=5`                                                                |
+
+### Fix de overflow movil (KpiCard)
+
+En viewports angostos (`<sm`) la grilla de `grid-cols-2` hacia que los valores MXN largos se salieran del card. El `<dd>` del value ahora usa `text-base sm:text-xl truncate` — tamano reducido en mobile + ellipsis, sin afectar la tipografia desktop.
 
 ### Responsividad
 
