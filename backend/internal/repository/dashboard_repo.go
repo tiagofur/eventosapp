@@ -108,10 +108,15 @@ func (r *DashboardRepo) GetKPIs(ctx context.Context, userID uuid.UUID) (*Dashboa
 		return nil, fmt.Errorf("failed to count pending quotes: %w", err)
 	}
 
-	// Low stock items (inventory where current_stock <= minimum_stock)
+	// Low stock items (inventory where current_stock <= minimum_stock).
+	// Note: the table is `inventory`, not `inventory_items` — the original
+	// version of this file used the wrong name, which made every call to
+	// /api/dashboard/kpis return 500 (SQLSTATE 42P01). No client was
+	// consuming the endpoint so it stayed silent until the cross-platform
+	// dashboard parity work routed iOS/Android/Web through it.
 	err = r.pool.QueryRow(ctx, `
 		SELECT COUNT(*)
-		FROM inventory_items
+		FROM inventory
 		WHERE user_id = $1 AND current_stock <= minimum_stock`, userID).Scan(&kpis.LowStockItems)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count low stock items: %w", err)
