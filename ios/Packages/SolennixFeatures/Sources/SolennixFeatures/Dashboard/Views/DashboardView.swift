@@ -635,10 +635,10 @@ public struct DashboardView: View {
 
     @ViewBuilder
     private var premiumReportsCard: some View {
-        if let vm = viewModel {
-            let trend = vm.monthlyRevenueTrend
-            let isPremium = !planLimitsManager.isBasicPlan
-
+        // Parity with Android/Web: the 6-month chart is a premium-only
+        // feature. Non-premium users do not see the card at all (no blur,
+        // no upsell banner). Upsell surfaces live elsewhere in the app.
+        if let vm = viewModel, !planLimitsManager.isBasicPlan {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 HStack {
                     Image(systemName: "chart.bar.fill")
@@ -647,19 +647,9 @@ public struct DashboardView: View {
                         .font(.headline)
                         .foregroundStyle(SolennixColors.text)
                     Spacer()
-                    if !isPremium {
-                        Label("Pro", systemImage: "bolt.fill")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(SolennixColors.primary)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.vertical, 3)
-                            .background(SolennixColors.primaryLight)
-                            .clipShape(Capsule())
-                    }
                 }
 
-                Chart(trend) { point in
+                Chart(vm.monthlyRevenueTrend) { point in
                     BarMark(
                         x: .value("Mes", point.month),
                         y: .value("Ingresos", point.revenue)
@@ -687,14 +677,6 @@ public struct DashboardView: View {
                     }
                 }
                 .frame(height: 140)
-                .blur(radius: isPremium ? 0 : 10)
-
-                if !isPremium {
-                    NavigationLink(value: Route.pricing) {
-                        UpgradeBannerView(type: .upsell, onUpgrade: {})
-                    }
-                    .buttonStyle(.plain)
-                }
             }
             .padding(Spacing.md)
             .background(SolennixColors.card)

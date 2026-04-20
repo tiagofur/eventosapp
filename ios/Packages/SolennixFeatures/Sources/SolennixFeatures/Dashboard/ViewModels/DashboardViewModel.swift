@@ -80,10 +80,6 @@ public final class DashboardViewModel {
     public var eventsThisMonth: [Event] = []
     public var upcomingEvents: [Event] = []
     public var lowStockItems: [InventoryItem] = []
-    public var netSalesThisMonth: Double = 0
-    public var cashCollectedThisMonth: Double = 0
-    public var vatCollectedThisMonth: Double = 0
-    public var vatOutstandingThisMonth: Double = 0
     public var lowStockCount: Int = 0
     public var totalProducts: Int = 0
     public var totalEvents: Int = 0
@@ -91,6 +87,11 @@ public final class DashboardViewModel {
     public var errorMessage: String?
     public var attentionEvents: [DashboardAttentionEvent] = []
     public var updatingEventId: String?
+
+    /// Last 6 months of revenue, fetched from
+    /// `GET /api/dashboard/revenue-chart?period=year` (backend returns 12
+    /// months, we slice the tail). Only populated for premium users.
+    public var monthlyRevenueTrend: [MonthlyRevenueTrendPoint] = []
 
     /// Server-aggregated counts. Populated by the first /dashboard/kpis call
     /// so header cards paint in <200ms while the list endpoints continue
@@ -124,24 +125,19 @@ public final class DashboardViewModel {
         return counts
     }
 
-    /// Prefer the server aggregate when available (arrives first); fall back
-    /// to computing from the already-loaded client map once the sequential
-    /// loaders finish populating it.
-    public var totalClients: Int {
-        kpis?.totalClients ?? clientMap.count
-    }
+    /// Backend is the single source of truth for these counts — fall back to
+    /// 0 only while the preload is in flight. Once `kpis` is populated by
+    /// `/api/dashboard/kpis`, every header card reads from it.
+    public var totalClients: Int { kpis?.totalClients ?? 0 }
+    public var pendingQuotes: Int { kpis?.pendingQuotes ?? 0 }
+    public var eventsThisMonthCount: Int { kpis?.eventsThisMonth ?? 0 }
 
-    /// Prefer the server aggregate when available; fall back to filtering the
-    /// already-loaded events list.
-    public var pendingQuotes: Int {
-        kpis?.pendingQuotes ?? eventsThisMonth.filter { $0.status == .quoted }.count
-    }
-
-    /// Count of events in the current month — paints instantly from kpis
-    /// preload, then stays stable once the full list loads.
-    public var eventsThisMonthCount: Int {
-        kpis?.eventsThisMonth ?? eventsThisMonth.count
-    }
+    /// Monetary KPIs — all computed server-side and fetched as a block from
+    /// `/api/dashboard/kpis`. No client-side aggregation.
+    public var netSalesThisMonth: Double { kpis?.netSalesThisMonth ?? 0 }
+    public var cashCollectedThisMonth: Double { kpis?.cashCollectedThisMonth ?? 0 }
+    public var vatCollectedThisMonth: Double { kpis?.vatCollectedThisMonth ?? 0 }
+    public var vatOutstandingThisMonth: Double { kpis?.vatOutstandingThisMonth ?? 0 }
 
     /// Resolve a client name from the client map.
     public func clientName(for clientId: String) -> String {
@@ -247,11 +243,6 @@ public final class DashboardViewModel {
             Endpoint.products,
             label: "products"
         )
-        let monthPayments: [Payment] = await loadOrEmpty(
-            Endpoint.payments,
-            params: ["start": startStr, "end": endStr],
-            label: "month payments"
-        )
         let loadedAllPayments: [Payment] = await loadOrEmpty(
             Endpoint.payments,
             label: "all payments"
@@ -284,14 +275,15 @@ public final class DashboardViewModel {
             now: now
         )
 
-        // Cash collected = sum of payment amounts in current month
-        cashCollectedThisMonth = monthPayments.reduce(0) { $0 + $1.amount }
-        recalculateMonthlyMetrics()
-
-        NSLog("[Dashboard] 📊 Summary: clients=%d, monthEvents=%d, upcoming=%d, allEvents=%d, inventory=%d, products=%d, monthPayments=%d, allPayments=%d, encounteredError=%@",
+        NSLog("[Dashboard] 📊 Summary: clients=%d, monthEvents=%d, upcoming=%d, allEvents=%d, inventory=%d, products=%d, allPayments=%d, encounteredError=%@",
               clients.count, monthEvents.count, upcoming.count, loadedAllEvents.count,
-              inventory.count, products.count, monthPayments.count, loadedAllPayments.count,
+              inventory.count, products.count, loadedAllPayments.count,
               encounteredError ? "YES" : "NO")
+
+        // Premium 6-month chart: backend-aggregated revenue by month. Loaded
+        // regardless of plan — the View gates the card on `isPremium`, so a
+        // non-premium user just pays for one extra GET and never sees it.
+        await loadMonthlyRevenueTrend()
 
         if encounteredError {
             if clients.isEmpty && loadedAllEvents.isEmpty && products.isEmpty {
@@ -321,6 +313,13 @@ public final class DashboardViewModel {
             let updatedEvent: Event = try await apiClient.put(Endpoint.event(eventId), body: body)
 
             applyUpdatedEvent(updatedEvent)
+            // Refresh server-aggregated KPIs so monetary cards (net sales,
+            // VAT, cash collected) reflect the new event status without
+            // requiring a full pull-to-refresh.
+            if let refreshed: DashboardKPIs = try? await apiClient.get(Endpoint.dashboardKpis) {
+                kpis = refreshed
+                lowStockCount = refreshed.lowStockItems
+            }
             HapticsHelper.play(.success)
         } catch {
             HapticsHelper.play(.error)
@@ -353,26 +352,6 @@ public final class DashboardViewModel {
             clientMap: clientMap,
             now: now
         )
-        recalculateMonthlyMetrics()
-    }
-
-    private func recalculateMonthlyMetrics() {
-        let realizedEvents = eventsThisMonth
-            .filter { $0.status == .confirmed || $0.status == .completed }
-
-        netSalesThisMonth = realizedEvents.reduce(0) { $0 + $1.totalAmount }
-
-        let totalEventAmount = realizedEvents.reduce(0) { $0 + $1.totalAmount }
-        let totalTaxAmount = realizedEvents.reduce(0) { $0 + $1.taxAmount }
-
-        if totalEventAmount > 0 {
-            let paymentRatio = cashCollectedThisMonth / totalEventAmount
-            vatCollectedThisMonth = totalTaxAmount * paymentRatio
-            vatOutstandingThisMonth = totalTaxAmount - vatCollectedThisMonth
-        } else {
-            vatCollectedThisMonth = 0
-            vatOutstandingThisMonth = 0
-        }
     }
 
     private func shouldDisplayInUpcoming(_ event: Event, now: Date) -> Bool {
@@ -512,33 +491,44 @@ public final class DashboardViewModel {
 
     // MARK: - Premium: Monthly Revenue Trend
 
-    /// Revenue (confirmed + completed events) for each of the last 6 months.
-    public var monthlyRevenueTrend: [MonthlyRevenueTrendPoint] {
-        let calendar = Calendar.current
-        let now = Date()
-        let eventDateFormatter = DateFormatter()
-        eventDateFormatter.dateFormat = "yyyy-MM-dd"
+    /// Fetch the last 6 months of revenue from the backend and map to the
+    /// chart-friendly `MonthlyRevenueTrendPoint` shape (localized month
+    /// label). Called from `loadDashboard()` for premium users.
+    @MainActor
+    public func loadMonthlyRevenueTrend() async {
+        let points: [DashboardRevenuePoint]
+        do {
+            points = try await apiClient.get(
+                Endpoint.dashboardRevenueChart,
+                params: ["period": "year"]
+            )
+        } catch {
+            NSLog("[Dashboard] ⚠️ revenue-chart failed: %@", String(describing: error))
+            return
+        }
+
+        let keyFormatter = DateFormatter()
+        keyFormatter.calendar = Calendar(identifier: .gregorian)
+        keyFormatter.locale = Locale(identifier: "en_US_POSIX")
+        keyFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        keyFormatter.dateFormat = "yyyy-MM"
+
         let labelFormatter = DateFormatter()
         labelFormatter.dateFormat = "MMM"
         labelFormatter.locale = Locale(identifier: "es_MX")
 
-        return (-5...0).compactMap { offset -> MonthlyRevenueTrendPoint? in
-            guard let monthDate = calendar.date(byAdding: .month, value: offset, to: now),
-                  let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)),
-                  let monthEnd = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart)
-            else { return nil }
-
-            let startStr = eventDateFormatter.string(from: monthStart)
-            let endStr = eventDateFormatter.string(from: monthEnd)
-            let qualifying = allEvents.filter {
-                $0.eventDate >= startStr && $0.eventDate <= endStr &&
-                ($0.status == .confirmed || $0.status == .completed)
+        // Backend returns up to 12 months (period=year). Take the last 6 to
+        // match the existing "Ingresos — Últimos 6 meses" card.
+        let trimmed = Array(points.suffix(6))
+        monthlyRevenueTrend = trimmed.compactMap { point in
+            guard let monthDate = keyFormatter.date(from: point.month) else {
+                return nil
             }
             return MonthlyRevenueTrendPoint(
                 month: labelFormatter.string(from: monthDate).capitalized,
                 monthDate: monthDate,
-                revenue: qualifying.reduce(0) { $0 + $1.totalAmount },
-                eventCount: qualifying.count
+                revenue: point.revenue,
+                eventCount: point.eventCount
             )
         }
     }

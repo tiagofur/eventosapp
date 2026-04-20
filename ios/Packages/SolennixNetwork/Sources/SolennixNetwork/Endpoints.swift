@@ -134,6 +134,12 @@ public enum Endpoint {
     /// while the underlying list endpoints continue loading.
     public static let dashboardKpis = "/dashboard/kpis"
 
+    /// Revenue chart endpoint — returns `[DashboardRevenuePoint]` with one
+    /// entry per month. Query param `period=month|quarter|year` controls the
+    /// window (year = last 12 months). The dashboard's 6-month chart takes
+    /// the last 6 entries.
+    public static let dashboardRevenueChart = "/dashboard/revenue-chart"
+
     // MARK: - Search
 
     public static let search = "/search"
