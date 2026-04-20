@@ -237,44 +237,44 @@ export interface EventStaffAssignment {
 // StaffTeamMember. `members` llega en GetByID/Create/Update; `member_count`
 // llega en ListTeams.
 export interface StaffTeamMember {
-    team_id: string;
-    staff_id: string;
-    is_lead: boolean;
-    position: number;
-    created_at: string;
+    team_id: string
+    staff_id: string
+    is_lead: boolean
+    position: number
+    created_at: string
     // Joined desde staff
-    staff_name?: string | null;
-    staff_role_label?: string | null;
-    staff_phone?: string | null;
-    staff_email?: string | null;
+    staff_name?: string | null
+    staff_role_label?: string | null
+    staff_phone?: string | null
+    staff_email?: string | null
 }
 
 export interface StaffTeam {
-    id: string;
-    user_id: string;
-    name: string;
-    role_label?: string | null;
-    notes?: string | null;
-    created_at: string;
-    updated_at: string;
-    members?: StaffTeamMember[];
-    member_count?: number | null;
+    id: string
+    user_id: string
+    name: string
+    role_label?: string | null
+    notes?: string | null
+    created_at: string
+    updated_at: string
+    members?: StaffTeamMember[]
+    member_count?: number | null
 }
 
 // Miembro del equipo tal como se envía al backend en create/update.
 // El backend deduplica por staff_id y respeta `position` para ordenar.
 export interface StaffTeamMemberInput {
-    staff_id: string;
-    is_lead?: boolean;
-    position?: number;
+    staff_id: string
+    is_lead?: boolean
+    position?: number
 }
 
 // Body del POST /api/staff/teams.
 export interface StaffTeamInsert {
-    name: string;
-    role_label?: string | null;
-    notes?: string | null;
-    members?: StaffTeamMemberInput[];
+    name: string
+    role_label?: string | null
+    notes?: string | null
+    members?: StaffTeamMemberInput[]
 }
 
 // Body del PUT /api/staff/teams/{id} — reemplaza miembros atómicamente.

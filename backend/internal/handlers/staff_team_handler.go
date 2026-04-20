@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -8,7 +9,23 @@ import (
 	"github.com/google/uuid"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
+	"github.com/tiagofur/solennix-backend/internal/repository"
 )
+
+// writeStaffTeamError maps repo errors to the right status code and message,
+// preventing internal error text from leaking to the client. Anything not
+// recognized becomes 500 with the caller-provided generic message; details
+// stay in the server log.
+func writeStaffTeamError(w http.ResponseWriter, err error, genericMsg string) {
+	switch {
+	case errors.Is(err, repository.ErrStaffTeamNotFound):
+		writeError(w, http.StatusNotFound, "Team not found")
+	case errors.Is(err, repository.ErrInvalidTeamMember):
+		writeError(w, http.StatusBadRequest, "invalid team member (unknown or cross-tenant staff)")
+	default:
+		writeError(w, http.StatusInternalServerError, genericMsg)
+	}
+}
 
 // StaffTeamHandler handles CRUD for the organizer's staff teams (Ola 2).
 type StaffTeamHandler struct {
@@ -65,7 +82,7 @@ func (h *StaffTeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 	t.UserID = userID
 	if err := h.repo.Create(r.Context(), &t); err != nil {
 		slog.Error("create staff team failed", "error", err, "user_id", userID)
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeStaffTeamError(w, err, "Failed to create team")
 		return
 	}
 	writeJSON(w, http.StatusCreated, t)
@@ -93,7 +110,7 @@ func (h *StaffTeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 	t.UserID = userID
 	if err := h.repo.Update(r.Context(), &t); err != nil {
 		slog.Error("update staff team failed", "error", err, "user_id", userID)
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeStaffTeamError(w, err, "Failed to update team")
 		return
 	}
 	writeJSON(w, http.StatusOK, t)

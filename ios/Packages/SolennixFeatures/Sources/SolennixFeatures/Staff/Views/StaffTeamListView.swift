@@ -41,7 +41,7 @@ public struct StaffTeamListView: View {
                 }
                 Button("Cancelar", role: .cancel) {}
             } message: { team in
-                Text("Se eliminara el equipo \(team.name). Los colaboradores individuales no se borran.")
+                Text("Se eliminará el equipo \(team.name). Los colaboradores individuales no se borran.")
             }
             .task {
                 await viewModel.load()
@@ -68,8 +68,8 @@ public struct StaffTeamListView: View {
             if viewModel.searchText.isEmpty {
                 EmptyStateView(
                     icon: "person.3.sequence",
-                    title: "Sin equipos todavia",
-                    message: "Agrupa a tu equipo de meseros o fotografos para asignarlos a un evento con un solo toque.",
+                    title: "Sin equipos todavía",
+                    message: "Agrupá a tu equipo de meseros o fotógrafos para asignarlos a un evento con un solo toque.",
                     actionTitle: "Crear equipo"
                 ) {
                     // El boton del toolbar navega — este CTA es visual.
@@ -78,7 +78,7 @@ public struct StaffTeamListView: View {
                 EmptyStateView(
                     icon: "magnifyingglass",
                     title: "Sin resultados",
-                    message: "No encontramos equipos que coincidan con tu busqueda"
+                    message: "No encontramos equipos que coincidan con tu búsqueda"
                 )
             }
         } else {

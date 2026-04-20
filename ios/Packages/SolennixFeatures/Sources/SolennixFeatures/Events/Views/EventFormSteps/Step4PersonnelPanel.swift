@@ -129,8 +129,8 @@ struct Step4PersonnelPanel: View {
                 } else if teams.isEmpty {
                     EmptyStateView(
                         icon: "person.3.sequence",
-                        title: "Sin equipos todavia",
-                        message: "Agrupa a tu equipo de meseros o fotografos desde Personal > Equipos para asignarlos con un solo toque."
+                        title: "Sin equipos todavía",
+                        message: "Agrupá a tu equipo de meseros o fotógrafos desde Personal > Equipos para asignarlos con un solo toque."
                     )
                 } else {
                     List {
@@ -302,7 +302,7 @@ struct Step4PersonnelPanel: View {
                     .font(.caption2)
                     .foregroundStyle(SolennixColors.textTertiary)
 
-                TextField("Notas de la asignacion", text: $viewModel.selectedStaff[index].notes)
+                TextField("Notas de la asignación", text: $viewModel.selectedStaff[index].notes)
                     .font(.body)
                     .foregroundStyle(SolennixColors.text)
                     .padding(.horizontal, Spacing.sm)

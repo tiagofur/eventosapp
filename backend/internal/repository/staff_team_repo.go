@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"context"
 	"fmt"
 
@@ -8,6 +9,15 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tiagofur/solennix-backend/internal/models"
+)
+
+// Sentinel errors so handlers can classify failures without parsing messages.
+// ErrStaffTeamNotFound maps to 404; ErrInvalidTeamMember (bad staff_id or
+// cross-tenant) maps to 400. Anything else is treated as 500 by the handler
+// with a generic message (details stay in the server logs).
+var (
+	ErrStaffTeamNotFound  = errors.New("staff team not found")
+	ErrInvalidTeamMember  = errors.New("invalid team member")
 )
 
 type StaffTeamRepo struct {
@@ -61,7 +71,10 @@ func (r *StaffTeamRepo) GetByID(ctx context.Context, id, userID uuid.UUID) (*mod
 		WHERE id = $1 AND user_id = $2`, staffTeamColumns), id, userID)
 	if err := row.Scan(&t.ID, &t.UserID, &t.Name, &t.RoleLabel, &t.Notes,
 		&t.CreatedAt, &t.UpdatedAt); err != nil {
-		return nil, fmt.Errorf("staff team not found: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrStaffTeamNotFound
+		}
+		return nil, fmt.Errorf("get staff team: %w", err)
 	}
 	members, err := r.getMembers(ctx, t.ID)
 	if err != nil {
@@ -140,7 +153,7 @@ func (r *StaffTeamRepo) Update(ctx context.Context, t *models.StaffTeam) error {
 		return fmt.Errorf("update staff_team: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("staff team not found")
+		return ErrStaffTeamNotFound
 	}
 
 	if _, err := tx.Exec(ctx, `DELETE FROM staff_team_members WHERE team_id = $1`, t.ID); err != nil {
@@ -159,10 +172,11 @@ func upsertTeamMembers(ctx context.Context, tx pgx.Tx, teamID, userID uuid.UUID,
 		var ownerID uuid.UUID
 		err := tx.QueryRow(ctx, `SELECT user_id FROM staff WHERE id = $1`, m.StaffID).Scan(&ownerID)
 		if err != nil {
-			return fmt.Errorf("staff_id %s not found", m.StaffID)
+			// Bad client input (unknown staff_id) — callers map to 400.
+			return fmt.Errorf("%w: staff_id %s not found", ErrInvalidTeamMember, m.StaffID)
 		}
 		if ownerID != userID {
-			return fmt.Errorf("staff_id %s does not belong to this user", m.StaffID)
+			return fmt.Errorf("%w: staff_id %s does not belong to this user", ErrInvalidTeamMember, m.StaffID)
 		}
 		if _, err := tx.Exec(ctx, `INSERT INTO staff_team_members
 			(team_id, staff_id, is_lead, position) VALUES ($1, $2, $3, $4)`,
@@ -179,7 +193,7 @@ func (r *StaffTeamRepo) Delete(ctx context.Context, id, userID uuid.UUID) error 
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("staff team not found")
+		return ErrStaffTeamNotFound
 	}
 	return nil
 }

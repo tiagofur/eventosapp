@@ -67,7 +67,7 @@ public struct StaffTeamDetailView: View {
             }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("Se eliminara el equipo \(team?.name ?? ""). Los colaboradores individuales no se borran.")
+            Text("Se eliminará el equipo \(team?.name ?? ""). Los colaboradores individuales no se borran.")
         }
         .task { await loadData() }
     }
@@ -179,7 +179,7 @@ public struct StaffTeamDetailView: View {
             let sorted = (team.members ?? []).sorted { $0.position < $1.position }
 
             if sorted.isEmpty {
-                Text("Este equipo todavia no tiene miembros. Editalo para agregarlos.")
+                Text("Este equipo todavía no tiene miembros. Editalo para agregarlos.")
                     .font(.body)
                     .foregroundStyle(SolennixColors.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)

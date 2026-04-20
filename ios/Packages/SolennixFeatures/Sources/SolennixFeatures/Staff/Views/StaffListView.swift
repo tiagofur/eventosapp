@@ -59,7 +59,7 @@ public struct StaffListView: View {
             }
             Button("Cancelar", role: .cancel) {}
         } message: { item in
-            Text("Se eliminara a \(item.name). Podras deshacer durante unos segundos.")
+            Text("Se eliminará a \(item.name). Podrás deshacer durante unos segundos.")
         }
         .task {
             await viewModel.loadStaff()
@@ -86,7 +86,7 @@ public struct StaffListView: View {
                 EmptyStateView(
                     icon: "person.3",
                     title: "Sin personal",
-                    message: "Agrega a tu primer colaborador para asignarlo a eventos",
+                    message: "Agregá a tu primer colaborador para asignarlo a eventos",
                     actionTitle: "Agregar Personal"
                 ) {
                     // FAB handles navigation; empty state CTA is visual only
@@ -95,7 +95,7 @@ public struct StaffListView: View {
                 EmptyStateView(
                     icon: "magnifyingglass",
                     title: "Sin resultados",
-                    message: "No se encontro personal que coincida con tu busqueda"
+                    message: "No se encontró personal que coincida con tu búsqueda"
                 )
             }
         } else {

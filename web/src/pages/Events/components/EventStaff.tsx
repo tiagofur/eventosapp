@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Clock, Crown, Plus, Trash2, UserCog, Users } from 'lucide-react';
 import type { AssignmentStatus, Staff } from '../../../types/entities';
 import { useStaffAvailability, useStaffTeams } from '@/hooks/queries/useStaffQueries';
@@ -329,12 +330,13 @@ export const EventStaff: React.FC<EventStaffProps> = ({
         ) : teams.length === 0 ? (
           <div className="text-sm text-text-secondary space-y-2">
             <p>Sin equipos todavía.</p>
-            <a
-              href="/staff/teams/new"
+            <Link
+              to="/staff/teams/new"
+              onClick={() => setTeamPickerOpen(false)}
               className="inline-flex items-center gap-1 text-primary hover:underline"
             >
               <Plus className="h-4 w-4" aria-hidden="true" /> Agregá tu primera cuadrilla
-            </a>
+            </Link>
           </div>
         ) : (
           <ul className="divide-y divide-border max-h-96 overflow-y-auto">
