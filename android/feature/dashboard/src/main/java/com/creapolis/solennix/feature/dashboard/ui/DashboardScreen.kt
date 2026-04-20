@@ -42,7 +42,7 @@ import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.InventoryItem
-import com.creapolis.solennix.core.model.extensions.asMXN
+import com.creapolis.solennix.core.model.extensions.asMXNCompact
 import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
 import com.creapolis.solennix.feature.dashboard.viewmodel.DashboardViewModel
 import com.creapolis.solennix.feature.dashboard.viewmodel.MIN_PENDING_AMOUNT
@@ -185,10 +185,10 @@ fun DashboardScreen(
                 item {
                     if (isWideScreen) {
                         val kpiItems = listOf(
-                            Triple("Ventas Netas", uiState.revenueThisMonth.asMXN(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, "Eventos confirmados y completados")),
-                            Triple("Cobrado", uiState.cashCollected.asMXN(), Triple(Icons.Default.Payments, SolennixTheme.colors.kpiOrange, "Este mes")),
-                            Triple("IVA Cobrado", uiState.vatCollected.asMXN(), Triple(Icons.Default.Receipt, SolennixTheme.colors.kpiBlue, "Este mes")),
-                            Triple("IVA Pendiente", uiState.vatOutstanding.asMXN(), Triple(Icons.Default.ReceiptLong, SolennixTheme.colors.kpiBlue, "Por cobrar")),
+                            Triple("Ventas Netas", uiState.revenueThisMonth.asMXNCompact(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, "Eventos confirmados y completados")),
+                            Triple("Cobrado", uiState.cashCollected.asMXNCompact(), Triple(Icons.Default.Payments, SolennixTheme.colors.kpiOrange, "Este mes")),
+                            Triple("IVA Cobrado", uiState.vatCollected.asMXNCompact(), Triple(Icons.Default.Receipt, SolennixTheme.colors.kpiBlue, "Este mes")),
+                            Triple("IVA Pendiente", uiState.vatOutstanding.asMXNCompact(), Triple(Icons.Default.ReceiptLong, SolennixTheme.colors.kpiBlue, "Por cobrar")),
                             Triple("Eventos del Mes", uiState.eventsThisMonth.toString(), Triple(Icons.Default.CalendarMonth, SolennixTheme.colors.kpiOrange, null)),
                             Triple("Stock Bajo", uiState.lowStockCount.toString(), Triple(Icons.Default.Inventory2, if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen, null)),
                             Triple("Clientes", uiState.totalClients.toString(), Triple(Icons.Default.People, SolennixTheme.colors.kpiBlue, "Total")),
@@ -234,10 +234,10 @@ fun DashboardScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Spacer(modifier = Modifier.width(4.dp))
-                            KPICard(title = "Ventas Netas", value = uiState.revenueThisMonth.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, subtitle = "Eventos confirmados y completados", modifier = cardModifier)
-                            KPICard(title = "Cobrado", value = uiState.cashCollected.asMXN(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = "Este mes", modifier = cardModifier)
-                            KPICard(title = "IVA Cobrado", value = uiState.vatCollected.asMXN(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Este mes", modifier = cardModifier)
-                            KPICard(title = "IVA Pendiente", value = uiState.vatOutstanding.asMXN(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Por cobrar", modifier = cardModifier)
+                            KPICard(title = "Ventas Netas", value = uiState.revenueThisMonth.asMXNCompact(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, subtitle = "Eventos confirmados y completados", modifier = cardModifier)
+                            KPICard(title = "Cobrado", value = uiState.cashCollected.asMXNCompact(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = "Este mes", modifier = cardModifier)
+                            KPICard(title = "IVA Cobrado", value = uiState.vatCollected.asMXNCompact(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Este mes", modifier = cardModifier)
+                            KPICard(title = "IVA Pendiente", value = uiState.vatOutstanding.asMXNCompact(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Por cobrar", modifier = cardModifier)
                             KPICard(title = "Eventos del Mes", value = uiState.eventsThisMonth.toString(), icon = Icons.Default.CalendarMonth, iconColor = SolennixTheme.colors.kpiOrange, modifier = cardModifier)
                             KPICard(title = "Stock Bajo", value = uiState.lowStockCount.toString(), icon = Icons.Default.Inventory2, iconColor = if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen, modifier = cardModifier)
                             KPICard(title = "Clientes", value = uiState.totalClients.toString(), icon = Icons.Default.People, iconColor = SolennixTheme.colors.kpiBlue, subtitle = "Total", modifier = cardModifier)
@@ -851,7 +851,7 @@ private fun FinancialBar(label: String, value: Double, maxValue: Double, barColo
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
-            Text(value.asMXN(), style = MaterialTheme.typography.bodySmall,
+            Text(value.asMXNCompact(), style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium, color = SolennixTheme.colors.primaryText)
         }
         Box(modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp))

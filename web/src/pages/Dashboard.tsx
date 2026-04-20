@@ -474,8 +474,12 @@ function DashboardAttentionSection({
   );
 }
 
+// Dashboard uses zero-decimal formatting: KPI cards are tight on mobile
+// and cents add noise without insight. Parity with iOS (`Double.asMXN`)
+// and Android (`Double.asMXNCompact`). Detail screens (event summary,
+// payments, invoices) keep their own full-precision formatters.
 function fmt(n: number) {
-  return `$${n.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
+  return `$${n.toLocaleString("es-MX", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 // ── Monthly Revenue Trend Card (premium only) ────────────────────
