@@ -51,6 +51,21 @@ public struct EventListView: View {
             .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: Spacing.sm) {
+                    // Sort menu — Apple HIG: Menu in toolbar with checkmark
+                    // on the active field; tapping the same field flips the
+                    // ASC/DESC direction (mirrors Web's sortable columns).
+                    Menu {
+                        sortMenuButton(field: .eventDate, label: "Fecha")
+                        sortMenuButton(field: .serviceType, label: "Servicio")
+                        sortMenuButton(field: .clientName, label: "Cliente")
+                        sortMenuButton(field: .totalAmount, label: "Total")
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.body)
+                            .foregroundStyle(SolennixColors.primary)
+                            .accessibilityLabel("Ordenar eventos")
+                    }
+
                     Menu {
                         NavigationLink(value: Route.eventForm()) {
                             Label("Nuevo Evento", systemImage: "calendar.badge.plus")
@@ -215,23 +230,8 @@ public struct EventListView: View {
             // Expandable filter content
             if viewModel.showAdvancedFilters {
                 VStack(spacing: Spacing.sm) {
-                    // Client picker
-                    HStack {
-                        Text("Cliente")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(SolennixColors.textSecondary)
-                            .frame(width: 60, alignment: .leading)
-
-                        Picker("Cliente", selection: $viewModel.selectedClientId) {
-                            Text("Todos").tag(String?.none)
-                            ForEach(viewModel.clients.sorted(by: { $0.name < $1.name })) { client in
-                                Text(client.name).tag(Optional(client.id))
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .tint(SolennixColors.primary)
-                    }
+                    // Client picker dropped — not in Android/Web, and the
+                    // Clients tab already shows per-client event lists.
 
                     // Date range
                     HStack {
@@ -371,6 +371,17 @@ public struct EventListView: View {
                         NavigationLink(value: Route.eventChecklist(id: event.id)) {
                             Label("Checklist", systemImage: "checklist")
                         }
+                        // Inline status change — mirrors Web's inline
+                        // dropdown. Each option marks the current one with
+                        // a checkmark and skips the API call if unchanged.
+                        Menu {
+                            statusChangeButton(event: event, status: .quoted,    label: "Cotizado")
+                            statusChangeButton(event: event, status: .confirmed, label: "Confirmado")
+                            statusChangeButton(event: event, status: .completed, label: "Completado")
+                            statusChangeButton(event: event, status: .cancelled, label: "Cancelado")
+                        } label: {
+                            Label("Cambiar estado", systemImage: "arrow.triangle.2.circlepath")
+                        }
                         Divider()
                         Button(role: .destructive) {
                             HapticsHelper.play(.warning)
@@ -397,6 +408,17 @@ public struct EventListView: View {
                         }
                         NavigationLink(value: Route.eventChecklist(id: event.id)) {
                             Label("Checklist", systemImage: "checklist")
+                        }
+                        // Inline status change — mirrors Web's inline
+                        // dropdown. Each option marks the current one with
+                        // a checkmark and skips the API call if unchanged.
+                        Menu {
+                            statusChangeButton(event: event, status: .quoted,    label: "Cotizado")
+                            statusChangeButton(event: event, status: .confirmed, label: "Confirmado")
+                            statusChangeButton(event: event, status: .completed, label: "Completado")
+                            statusChangeButton(event: event, status: .cancelled, label: "Cancelado")
+                        } label: {
+                            Label("Cambiar estado", systemImage: "arrow.triangle.2.circlepath")
                         }
                         Divider()
                         Button(role: .destructive) {
@@ -445,29 +467,52 @@ public struct EventListView: View {
 
     // MARK: - Event Card
 
+    /// Row layout matched across iOS / Android / Web:
+    ///   Row 1: Client name (bold) + Status badge (right)
+    ///   Row 2: Service type (caption)
+    ///   Row 3: 📅 Date  ·  🕐 Time range (or "Todo el día")
+    ///   Row 4 (conditional): 📍 Location, city
+    ///   Divider
+    ///   Row 5: 👥 N personas   (spacer)   $Total (bold primary)
     private func eventCard(_ event: Event) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            // Title row: service type + status badge
-            HStack {
-                Text(event.serviceType)
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            // Title row: client (bold) + status badge
+            HStack(alignment: .top) {
+                Text(viewModel.clientName(for: event.clientId))
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundStyle(SolennixColors.text)
+                    .lineLimit(1)
 
-                Spacer()
+                Spacer(minLength: Spacing.sm)
 
-                StatusBadge(status: event.status.rawValue)
+                if viewModel.updatingStatusEventId == event.id {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .tint(SolennixColors.primary)
+                } else {
+                    StatusBadge(status: event.status.rawValue)
+                }
             }
 
-            // Date
-            Text(formattedEventDate(event.eventDate))
+            // Service type
+            Text(event.serviceType)
                 .font(.caption)
                 .foregroundStyle(SolennixColors.textSecondary)
+                .lineLimit(1)
 
-            // Client name
-            Label(viewModel.clientName(for: event.clientId), systemImage: "person")
-                .font(.caption)
-                .foregroundStyle(SolennixColors.textSecondary)
+            // Date + time row
+            HStack(spacing: Spacing.sm) {
+                Label(formattedEventDate(event.eventDate), systemImage: "calendar")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+                    .lineLimit(1)
+
+                let timeLabel = formattedTimeRange(event)
+                Label(timeLabel, systemImage: "clock")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+            }
 
             // Location (if available)
             if let location = event.location, !location.isEmpty {
@@ -482,6 +527,7 @@ public struct EventListView: View {
             }
 
             Divider()
+                .padding(.vertical, 2)
 
             // Bottom row: people count + total amount
             HStack {
@@ -491,7 +537,9 @@ public struct EventListView: View {
 
                 Spacer()
 
-                Text(event.totalAmount.asMXN)
+                Text(Self.amountFormatter.string(
+                    from: NSNumber(value: event.totalAmount)
+                ) ?? "$0")
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundStyle(SolennixColors.primary)
@@ -503,14 +551,78 @@ public struct EventListView: View {
         .shadowSm()
     }
 
+    // MARK: - Sort Menu
+
+    /// Helper that builds a Menu option with a checkmark on the active
+    /// sort field and an ascending / descending arrow next to it.
+    @ViewBuilder
+    private func sortMenuButton(field: EventSortField, label: String) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                viewModel.applySort(field)
+            }
+            HapticsHelper.play(.success)
+        } label: {
+            if viewModel.sortField == field {
+                Label(
+                    label,
+                    systemImage: viewModel.sortAscending ? "arrow.up" : "arrow.down"
+                )
+            } else {
+                Text(label)
+            }
+        }
+    }
+
+    /// Inline status change button — checkmark on the event's current status.
+    @ViewBuilder
+    private func statusChangeButton(event: Event, status: EventStatus, label: String) -> some View {
+        Button {
+            Task { await viewModel.updateEventStatus(event, to: status) }
+        } label: {
+            if event.status == status {
+                Label(label, systemImage: "checkmark")
+            } else {
+                Text(label)
+            }
+        }
+    }
+
     // MARK: - Helpers
 
-    private static let displayDateFormatter: DateFormatter = {
-        let f = DateFormatter()
+    /// Zero-decimal MXN for list cards — same convention as dashboard +
+    /// calendar. Cents live on the event detail screen.
+    private static let amountFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
         f.locale = Locale(identifier: "es_MX")
-        f.dateFormat = "EEEE d 'de' MMMM, yyyy"
+        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = 0
         return f
     }()
+
+    /// Shorter date format for list rows — the card carries so much info
+    /// now that the long "Viernes 15 de Marzo, 2025" crowds the row. Users
+    /// get "15 mar 2025" which is enough to scan quickly.
+    private static let displayDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale.autoupdatingCurrent
+        f.setLocalizedDateFormatFromTemplate("dMMMyyyy")
+        return f
+    }()
+
+    /// Build the "18:00 - 20:00" time label (or "Todo el día" when the
+    /// event has no start_time).
+    private func formattedTimeRange(_ event: Event) -> String {
+        guard let start = event.startTime, !start.isEmpty else {
+            return "Todo el día"
+        }
+        let startTrim = String(start.prefix(5))
+        if let end = event.endTime, !end.isEmpty {
+            return "\(startTrim) - \(String(end.prefix(5)))"
+        }
+        return startTrim
+    }
 
     private static let apiDateFormatter: DateFormatter = {
         let f = DateFormatter()
