@@ -156,6 +156,33 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
+      - name: Create google-services.json placeholder
+        # The real file is gitignored. CI uses a syntactically-valid placeholder
+        # so the google-services Gradle plugin can run; no Firebase calls are
+        # made during unit tests or assembleDebug.
+        run: |
+          cat > app/google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "ci-placeholder",
+              "storage_bucket": "ci-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": { "package_name": "com.solennix.app" }
+                },
+                "oauth_client": [],
+                "api_key": [ { "current_key": "ci-placeholder-key" } ],
+                "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON
+
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
