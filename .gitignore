@@ -29,6 +29,9 @@ xcuserdata/
 .build/
 .swiftpm/
 Package.resolved
+# Apps need a checked-in Package.resolved for reproducible CI builds
+# (Xcode Cloud disables automatic dependency resolution).
+!ios/Solennix.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # CocoaPods (si aplica)
 # Pods/
