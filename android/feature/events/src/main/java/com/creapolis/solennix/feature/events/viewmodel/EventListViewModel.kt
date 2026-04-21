@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.events.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.creapolis.solennix.core.data.repository.ClientRepository
@@ -8,6 +9,7 @@ import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.extensions.asMXN
+import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,17 +20,36 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import java.time.LocalDate
 
+private const val TAG = "EventListVM"
+
+/**
+ * Ordering axis for the events list — mirrors iOS's `EventSortField` so the
+ * three platforms expose the same 4 sort options (Fecha / Servicio /
+ * Cliente / Total).
+ */
+enum class EventSortField { EVENT_DATE, SERVICE_TYPE, CLIENT_NAME, TOTAL_AMOUNT }
+
 data class EventListUiState(
     val events: List<Event> = emptyList(),
+    /** Filtered + sorted list ready for the LazyColumn. */
+    val sortedEvents: List<Event> = emptyList(),
     val clientMap: Map<String, Client> = emptyMap(),
     val searchQuery: String = "",
     val selectedStatus: EventStatus? = null,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
+    val sortField: EventSortField = EventSortField.EVENT_DATE,
+    /**
+     * DESC default for date + amount (newest / largest first — how
+     * organizers scan their book). ASC default for strings (A→Z).
+     */
+    val sortAscending: Boolean = false,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val error: String? = null,
-    val statusFilters: List<EventStatusFilter> = emptyList()
+    val statusFilters: List<EventStatusFilter> = emptyList(),
+    /** Event whose status mutation is in flight — shows a spinner on that row. */
+    val updatingStatusEventId: String? = null
 )
 
 data class EventStatusFilter(
@@ -48,8 +69,11 @@ class EventListViewModel @Inject constructor(
     private val _selectedStatus = MutableStateFlow<EventStatus?>(null)
     private val _startDate = MutableStateFlow<LocalDate?>(null)
     private val _endDate = MutableStateFlow<LocalDate?>(null)
+    private val _sortField = MutableStateFlow(EventSortField.EVENT_DATE)
+    private val _sortAscending = MutableStateFlow(false)
     private val _isRefreshing = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
+    private val _updatingStatusEventId = MutableStateFlow<String?>(null)
 
     private data class FilterState(
         val query: String,
@@ -84,31 +108,96 @@ class EventListViewModel @Inject constructor(
             )
         }.cachedIn(viewModelScope)
 
+    /// Bundle sort axis state with the ongoing updatingStatusEventId into a
+    /// single upstream so the main `combine` stays under the 5-arg ceiling.
+    private val sortAndStatusFlow = combine(
+        _sortField, _sortAscending, _updatingStatusEventId
+    ) { field, ascending, updatingId ->
+        Triple(field, ascending, updatingId)
+    }
+
     val uiState: StateFlow<EventListUiState> = combine(
         eventRepository.getEvents(),
         clientRepository.getClients(),
-        filterState
-    ) { events, clients, filters ->
+        filterState,
+        sortAndStatusFlow
+    ) { events, clients, filters, sortTriple ->
+        val (sortField, sortAscending, updatingId) = sortTriple
         val clientMap = clients.associateBy { it.id }
         val statusFilters = buildStatusFilters(events)
+        val sorted = applyFiltersAndSort(
+            events = events,
+            clientMap = clientMap,
+            query = filters.query,
+            status = filters.status,
+            startDate = filters.startDate,
+            endDate = filters.endDate,
+            sortField = sortField,
+            sortAscending = sortAscending
+        )
 
         EventListUiState(
             events = events,
+            sortedEvents = sorted,
             clientMap = clientMap,
             searchQuery = filters.query,
             selectedStatus = filters.status,
             startDate = filters.startDate,
             endDate = filters.endDate,
+            sortField = sortField,
+            sortAscending = sortAscending,
             isLoading = false,
             isRefreshing = filters.refreshing,
             error = filters.error,
-            statusFilters = statusFilters
+            statusFilters = statusFilters,
+            updatingStatusEventId = updatingId
         )
     }.distinctUntilChanged().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = EventListUiState(isLoading = true)
     )
+
+    /// Filter + sort the full events list in memory. Matches iOS's
+    /// `filteredEvents` + `comparator` pair. Local-sort is fine at the
+    /// scale of a single organizer's book (20-200 events); beyond that we'd
+    /// push sort into the Room DAO or hit `/api/events/search`.
+    private fun applyFiltersAndSort(
+        events: List<Event>,
+        clientMap: Map<String, Client>,
+        query: String,
+        status: EventStatus?,
+        startDate: LocalDate?,
+        endDate: LocalDate?,
+        sortField: EventSortField,
+        sortAscending: Boolean
+    ): List<Event> {
+        val filtered = events.filter { event ->
+            val matchesStatus = status == null || event.status == status
+            val matchesStart = startDate == null ||
+                (parseFlexibleDate(event.eventDate)?.let { it >= startDate } ?: true)
+            val matchesEnd = endDate == null ||
+                (parseFlexibleDate(event.eventDate)?.let { it <= endDate } ?: true)
+            val q = query.trim()
+            val matchesQuery = q.isEmpty() ||
+                event.serviceType.contains(q, ignoreCase = true) ||
+                (event.location?.contains(q, ignoreCase = true) == true) ||
+                (event.city?.contains(q, ignoreCase = true) == true) ||
+                (clientMap[event.clientId]?.name?.contains(q, ignoreCase = true) == true)
+            matchesStatus && matchesStart && matchesEnd && matchesQuery
+        }
+
+        val comparator: Comparator<Event> = when (sortField) {
+            EventSortField.EVENT_DATE -> compareBy { it.eventDate }
+            EventSortField.SERVICE_TYPE -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.serviceType }
+            EventSortField.CLIENT_NAME -> compareBy(String.CASE_INSENSITIVE_ORDER) {
+                clientMap[it.clientId]?.name ?: ""
+            }
+            EventSortField.TOTAL_AMOUNT -> compareBy { it.totalAmount }
+        }
+        return if (sortAscending) filtered.sortedWith(comparator)
+        else filtered.sortedWith(comparator.reversed())
+    }
 
     private fun buildStatusFilters(events: List<Event>): List<EventStatusFilter> {
         val counts = events.groupingBy { it.status }.eachCount()
@@ -143,6 +232,57 @@ class EventListViewModel @Inject constructor(
         _selectedStatus.value = null
         _startDate.value = null
         _endDate.value = null
+    }
+
+    /**
+     * Apply a sort axis. Re-selecting the active field flips the direction
+     * (matches Web's sortable column behavior); a fresh field resets to
+     * that field's natural default (DESC for date/amount, ASC for strings).
+     */
+    fun applySort(field: EventSortField) {
+        if (_sortField.value == field) {
+            _sortAscending.value = !_sortAscending.value
+        } else {
+            _sortField.value = field
+            _sortAscending.value = (field == EventSortField.SERVICE_TYPE ||
+                field == EventSortField.CLIENT_NAME)
+        }
+    }
+
+    /**
+     * Change an event's status via `PUT /events/{id}`. Matches iOS's
+     * `updateEventStatus` and Web's inline dropdown. `updatingStatusEventId`
+     * drives a spinner on the affected row while the call is in flight.
+     */
+    fun updateEventStatus(event: Event, newStatus: EventStatus) {
+        if (event.status == newStatus) return
+        viewModelScope.launch {
+            _updatingStatusEventId.value = event.id
+            try {
+                eventRepository.updateEvent(event.copy(status = newStatus))
+            } catch (e: Exception) {
+                Log.w(TAG, "updateEventStatus failed for ${event.id}", e)
+                _error.value = e.message ?: "No se pudo cambiar el estado"
+            } finally {
+                _updatingStatusEventId.value = null
+            }
+        }
+    }
+
+    /**
+     * Hard delete an event via the repository. The UI triggers this from a
+     * confirm dialog. No soft-delete/undo on Android today (iOS has it via
+     * ToastManager — candidate for a future slice).
+     */
+    fun deleteEvent(event: Event) {
+        viewModelScope.launch {
+            try {
+                eventRepository.deleteEvent(event.id)
+            } catch (e: Exception) {
+                Log.w(TAG, "deleteEvent failed for ${event.id}", e)
+                _error.value = e.message ?: "No se pudo eliminar el evento"
+            }
+        }
     }
 
     fun generateCsvContent(): String {

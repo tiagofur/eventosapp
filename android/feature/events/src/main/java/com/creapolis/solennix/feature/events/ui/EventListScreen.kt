@@ -10,7 +10,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.items
@@ -19,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -50,7 +54,11 @@ import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.viewmodel.EventListViewModel
+import com.creapolis.solennix.feature.events.viewmodel.EventSortField
 import com.creapolis.solennix.feature.events.viewmodel.EventStatusFilter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.delay
 import java.io.File
 import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
@@ -83,14 +91,20 @@ private fun exportEventsCsv(context: Context, csvContent: String) {
 fun EventListScreen(
     viewModel: EventListViewModel,
     onEventClick: (String) -> Unit,
+    onEventEdit: (String) -> Unit = onEventClick,
     onNavigateBack: () -> Unit,
     onSearchClick: (() -> Unit)? = null,
     showBackButton: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val pagedEvents = viewModel.pagedEvents.collectAsLazyPagingItems()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    // Sheets + dialogs for row actions + sort. We keep them in one place
+    // at the screen level so the event card itself stays purely visual.
+    var showSortSheet by remember { mutableStateOf(false) }
+    var rowActionsEvent by remember { mutableStateOf<Event?>(null) }
+    var statusChangeEvent by remember { mutableStateOf<Event?>(null) }
+    var deleteConfirmEvent by remember { mutableStateOf<Event?>(null) }
 
     LifecycleResumeEffect(viewModel) {
         viewModel.refresh()
@@ -125,6 +139,9 @@ fun EventListScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showSortSheet = true }) {
+                        Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Ordenar eventos")
+                    }
                     IconButton(onClick = {
                         val csv = viewModel.generateCsvContent()
                         exportEventsCsv(context, csv)
@@ -295,19 +312,20 @@ fun EventListScreen(
                     }
                 }
 
-                val isLoading = pagedEvents.loadState.refresh is LoadState.Loading
-                val isError = pagedEvents.loadState.refresh is LoadState.Error
-                val isEmpty = pagedEvents.itemCount == 0 && !isLoading
+                // Event list — uses the filter-sorted StateFlow from the VM
+                // (replaces the Paging3 flow so sort can be applied across
+                // the full dataset without a DAO schema change).
+                val sortedEvents = uiState.sortedEvents
+                val isLoading = uiState.isLoading
+                val isEmpty = sortedEvents.isEmpty() && !isLoading
 
                 AnimatedContent(
                     targetState = when {
-                        isLoading && pagedEvents.itemCount == 0 -> "loading"
+                        isLoading && sortedEvents.isEmpty() -> "loading"
                         isEmpty -> "empty"
                         else -> "content"
                     },
-                    transitionSpec = {
-                        fadeIn() togetherWith fadeOut()
-                    },
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
                     label = "eventListState"
                 ) { screenState ->
                     when (screenState) {
@@ -324,36 +342,308 @@ fun EventListScreen(
                             contentPadding = PaddingValues(vertical = 8.dp),
                             gridContent = {
                                 items(
-                                    count = pagedEvents.itemCount,
-                                    key = pagedEvents.itemKey { it.id }
-                                ) { index ->
-                                    pagedEvents[index]?.let { event ->
-                                        val client = uiState.clientMap[event.clientId]
-                                        AnimatedEventListItem(
-                                            index = index,
-                                            event = event,
-                                            clientName = client?.name,
-                                            onClick = { onEventClick(event.id) }
-                                        )
-                                    }
+                                    items = sortedEvents,
+                                    key = { it.id }
+                                ) { event ->
+                                    AnimatedEventListItem(
+                                        index = sortedEvents.indexOf(event),
+                                        event = event,
+                                        clientName = uiState.clientMap[event.clientId]?.name,
+                                        isUpdatingStatus = uiState.updatingStatusEventId == event.id,
+                                        onClick = { onEventClick(event.id) },
+                                        onLongClick = { rowActionsEvent = event }
+                                    )
                                 }
                             },
                             listContent = {
                                 items(
-                                    count = pagedEvents.itemCount,
-                                    key = pagedEvents.itemKey { it.id }
-                                ) { index ->
-                                    pagedEvents[index]?.let { event ->
-                                        val client = uiState.clientMap[event.clientId]
-                                        AnimatedEventListItem(
-                                            index = index,
-                                            event = event,
-                                            clientName = client?.name,
-                                            onClick = { onEventClick(event.id) }
-                                        )
-                                    }
+                                    items = sortedEvents,
+                                    key = { it.id }
+                                ) { event ->
+                                    AnimatedEventListItem(
+                                        index = sortedEvents.indexOf(event),
+                                        event = event,
+                                        clientName = uiState.clientMap[event.clientId]?.name,
+                                        isUpdatingStatus = uiState.updatingStatusEventId == event.id,
+                                        onClick = { onEventClick(event.id) },
+                                        onLongClick = { rowActionsEvent = event }
+                                    )
                                 }
                             }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Sort bottom sheet — M3 idiom for "pick one of these options".
+    if (showSortSheet) {
+        SortBottomSheet(
+            activeField = uiState.sortField,
+            ascending = uiState.sortAscending,
+            onPick = { field ->
+                viewModel.applySort(field)
+                showSortSheet = false
+            },
+            onDismiss = { showSortSheet = false }
+        )
+    }
+
+    // Row actions bottom sheet — triggered by long-press on an event card.
+    rowActionsEvent?.let { event ->
+        RowActionsBottomSheet(
+            event = event,
+            clientName = uiState.clientMap[event.clientId]?.name,
+            onEdit = {
+                rowActionsEvent = null
+                onEventEdit(event.id)
+            },
+            onChangeStatus = {
+                statusChangeEvent = event
+                rowActionsEvent = null
+            },
+            onDelete = {
+                deleteConfirmEvent = event
+                rowActionsEvent = null
+            },
+            onDismiss = { rowActionsEvent = null }
+        )
+    }
+
+    // Status picker bottom sheet — secondary sheet after the user picks
+    // "Cambiar estado" from the row actions sheet.
+    statusChangeEvent?.let { event ->
+        StatusChangeBottomSheet(
+            event = event,
+            onPick = { newStatus ->
+                viewModel.updateEventStatus(event, newStatus)
+                statusChangeEvent = null
+            },
+            onDismiss = { statusChangeEvent = null }
+        )
+    }
+
+    // Delete confirmation — destructive, so always a dialog (not a sheet).
+    deleteConfirmEvent?.let { event ->
+        AlertDialog(
+            onDismissRequest = { deleteConfirmEvent = null },
+            title = { Text("Eliminar evento") },
+            text = {
+                Text("Se eliminará \"${event.serviceType}\". Esta acción no se puede deshacer.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteEvent(event)
+                    deleteConfirmEvent = null
+                }) {
+                    Text("Eliminar", color = SolennixTheme.colors.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteConfirmEvent = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SortBottomSheet(
+    activeField: EventSortField,
+    ascending: Boolean,
+    onPick: (EventSortField) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val options = listOf(
+        EventSortField.EVENT_DATE to "Fecha",
+        EventSortField.SERVICE_TYPE to "Servicio",
+        EventSortField.CLIENT_NAME to "Cliente",
+        EventSortField.TOTAL_AMOUNT to "Total"
+    )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SolennixTheme.colors.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text(
+                "Ordenar por",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = SolennixTheme.colors.primaryText
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            options.forEach { (field, label) ->
+                val isActive = field == activeField
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPick(field) }
+                        .padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        label,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isActive) SolennixTheme.colors.primary
+                        else SolennixTheme.colors.primaryText,
+                        fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                    if (isActive) {
+                        Icon(
+                            if (ascending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                            contentDescription = if (ascending) "Ascendente" else "Descendente",
+                            tint = SolennixTheme.colors.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RowActionsBottomSheet(
+    event: Event,
+    clientName: String?,
+    onEdit: () -> Unit,
+    onChangeStatus: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SolennixTheme.colors.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            // Header with the event's identifying info — so the user has
+            // context for which row they're acting on.
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(
+                    clientName ?: "Cliente",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SolennixTheme.colors.primaryText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    event.serviceType,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SolennixTheme.colors.secondaryText,
+                    maxLines = 1
+                )
+            }
+            HorizontalDivider(color = SolennixTheme.colors.divider)
+
+            RowActionItem(icon = Icons.Default.Edit, label = "Editar", onClick = onEdit)
+            RowActionItem(
+                icon = Icons.Default.SwapVert,
+                label = "Cambiar estado",
+                onClick = onChangeStatus
+            )
+            RowActionItem(
+                icon = Icons.Default.Delete,
+                label = "Eliminar",
+                destructive = true,
+                onClick = onDelete
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowActionItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    destructive: Boolean = false,
+    onClick: () -> Unit
+) {
+    val tint = if (destructive) SolennixTheme.colors.error else SolennixTheme.colors.primaryText
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = tint)
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = tint)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StatusChangeBottomSheet(
+    event: Event,
+    onPick: (EventStatus) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val options = listOf(
+        EventStatus.QUOTED to "Cotizado",
+        EventStatus.CONFIRMED to "Confirmado",
+        EventStatus.COMPLETED to "Completado",
+        EventStatus.CANCELLED to "Cancelado"
+    )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = SolennixTheme.colors.card
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text(
+                "Cambiar estado",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = SolennixTheme.colors.primaryText
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            options.forEach { (status, label) ->
+                val isActive = status == event.status
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPick(status) }
+                        .padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        label,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isActive) SolennixTheme.colors.primary
+                        else SolennixTheme.colors.primaryText,
+                        fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                    if (isActive) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            tint = SolennixTheme.colors.primary
                         )
                     }
                 }
@@ -437,7 +727,9 @@ private fun AnimatedEventListItem(
     index: Int,
     event: Event,
     clientName: String?,
-    onClick: () -> Unit
+    isUpdatingStatus: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     var visible by remember(event.id) { mutableStateOf(false) }
 
@@ -465,25 +757,51 @@ private fun AnimatedEventListItem(
         EventListItem(
             event = event,
             clientName = clientName,
-            onClick = onClick
+            isUpdatingStatus = isUpdatingStatus,
+            onClick = onClick,
+            onLongClick = onLongClick
         )
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+/**
+ * Row layout matched with iOS/Web — info density parity across platforms:
+ *   Row 1: Client name (bold) + Status badge / spinner
+ *   Row 2: Service type (caption)
+ *   Row 3: 📅 Date  ·  🕐 Time range (start-end or "Todo el día")
+ *   Row 4 (conditional): 📍 Location
+ *   Divider
+ *   Row 5: 👥 N personas   (spacer)   $Total (bold primary, zero decimals)
+ *
+ * `onLongClick` opens the row actions ModalBottomSheet (Edit / Change
+ * status / Delete) — Android's native idiom vs. iOS's contextMenu and
+ * Web's 3-dot hover button.
+ */
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun EventListItem(
     event: Event,
     clientName: String?,
-    onClick: () -> Unit
+    isUpdatingStatus: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     val eventDate = remember(event.eventDate) {
-        val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
+        val dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
         parseFlexibleDate(event.eventDate)?.format(dateFormatter) ?: event.eventDate
+    }
+    val timeLabel = remember(event.startTime, event.endTime) {
+        val start = event.startTime
+        when {
+            start.isNullOrEmpty() -> "Todo el día"
+            !event.endTime.isNullOrEmpty() -> "${start.take(5)} - ${event.endTime!!.take(5)}"
+            else -> start.take(5)
+        }
     }
     val accessibilitySummary = remember(event, clientName, eventDate) {
         eventCardTalkBackLabel(event, clientName, eventDate)
     }
+    val haptic = LocalHapticFeedback.current
 
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
@@ -501,28 +819,55 @@ private fun EventListItem(
     } else baseModifier
 
     Card(
-        onClick = onClick,
-        modifier = cardModifier,
+        modifier = cardModifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onLongClick()
+            }
+        ),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Row 1: client (bold primary) + status badge or spinner
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = event.serviceType,
+                    text = clientName ?: "Cliente",
                     style = MaterialTheme.typography.titleMedium,
-                    color = SolennixTheme.colors.primaryText
+                    fontWeight = FontWeight.SemiBold,
+                    color = SolennixTheme.colors.primaryText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
                 )
-                StatusBadge(status = event.status.name.lowercase())
+                if (isUpdatingStatus) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = SolennixTheme.colors.primary
+                    )
+                } else {
+                    StatusBadge(status = event.status.name.lowercase())
+                }
             }
+
+            // Row 2: service type
+            Text(
+                text = event.serviceType,
+                style = MaterialTheme.typography.bodySmall,
+                color = SolennixTheme.colors.secondaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Date and time row
+            // Row 3: date + time
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -531,7 +876,7 @@ private fun EventListItem(
                     Icon(
                         Icons.Default.CalendarToday,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(14.dp),
                         tint = SolennixTheme.colors.secondaryText
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -545,54 +890,35 @@ private fun EventListItem(
                     Icon(
                         Icons.Default.Schedule,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(14.dp),
                         tint = SolennixTheme.colors.secondaryText
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = event.startTime ?: "Todo el día",
+                        text = timeLabel,
                         style = MaterialTheme.typography.bodySmall,
                         color = SolennixTheme.colors.secondaryText
                     )
                 }
             }
 
-            // Client name
-            if (clientName != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = SolennixTheme.colors.secondaryText
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = clientName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = SolennixTheme.colors.secondaryText,
-                        maxLines = 1
-                    )
-                }
-            }
-
-            // Location
-            event.location?.let { location ->
+            // Row 4 (optional): location
+            event.location?.takeIf { it.isNotEmpty() }?.let { location ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.LocationOn,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(14.dp),
                         tint = SolennixTheme.colors.secondaryText
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = location,
+                        text = listOfNotNull(location, event.city?.takeIf { it.isNotEmpty() }).joinToString(", "),
                         style = MaterialTheme.typography.bodySmall,
                         color = SolennixTheme.colors.secondaryText,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -601,7 +927,7 @@ private fun EventListItem(
             HorizontalDivider(color = SolennixTheme.colors.divider)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // People count and total amount
+            // Row 5: people count + total amount (zero decimals, MXN)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -611,7 +937,7 @@ private fun EventListItem(
                     Icon(
                         Icons.Default.People,
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(14.dp),
                         tint = SolennixTheme.colors.secondaryText
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -622,7 +948,7 @@ private fun EventListItem(
                     )
                 }
                 Text(
-                    text = event.totalAmount.asMXN(),
+                    text = "$${String.format("%,.0f", event.totalAmount)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = SolennixTheme.colors.primary
