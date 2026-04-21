@@ -196,6 +196,101 @@ describe('eventService', () => {
     });
   });
 
+  // ---------------------------------------------------------------------
+  // updateItems — staff payload mapping (Ola 1: shift + status)
+  // ---------------------------------------------------------------------
+
+  it('updateItems omits status from staff payload when input is null (preserve semantics)', async () => {
+    (api.put as any).mockResolvedValue({});
+
+    await eventService.updateItems(
+      'event-1',
+      [],
+      [],
+      undefined,
+      undefined,
+      [
+        {
+          staffId: 'staff-1',
+          feeAmount: 200,
+          shiftStart: '2026-05-01T18:00:00Z',
+          shiftEnd: '2026-05-01T23:00:00Z',
+          status: null,
+        },
+      ],
+    );
+
+    const payload = (api.put as any).mock.calls[0][1];
+    const sent = payload.staff[0];
+    expect(sent).not.toHaveProperty('status');
+    expect(sent).toMatchObject({
+      staff_id: 'staff-1',
+      fee_amount: 200,
+      shift_start: '2026-05-01T18:00:00Z',
+      shift_end: '2026-05-01T23:00:00Z',
+    });
+  });
+
+  it.each(['pending', 'confirmed', 'declined', 'cancelled'] as const)(
+    'updateItems includes status verbatim when set to %s',
+    async (status) => {
+      (api.put as any).mockResolvedValue({});
+
+      await eventService.updateItems(
+        'event-1',
+        [],
+        [],
+        undefined,
+        undefined,
+        [{ staffId: 'staff-1', status }],
+      );
+
+      const payload = (api.put as any).mock.calls[0][1];
+      expect(payload.staff[0].status).toBe(status);
+    },
+  );
+
+  it('updateItems sends shift_start/shift_end as null when the UI left them blank', async () => {
+    (api.put as any).mockResolvedValue({});
+
+    await eventService.updateItems(
+      'event-1',
+      [],
+      [],
+      undefined,
+      undefined,
+      [{ staffId: 'staff-1', feeAmount: 100 }],
+    );
+
+    const payload = (api.put as any).mock.calls[0][1];
+    expect(payload.staff[0]).toMatchObject({
+      staff_id: 'staff-1',
+      fee_amount: 100,
+      role_override: null,
+      notes: null,
+      shift_start: null,
+      shift_end: null,
+    });
+    expect(payload.staff[0]).not.toHaveProperty('status');
+  });
+
+  it('updateItems back-compat: payload without staff arg matches pre-Ola1 shape', async () => {
+    (api.put as any).mockResolvedValue({});
+
+    await eventService.updateItems(
+      'event-1',
+      [{ productId: 'p1', quantity: 1, unitPrice: 100 }],
+      [{ description: 'Extra', cost: 10, price: 20 }],
+    );
+
+    expect(api.put).toHaveBeenCalledWith('/events/event-1/items', {
+      products: [{ product_id: 'p1', quantity: 1, unit_price: 100, discount: 0 }],
+      extras: [{ description: 'Extra', cost: 10, price: 20, exclude_utility: false, include_in_checklist: true }],
+    });
+    const payload = (api.put as any).mock.calls[0][1];
+    expect(payload).not.toHaveProperty('staff');
+  });
+
   it('getEquipment calls api.get', async () => {
     (api.get as any).mockResolvedValue([]);
     await eventService.getEquipment('event-1');
