@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Paso 4 (Personal)**: Fee amount usa @State local — mismo patrón que Extras, permite tipear decimales sin que se pisen.
 - **Stepper híbrido (Paso 1, 2, 4)**: El número central ahora es tappable — abre teclado numérico para tipear directo. Evita 50+ clicks al poner 100 platos o 200 personas. +/- siguen funcionando.
 
+#### Web — Event Form & PDFs (paridad con mobile)
+- **Contract PDF + Cotización PDF discount fix**: `event.discount` se trataba como monto en dólares siempre, sin considerar `discount_type`. Un descuento de 10% se mostraba como "-$10.00" en el contrato, distinto de lo que la UI de Finanzas calcula. Ahora ambos PDFs usan la misma fórmula que `EventFinancials.tsx`: `subtotal × discount/100` para percent, valor crudo para fixed. Subtotal pre-descuento también recomputado correctamente.
+- **Confirmation dialog en delete**: Productos, Extras, Equipamiento e Insumos ahora muestran un ConfirmDialog antes de eliminar. Paridad con mobile — antes un tap al trash borraba sin feedback.
+- **Equipment overstock badge**: Agregado chip rojo "Insuficiente (N unit)" al lado del "Conflicto" existente cuando `qty > current_stock`. Paridad con el patrón de Insumos y con mobile.
+- **num_people default 0**: Antes defaultaba a 100 (deshonesto — el usuario no especificó 100). El zod `min(1)` + validación step-scoped ya bloqueaba el submit, solo faltaba el default. Paridad con iOS/Android.
+
 #### Event Detail
 - **iOS — Contract PDF discount math**: El contrato PDF usaba una fórmula inversa que daba un monto de descuento distinto al que muestra la UI de Finanzas. Ahora ambos usan la misma fórmula (`subtotal × discount%/100`). Evita contratos firmados con montos que no matchean lo que el cliente vio en la app.
 - **iOS — Botón "Anticipo" con texto corto**: Antes decía `"Registrar Anticipo (50%) - $12,500.00"` (se truncaba en iPhone mini). Ahora `"Anticipo $12,500.00"` — el porcentaje ya se muestra en la card de arriba.

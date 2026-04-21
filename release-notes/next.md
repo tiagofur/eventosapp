@@ -96,6 +96,27 @@ Fixed
 
 ---
 
+---
+
+## 🌐 Web app (dashboard) — cambios incluidos
+
+La versión web (`app.solennix.com`) recibe los mismos fixes críticos que mobile.
+No requiere release en store — se despliega con el próximo deploy:
+
+**Bugs corregidos**
+- PDF de Contrato y Cotización: el monto del descuento era incorrecto
+  cuando el tipo era porcentaje (mostraba el % como si fuera dólares).
+  Ahora coincide con lo que ves en Finanzas.
+- Eliminar un producto/extra/equipo/insumo ahora pide confirmación antes
+  de borrar (igual que en mobile).
+
+**Mejoras UX**
+- Alerta inline cuando pedís más equipo del disponible en inventario.
+- "Número de Personas" arranca en 0 y exige que pongas un valor antes
+  de continuar al siguiente paso.
+
+---
+
 ## Canales de comunicación adicionales (opcional)
 
 Si querés avisar a usuarios fuera de la store:
