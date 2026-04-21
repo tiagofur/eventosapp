@@ -341,7 +341,11 @@
       "Bash(rg -c \"calendar_\" /Users/tiagofur/dev/eventosapp/android/app/src/main/res/values*/strings.xml)",
       "Bash(npm i *)",
       "Bash(osascript -e 'tell application \"Simulator\" to activate')",
-      "Bash(osascript -e 'tell application \"System Events\" to keystroke \"2\" using {command down}')"
+      "Bash(osascript -e 'tell application \"System Events\" to keystroke \"2\" using {command down}')",
+      "Bash(/Users/tiagofur/dev/eventosapp/android/gradlew -p /Users/tiagofur/dev/eventosapp/android :app:assembleDebug)",
+      "Bash(gh run *)",
+      "Bash(./gradlew testDebugUnitTest)",
+      "Bash(gh auth *)"
     ]
   }
 }
