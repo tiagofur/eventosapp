@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.PaymentRepository
-import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.data.repository.StaffRepository
 import com.creapolis.solennix.core.model.Client
 import com.creapolis.solennix.core.model.DiscountType
 import com.creapolis.solennix.core.model.Event
@@ -40,7 +40,7 @@ class EventDetailViewModelTest {
     private val eventRepository = mockk<EventRepository>(relaxed = true)
     private val clientRepository = mockk<ClientRepository>(relaxed = true)
     private val paymentRepository = mockk<PaymentRepository>(relaxed = true)
-    private val productRepository = mockk<ProductRepository>(relaxed = true)
+    private val staffRepository = mockk<StaffRepository>(relaxed = true)
     private val apiService = mockk<ApiService>(relaxed = true)
     private val authManager = mockk<AuthManager>(relaxed = true)
     private val eventDayNotificationManager = mockk<EventDayNotificationManager>(relaxed = true)
@@ -70,6 +70,7 @@ class EventDetailViewModelTest {
         coEvery { eventRepository.getEvent("event-1") } returns baseEvent
         every { eventRepository.getEventProducts("event-1") } returns flowOf(emptyList())
         every { eventRepository.getEventExtras("event-1") } returns flowOf(emptyList())
+        every { staffRepository.getEventStaff("event-1") } returns flowOf(emptyList())
 
         every { paymentRepository.getPaymentsByEventId("event-1") } returns flowOf(
             listOf(
@@ -111,7 +112,7 @@ class EventDetailViewModelTest {
             eventRepository = eventRepository,
             clientRepository = clientRepository,
             paymentRepository = paymentRepository,
-            productRepository = productRepository,
+            staffRepository = staffRepository,
             apiService = apiService,
             authManager = authManager,
             eventDayNotificationManager = eventDayNotificationManager,

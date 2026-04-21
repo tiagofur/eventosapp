@@ -7,6 +7,8 @@ import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
+import com.creapolis.solennix.core.data.repository.StaffRepository
+import com.creapolis.solennix.core.data.repository.StaffTeamRepository
 import com.creapolis.solennix.core.model.DiscountType
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.InventoryType
@@ -43,6 +45,8 @@ class EventFormViewModelTest {
     private val clientRepository = mockk<ClientRepository>(relaxed = true)
     private val productRepository = mockk<ProductRepository>(relaxed = true)
     private val inventoryRepository = mockk<InventoryRepository>(relaxed = true)
+    private val staffRepository = mockk<StaffRepository>(relaxed = true)
+    private val staffTeamRepository = mockk<StaffTeamRepository>(relaxed = true)
     private val apiService = mockk<ApiService>(relaxed = true)
     private val planLimitsManager = mockk<PlanLimitsManager>(relaxed = true)
     private val authManager = mockk<AuthManager>(relaxed = true)
@@ -85,6 +89,8 @@ class EventFormViewModelTest {
             clientRepository,
             productRepository,
             inventoryRepository,
+            staffRepository,
+            staffTeamRepository,
             apiService,
             planLimitsManager,
             authManager,
@@ -106,6 +112,8 @@ class EventFormViewModelTest {
             clientRepository,
             productRepository,
             inventoryRepository,
+            staffRepository,
+            staffTeamRepository,
             apiService,
             planLimitsManager,
             authManager,
@@ -134,6 +142,8 @@ class EventFormViewModelTest {
             clientRepository,
             productRepository,
             inventoryRepository,
+            staffRepository,
+            staffTeamRepository,
             apiService,
             planLimitsManager,
             authManager,
