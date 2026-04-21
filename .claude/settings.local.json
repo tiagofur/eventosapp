@@ -332,7 +332,16 @@
       "Bash(bash /tmp/poll_prod.sh)",
       "Bash(xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'platform=iOS Simulator,id=4277DB83-2869-41E5-8F8E-4410D01D8C95' -derivedDataPath /tmp/solennix-ios-build -configuration Debug build)",
       "Bash(~/Library/Android/sdk/platform-tools/adb exec-out *)",
-      "Bash(osascript -e 'tell application \"System Events\" to tell process \"Simulator\" to key code 126 using {command down}')"
+      "Bash(osascript -e 'tell application \"System Events\" to tell process \"Simulator\" to key code 126 using {command down}')",
+      "Bash(./gradlew :feature:dashboard:testDebugUnitTest :app:compileDebugKotlin)",
+      "Bash(bash /tmp/poll_status.sh)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb install *)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb pull *)",
+      "Bash(~/Library/Android/sdk/emulator/emulator -avd Pixel_10_Pro -no-snapshot -no-boot-anim -no-audio)",
+      "Bash(rg -c \"calendar_\" /Users/tiagofur/dev/eventosapp/android/app/src/main/res/values*/strings.xml)",
+      "Bash(npm i *)",
+      "Bash(osascript -e 'tell application \"Simulator\" to activate')",
+      "Bash(osascript -e 'tell application \"System Events\" to keystroke \"2\" using {command down}')"
     ]
   }
 }

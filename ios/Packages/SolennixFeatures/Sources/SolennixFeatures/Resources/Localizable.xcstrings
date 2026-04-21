@@ -1,276 +1,2564 @@
 {
   "sourceLanguage" : "es",
-  "version" : "1.0",
   "strings" : {
-    "calendar.title" : {
+    "" : {
+
+    },
+    "¡Stock insuficiente para los proximos 7 dias!" : {
+
+    },
+    "¿Estás seguro de que quieres cerrar sesión?" : {
+
+    },
+    "· %@/%@" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Calendario" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "· %1$@/%2$@"
+          }
+        }
       }
     },
-    "calendar.today" : {
+    "(%@)" : {
+
+    },
+    "(%lld)" : {
+
+    },
+    "(min: %lld)" : {
+
+    },
+    "%" : {
+
+    },
+    "%@ est." : {
+
+    },
+    "%@ unidades" : {
+
+    },
+    "%@ x %@" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Hoy" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Today" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ x %2$@"
+          }
+        }
       }
     },
-    "calendar.previous_month" : {
+    "%@ ya reservado para \"%@\"" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mes anterior" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Previous month" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ ya reservado para \"%2$@\""
+          }
+        }
       }
     },
-    "calendar.next_month" : {
+    "%@, estado actual" : {
+
+    },
+    "%@%%" : {
+
+    },
+    "%@%% cobrado" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld %@" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mes siguiente" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Next month" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
       }
     },
-    "calendar.new_event" : {
+    "%lld colaboradores asignados" : {
+
+    },
+    "%lld de %lld" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Nuevo Evento" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Event" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld de %2$lld"
+          }
+        }
       }
     },
-    "calendar.quick_quote" : {
+    "%lld dias" : {
+
+    },
+    "%lld equipos asignados" : {
+
+    },
+    "%lld evento%@" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cotización Rápida" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quick Quote" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld evento%2$@"
+          }
+        }
       }
     },
-    "calendar.manage_blocks" : {
+    "%lld eventos" : {
+
+    },
+    "%lld extras" : {
+
+    },
+    "%lld fotos" : {
+
+    },
+    "%lld miembros" : {
+
+    },
+    "%lld personas" : {
+
+    },
+    "%lld productos" : {
+
+    },
+    "%lld uds" : {
+
+    },
+    "%lld unidades" : {
+
+    },
+    "%lld unidades en %lld evento%@ proximos." : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Gestionar fechas bloqueadas" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Manage blocked dates" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld unidades en %2$lld evento%3$@ proximos."
+          }
+        }
       }
     },
-    "calendar.no_events_scheduled" : {
+    "%lld unidades en los proximos 7 dias" : {
+
+    },
+    "%lld x %@" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No hay eventos programados" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No events scheduled" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld x %2$@"
+          }
+        }
       }
     },
-    "calendar.all_day" : {
+    "%lld/%lld" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Todo el día" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "All day" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
       }
     },
-    "calendar.select_date" : {
+    "%lld%%" : {
+
+    },
+    "%lldk" : {
+
+    },
+    "•" : {
+
+    },
+    "© 2025 Solennix por Creapolis" : {
+
+    },
+    "+ %lld mas" : {
+
+    },
+    "+%lld" : {
+
+    },
+    "$" : {
+
+    },
+    "$%@ c/u" : {
+
+    },
+    "$%@/u" : {
+
+    },
+    "$0" : {
+
+    },
+    "0" : {
+
+    },
+    "0.00" : {
+
+    },
+    "1" : {
+
+    },
+    "1 dia" : {
+
+    },
+    "1 miembro" : {
+
+    },
+    "3" : {
+
+    },
+    "16" : {
+
+    },
+    "50" : {
+
+    },
+    "A Evento" : {
+
+    },
+    "Abre la politica de privacidad en Safari" : {
+
+    },
+    "Abre los terminos de servicio en Safari" : {
+
+    },
+    "Abre los terminos de uso en Safari" : {
+
+    },
+    "Abrir detalle del evento" : {
+
+    },
+    "Acciones del evento" : {
+
+    },
+    "Acciones Rápidas" : {
+
+    },
+    "Aceptar" : {
+
+    },
+    "Acerca de" : {
+
+    },
+    "Activo" : {
+
+    },
+    "Administrar suscripcion" : {
+
+    },
+    "Agradecimientos" : {
+
+    },
+    "Agrega equipos desde Personal para venderlos como servicio." : {
+
+    },
+    "Agrega fotos del evento para tener un registro visual" : {
+
+    },
+    "Agrega productos al evento" : {
+
+    },
+    "Agrega servicios o items adicionales" : {
+
+    },
+    "Agregar" : {
+
+    },
+    "Agregar cliente" : {
+
+    },
+    "Agregar equipo" : {
+
+    },
+    "Agregar Equipo" : {
+
+    },
+    "Agregar equipo completo" : {
+
+    },
+    "Agregar Extra" : {
+
+    },
+    "Agregar foto" : {
+
+    },
+    "Agregar Fotos" : {
+
+    },
+    "Agregar horario (opcional)" : {
+
+    },
+    "Agregar Insumo" : {
+
+    },
+    "Agregar item de inventario" : {
+
+    },
+    "Agregar miembro" : {
+
+    },
+    "Agregar personal" : {
+
+    },
+    "Agregar Personal" : {
+
+    },
+    "Agregar producto" : {
+
+    },
+    "Agregar Producto" : {
+
+    },
+    "Ajustar" : {
+
+    },
+    "Ajustar Stock" : {
+
+    },
+    "Ajustes" : {
+
+    },
+    "Ajustes del Negocio" : {
+
+    },
+    "Al registrarte aceptas nuestros" : {
+
+    },
+    "Al rotar el enlace, el que ya compartiste dejará de funcionar. ¿Continuamos?" : {
+
+    },
+    "Alertas de Stock" : {
+
+    },
+    "Alta demanda esta semana." : {
+
+    },
+    "Alta demanda esta semana. Ingreso estimado total: %@" : {
+
+    },
+    "Análisis del cliente" : {
+
+    },
+    "Anterior" : {
+
+    },
+    "Anticipo" : {
+
+    },
+    "Anticipo (%@%%)" : {
+
+    },
+    "Anticipo %lld%%" : {
+
+    },
+    "Anticipo %lld%%: %@" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Selecciona una fecha" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select a date" } }
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Anticipo %1$lld%%: %2$@"
+          }
+        }
       }
     },
-    "calendar.overflow_more" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "+%lld más" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "+%lld more" } }
-      }
+    "Anticipo cubierto" : {
+
     },
-    "calendar.block.title" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Bloquear fecha" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Block date" } }
-      }
+    "Anticipo Requerido" : {
+
     },
-    "calendar.block.range_title" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Bloquear rango de fechas" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Block date range" } }
-      }
+    "Apariencia" : {
+
     },
-    "calendar.block.reason_label" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Motivo (opcional)" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reason (optional)" } }
-      }
+    "Armá cuadrillas para asignarlas de un toque" : {
+
     },
-    "calendar.block.reason_placeholder_single" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Ej: Vacaciones, día personal…" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "E.g. Vacation, personal day…" } }
-      }
+    "Ascendente" : {
+
     },
-    "calendar.block.reason_placeholder_range" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Ej: Vacaciones, mantenimiento…" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "E.g. Vacation, maintenance…" } }
-      }
+    "Avisarle por email al asignarlo a un evento" : {
+
     },
-    "calendar.block.start_date" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desde" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "From" } }
-      }
+    "Aviso enviado" : {
+
     },
-    "calendar.block.end_date" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Hasta" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "To" } }
-      }
+    "Avisos" : {
+
     },
-    "calendar.block.add_range" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Agregar rango" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Add range" } }
-      }
+    "Avisos por email activados" : {
+
     },
-    "calendar.block.save" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Bloquear" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Block" } }
-      }
+    "Busca clientes, eventos, productos o inventario" : {
+
     },
-    "calendar.block.range_invalid" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "La fecha fin no puede ser anterior a la fecha inicio" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "End date cannot be before start date" } }
-      }
+    "Buscando..." : {
+
     },
-    "calendar.unblock.title" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desbloquear fecha" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unblock date" } }
-      }
+    "Buscar" : {
+
     },
-    "calendar.unblock.confirm" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desbloquear" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unblock" } }
-      }
+    "Buscar cliente" : {
+
     },
-    "calendar.unblock.reason_prefix" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Motivo: %@" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reason: %@" } }
-      }
+    "Buscar clientes" : {
+
     },
-    "calendar.blocked_dates_title" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Fechas No Disponibles" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unavailable Dates" } }
-      }
+    "Buscar equipo" : {
+
     },
-    "calendar.blocked_dates_empty" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No hay fechas bloqueadas" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No blocked dates" } }
-      }
+    "Buscar equipos" : {
+
     },
-    "calendar.blocked_dates_empty_subtitle" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Todas las fechas están disponibles" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "All dates are available" } }
-      }
+    "Buscar eventos" : {
+
     },
-    "calendar.filter.all" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Todos" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "All" } }
-      }
+    "Buscar insumo" : {
+
     },
-    "calendar.filter.quoted" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cotizados" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quoted" } }
-      }
+    "Buscar inventario" : {
+
     },
-    "calendar.filter.confirmed" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Confirmados" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirmed" } }
-      }
+    "Buscar item..." : {
+
     },
-    "calendar.filter.completed" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Completados" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed" } }
-      }
+    "Buscar personal" : {
+
     },
-    "calendar.filter.cancelled" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cancelados" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancelled" } }
-      }
+    "Buscar producto" : {
+
     },
-    "calendar.error.load_failed" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudieron cargar los eventos" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to load events" } }
-      }
+    "Buscar productos" : {
+
     },
-    "calendar.error.block_failed" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo bloquear la fecha" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to block date" } }
-      }
+    "Cada detalle importa" : {
+
     },
-    "calendar.error.unblock_failed" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo desbloquear" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to unblock date" } }
-      }
-    },
-    "calendar.error.retry" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reintentar" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } }
-      }
+    "CADA DETALLE IMPORTA" : {
+
     },
     "calendar.action.cancel" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cancelar" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } }
-      }
-    },
-    "calendar.action.ok" : {
-      "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Aceptar" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
       }
     },
     "calendar.action.delete" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Eliminar" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar"
+          }
+        }
       }
     },
-    "calendar.unknown_client" : {
+    "calendar.action.ok" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cliente" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Client" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aceptar"
+          }
+        }
       }
     },
-    "calendar.select_day_prompt" : {
+    "calendar.all_day" : {
+      "extractionState" : "stale",
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Seleccioná un día para ver sus eventos" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select a day to see its events" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo el día"
+          }
+        }
       }
     },
-    "calendar.no_events_for_day" : {
+    "calendar.block.add_range" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "No hay eventos para este día" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "No events on this day" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add range"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar rango"
+          }
+        }
+      }
+    },
+    "calendar.block.end_date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasta"
+          }
+        }
+      }
+    },
+    "calendar.block.range_invalid" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "End date cannot be before start date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fecha fin no puede ser anterior a la fecha inicio"
+          }
+        }
+      }
+    },
+    "calendar.block.range_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block date range"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear rango de fechas"
+          }
+        }
+      }
+    },
+    "calendar.block.reason_label" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reason (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motivo (opcional)"
+          }
+        }
+      }
+    },
+    "calendar.block.reason_placeholder_range" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Vacation, maintenance…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej: Vacaciones, mantenimiento…"
+          }
+        }
+      }
+    },
+    "calendar.block.reason_placeholder_single" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E.g. Vacation, personal day…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ej: Vacaciones, día personal…"
+          }
+        }
+      }
+    },
+    "calendar.block.save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear"
+          }
+        }
+      }
+    },
+    "calendar.block.start_date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desde"
+          }
+        }
+      }
+    },
+    "calendar.block.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear fecha"
+          }
+        }
+      }
+    },
+    "calendar.blocked_dates_empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No blocked dates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay fechas bloqueadas"
+          }
+        }
+      }
+    },
+    "calendar.blocked_dates_empty_subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All dates are available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas las fechas están disponibles"
+          }
+        }
+      }
+    },
+    "calendar.blocked_dates_title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unavailable Dates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechas No Disponibles"
+          }
+        }
       }
     },
     "calendar.create_event_action" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Crear evento o cotización" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create event or quote" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create event or quote"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crear evento o cotización"
+          }
+        }
       }
     },
-    "calendar.unblock_message_reason" : {
+    "calendar.error.block_failed" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Motivo: %@\n\nEsta acción habilitará la fecha nuevamente." } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Reason: %@\n\nThis will make the date available again." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to block date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo bloquear la fecha"
+          }
+        }
+      }
+    },
+    "calendar.error.load_failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load events"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron cargar los eventos"
+          }
+        }
+      }
+    },
+    "calendar.error.retry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        }
+      }
+    },
+    "calendar.error.unblock_failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to unblock date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo desbloquear"
+          }
+        }
+      }
+    },
+    "calendar.filter.all" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos"
+          }
+        }
+      }
+    },
+    "calendar.filter.cancelled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelled"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelados"
+          }
+        }
+      }
+    },
+    "calendar.filter.completed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Completados"
+          }
+        }
+      }
+    },
+    "calendar.filter.confirmed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirmados"
+          }
+        }
+      }
+    },
+    "calendar.filter.quoted" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quoted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cotizados"
+          }
+        }
+      }
+    },
+    "calendar.manage_blocks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage blocked dates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionar fechas bloqueadas"
+          }
+        }
+      }
+    },
+    "calendar.new_event" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo Evento"
+          }
+        }
+      }
+    },
+    "calendar.next_month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes siguiente"
+          }
+        }
+      }
+    },
+    "calendar.no_events_for_day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No events on this day"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay eventos para este día"
+          }
+        }
+      }
+    },
+    "calendar.no_events_scheduled" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No events scheduled"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay eventos programados"
+          }
+        }
+      }
+    },
+    "calendar.overflow_more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld more"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld más"
+          }
+        }
+      }
+    },
+    "calendar.previous_month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous month"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes anterior"
+          }
+        }
+      }
+    },
+    "calendar.quick_quote" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Quote"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cotización Rápida"
+          }
+        }
+      }
+    },
+    "calendar.select_date" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecciona una fecha"
+          }
+        }
+      }
+    },
+    "calendar.select_day_prompt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a day to see its events"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccioná un día para ver sus eventos"
+          }
+        }
+      }
+    },
+    "calendar.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendario"
+          }
+        }
+      }
+    },
+    "calendar.today" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy"
+          }
+        }
       }
     },
     "calendar.unblock_message" : {
       "localizations" : {
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Esta acción habilitará la fecha nuevamente." } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "This will make the date available again." } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will make the date available again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta acción habilitará la fecha nuevamente."
+          }
+        }
       }
+    },
+    "calendar.unblock_message_reason" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reason: %@\n\nThis will make the date available again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motivo: %@\n\nEsta acción habilitará la fecha nuevamente."
+          }
+        }
+      }
+    },
+    "calendar.unblock.confirm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unblock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear"
+          }
+        }
+      }
+    },
+    "calendar.unblock.reason_prefix" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reason: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motivo: %@"
+          }
+        }
+      }
+    },
+    "calendar.unblock.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unblock date"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear fecha"
+          }
+        }
+      }
+    },
+    "calendar.unknown_client" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Client"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliente"
+          }
+        }
+      }
+    },
+    "Cambiar a %@" : {
+
+    },
+    "Cambiar Contrasena" : {
+
+    },
+    "Cambiar estado" : {
+
+    },
+    "Cambiar Logo" : {
+
+    },
+    "Cancela al vencer" : {
+
+    },
+    "Cancelacion" : {
+
+    },
+    "Cancelado" : {
+
+    },
+    "Cancelar" : {
+
+    },
+    "Cantidad" : {
+
+    },
+    "CANTIDAD" : {
+
+    },
+    "Cantidad:" : {
+
+    },
+    "Cargando checklist..." : {
+
+    },
+    "Cargando cliente..." : {
+
+    },
+    "Cargando equipo..." : {
+
+    },
+    "Cargando equipos..." : {
+
+    },
+    "Cargando evento..." : {
+
+    },
+    "Cargando lista de compras..." : {
+
+    },
+    "Cargando personal..." : {
+
+    },
+    "Cargando..." : {
+
+    },
+    "Cargando…" : {
+
+    },
+    "Categoria" : {
+
+    },
+    "Categorias Existentes" : {
+
+    },
+    "Cerrar" : {
+
+    },
+    "Cerrar por ahora" : {
+
+    },
+    "Cerrar Sesión" : {
+
+    },
+    "Checklist" : {
+
+    },
+    "Checklist de Carga" : {
+
+    },
+    "Cliente" : {
+
+    },
+    "Clientes" : {
+
+    },
+    "Clientes, eventos, productos..." : {
+
+    },
+    "Color de marca" : {
+
+    },
+    "Comparacion de funciones" : {
+
+    },
+    "Comparativa Financiera" : {
+
+    },
+    "Compartir" : {
+
+    },
+    "Compartir por WhatsApp" : {
+
+    },
+    "Completa estos campos en el evento o cliente:" : {
+
+    },
+    "Completado" : {
+
+    },
+    "Completar" : {
+
+    },
+    "Composicion" : {
+
+    },
+    "Compra" : {
+
+    },
+    "Comprar" : {
+
+    },
+    "Confirmado" : {
+
+    },
+    "Confirmar contrasena" : {
+
+    },
+    "Conflictos de disponibilidad" : {
+
+    },
+    "Contacto" : {
+
+    },
+    "Continuar con Apple" : {
+
+    },
+    "Continuar con Google" : {
+
+    },
+    "Contrasena actual" : {
+
+    },
+    "Contrasena Actual" : {
+
+    },
+    "Contrasena actualizada" : {
+
+    },
+    "Contrasena actualizada correctamente" : {
+
+    },
+    "Contrato" : {
+
+    },
+    "Copiado" : {
+
+    },
+    "Copiar" : {
+
+    },
+    "Copiar enlace" : {
+
+    },
+    "Copiar Link" : {
+
+    },
+    "Correo electronico" : {
+
+    },
+    "Correos Electronicos" : {
+
+    },
+    "Costo" : {
+
+    },
+    "Costo (MXN)" : {
+
+    },
+    "Costo (Opcional)" : {
+
+    },
+    "Costo est." : {
+
+    },
+    "COSTO EST." : {
+
+    },
+    "Costo Insumos" : {
+
+    },
+    "Costo Personal" : {
+
+    },
+    "Costo por unidad" : {
+
+    },
+    "Cotización Rápida" : {
+
+    },
+    "Cotizado" : {
+
+    },
+    "Crea un cliente rapidamente" : {
+
+    },
+    "Crea una nueva contrasena segura" : {
+
+    },
+    "Crear Cuenta" : {
+
+    },
+    "Crear equipo" : {
+
+    },
+    "Crear evento o cotización" : {
+
+    },
+    "Crear un Evento" : {
+
+    },
+    "Cuando agregues este producto a un evento, se asignan automaticamente los miembros del equipo como personal." : {
+
+    },
+    "Cuenta" : {
+
+    },
+    "Datos Básicos" : {
+
+    },
+    "Datos del cliente (opcional, para el PDF)" : {
+
+    },
+    "Del Stock" : {
+
+    },
+    "Demanda por Fecha" : {
+
+    },
+    "Desbloquea Solennix" : {
+
+    },
+    "Descendente" : {
+
+    },
+    "Descripción" : {
+
+    },
+    "Descuento" : {
+
+    },
+    "Descuento y Facturación" : {
+
+    },
+    "Desde" : {
+
+    },
+    "Deshabilitar" : {
+
+    },
+    "Deshabilitar enlace" : {
+
+    },
+    "Desliza los elementos de la lista hacia la izquierda o derecha para ver más opciones como editar, eliminar o llamar." : {
+
+    },
+    "Detalle del Evento" : {
+
+    },
+    "Detener Actividad en Vivo" : {
+
+    },
+    "dias" : {
+
+    },
+    "Dias" : {
+
+    },
+    "Dias anticipacion" : {
+
+    },
+    "Dias de anticipacion" : {
+
+    },
+    "Dias de vigencia" : {
+
+    },
+    "Direccion" : {
+
+    },
+    "Disponible: %@ %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disponible: %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Duplicar Evento" : {
+
+    },
+    "Editar" : {
+
+    },
+    "Editar Cliente" : {
+
+    },
+    "Editar Equipo" : {
+
+    },
+    "Editar Evento" : {
+
+    },
+    "Editar Item" : {
+
+    },
+    "Editar Perfil" : {
+
+    },
+    "Editar Personal" : {
+
+    },
+    "Editar Producto" : {
+
+    },
+    "Ej: Boda Rodriguez, Evento Mayo" : {
+
+    },
+    "Ej: Lider de barra" : {
+
+    },
+    "Ej: Paquete Premium" : {
+
+    },
+    "El cliente podra llenar sus datos de evento a traves de este link. Una vez usado, no podra volver a utilizarse." : {
+
+    },
+    "El pago se cargara a tu cuenta de Apple ID al confirmar la compra. La suscripcion se renovara automaticamente a menos que sea cancelada al menos 24 horas antes del final del periodo actual. Se cobrara a tu cuenta la renovacion dentro de las 24 horas anteriores al final del periodo actual, al precio del plan seleccionado. Las suscripciones pueden ser administradas por el usuario y la renovacion automatica puede desactivarse yendo a los Ajustes de la cuenta del App Store despues de la compra. No se permite la cancelacion de la suscripcion actual durante el periodo activo." : {
+
+    },
+    "Elige el plan que mejor se adapte a tu negocio" : {
+
+    },
+    "Eliminar" : {
+
+    },
+    "Eliminar cliente" : {
+
+    },
+    "Eliminar equipo" : {
+
+    },
+    "Eliminar evento" : {
+
+    },
+    "Eliminar Evento" : {
+
+    },
+    "Eliminar item" : {
+
+    },
+    "Eliminar link" : {
+
+    },
+    "Eliminar personal" : {
+
+    },
+    "Eliminar producto" : {
+
+    },
+    "Email" : {
+
+    },
+    "en %lld dias" : {
+
+    },
+    "Entra" : {
+
+    },
+    "Equipo" : {
+
+    },
+    "Equipo Asignado" : {
+
+    },
+    "Equipo asociado" : {
+
+    },
+    "Equipo sugerido" : {
+
+    },
+    "Equipos" : {
+
+    },
+    "Error" : {
+
+    },
+    "Estado" : {
+
+    },
+    "Estado de Eventos" : {
+
+    },
+    "Estado de eventos del mes" : {
+
+    },
+    "Estas seguro de que quieres eliminar \"%@\"? Esta accion no se puede deshacer." : {
+
+    },
+    "Estas seguro de que quieres eliminar a %@? Esta accion no se puede deshacer." : {
+
+    },
+    "Estas seguro de que quieres eliminar este evento? Esta accion no se puede deshacer." : {
+
+    },
+    "Este cliente no tiene eventos aun" : {
+
+    },
+    "Este color se usara como acento en los documentos PDF que generes." : {
+
+    },
+    "Este enlace no tiene vencimiento. Podés deshabilitarlo cuando quieras." : {
+
+    },
+    "Este equipo todavía no tiene miembros. Editalo para agregarlos." : {
+
+    },
+    "Este mes" : {
+
+    },
+    "Este producto no esta incluido en ningun evento proximo" : {
+
+    },
+    "Etiqueta (opcional)" : {
+
+    },
+    "Evento" : {
+
+    },
+    "Eventos" : {
+
+    },
+    "Eventos confirmados" : {
+
+    },
+    "Eventos Pendientes de Cierre" : {
+
+    },
+    "Expira: %@" : {
+
+    },
+    "Exportar" : {
+
+    },
+    "Exportar eventos a CSV" : {
+
+    },
+    "Exportar PDF" : {
+
+    },
+    "Extra %lld" : {
+
+    },
+    "Extras" : {
+
+    },
+    "Faltan %@" : {
+
+    },
+    "Faltan %@ por cobrar." : {
+
+    },
+    "Faltan datos para el contrato" : {
+
+    },
+    "Fecha" : {
+
+    },
+    "Fecha del Evento" : {
+
+    },
+    "Filtros" : {
+
+    },
+    "Finanzas" : {
+
+    },
+    "Firma" : {
+
+    },
+    "Firma de EL CLIENTE" : {
+
+    },
+    "Formulario completado" : {
+
+    },
+    "Fotos" : {
+
+    },
+    "Fotos del Evento" : {
+
+    },
+    "Fuente" : {
+
+    },
+    "Funciones incluidas" : {
+
+    },
+    "G" : {
+
+    },
+    "Generar" : {
+
+    },
+    "Generar Documentos" : {
+
+    },
+    "Generar link" : {
+
+    },
+    "Generar Link" : {
+
+    },
+    "Gestion de eventos simplificada" : {
+
+    },
+    "Gestionar Plan" : {
+
+    },
+    "Gracias a todos nuestros usuarios por confiar en Solennix para gestionar sus eventos. Tu retroalimentacion nos ayuda a mejorar constantemente." : {
+
+    },
+    "Guardar" : {
+
+    },
+    "Hasta" : {
+
+    },
+    "Haz clic en una variable para insertarla en tu contrato" : {
+
+    },
+    "Hecho con amor en Mexico" : {
+
+    },
+    "Historial de Eventos (%lld)" : {
+
+    },
+    "Historial de Pagos" : {
+
+    },
+    "Hola! Acá podés ver los detalles de tu evento: %@" : {
+
+    },
+    "Hora Fin" : {
+
+    },
+    "Hora Inicio" : {
+
+    },
+    "Inactivo" : {
+
+    },
+    "Incluir en checklist" : {
+
+    },
+    "Incluye equipo" : {
+
+    },
+    "Informacion" : {
+
+    },
+    "Información" : {
+
+    },
+    "Informacion de suscripcion" : {
+
+    },
+    "Informacion del Producto" : {
+
+    },
+    "INFORMACION GENERAL" : {
+
+    },
+    "Informacion Personal" : {
+
+    },
+    "Ingrediente" : {
+
+    },
+    "Ingredientes" : {
+
+    },
+    "Ingredientes de Productos" : {
+
+    },
+    "Ingresa tu correo electronico y te enviaremos un enlace para restablecer tu contrasena." : {
+
+    },
+    "Ingresa tu nueva contrasena. Debe tener al menos 8 caracteres, una mayuscula, una minuscula y un numero." : {
+
+    },
+    "Ingresos" : {
+
+    },
+    "Ingresos — Últimos 6 meses" : {
+
+    },
+    "Inicia sesion" : {
+
+    },
+    "Iniciar Actividad en Vivo" : {
+
+    },
+    "Inicio" : {
+
+    },
+    "Insertar Variable" : {
+
+    },
+    "Insumo" : {
+
+    },
+    "INSUMO" : {
+
+    },
+    "Insumos" : {
+
+    },
+    "Insumos del Evento" : {
+
+    },
+    "Insumos por Evento — Compra Nueva" : {
+
+    },
+    "Insumos por Evento — Del Stock" : {
+
+    },
+    "Insumos sugeridos" : {
+
+    },
+    "Intenta con otro termino de busqueda" : {
+
+    },
+    "Inventario" : {
+
+    },
+    "Ir al login" : {
+
+    },
+    "IVA %lld%%" : {
+
+    },
+    "La contrasena debe tener al menos 8 caracteres." : {
+
+    },
+    "Las variables como [Nombre del cliente] se reemplazan automaticamente con los datos del evento al generar el contrato." : {
+
+    },
+    "Legal" : {
+
+    },
+    "Lidera el equipo" : {
+
+    },
+    "Limpiar" : {
+
+    },
+    "Limpiar filtros" : {
+
+    },
+    "Links de Formulario" : {
+
+    },
+    "Lista de Compras" : {
+
+    },
+    "LISTA DE INSUMOS" : {
+
+    },
+    "Llamar" : {
+
+    },
+    "Logo" : {
+
+    },
+    "Marcar como lider" : {
+
+    },
+    "Margen" : {
+
+    },
+    "Mayusculas, minusculas y numeros" : {
+
+    },
+    "Mejorar plan" : {
+
+    },
+    "Mes" : {
+
+    },
+    "Metodo de pago" : {
+
+    },
+    "Método de pago" : {
+
+    },
+    "Métricas de Rentabilidad (Interno)" : {
+
+    },
+    "Miembros" : {
+
+    },
+    "Mínimo" : {
+
+    },
+    "Minimo 8 caracteres" : {
+
+    },
+    "Monto" : {
+
+    },
+    "Monto Fijo ($)" : {
+
+    },
+    "Mostrar en PDFs" : {
+
+    },
+    "Mostrar stock bajo" : {
+
+    },
+    "Necesario: %@ %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Necesario: %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Necesitas %lld %@ en los proximos 7 dias. Tienes %lld %@. Faltan %lld %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Necesitas %1$lld %2$@ en los proximos 7 dias. Tienes %3$lld %4$@. Faltan %5$lld %6$@."
+          }
+        }
+      }
+    },
+    "Negocio" : {
+
+    },
+    "Negocio e Identidad Visual" : {
+
+    },
+    "No hay elementos agregados" : {
+
+    },
+    "No hay eventos confirmados que incluyan este producto." : {
+
+    },
+    "No hay pagos registrados" : {
+
+    },
+    "No se encontraron eventos" : {
+
+    },
+    "No se ha definido un costo por unidad" : {
+
+    },
+    "No se pudo cargar la informacion del producto." : {
+
+    },
+    "No tienes cuenta?" : {
+
+    },
+    "Nombre" : {
+
+    },
+    "Nombre del cliente" : {
+
+    },
+    "Nombre del negocio" : {
+
+    },
+    "Notas" : {
+
+    },
+    "Notas (opcional)" : {
+
+    },
+    "Notas de la asignación" : {
+
+    },
+    "Notas del pago" : {
+
+    },
+    "Notas internas" : {
+
+    },
+    "Notificaciones" : {
+
+    },
+    "Notificaciones Push" : {
+
+    },
+    "Nueva Categoria" : {
+
+    },
+    "Nueva categoria..." : {
+
+    },
+    "Nueva contrasena" : {
+
+    },
+    "Nueva Contrasena" : {
+
+    },
+    "Nuevo Cliente" : {
+
+    },
+    "Nuevo Equipo" : {
+
+    },
+    "Nuevo Evento" : {
+
+    },
+    "Nuevo Item" : {
+
+    },
+    "Nuevo Personal" : {
+
+    },
+    "Nuevo Producto" : {
+
+    },
+    "Nuevo stock:" : {
+
+    },
+    "Numero de Personas" : {
+
+    },
+    "Número de Personas" : {
+
+    },
+    "Numero minimo de dias antes del evento para permitir cancelacion con reembolso." : {
+
+    },
+    "o continua con" : {
+
+    },
+    "Ocultar stock bajo" : {
+
+    },
+    "Ocupado ese día" : {
+
+    },
+    "OK" : {
+
+    },
+    "Olvidaste tu contrasena?" : {
+
+    },
+    "Omitir" : {
+
+    },
+    "Ordenalos como deberian aparecer al asignar el equipo a un evento. El lider se marca con la corona." : {
+
+    },
+    "Ordenar clientes" : {
+
+    },
+    "Ordenar inventario" : {
+
+    },
+    "Ordenar personal" : {
+
+    },
+    "Ordenar por" : {
+
+    },
+    "Ordenar productos" : {
+
+    },
+    "Pagos" : {
+
+    },
+    "Para activar el aviso necesitas un email valido" : {
+
+    },
+    "Para visualizar y generar el contrato, es necesario cubrir el anticipo mínimo del **%lld%%**" : {
+
+    },
+    "Passthrough (Sin Utilidad)" : {
+
+    },
+    "Pendiente" : {
+
+    },
+    "Pendiente de confirmar" : {
+
+    },
+    "Personal" : {
+
+    },
+    "Personal Asignado" : {
+
+    },
+    "Plan actual" : {
+
+    },
+    "Planes y Precios" : {
+
+    },
+    "Plantilla del Contrato" : {
+
+    },
+    "Politica de Cancelacion" : {
+
+    },
+    "Politica de Privacidad" : {
+
+    },
+    "Porcentaje (%)" : {
+
+    },
+    "Porcentaje de anticipo" : {
+
+    },
+    "Porcentaje de reembolso" : {
+
+    },
+    "Porcentaje del anticipo que devuelves en caso de cancelacion dentro del plazo permitido." : {
+
+    },
+    "Porcentaje del total que solicitas como anticipo al confirmar un evento." : {
+
+    },
+    "Portal del cliente" : {
+
+    },
+    "Portal del cliente — Solennix" : {
+
+    },
+    "Precio" : {
+
+    },
+    "Precio Base" : {
+
+    },
+    "Preguntas frecuentes" : {
+
+    },
+    "Primeros pasos" : {
+
+    },
+    "Privacidad" : {
+
+    },
+    "Pro" : {
+
+    },
+    "Producto" : {
+
+    },
+    "Producto Activo" : {
+
+    },
+    "Producto no encontrado" : {
+
+    },
+    "Productos" : {
+
+    },
+    "Progreso de Cobro" : {
+
+    },
+    "Proximos %lld eventos" : {
+
+    },
+    "Proximos Eventos" : {
+
+    },
+    "Quitar liderazgo" : {
+
+    },
+    "Recomendado" : {
+
+    },
+    "Recupera el acceso a tu cuenta" : {
+
+    },
+    "Recuperar Contrasena" : {
+
+    },
+    "Reembolso" : {
+
+    },
+    "Registrar Pago" : {
+
+    },
+    "Registrate" : {
+
+    },
+    "Requiere Factura (IVA)" : {
+
+    },
+    "Requieren atencion" : {
+
+    },
+    "Restaurar compras" : {
+
+    },
+    "Resumen" : {
+
+    },
+    "Revisa tu email" : {
+
+    },
+    "Rol en este evento (opcional)" : {
+
+    },
+    "Rotar enlace" : {
+
+    },
+    "Sale" : {
+
+    },
+    "Se activara en Phase 2 (Pro+). Por ahora guardamos la preferencia." : {
+
+    },
+    "Se activara en Phase 2 (Pro+). Por ahora queda registrada la preferencia." : {
+
+    },
+    "Se eliminara \"%@\". Podras deshacer durante unos segundos." : {
+
+    },
+    "Se eliminara a %@. Podras deshacer durante unos segundos." : {
+
+    },
+    "Se eliminará a %@. Podrás deshacer durante unos segundos." : {
+
+    },
+    "Se eliminará el equipo %@. Los colaboradores individuales no se borran." : {
+
+    },
+    "Se eliminara el link \"%@\". Esta accion no se puede deshacer." : {
+
+    },
+    "Se va a deshabilitar el enlace para el cliente. ¿Estás seguro?" : {
+
+    },
+    "Selecciona el nuevo estado del evento" : {
+
+    },
+    "Seleccioná un equipo para asignar a todos sus miembros. Los que ya esten asignados se ignoran." : {
+
+    },
+    "Seleccionar" : {
+
+    },
+    "Seleccionar Categoria" : {
+
+    },
+    "Seleccionar Cliente" : {
+
+    },
+    "Seleccionar Item" : {
+
+    },
+    "Si activas esta opcion, tu nombre comercial aparecera en los documentos en lugar de tu nombre personal." : {
+
+    },
+    "Si existe una cuenta con ese correo, recibiras un enlace para restablecer tu contrasena." : {
+
+    },
+    "Siguenos" : {
+
+    },
+    "Siguiente" : {
+
+    },
+    "Sin costo (reaprovechado)" : {
+
+    },
+    "Sin demanda en los proximos 7 dias" : {
+
+    },
+    "Sin demanda inmediata" : {
+
+    },
+    "Sin equipo" : {
+
+    },
+    "Sin eventos confirmados que usen este item." : {
+
+    },
+    "Sin eventos proximos" : {
+
+    },
+    "Sin extras" : {
+
+    },
+    "Sin fotos" : {
+
+    },
+    "Sin productos" : {
+
+    },
+    "Sin resultados" : {
+
+    },
+    "Solennix" : {
+
+    },
+    "Solennix es un producto de Creapolis" : {
+
+    },
+    "Solo cobrar costo (sin utilidad)" : {
+
+    },
+    "Solo completar" : {
+
+    },
+    "Stock" : {
+
+    },
+    "Stock actual" : {
+
+    },
+    "Stock actual: %lld %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stock actual: %1$lld %2$@"
+          }
+        }
+      }
+    },
+    "Stock Bajo" : {
+
+    },
+    "Stock minimo" : {
+
+    },
+    "Stock OK" : {
+
+    },
+    "Stock por debajo del minimo recomendado" : {
+
+    },
+    "Stock quedara bajo el minimo tras eventos proximos" : {
+
+    },
+    "Stock suficiente para los proximos 7 dias" : {
+
+    },
+    "Stock: %@" : {
+
+    },
+    "Stock: %@ %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stock: %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Stock: %lld %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stock: %1$lld %2$@"
+          }
+        }
+      }
+    },
+    "Stock: %lld/%lld %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stock: %1$lld/%2$lld %3$@"
+          }
+        }
+      }
+    },
+    "Subir Logo" : {
+
+    },
+    "Subtotal Extras" : {
+
+    },
+    "Subtotal Productos" : {
+
+    },
+    "Subtotal: %@" : {
+
+    },
+    "Sugerencias" : {
+
+    },
+    "Suscripcion" : {
+
+    },
+    "Suscripción" : {
+
+    },
+    "Suscripción activa" : {
+
+    },
+    "Suscripción Pro activa" : {
+
+    },
+    "Tasa IVA:" : {
+
+    },
+    "Te enviaremos un enlace seguro" : {
+
+    },
+    "Teléfono" : {
+
+    },
+    "Tema" : {
+
+    },
+    "Terminos" : {
+
+    },
+    "Terminos de Servicio" : {
+
+    },
+    "Terminos de Uso (EULA)" : {
+
+    },
+    "Tienes %lld evento(s) que requieren tu atencion." : {
+
+    },
+    "Tipo" : {
+
+    },
+    "Tipo de Descuento" : {
+
+    },
+    "Toca aquí para iniciar la creación de un nuevo evento, cotización o contrato." : {
+
+    },
+    "Todavía no generaste un enlace para este evento." : {
+
+    },
+    "Todos" : {
+
+    },
+    "Total" : {
+
+    },
+    "TOTAL" : {
+
+    },
+    "TOTAL COBRADO" : {
+
+    },
+    "Total demanda" : {
+
+    },
+    "TOTAL DEMANDA" : {
+
+    },
+    "Total: %@" : {
+
+    },
+    "Total: %lld unidades para %lld personas" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Total: %1$lld unidades para %2$lld personas"
+          }
+        }
+      }
+    },
+    "Tu contrasena ha sido restablecida exitosamente. Ya puedes iniciar sesion con tu nueva contrasena." : {
+
+    },
+    "Tu logo aparecera en los contratos y cotizaciones que generes." : {
+
+    },
+    "Tu nombre aparecera en los contratos y documentos que generes." : {
+
+    },
+    "Tu plan actual:" : {
+
+    },
+    "Tu plataforma para gestionar eventos de manera profesional" : {
+
+    },
+    "Tu stock actual (%lld %@) esta por debajo del minimo recomendado (%lld %@)." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tu stock actual (%1$lld %2$@) esta por debajo del minimo recomendado (%3$lld %4$@)."
+          }
+        }
+      }
+    },
+    "Tus datos siempre protegidos" : {
+
+    },
+    "Última actualización" : {
+
+    },
+    "Un enlace privado para que tu cliente vea el evento, el estado de pagos y los detalles clave." : {
+
+    },
+    "Unete a Solennix" : {
+
+    },
+    "Unidad de Medida" : {
+
+    },
+    "Usa esta herramienta para generar un presupuesto en el momento sin necesidad de crear el cliente primero." : {
+
+    },
+    "Usar contrasena" : {
+
+    },
+    "UTILIDAD" : {
+
+    },
+    "Utilidad Neta" : {
+
+    },
+    "Valor total en stock" : {
+
+    },
+    "Valores del Contrato" : {
+
+    },
+    "Vence el %@" : {
+
+    },
+    "Ver Contrato" : {
+
+    },
+    "Ver Detalle" : {
+
+    },
+    "Ver Evento" : {
+
+    },
+    "Ver todos los planes" : {
+
+    },
+    "Versión" : {
+
+    },
+    "Vigencia del link" : {
+
+    },
+    "Visible en cotizaciones" : {
+
+    },
+    "Vista previa de terminos" : {
+
+    },
+    "Volver al login" : {
+
+    },
+    "x%@" : {
+
+    },
+    "x%lld" : {
+
+    },
+    "y" : {
+
+    },
+    "Ya tienes cuenta?" : {
+
     }
-  }
+  },
+  "version" : "1.0"
 }
