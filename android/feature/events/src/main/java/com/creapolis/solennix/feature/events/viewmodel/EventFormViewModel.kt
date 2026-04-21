@@ -899,14 +899,14 @@ class EventFormViewModel @Inject constructor(
     }
 
     fun updateEquipmentQuantity(inventoryId: String, newQuantity: Int) {
-        if (newQuantity <= 0) {
-            removeEquipment(inventoryId)
-            return
-        }
+        // No auto-eliminamos cuando quantity=0: paridad con iOS. El usuario
+        // borra el item tocando el trash. 0 es un estado transitorio valido
+        // (el stepper hoy lo previene; defense in depth por si a futuro se
+        // agrega un text field como en supplies).
         val existing = selectedEquipment.find { it.inventoryId == inventoryId }
         if (existing != null) {
             val index = selectedEquipment.indexOf(existing)
-            selectedEquipment[index] = existing.copy(quantity = newQuantity)
+            selectedEquipment[index] = existing.copy(quantity = newQuantity.coerceAtLeast(0))
         }
         checkEquipmentConflicts()
     }
@@ -995,14 +995,13 @@ class EventFormViewModel @Inject constructor(
     }
 
     fun updateSupplyQuantity(inventoryId: String, newQuantity: Double) {
-        if (newQuantity <= 0) {
-            removeSupply(inventoryId)
-            return
-        }
+        // No auto-eliminamos cuando quantity=0: paridad con iOS. Borrar el
+        // text field para re-tipear otro valor es un estado transitorio
+        // valido — no debe borrar el insumo. El usuario borra con el trash.
         val existing = selectedSupplies.find { it.inventoryId == inventoryId }
         if (existing != null) {
             val index = selectedSupplies.indexOf(existing)
-            selectedSupplies[index] = existing.copy(quantity = newQuantity)
+            selectedSupplies[index] = existing.copy(quantity = newQuantity.coerceAtLeast(0.0))
         }
     }
 

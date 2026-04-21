@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -832,11 +833,12 @@ fun StepProducts(viewModel: EventFormViewModel) {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 if (isWideScreen) {
                     val chunkedProducts = viewModel.selectedProducts.chunked(2)
-                    items(chunkedProducts.size) { index ->
-                        val pair = chunkedProducts[index]
+                    items(chunkedProducts.size) { chunkIndex ->
+                        val pair = chunkedProducts[chunkIndex]
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Box(modifier = Modifier.weight(1f)) {
                                 ProductSelectionItem(
+                                    index = chunkIndex * 2,
                                     item = pair[0],
                                     availableProducts = availableProducts,
                                     onQuantityChange = { viewModel.updateProductQuantity(pair[0].productId, it) },
@@ -847,6 +849,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
                             if (pair.size > 1) {
                                 Box(modifier = Modifier.weight(1f)) {
                                     ProductSelectionItem(
+                                        index = chunkIndex * 2 + 1,
                                         item = pair[1],
                                         availableProducts = availableProducts,
                                         onQuantityChange = { viewModel.updateProductQuantity(pair[1].productId, it) },
@@ -863,6 +866,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
                     items(viewModel.selectedProducts.size) { index ->
                         val item = viewModel.selectedProducts[index]
                         ProductSelectionItem(
+                            index = index,
                             item = item,
                             availableProducts = availableProducts,
                             onQuantityChange = { viewModel.updateProductQuantity(item.productId, it) },
@@ -921,6 +925,7 @@ fun StepProducts(viewModel: EventFormViewModel) {
 
 @Composable
 fun ProductSelectionItem(
+    index: Int,
     item: com.creapolis.solennix.core.model.EventProduct,
     availableProducts: List<com.creapolis.solennix.core.model.Product>,
     onQuantityChange: (Double) -> Unit,
@@ -928,9 +933,38 @@ fun ProductSelectionItem(
     onRemove: () -> Unit,
 ) {
     val product = availableProducts.find { it.id == item.productId } ?: return
-    var discountText by remember(item.discount) { mutableStateOf(if (item.discount > 0) item.discount.toString() else "") }
+    // Ojo: la key del remember es item.id (no item.discount). Si usáramos el
+    // discount como key, cada keystroke dispararía la VM → rebote al state
+    // local → texto sobrescrito (aparecía "2.0" tras tipear "2" y se borraba
+    // al intentar tipear un decimal). Con item.id el texto es autoritativo
+    // durante la edición y sólo se recalcula si esta fila se rebinda a otro
+    // producto.
+    var discountText by remember(item.id) {
+        mutableStateOf(if (item.discount > 0) formatDiscountClean(item.discount) else "")
+    }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val effectivePrice = item.unitPrice - item.discount
     val lineTotal = effectivePrice * item.quantity
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("¿Eliminar ${product.name}?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onRemove()
+                    }
+                ) {
+                    Text("Eliminar", color = SolennixTheme.colors.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -939,6 +973,29 @@ fun ProductSelectionItem(
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
+            // Header: ordinal + trash rojo alineado a la derecha. Paridad
+            // visual con EditableExtraCard — trash vive en su propia fila
+            // separado del contenido.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Producto ${index + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SolennixTheme.colors.secondaryText,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Eliminar",
+                        tint = SolennixTheme.colors.error,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -980,52 +1037,49 @@ fun ProductSelectionItem(
                     }
                 }
 
-                // Stepper compacto — IconButton default es 48dp y quedaba
-                // con mucho aire alrededor del número. Lo achico a 32dp para
-                // acercar los botones al count, patrón más tight de iOS.
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                // Stepper con hit target Material mínimo (44dp). Cantidad
+                // con ancho fijo de 36dp + FontFeatureSettings tabular para
+                // que 1, 99, 999 ocupen lo mismo y los botones no se muevan.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
                     IconButton(
                         onClick = { onQuantityChange(item.quantity - 1.0) },
                         enabled = item.quantity > 1,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(44.dp),
                     ) {
                         Icon(
                             Icons.Default.RemoveCircle,
                             contentDescription = "Menos",
                             tint = if (item.quantity > 1) SolennixTheme.colors.primary
                                    else SolennixTheme.colors.secondaryText,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(26.dp),
                         )
                     }
-                    Text(
-                        item.quantity.toInt().toString(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
+                    EditableQuantityField(
+                        value = item.quantity.toInt(),
+                        onValueChange = { onQuantityChange(it.toDouble()) },
+                        minValue = 1,
+                        key = item.productId,
+                        width = 36.dp,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                     )
                     IconButton(
                         onClick = { onQuantityChange(item.quantity + 1.0) },
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(44.dp),
                     ) {
                         Icon(
                             Icons.Default.AddCircle,
                             contentDescription = "Mas",
                             tint = SolennixTheme.colors.primary,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(26.dp),
                         )
                     }
                 }
 
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar",
-                        tint = SolennixTheme.colors.error,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
             }
 
             // Per-product discount row — sin height fija para que el label
@@ -1038,10 +1092,17 @@ fun ProductSelectionItem(
             ) {
                 OutlinedTextField(
                     value = discountText,
-                    onValueChange = { value ->
-                        discountText = value
-                        val d = value.toDoubleOrNull() ?: 0.0
-                        onDiscountChange(d)
+                    onValueChange = { raw ->
+                        // Aceptamos coma como separador decimal (teclado
+                        // LATAM) y solo dejamos pasar input numérico parcial
+                        // válido — incluye estados intermedios como "2." o
+                        // ".5" para que el usuario pueda tipear decimales
+                        // fluido sin que el filtro los rechace.
+                        val normalized = raw.replace(',', '.')
+                        if (normalized.isEmpty() || normalized.matches(Regex("""^\d*\.?\d*$"""))) {
+                            discountText = normalized
+                            onDiscountChange(normalized.toDoubleOrNull() ?: 0.0)
+                        }
                     },
                     label = { Text("Descuento") },
                     placeholder = { Text("0") },
@@ -1192,15 +1253,21 @@ private fun EditableExtraCard(
     onIncludeInChecklistChange: (Boolean) -> Unit,
     onRemove: () -> Unit,
 ) {
-    // Texto del TextField "rebota" del modelo — si el usuario borra y escribe
-    // un valor inválido, mostramos lo que él tipeó pero al VM le mandamos el
-    // double parseado (fallback 0.0).
-    var costText by remember(extra.id, extra.cost) {
-        mutableStateOf(if (extra.cost > 0) "%g".format(extra.cost) else "")
+    // Texto local del card. Clave = extra.id SOLO — usar el cost/price como
+    // clave hacía que cada keystroke rebote del VM y re-semille el texto,
+    // forzando cosas como "2.00000" (Java %g no trunca ceros como Swift) y
+    // borrando decimales en curso. Con id estable, el input del usuario es
+    // autoritativo mientras edita.
+    var costText by remember(extra.id) {
+        mutableStateOf(if (extra.cost > 0) formatDiscountClean(extra.cost) else "")
     }
-    var priceText by remember(extra.id, extra.price) {
-        mutableStateOf(if (extra.price > 0) "%g".format(extra.price) else "")
+    var priceText by remember(extra.id) {
+        mutableStateOf(if (extra.price > 0) formatDiscountClean(extra.price) else "")
     }
+    // Cuando el toggle "solo costo" está on, el precio se fuerza = costo. En
+    // vez de mantener los dos estados sincronizados a mano, derivamos el
+    // display del price field desde el costText — un solo source of truth.
+    val displayedPriceText = if (extra.excludeUtility) costText else priceText
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1242,9 +1309,12 @@ private fun EditableExtraCard(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = costText,
-                    onValueChange = { value ->
-                        costText = value
-                        onCostChange(value.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                    onValueChange = { raw ->
+                        val normalized = raw.replace(',', '.')
+                        if (normalized.isEmpty() || normalized.matches(Regex("""^\d*\.?\d*$"""))) {
+                            costText = normalized
+                            onCostChange(normalized.toDoubleOrNull() ?: 0.0)
+                        }
                     },
                     label = { Text("Costo") },
                     placeholder = { Text("0.00") },
@@ -1255,11 +1325,14 @@ private fun EditableExtraCard(
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
-                    value = priceText,
-                    onValueChange = { value ->
+                    value = displayedPriceText,
+                    onValueChange = { raw ->
                         if (!extra.excludeUtility) {
-                            priceText = value
-                            onPriceChange(value.replace(",", ".").toDoubleOrNull() ?: 0.0)
+                            val normalized = raw.replace(',', '.')
+                            if (normalized.isEmpty() || normalized.matches(Regex("""^\d*\.?\d*$"""))) {
+                                priceText = normalized
+                                onPriceChange(normalized.toDoubleOrNull() ?: 0.0)
+                            }
                         }
                     },
                     label = { Text("Precio") },
@@ -1289,12 +1362,7 @@ private fun EditableExtraCard(
                 )
                 Switch(
                     checked = extra.excludeUtility,
-                    onCheckedChange = {
-                        onExcludeUtilityChange(it)
-                        // Mantener sincronizado el texto local del price
-                        // cuando al toggle se fuerza price = cost.
-                        if (it) priceText = costText
-                    },
+                    onCheckedChange = onExcludeUtilityChange,
                 )
             }
             Row(
@@ -1510,58 +1578,106 @@ private fun EquipmentCard(
     onQuantityChange: (Int) -> Unit,
     onRemove: () -> Unit
 ) {
+    // Stock no es date-aware: es total de inventario sin descontar reservas
+    // del mismo día (ver banner de conflictos arriba). Follow-up en issue.
+    val stock = equipment.currentStock
+    val overstock = stock != null && stock > 0 && equipment.quantity > stock
+
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
         border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight),
         shape = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        equipment.equipmentName ?: "Equipo",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (equipment.unit != null) {
-                            Text("Unidad: ${equipment.unit}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
-                        }
-                        if (equipment.currentStock != null) {
-                            val currentStock = equipment.currentStock
-                            if (currentStock != null) {
-                                Text("Stock: ${currentStock.toInt()}", style = MaterialTheme.typography.bodySmall, color = SolennixTheme.colors.secondaryText)
-                            }
-                        }
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    equipment.equipmentName ?: "Equipo",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                )
+                // Stock + unit debajo del nombre. Rojo + warning cuando qty
+                // > stock — feedback inline sin bloquear (el usuario puede
+                // querer ordenar más igual).
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (overstock) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = SolennixTheme.colors.error,
+                            modifier = Modifier.size(12.dp),
+                        )
                     }
-                }
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Default.Close, contentDescription = "Quitar", tint = SolennixTheme.colors.error)
+                    Text(
+                        stockLabel(stock = stock, unit = equipment.unit),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (overstock) SolennixTheme.colors.error else SolennixTheme.colors.secondaryText,
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            // Stepper con hit area Material 44dp + width fija de 36dp
+            // (paridad con Paso 2). Evita que el layout salte con 3 dígitos.
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { onQuantityChange(equipment.quantity - 1) },
-                    modifier = Modifier.size(32.dp)
+                    enabled = equipment.quantity > 1,
+                    modifier = Modifier.size(44.dp),
                 ) {
-                    Icon(Icons.Default.Remove, contentDescription = "Menos")
+                    Icon(
+                        Icons.Default.RemoveCircle,
+                        contentDescription = "Menos",
+                        tint = if (equipment.quantity > 1) SolennixTheme.colors.primary
+                               else SolennixTheme.colors.secondaryText,
+                        modifier = Modifier.size(26.dp),
+                    )
                 }
-                Text(
-                    "${equipment.quantity}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                EditableQuantityField(
+                    value = equipment.quantity,
+                    onValueChange = { onQuantityChange(it) },
+                    minValue = 1,
+                    key = equipment.inventoryId,
+                    width = 36.dp,
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                    colorOverride = if (overstock) SolennixTheme.colors.error else null,
                 )
                 IconButton(
                     onClick = { onQuantityChange(equipment.quantity + 1) },
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(44.dp),
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Más")
+                    Icon(
+                        Icons.Default.AddCircle,
+                        contentDescription = "Mas",
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(26.dp),
+                    )
                 }
+            }
+
+            IconButton(onClick = onRemove) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = SolennixTheme.colors.error,
+                )
             }
         }
     }
+}
+
+private fun stockLabel(stock: Double?, unit: String?): String {
+    val stockStr = stock?.let {
+        if (it % 1.0 == 0.0) it.toInt().toString() else "%.1f".format(it)
+    } ?: "—"
+    return if (unit.isNullOrBlank()) "Stock: $stockStr" else "Stock: $stockStr $unit"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1881,6 +1997,17 @@ private fun SupplyCard(
     onExcludeCostChange: (Boolean) -> Unit,
     onRemove: () -> Unit
 ) {
+    // Si la unidad es contable (unidad, pz, bolsa, caja…) mostramos stepper
+    // +/- 1. Si es pesada/líquida (kg, L, g, ml…) mostramos text field
+    // decimal. No tiene sentido pedir 1.5 bolsas pero sí 0.5 kg de sal.
+    val isInteger = isIntegerSupplyUnit(supply.unit)
+    var qtyText by remember(supply.inventoryId, isInteger) {
+        mutableStateOf(
+            if (isInteger) supply.quantity.toInt().toString()
+            else if (supply.quantity > 0) "%.1f".format(supply.quantity) else ""
+        )
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
@@ -1911,30 +2038,70 @@ private fun SupplyCard(
                     )
                 }
                 IconButton(onClick = onRemove) {
-                    Icon(Icons.Default.Close, contentDescription = "Quitar", tint = SolennixTheme.colors.error)
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Eliminar",
+                        tint = SolennixTheme.colors.error,
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Quantity controls
+            // Quantity controls: stepper si es contable, text field si decimal.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(
-                    onClick = { onQuantityChange((supply.quantity - 0.5).coerceAtLeast(0.5)) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.Default.Remove, contentDescription = "Menos")
-                }
-                Text(
-                    String.format("%.1f", supply.quantity),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(
-                    onClick = { onQuantityChange(supply.quantity + 0.5) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Más")
+                if (isInteger) {
+                    IconButton(
+                        onClick = { onQuantityChange((supply.quantity - 1).coerceAtLeast(1.0)) },
+                        enabled = supply.quantity > 1,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.RemoveCircle,
+                            contentDescription = "Menos",
+                            tint = if (supply.quantity > 1) SolennixTheme.colors.primary
+                                   else SolennixTheme.colors.secondaryText,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                    EditableQuantityField(
+                        value = supply.quantity.toInt(),
+                        onValueChange = { onQuantityChange(it.toDouble()) },
+                        minValue = 1,
+                        key = supply.inventoryId,
+                        width = 32.dp,
+                        textStyle = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
+                    IconButton(
+                        onClick = { onQuantityChange(supply.quantity + 1) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.AddCircle,
+                            contentDescription = "Mas",
+                            tint = SolennixTheme.colors.primary,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = qtyText,
+                        onValueChange = { raw ->
+                            val normalized = raw.replace(',', '.')
+                            if (normalized.isEmpty() || normalized.matches(Regex("""^\d*\.?\d*$"""))) {
+                                qtyText = normalized
+                                onQuantityChange(normalized.toDoubleOrNull() ?: 0.0)
+                            }
+                        },
+                        label = { Text("Cantidad") },
+                        placeholder = { Text("0.0") },
+                        modifier = Modifier.width(110.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                        shape = MaterialTheme.shapes.small,
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -1952,19 +2119,45 @@ private fun SupplyCard(
                 )
             }
 
-            // Exclude cost (only for stock items)
+            // Exclude cost (only for stock items). Switch — paridad con
+            // los otros toggles (Extras "Solo cobrar costo", etc.)
             if (supply.source == SupplySource.STOCK) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = supply.excludeCost,
-                        onCheckedChange = { onExcludeCostChange(it) }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        "Sin costo (reaprovechado)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText,
+                        modifier = Modifier.weight(1f),
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Sin costo (reaprovechado)", style = MaterialTheme.typography.bodySmall)
+                    Switch(
+                        checked = supply.excludeCost,
+                        onCheckedChange = { onExcludeCostChange(it) },
+                        colors = androidx.compose.material3.SwitchDefaults.colors(
+                            checkedThumbColor = SolennixTheme.colors.primary,
+                            checkedTrackColor = SolennixTheme.colors.primary.copy(alpha = 0.5f),
+                        ),
+                    )
                 }
             }
         }
     }
+}
+
+private fun isIntegerSupplyUnit(unit: String?): Boolean {
+    val normalized = unit?.trim()?.lowercase().orEmpty()
+    if (normalized.isEmpty()) return true
+    return normalized in setOf(
+        "unidad", "unidades", "u", "ud", "uds",
+        "pz", "pza", "pzas", "pieza", "piezas",
+        "bolsa", "bolsas",
+        "caja", "cajas",
+        "botella", "botellas",
+        "pack", "packs",
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -2813,58 +3006,158 @@ private fun formatTime(time: java.time.LocalTime): String =
     time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
 
 /**
- * Stepper de invitados — usa OutlinedTextField read-only para quedar idéntico
- * en altura y estilo a los demás fields (ej. "Tipo de Servicio"). Los botones
- * -/+ son IconButton de tamaño M3 default (48dp touch target) — cómodos para
- * el dedo. Label flota arriba como cualquier Material TextField.
+ * Formato de display para el descuento por producto — paridad con iOS
+ * que usa `%g`. Un entero se imprime sin el ".0" (2.0 → "2"), un decimal
+ * se conserva tal cual (2.5 → "2.5"). Evita que el card muestre "2.0" al
+ * abrir un producto con descuento redondo.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+private fun formatDiscountClean(value: Double): String =
+    if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
+
+/**
+ * Numero tappable dentro de los steppers +/-. Al tocarlo abre el teclado
+ * numerico y permite tipear directamente — evita decenas de clicks cuando
+ * la cantidad es alta (100 platos, 200 personas).
+ *
+ * Estado local (`textValue` con TextFieldValue) es autoritativo mientras el
+ * usuario edita. Se hidrata del VM en mount y cuando cambia `key` (rebind a
+ * otro item). Durante la edicion, los push del VM NO pisan lo que se tipia.
+ * Al blur: clamp a `minValue` y rehidratar display.
+ *
+ * @param key cualquier valor hashable que cambia al apuntar a otro item
+ *        (product.id, extra.id). Gatilla rehidrate.
+ * @param minValue clamp al blur. 0 para personas (transitorio), 1 para
+ *        productos/equipamiento/insumos.
+ */
+@Composable
+private fun EditableQuantityField(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    minValue: Int,
+    key: Any,
+    modifier: Modifier = Modifier,
+    width: androidx.compose.ui.unit.Dp = 36.dp,
+    textStyle: androidx.compose.ui.text.TextStyle = LocalTextStyle.current,
+    colorOverride: androidx.compose.ui.graphics.Color? = null,
+) {
+    var textValue by remember(key) {
+        mutableStateOf(androidx.compose.ui.text.input.TextFieldValue(value.toString()))
+    }
+    var isFocused by remember { mutableStateOf(false) }
+
+    // Sync cuando el valor cambia desde afuera (stepper +/-, edit event) y
+    // el usuario no esta editando. Durante focus, ignorar para no pisar.
+    LaunchedEffect(value, isFocused) {
+        if (!isFocused && textValue.text != value.toString()) {
+            textValue = androidx.compose.ui.text.input.TextFieldValue(value.toString())
+        }
+    }
+
+    androidx.compose.foundation.text.BasicTextField(
+        value = textValue,
+        onValueChange = { new ->
+            // Filtrar a solo digitos. Permite vacio transitorio (no
+            // propaga 0 que podria eliminar el item).
+            val digits = new.text.filter { it.isDigit() }
+            val filtered = new.copy(text = digits)
+            textValue = filtered
+            digits.toIntOrNull()?.let { onValueChange(it) }
+        },
+        modifier = modifier
+            .width(width)
+            .onFocusChanged { focusState ->
+                if (isFocused != focusState.isFocused) {
+                    isFocused = focusState.isFocused
+                    if (focusState.isFocused) {
+                        // Selecciona todo al entrar — tipear pisa.
+                        textValue = textValue.copy(
+                            selection = androidx.compose.ui.text.TextRange(0, textValue.text.length)
+                        )
+                    } else {
+                        // Blur: clamp + rehydrate.
+                        val clamped = (textValue.text.toIntOrNull() ?: minValue)
+                            .coerceAtLeast(minValue)
+                        if (clamped != value) onValueChange(clamped)
+                        textValue = androidx.compose.ui.text.input.TextFieldValue(clamped.toString())
+                    }
+                }
+            },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+            imeAction = androidx.compose.ui.text.input.ImeAction.Done,
+        ),
+        textStyle = textStyle.copy(
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            color = colorOverride ?: textStyle.color,
+            fontFeatureSettings = "tnum",
+        ),
+        cursorBrush = androidx.compose.ui.graphics.SolidColor(SolennixTheme.colors.primary),
+    )
+}
+
 @Composable
 private fun GuestCountStepper(
     value: Int,
     onValueChange: (Int) -> Unit,
 ) {
-    OutlinedTextField(
-        value = value.toString(),
-        onValueChange = {},
-        readOnly = true,
-        label = { Text("Personas") },
-        textStyle = LocalTextStyle.current.copy(
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            fontWeight = FontWeight.SemiBold,
-        ),
-        leadingIcon = {
-            IconButton(
-                onClick = { if (value > 1) onValueChange(value - 1) },
-                enabled = value > 1,
+    // OutlinedTextField con el numero tappable en vez de read-only. El
+    // campo interior (BasicTextField) maneja edit directo + filtrado de
+    // digitos; los botones +/- en leading/trailing siguen funcionando.
+    Column {
+        Text(
+            "Personas",
+            style = MaterialTheme.typography.labelMedium,
+            color = SolennixTheme.colors.secondaryText,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        androidx.compose.material3.Surface(
+            shape = MaterialTheme.shapes.small,
+            border = androidx.compose.foundation.BorderStroke(1.dp, SolennixTheme.colors.borderLight),
+            color = androidx.compose.ui.graphics.Color.Transparent,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
             ) {
-                Icon(
-                    Icons.Default.RemoveCircle,
-                    contentDescription = "Menos",
-                    tint = if (value > 1) SolennixTheme.colors.primary
-                           else SolennixTheme.colors.secondaryText,
-                    modifier = Modifier.size(28.dp),
+                IconButton(
+                    onClick = { if (value > 0) onValueChange(value - 1) },
+                    enabled = value > 0,
+                ) {
+                    Icon(
+                        Icons.Default.RemoveCircle,
+                        contentDescription = "Menos",
+                        tint = if (value > 0) SolennixTheme.colors.primary
+                               else SolennixTheme.colors.secondaryText,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+                EditableQuantityField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    minValue = 0,
+                    key = "guestCount",
+                    modifier = Modifier.weight(1f),
+                    width = 80.dp,
+                    textStyle = LocalTextStyle.current.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                        color = if (value == 0) SolennixTheme.colors.secondaryText
+                                else SolennixTheme.colors.primaryText,
+                    ),
                 )
+                IconButton(onClick = { onValueChange(value + 1) }) {
+                    Icon(
+                        Icons.Default.AddCircle,
+                        contentDescription = "Más",
+                        tint = SolennixTheme.colors.primary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
             }
-        },
-        trailingIcon = {
-            IconButton(onClick = { onValueChange(value + 1) }) {
-                Icon(
-                    Icons.Default.AddCircle,
-                    contentDescription = "Más",
-                    tint = SolennixTheme.colors.primary,
-                    modifier = Modifier.size(28.dp),
-                )
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = SolennixTheme.colors.borderLight,
-            unfocusedBorderColor = SolennixTheme.colors.borderLight,
-            focusedLabelColor = SolennixTheme.colors.secondaryText,
-        ),
-    )
+        }
+    }
 }
 
 /**

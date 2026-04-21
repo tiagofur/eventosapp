@@ -34,6 +34,15 @@ struct Step5FinancesView: View {
             }
             .padding(Spacing.md)
         }
+        // Fetch costos unitarios de productos al llegar al Paso 5 — necesario
+        // para computar ganancia neta y margen. Si el usuario vuelve al Paso 2
+        // y agrega más productos, el onChange refetch los missing.
+        .task {
+            await viewModel.fetchProductCosts()
+        }
+        .onChange(of: viewModel.selectedProducts.count) { _, _ in
+            Task { await viewModel.fetchProductCosts() }
+        }
     }
 
     // MARK: - Discount Section
@@ -285,27 +294,34 @@ struct Step5FinancesView: View {
     }
 
     // MARK: - Totals Card
+    //
+    // Parity con Android StepSummary: muestra subtotales separados
+    // (productos/extras), descuento, IVA, total, anticipo, y sección de
+    // Rentabilidad (costos totales, ganancia neta, margen %).
 
     private var totalsCard: some View {
         VStack(spacing: Spacing.sm) {
             Text("Resumen")
                 .font(.headline)
+                .fontWeight(.bold)
                 .foregroundStyle(SolennixColors.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Divider()
-                .foregroundStyle(SolennixColors.border)
+            if viewModel.hasPendingProductCosts {
+                Text("Algunos costos de productos siguen cargando. La rentabilidad puede ajustarse en segundos.")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.warning)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
 
-            // Subtotal
-            totalRow(label: "Subtotal", value: viewModel.subtotal)
+            totalRow(label: "Subtotal productos", value: viewModel.productsSubtotal)
+            totalRow(label: "Subtotal extras", value: viewModel.extrasSubtotal)
 
-            // Discount
             if viewModel.discountAmount > 0 {
                 totalRow(label: "Descuento", value: -viewModel.discountAmount, color: SolennixColors.error)
             }
 
-            // Tax
-            if viewModel.requiresInvoice {
+            if viewModel.requiresInvoice && viewModel.taxAmount > 0 {
                 totalRow(label: "IVA (\(String(format: "%.0f", viewModel.taxRate))%)", value: viewModel.taxAmount)
             }
 
@@ -315,29 +331,54 @@ struct Step5FinancesView: View {
             // Total
             HStack {
                 Text("Total")
-                    .font(.headline)
+                    .font(.title3)
+                    .fontWeight(.bold)
                     .foregroundStyle(SolennixColors.text)
 
                 Spacer()
 
                 Text(formatCurrency(viewModel.total))
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundStyle(SolennixColors.primary)
             }
 
             // Deposit
+            totalRow(
+                label: "Anticipo (\(String(format: "%.0f", viewModel.depositPercent))%)",
+                value: viewModel.depositAmount,
+                color: SolennixColors.primary
+            )
+
+            Divider()
+                .foregroundStyle(SolennixColors.border)
+
+            // Profitability
+            Text("Rentabilidad")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(SolennixColors.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            totalRow(label: "Costos totales", value: viewModel.totalCosts)
+            totalRow(
+                label: "Ganancia neta",
+                value: viewModel.netProfit,
+                color: viewModel.netProfit >= 0 ? SolennixColors.success : SolennixColors.error
+            )
+
+            // Margin — usa % en lugar de currency.
             HStack {
-                Text("Anticipo (\(String(format: "%.0f", viewModel.depositPercent))%)")
+                Text("Margen")
                     .font(.subheadline)
                     .foregroundStyle(SolennixColors.textSecondary)
 
                 Spacer()
 
-                Text(formatCurrency(viewModel.depositAmount))
+                Text("\(String(format: "%.1f", viewModel.profitMargin))%")
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.primary)
+                    .foregroundStyle(viewModel.profitMargin >= 20 ? SolennixColors.success : SolennixColors.warning)
             }
         }
         .padding(Spacing.lg)

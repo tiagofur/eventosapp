@@ -369,11 +369,14 @@ struct Step1GeneralView: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.numPeople <= 0)
 
-                Text("\(viewModel.numPeople)")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(viewModel.numPeople == 0 ? SolennixColors.textTertiary : SolennixColors.text)
-                    .frame(minWidth: 40)
+                EditableQuantityText(
+                    quantity: $viewModel.numPeople,
+                    minValue: 0,
+                    id: "numPeople",
+                    font: .title3,
+                    width: 44,
+                    showTertiaryAtMin: true
+                )
 
                 Button {
                     viewModel.numPeople += 1

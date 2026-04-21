@@ -32,6 +32,9 @@
     "%" : {
 
     },
+    "%@ c/u" : {
+
+    },
     "%@ est." : {
 
     },
@@ -185,9 +188,6 @@
 
     },
     "$" : {
-
-    },
-    "$%@ c/u" : {
 
     },
     "$%@/u" : {
@@ -1199,9 +1199,6 @@
     "CANTIDAD" : {
 
     },
-    "Cantidad:" : {
-
-    },
     "Cargando checklist..." : {
 
     },
@@ -1725,6 +1722,9 @@
     "Hola! Acá podés ver los detalles de tu evento: %@" : {
 
     },
+    "Hora" : {
+
+    },
     "Hora Fin" : {
 
     },
@@ -1791,6 +1791,9 @@
     "Insertar Variable" : {
 
     },
+    "Instrucciones especiales para el montaje..." : {
+
+    },
     "Insumo" : {
 
     },
@@ -1849,6 +1852,9 @@
 
     },
     "LISTA DE INSUMOS" : {
+
+    },
+    "Listo" : {
 
     },
     "Llamar" : {
@@ -1962,6 +1968,9 @@
 
     },
     "Notas (opcional)" : {
+
+    },
+    "Notas Adicionales" : {
 
     },
     "Notas de la asignación" : {

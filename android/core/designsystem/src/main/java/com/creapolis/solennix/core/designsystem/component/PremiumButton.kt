@@ -41,11 +41,16 @@ fun PremiumButton(
     // parent constraints and, when placed in an unbounded context (e.g. a Scaffold
     // bottomBar), the Button grows to fill the entire screen. See /Users/tiagofur/.claude/plans/proud-juggling-wolf.md
     // for the full incident analysis.
+    //
+    // Min 48dp = Material 3 touch target. Antes era 50/64 — se veia muy
+    // alto vs los Material standard (~40-48dp visual). 48/54 matchea mejor
+    // con el resto de la UI (OutlinedButton default ~40, iOS PremiumButton
+    // ~54) sin romper accesibilidad.
     val buttonModifier = modifier
         .fillMaxWidth()
         .heightIn(
-            min = if (isLargeFontScale) 56.dp else 50.dp,
-            max = if (isLargeFontScale) 88.dp else 64.dp,
+            min = if (isLargeFontScale) 54.dp else 48.dp,
+            max = if (isLargeFontScale) 72.dp else 54.dp,
         )
         .animateContentSize()
 

@@ -33,7 +33,49 @@ struct Step4PersonnelPanel: View {
 
             // Selected staff
             ForEach(Array(viewModel.selectedStaff.enumerated()), id: \.element.id) { index, assignment in
-                staffRow(assignment: assignment, index: index)
+                let isExpanded = expandedShiftRow == assignment.id
+                    || assignment.shiftStart != nil
+                    || assignment.shiftEnd != nil
+                StaffRowView(
+                    assignment: assignment,
+                    index: index,
+                    isShiftExpanded: isExpanded,
+                    defaultShiftStart: defaultShiftStart(),
+                    defaultShiftEnd: defaultShiftEnd(),
+                    onRemove: { viewModel.removeStaff(at: index) },
+                    onFeeChange: { newFee in
+                        guard viewModel.selectedStaff.indices.contains(index) else { return }
+                        viewModel.selectedStaff[index].feeAmount = newFee
+                    },
+                    onRoleOverrideChange: { newValue in
+                        guard viewModel.selectedStaff.indices.contains(index) else { return }
+                        viewModel.selectedStaff[index].roleOverride = newValue
+                    },
+                    onNotesChange: { newValue in
+                        guard viewModel.selectedStaff.indices.contains(index) else { return }
+                        viewModel.selectedStaff[index].notes = newValue
+                    },
+                    onStatusChange: { newStatus in
+                        guard viewModel.selectedStaff.indices.contains(index) else { return }
+                        viewModel.selectedStaff[index].status = newStatus
+                    },
+                    onShiftStartChange: { newDate in
+                        guard viewModel.selectedStaff.indices.contains(index) else { return }
+                        viewModel.selectedStaff[index].shiftStart = newDate
+                    },
+                    onShiftEndChange: { newDate in
+                        guard viewModel.selectedStaff.indices.contains(index) else { return }
+                        viewModel.selectedStaff[index].shiftEnd = newDate
+                    },
+                    onShiftExpandToggle: {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            expandedShiftRow = isExpanded ? nil : assignment.id
+                        }
+                    },
+                    labelFor: { label(for: $0) },
+                    colorFor: { color(for: $0) },
+                    backgroundFor: { background(for: $0) }
+                )
             }
 
             // Add staff / team buttons
@@ -223,216 +265,6 @@ struct Step4PersonnelPanel: View {
         }
     }
 
-    // MARK: - Staff Row
-
-    private func staffRow(assignment: SelectedStaffAssignment, index: Int) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(spacing: Spacing.sm) {
-                Avatar(name: assignment.staffName.isEmpty ? "?" : assignment.staffName, photoURL: nil, size: 36)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(assignment.staffName)
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundStyle(SolennixColors.text)
-
-                    if let role = assignment.staffRoleLabel, !role.isEmpty {
-                        Text(role)
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.textSecondary)
-                    }
-                }
-
-                Spacer()
-
-                statusMenu(index: index, current: assignment.status)
-
-                Button {
-                    viewModel.removeStaff(at: index)
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.body)
-                        .foregroundStyle(SolennixColors.error)
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Fee amount
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Costo (MXN)")
-                    .font(.caption2)
-                    .foregroundStyle(SolennixColors.textTertiary)
-
-                TextField("0.00", value: $viewModel.selectedStaff[index].feeAmount, format: .number.precision(.fractionLength(2)))
-                    .keyboardType(.decimalPad)
-                    .font(.body)
-                    .foregroundStyle(SolennixColors.text)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, 6)
-                    .background(SolennixColors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(SolennixColors.border, lineWidth: 1)
-                    )
-            }
-
-            // Role override (opcional — para este evento solamente)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Rol en este evento (opcional)")
-                    .font(.caption2)
-                    .foregroundStyle(SolennixColors.textTertiary)
-
-                TextField("Ej: Lider de barra", text: $viewModel.selectedStaff[index].roleOverride)
-                    .font(.body)
-                    .foregroundStyle(SolennixColors.text)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, 6)
-                    .background(SolennixColors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(SolennixColors.border, lineWidth: 1)
-                    )
-            }
-
-            // Notes
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Notas (opcional)")
-                    .font(.caption2)
-                    .foregroundStyle(SolennixColors.textTertiary)
-
-                TextField("Notas de la asignación", text: $viewModel.selectedStaff[index].notes)
-                    .font(.body)
-                    .foregroundStyle(SolennixColors.text)
-                    .padding(.horizontal, Spacing.sm)
-                    .padding(.vertical, 6)
-                    .background(SolennixColors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(SolennixColors.border, lineWidth: 1)
-                    )
-            }
-
-            shiftDisclosure(index: index, assignment: assignment)
-        }
-        .padding(Spacing.md)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.md)
-                .stroke(SolennixColors.border, lineWidth: 1)
-        )
-    }
-
-    // MARK: - Status Menu
-
-    private func statusMenu(index: Int, current: AssignmentStatus) -> some View {
-        Menu {
-            ForEach(AssignmentStatus.allCases, id: \.self) { option in
-                Button {
-                    viewModel.selectedStaff[index].status = option
-                } label: {
-                    if option == current {
-                        Label(label(for: option), systemImage: "checkmark")
-                    } else {
-                        Text(label(for: option))
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(color(for: current))
-                    .frame(width: 8, height: 8)
-                Text(label(for: current))
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(color(for: current))
-                Image(systemName: "chevron.down")
-                    .font(.caption2)
-                    .foregroundStyle(color(for: current))
-            }
-            .padding(.horizontal, Spacing.sm)
-            .padding(.vertical, 4)
-            .background(background(for: current))
-            .clipShape(Capsule())
-        }
-    }
-
-    // MARK: - Shift Disclosure
-
-    private func shiftDisclosure(index: Int, assignment: SelectedStaffAssignment) -> some View {
-        let isExpanded = expandedShiftRow == assignment.id
-            || assignment.shiftStart != nil
-            || assignment.shiftEnd != nil
-
-        return VStack(alignment: .leading, spacing: Spacing.xs) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    expandedShiftRow = isExpanded ? nil : assignment.id
-                }
-            } label: {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.caption2)
-                    Text("Agregar horario (opcional)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                }
-                .foregroundStyle(SolennixColors.primary)
-            }
-            .buttonStyle(.plain)
-
-            if isExpanded {
-                HStack(spacing: Spacing.sm) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Entra")
-                            .font(.caption2)
-                            .foregroundStyle(SolennixColors.textTertiary)
-                        DatePicker(
-                            "",
-                            selection: Binding(
-                                get: { viewModel.selectedStaff[index].shiftStart ?? defaultShiftStart() },
-                                set: { viewModel.selectedStaff[index].shiftStart = $0 }
-                            ),
-                            displayedComponents: [.hourAndMinute]
-                        )
-                        .labelsHidden()
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Sale")
-                            .font(.caption2)
-                            .foregroundStyle(SolennixColors.textTertiary)
-                        DatePicker(
-                            "",
-                            selection: Binding(
-                                get: { viewModel.selectedStaff[index].shiftEnd ?? defaultShiftEnd() },
-                                set: { viewModel.selectedStaff[index].shiftEnd = $0 }
-                            ),
-                            displayedComponents: [.hourAndMinute]
-                        )
-                        .labelsHidden()
-                    }
-
-                    Spacer()
-
-                    if assignment.shiftStart != nil || assignment.shiftEnd != nil {
-                        Button {
-                            viewModel.selectedStaff[index].shiftStart = nil
-                            viewModel.selectedStaff[index].shiftEnd = nil
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(SolennixColors.textTertiary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-    }
 
     // MARK: - Staff Picker Sheet
 
@@ -563,7 +395,7 @@ struct Step4PersonnelPanel: View {
         "$\(String(format: "%.2f", value))"
     }
 
-    fileprivate func label(for status: AssignmentStatus) -> String {
+    func label(for status: AssignmentStatus) -> String {
         switch status {
         case .pending:   return "Sin confirmar"
         case .confirmed: return "Confirmado"
@@ -572,7 +404,7 @@ struct Step4PersonnelPanel: View {
         }
     }
 
-    fileprivate func color(for status: AssignmentStatus) -> Color {
+    func color(for status: AssignmentStatus) -> Color {
         switch status {
         case .pending:   return SolennixColors.warning
         case .confirmed: return SolennixColors.success
@@ -581,13 +413,266 @@ struct Step4PersonnelPanel: View {
         }
     }
 
-    fileprivate func background(for status: AssignmentStatus) -> Color {
+    func background(for status: AssignmentStatus) -> Color {
         switch status {
         case .pending:   return SolennixColors.warningBg
         case .confirmed: return SolennixColors.successBg
         case .declined:  return SolennixColors.errorBg
         case .cancelled: return SolennixColors.surfaceAlt
         }
+    }
+}
+
+// MARK: - Staff Row
+//
+// Subview con `assignment` por valor + callbacks. No indexa el array del
+// VM en sus modifiers, evita el crash de out-of-bounds al tocar el trash
+// (SwiftUI re-samplea .onChange/bindings antes de desmontar).
+//
+// `feeText` como @State local evita que el re-format del binding numérico
+// pise decimales intermedios ("2.", "0.5") mientras el usuario tipia.
+private struct StaffRowView: View {
+
+    let assignment: SelectedStaffAssignment
+    let index: Int
+    let isShiftExpanded: Bool
+    let defaultShiftStart: Date
+    let defaultShiftEnd: Date
+    let onRemove: () -> Void
+    let onFeeChange: (Double) -> Void
+    let onRoleOverrideChange: (String) -> Void
+    let onNotesChange: (String) -> Void
+    let onStatusChange: (AssignmentStatus) -> Void
+    let onShiftStartChange: (Date?) -> Void
+    let onShiftEndChange: (Date?) -> Void
+    let onShiftExpandToggle: () -> Void
+    let labelFor: (AssignmentStatus) -> String
+    let colorFor: (AssignmentStatus) -> Color
+    let backgroundFor: (AssignmentStatus) -> Color
+
+    @State private var feeText: String = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                Avatar(name: assignment.staffName.isEmpty ? "?" : assignment.staffName, photoURL: nil, size: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(assignment.staffName)
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundStyle(SolennixColors.text)
+
+                    if let role = assignment.staffRoleLabel, !role.isEmpty {
+                        Text(role)
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                statusMenu
+
+                Button {
+                    onRemove()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.body)
+                        .foregroundStyle(SolennixColors.error)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Fee amount
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Costo (MXN)")
+                    .font(.caption2)
+                    .foregroundStyle(SolennixColors.textTertiary)
+
+                TextField("0.00", text: $feeText)
+                    .keyboardType(.decimalPad)
+                    .font(.body)
+                    .foregroundStyle(SolennixColors.text)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, 6)
+                    .background(SolennixColors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: CornerRadius.sm)
+                            .stroke(SolennixColors.border, lineWidth: 1)
+                    )
+                    .onChange(of: feeText) { _, newValue in
+                        let normalized = newValue.replacingOccurrences(of: ",", with: ".")
+                        if let d = Double(normalized) {
+                            onFeeChange(d)
+                        }
+                    }
+            }
+
+            // Role override
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Rol en este evento (opcional)")
+                    .font(.caption2)
+                    .foregroundStyle(SolennixColors.textTertiary)
+
+                TextField(
+                    "Ej: Lider de barra",
+                    text: Binding(
+                        get: { assignment.roleOverride },
+                        set: onRoleOverrideChange
+                    )
+                )
+                .font(.body)
+                .foregroundStyle(SolennixColors.text)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, 6)
+                .background(SolennixColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(SolennixColors.border, lineWidth: 1)
+                )
+            }
+
+            // Notes
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Notas (opcional)")
+                    .font(.caption2)
+                    .foregroundStyle(SolennixColors.textTertiary)
+
+                TextField(
+                    "Notas de la asignación",
+                    text: Binding(
+                        get: { assignment.notes },
+                        set: onNotesChange
+                    )
+                )
+                .font(.body)
+                .foregroundStyle(SolennixColors.text)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, 6)
+                .background(SolennixColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(SolennixColors.border, lineWidth: 1)
+                )
+            }
+
+            shiftDisclosure
+        }
+        .padding(Spacing.md)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.md)
+                .stroke(SolennixColors.border, lineWidth: 1)
+        )
+        .onAppear { hydrate() }
+        .onChange(of: assignment.id) { _, _ in hydrate() }
+    }
+
+    private var statusMenu: some View {
+        Menu {
+            ForEach(AssignmentStatus.allCases, id: \.self) { option in
+                Button {
+                    onStatusChange(option)
+                } label: {
+                    if option == assignment.status {
+                        Label(labelFor(option), systemImage: "checkmark")
+                    } else {
+                        Text(labelFor(option))
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(colorFor(assignment.status))
+                    .frame(width: 8, height: 8)
+                Text(labelFor(assignment.status))
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(colorFor(assignment.status))
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(colorFor(assignment.status))
+            }
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, 4)
+            .background(backgroundFor(assignment.status))
+            .clipShape(Capsule())
+        }
+    }
+
+    private var shiftDisclosure: some View {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            Button {
+                onShiftExpandToggle()
+            } label: {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: isShiftExpanded ? "chevron.down" : "chevron.right")
+                        .font(.caption2)
+                    Text("Agregar horario (opcional)")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                }
+                .foregroundStyle(SolennixColors.primary)
+            }
+            .buttonStyle(.plain)
+
+            if isShiftExpanded {
+                HStack(spacing: Spacing.sm) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Entra")
+                            .font(.caption2)
+                            .foregroundStyle(SolennixColors.textTertiary)
+                        DatePicker(
+                            "",
+                            selection: Binding(
+                                get: { assignment.shiftStart ?? defaultShiftStart },
+                                set: onShiftStartChange
+                            ),
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .labelsHidden()
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sale")
+                            .font(.caption2)
+                            .foregroundStyle(SolennixColors.textTertiary)
+                        DatePicker(
+                            "",
+                            selection: Binding(
+                                get: { assignment.shiftEnd ?? defaultShiftEnd },
+                                set: onShiftEndChange
+                            ),
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .labelsHidden()
+                    }
+
+                    Spacer()
+
+                    if assignment.shiftStart != nil || assignment.shiftEnd != nil {
+                        Button {
+                            onShiftStartChange(nil)
+                            onShiftEndChange(nil)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(SolennixColors.textTertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private func hydrate() {
+        feeText = assignment.feeAmount > 0 ? String(format: "%g", assignment.feeAmount) : ""
     }
 }
 

@@ -13,7 +13,6 @@ struct Step3ExtrasView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.lg) {
-                // Add extra button
                 Button {
                     viewModel.addExtra()
                 } label: {
@@ -38,7 +37,6 @@ struct Step3ExtrasView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Extras list
                 if viewModel.extras.isEmpty {
                     VStack(spacing: Spacing.sm) {
                         Image(systemName: "star")
@@ -62,24 +60,53 @@ struct Step3ExtrasView: View {
 
                     LazyVGrid(columns: columns, spacing: Spacing.md) {
                         ForEach(Array(viewModel.extras.enumerated()), id: \.element.id) { index, extra in
-                            extraRow(index: index)
-                                .draggable(extra.id.uuidString) {
-                                    Text(extra.description.isEmpty ? "Extra \(index + 1)" : extra.description)
-                                        .padding(Spacing.sm)
-                                        .background(SolennixColors.card)
-                                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                            ExtraRowView(
+                                extra: extra,
+                                index: index,
+                                onRemove: { viewModel.removeExtra(at: index) },
+                                onDescriptionChange: { newValue in
+                                    guard viewModel.extras.indices.contains(index) else { return }
+                                    viewModel.extras[index].description = newValue
+                                },
+                                onCostChange: { newCost in
+                                    guard viewModel.extras.indices.contains(index) else { return }
+                                    viewModel.extras[index].cost = newCost
+                                    if viewModel.extras[index].excludeUtility {
+                                        viewModel.extras[index].price = newCost
+                                    }
+                                },
+                                onPriceChange: { newPrice in
+                                    guard viewModel.extras.indices.contains(index) else { return }
+                                    viewModel.extras[index].price = newPrice
+                                },
+                                onExcludeUtilityChange: { newValue in
+                                    guard viewModel.extras.indices.contains(index) else { return }
+                                    viewModel.extras[index].excludeUtility = newValue
+                                    if newValue {
+                                        viewModel.extras[index].price = viewModel.extras[index].cost
+                                    }
+                                },
+                                onIncludeInChecklistChange: { newValue in
+                                    guard viewModel.extras.indices.contains(index) else { return }
+                                    viewModel.extras[index].includeInChecklist = newValue
                                 }
-                                .dropDestination(for: String.self) { droppedItems, _ in
-                                    guard let sourceId = droppedItems.first,
-                                          let sourceIndex = viewModel.extras.firstIndex(where: { $0.id.uuidString == sourceId }) else { return false }
-                                    viewModel.moveExtra(from: sourceIndex, to: index)
-                                    return true
-                                }
+                            )
+                            .draggable(extra.id.uuidString) {
+                                Text(extra.description.isEmpty ? "Extra \(index + 1)" : extra.description)
+                                    .padding(Spacing.sm)
+                                    .background(SolennixColors.card)
+                                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                            }
+                            .dropDestination(for: String.self) { droppedItems, _ in
+                                guard let sourceId = droppedItems.first,
+                                      let sourceIndex = viewModel.extras.firstIndex(where: { $0.id.uuidString == sourceId }) else { return false }
+                                viewModel.moveExtra(from: sourceIndex, to: index)
+                                return true
+                            }
                         }
                     }
                 }
 
-                // Subtotal
                 if !viewModel.extras.isEmpty {
                     HStack {
                         Text("Subtotal Extras")
@@ -102,11 +129,38 @@ struct Step3ExtrasView: View {
         }
     }
 
-    // MARK: - Extra Row
+    private func formatCurrency(_ value: Double) -> String {
+        "$\(String(format: "%.2f", value))"
+    }
+}
 
-    private func extraRow(index: Int) -> some View {
+// MARK: - Extra Row
+//
+// Subview con `extra` pasado por valor + callbacks. No indexa el array del
+// VM, evita crashes out-of-bounds durante el remove (SwiftUI re-sampla las
+// expresiones de .onChange y Bindings subscript antes de desmontar el view;
+// si el array ya se achicó, `extras[staleIndex]` revienta).
+//
+// @State local de costText/priceText: autoritativo mientras el usuario
+// tipia. Si bindeáramos el TextField directo al Double del modelo, el
+// formatter lo re-escribiría en cada keystroke y pisaría decimales
+// intermedios ("2.", "0.5"). Se hidrata SOLO onAppear + onChange del id.
+private struct ExtraRowView: View {
+
+    let extra: SelectedExtra
+    let index: Int
+    let onRemove: () -> Void
+    let onDescriptionChange: (String) -> Void
+    let onCostChange: (Double) -> Void
+    let onPriceChange: (Double) -> Void
+    let onExcludeUtilityChange: (Bool) -> Void
+    let onIncludeInChecklistChange: (Bool) -> Void
+
+    @State private var costText: String = ""
+    @State private var priceText: String = ""
+
+    var body: some View {
         VStack(spacing: Spacing.sm) {
-            // Header with delete
             HStack {
                 Text("Extra \(index + 1)")
                     .font(.caption)
@@ -116,7 +170,7 @@ struct Step3ExtrasView: View {
                 Spacer()
 
                 Button {
-                    viewModel.removeExtra(at: index)
+                    onRemove()
                 } label: {
                     Image(systemName: "trash")
                         .font(.body)
@@ -125,22 +179,27 @@ struct Step3ExtrasView: View {
                 .buttonStyle(.plain)
             }
 
-            // Description
             SolennixTextField(
                 label: "Descripcion",
-                text: $viewModel.extras[index].description,
+                text: Binding(
+                    get: { extra.description },
+                    set: onDescriptionChange
+                ),
                 placeholder: "Descripcion del extra",
                 leftIcon: "text.alignleft"
             )
 
-            // Cost and Price
             HStack(spacing: Spacing.sm) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("Costo")
                         .font(.caption)
                         .foregroundStyle(SolennixColors.textSecondary)
 
-                    currencyField(value: $viewModel.extras[index].cost)
+                    currencyField(text: $costText)
+                        .onChange(of: costText) { _, newValue in
+                            let d = Double(newValue.replacingOccurrences(of: ",", with: ".")) ?? 0
+                            onCostChange(d)
+                        }
                 }
 
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -148,27 +207,46 @@ struct Step3ExtrasView: View {
                         .font(.caption)
                         .foregroundStyle(SolennixColors.textSecondary)
 
-                    currencyField(value: $viewModel.extras[index].price)
-                        .disabled(viewModel.extras[index].excludeUtility)
-                        .opacity(viewModel.extras[index].excludeUtility ? 0.5 : 1.0)
+                    // Cuando excludeUtility está on, el display se deriva
+                    // de costText — single source of truth en vez de
+                    // sincronizar priceText a mano.
+                    currencyField(
+                        text: Binding<String>(
+                            get: { extra.excludeUtility ? costText : priceText },
+                            set: { newValue in
+                                guard !extra.excludeUtility else { return }
+                                priceText = newValue
+                                let d = Double(newValue.replacingOccurrences(of: ",", with: ".")) ?? 0
+                                onPriceChange(d)
+                            }
+                        )
+                    )
+                    .disabled(extra.excludeUtility)
+                    .opacity(extra.excludeUtility ? 0.5 : 1.0)
                 }
             }
 
-            // Exclude utility toggle
-            Toggle(isOn: $viewModel.extras[index].excludeUtility) {
+            Toggle(isOn: Binding(
+                get: { extra.excludeUtility },
+                set: onExcludeUtilityChange
+            )) {
                 Text("Solo cobrar costo (sin utilidad)")
                     .font(.caption)
                     .foregroundStyle(SolennixColors.textSecondary)
             }
             .tint(SolennixColors.primary)
-            .onChange(of: viewModel.extras[index].excludeUtility) { _, newValue in
+            .onChange(of: extra.excludeUtility) { _, newValue in
                 if newValue {
-                    viewModel.extras[index].price = viewModel.extras[index].cost
+                    // Sincroniza priceText para que al toggle off el field
+                    // no muestre un valor stale.
+                    priceText = costText
                 }
             }
 
-            // Include in checklist toggle
-            Toggle(isOn: $viewModel.extras[index].includeInChecklist) {
+            Toggle(isOn: Binding(
+                get: { extra.includeInChecklist },
+                set: onIncludeInChecklistChange
+            )) {
                 Label {
                     Text("Incluir en checklist")
                         .font(.caption)
@@ -188,17 +266,22 @@ struct Step3ExtrasView: View {
             RoundedRectangle(cornerRadius: CornerRadius.md)
                 .stroke(SolennixColors.border, lineWidth: 1)
         )
+        .onAppear { hydrate(from: extra) }
+        .onChange(of: extra.id) { _, _ in hydrate(from: extra) }
     }
 
-    // MARK: - Currency Field
+    private func hydrate(from extra: SelectedExtra) {
+        costText = extra.cost > 0 ? String(format: "%g", extra.cost) : ""
+        priceText = extra.price > 0 ? String(format: "%g", extra.price) : ""
+    }
 
-    private func currencyField(value: Binding<Double>) -> some View {
+    private func currencyField(text: Binding<String>) -> some View {
         HStack(spacing: Spacing.xs) {
             Text("$")
                 .font(.body)
                 .foregroundStyle(SolennixColors.textTertiary)
 
-            TextField("0.00", value: value, format: .number.precision(.fractionLength(2)))
+            TextField("0.00", text: text)
                 .keyboardType(.decimalPad)
                 .font(.body)
                 .foregroundStyle(SolennixColors.text)
@@ -211,12 +294,6 @@ struct Step3ExtrasView: View {
             RoundedRectangle(cornerRadius: CornerRadius.md)
                 .stroke(SolennixColors.border, lineWidth: 1)
         )
-    }
-
-    // MARK: - Helpers
-
-    private func formatCurrency(_ value: Double) -> String {
-        "$\(String(format: "%.2f", value))"
     }
 }
 

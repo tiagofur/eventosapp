@@ -12,6 +12,7 @@ struct Step2ProductsView: View {
 
     @State private var showProductPicker = false
     @State private var productSearch = ""
+    @State private var pendingDeleteIndex: Int?
 
     var body: some View {
         ScrollView {
@@ -44,7 +45,9 @@ struct Step2ProductsView: View {
                 // Selected products
                 if viewModel.selectedProducts.isEmpty {
                     VStack(spacing: Spacing.sm) {
-                        Image(systemName: "cart")
+                        // shippingbox = mismo concepto visual que Android
+                        // (Inventory2 outlined) — paquete/producto genérico.
+                        Image(systemName: "shippingbox")
                             .font(.largeTitle)
                             .foregroundStyle(SolennixColors.textTertiary)
 
@@ -107,45 +110,59 @@ struct Step2ProductsView: View {
         .sheet(isPresented: $showProductPicker) {
             productPickerSheet
         }
+        .confirmationDialog(
+            deleteDialogTitle,
+            isPresented: deleteDialogBinding,
+            titleVisibility: .visible
+        ) {
+            Button("Eliminar", role: .destructive) {
+                if let idx = pendingDeleteIndex {
+                    viewModel.removeProduct(at: idx)
+                }
+                pendingDeleteIndex = nil
+            }
+            Button("Cancelar", role: .cancel) {
+                pendingDeleteIndex = nil
+            }
+        }
+    }
+
+    private var deleteDialogBinding: Binding<Bool> {
+        Binding(
+            get: { pendingDeleteIndex != nil },
+            set: { if !$0 { pendingDeleteIndex = nil } }
+        )
+    }
+
+    private var deleteDialogTitle: String {
+        guard let idx = pendingDeleteIndex,
+              viewModel.selectedProducts.indices.contains(idx) else {
+            return "¿Eliminar producto?"
+        }
+        let name = viewModel.selectedProducts[idx].product?.name ?? "este producto"
+        return "¿Eliminar \(name)?"
     }
 
     // MARK: - Product Row
 
     private func productRow(item: SelectedProduct, index: Int) -> some View {
-        VStack(spacing: Spacing.sm) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: Spacing.xs) {
-                        Text(item.product?.name ?? "Producto")
-                            .font(.body)
-                            .fontWeight(.medium)
-                            .foregroundStyle(SolennixColors.text)
+        let effectivePrice = item.unitPrice - item.discount
+        let lineTotal = effectivePrice * item.quantity
 
-                        if let teamId = item.product?.staffTeamId, !teamId.isEmpty {
-                            HStack(spacing: 2) {
-                                Image(systemName: "person.3.fill")
-                                    .font(.caption2)
-                                Text("Incluye equipo")
-                                    .font(.caption2)
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundStyle(SolennixColors.primary)
-                            .padding(.horizontal, Spacing.xs)
-                            .padding(.vertical, 2)
-                            .background(SolennixColors.primaryLight)
-                            .clipShape(Capsule())
-                        }
-                    }
-
-                    Text("$\(String(format: "%.2f", item.unitPrice)) c/u")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
-                }
+        return VStack(alignment: .leading, spacing: Spacing.sm) {
+            // Header: ordinal + trash rojo alineado a la derecha. Paridad
+            // visual con Step 3 (Extras) — el trash vive en su propia fila
+            // separado del contenido editable.
+            HStack {
+                Text("Producto \(index + 1)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.textSecondary)
 
                 Spacer()
 
                 Button {
-                    viewModel.removeProduct(at: index)
+                    pendingDeleteIndex = index
                 } label: {
                     Image(systemName: "trash")
                         .font(.body)
@@ -154,44 +171,89 @@ struct Step2ProductsView: View {
                 .buttonStyle(.plain)
             }
 
-            // Quantity controls
-            HStack(spacing: Spacing.md) {
-                Text("Cantidad:")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
+            // Producto + stepper.
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.product?.name ?? "Producto")
+                        .font(.body)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(SolennixColors.text)
 
-                Button {
-                    let newQty = max(1, item.quantity - 1)
-                    viewModel.updateProductQuantity(at: index, quantity: newQty)
-                } label: {
-                    Image(systemName: "minus.circle")
-                        .font(.title3)
-                        .foregroundStyle(item.quantity > 1 ? SolennixColors.primary : SolennixColors.textTertiary)
-                }
-                .buttonStyle(.plain)
-                .disabled(item.quantity <= 1)
-
-                Text("\(Int(item.quantity))")
-                    .font(.body)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.text)
-                    .frame(minWidth: 30)
-
-                Button {
-                    viewModel.updateProductQuantity(at: index, quantity: item.quantity + 1)
-                } label: {
-                    Image(systemName: "plus.circle")
-                        .font(.title3)
+                    // Precio unitario en primary — parity con Android.
+                    Text("\(formatCurrency(item.unitPrice)) c/u")
+                        .font(.subheadline)
                         .foregroundStyle(SolennixColors.primary)
+
+                    if let teamId = item.product?.staffTeamId, !teamId.isEmpty {
+                        HStack(spacing: 2) {
+                            Image(systemName: "person.3.fill")
+                                .font(.caption2)
+                            Text("Incluye equipo")
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundStyle(SolennixColors.primary)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 2)
+                        .background(SolennixColors.primaryLight)
+                        .clipShape(Capsule())
+                    }
                 }
-                .buttonStyle(.plain)
 
                 Spacer()
 
-                Text(formatCurrency(item.quantity * item.unitPrice * (1 - item.discount / 100)))
+                // Stepper con hit area de 44x44pt (Apple HIG mínimo). Glyph
+                // .title2 (~22pt) — visible sin saturar. Cantidad con ancho
+                // fijo de 36pt + monospacedDigit para que 1, 99, 999 ocupen
+                // exactamente lo mismo y los botones no se muevan.
+                HStack(spacing: 0) {
+                    Button {
+                        let newQty = max(1, item.quantity - 1)
+                        viewModel.updateProductQuantity(at: index, quantity: newQty)
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(item.quantity > 1 ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(item.quantity <= 1)
+
+                    EditableQuantityText(
+                        quantity: Binding<Int>(
+                            get: { Int(item.quantity) },
+                            set: { viewModel.updateProductQuantity(at: index, quantity: Double($0)) }
+                        ),
+                        minValue: 1,
+                        id: item.id,
+                        width: 44
+                    )
+
+                    Button {
+                        viewModel.updateProductQuantity(at: index, quantity: item.quantity + 1)
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(SolennixColors.primary)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // Descuento + Total — parity con Android. Descuento como monto
+            // por unidad ($ subtraído, no %) — igual que backend/web/Android.
+            HStack(alignment: .center, spacing: Spacing.sm) {
+                ProductDiscountField(viewModel: viewModel, index: index, itemId: item.id)
+
+                Spacer()
+
+                Text("Total: \(formatCurrency(lineTotal))")
                     .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.text)
+                    .fontWeight(.bold)
+                    .foregroundStyle(item.discount > 0 ? SolennixColors.success : SolennixColors.text)
             }
         }
         .padding(Spacing.md)
@@ -202,6 +264,7 @@ struct Step2ProductsView: View {
                 .stroke(SolennixColors.border, lineWidth: 1)
         )
     }
+
 
     // MARK: - Product Picker Sheet
 
@@ -266,6 +329,44 @@ struct Step2ProductsView: View {
 
     private func formatCurrency(_ value: Double) -> String {
         "$\(String(format: "%.2f", value))"
+    }
+}
+
+// MARK: - Product Discount Field
+//
+// Subview con @State local de discountText: autoritativo mientras el usuario
+// tipia. Bindear el TextField directo al Double del modelo rompía decimales
+// ("2." o "0.5") porque Double parsea incompleto y el get re-formateaba al
+// valor normalizado en cada keystroke. Se hidrata del modelo SOLO onAppear
+// + onChange del itemId (rebind a otro producto).
+private struct ProductDiscountField: View {
+
+    @Bindable var viewModel: EventFormViewModel
+    let index: Int
+    let itemId: UUID
+
+    @State private var discountText: String = ""
+
+    var body: some View {
+        SolennixTextField(
+            label: "Descuento",
+            text: $discountText,
+            placeholder: "0",
+            keyboardType: .decimalPad
+        )
+        .frame(maxWidth: 140)
+        .onChange(of: discountText) { _, newValue in
+            let d = Double(newValue.replacingOccurrences(of: ",", with: ".")) ?? 0
+            viewModel.updateProductDiscount(at: index, discount: d)
+        }
+        .onAppear { hydrate() }
+        .onChange(of: itemId) { _, _ in hydrate() }
+    }
+
+    private func hydrate() {
+        guard viewModel.selectedProducts.indices.contains(index) else { return }
+        let discount = viewModel.selectedProducts[index].discount
+        discountText = discount > 0 ? String(format: "%g", discount) : ""
     }
 }
 
