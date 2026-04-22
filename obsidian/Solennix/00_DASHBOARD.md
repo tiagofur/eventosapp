@@ -316,6 +316,7 @@ graph TB
 > - 🌐 [[Web/Web MOC|Web MOC]] — documentación Web
 > - ⚙️ [[Backend/Backend MOC|Backend MOC]] — documentación Backend
 > - 🎯 [[SUPER_PLAN/SUPER PLAN MOC|SUPER PLAN MOC]] — programa de transformación
+> - 🎬 [[Marketing/MOC|Marketing MOC]] — videos de producto (Remotion)
 
 > [!info] Documentos vivos
 > - 📊 [[PRD/11_CURRENT_STATUS|Estado Actual detallado]]
