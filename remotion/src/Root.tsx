@@ -29,7 +29,10 @@ import { ClientPOV } from './social/ClientPOV';
 import { FeatureCarousel } from './social/FeatureCarousel';
 import { TestimonialTemplate } from './social/TestimonialTemplate';
 import { CountdownLaunch } from './social/CountdownLaunch';
-import { ChaosToOrder } from './social/ChaosToOrder';
+import { ChaosToOrder } from './marketing/ChaosToOrder';
+import { ChaosToOrderSquare } from './marketing/ChaosToOrderSquare';
+import { V02_Dashboard } from './marketing/V02Dashboard';
+import { V02_DashboardSquare } from './marketing/V02DashboardSquare';
 
 export const RemotionRoot = () => {
   return (
@@ -303,7 +306,7 @@ export const RemotionRoot = () => {
           id="ChaosToOrder-Reel"
           component={ChaosToOrder}
           schema={ChaosToOrderSchema}
-          durationInFrames={890}
+          durationInFrames={940}
           fps={SOCIAL_FPS}
           width={SOCIAL_FORMATS.REEL.width}
           height={SOCIAL_FORMATS.REEL.height}
@@ -311,6 +314,36 @@ export const RemotionRoot = () => {
             tagline: 'Todo tu negocio de eventos.\nUna sola app. Cero caos.',
             url: 'solennix.com',
           }}
+        />
+        <Composition
+          id="V02-Dashboard-Reel"
+          component={V02_Dashboard}
+          durationInFrames={450}
+          fps={SOCIAL_FPS}
+          width={SOCIAL_FORMATS.REEL.width}
+          height={SOCIAL_FORMATS.REEL.height}
+        />
+
+        {/* Instagram Square (1:1) Variants */}
+        <Composition
+          id="ChaosToOrder-Square"
+          component={ChaosToOrderSquare}
+          durationInFrames={920}
+          fps={SOCIAL_FPS}
+          width={SOCIAL_FORMATS.FEED.width}
+          height={SOCIAL_FORMATS.FEED.height}
+          defaultProps={{
+            tagline: 'Todo tu negocio de eventos.\nUna sola app. Cero caos.',
+            url: 'solennix.com',
+          }}
+        />
+        <Composition
+          id="V02-Dashboard-Square"
+          component={V02_DashboardSquare}
+          durationInFrames={450}
+          fps={SOCIAL_FPS}
+          width={SOCIAL_FORMATS.FEED.width}
+          height={SOCIAL_FORMATS.FEED.height}
         />
       </Folder>
     </>

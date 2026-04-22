@@ -1,0 +1,3 @@
+✅ V02 Dashboard — Creado
+> Duration: 600 frames (20s)
+> Hook → Dashboard Reveal → KPIs animados → Gráfico → CTA
