@@ -141,6 +141,20 @@ Organizadores de eventos que usan Excel + WhatsApp + Google Calendar + papel par
 
 ---
 
+## Redes Sociales & Promoción
+
+### Descripción sugerida
+¿Sentís que tu negocio de eventos es un caos de Excels, WhatsApp y papeles? 🌪️ Descubrí Solennix, la plataforma todo-en-uno diseñada para organizadores que quieren retomar el control. Del caos al orden, en un solo lugar.
+
+### Hashtags
+#Solennix #EventPlanner #OrganizacionDeEventos #EventosLATAM #GestionDeNegocios #AdiosExcel #PlannerCommunity
+
+### Música sugerida
+- **Estilo:** Cinematic Tech / Hybrid Orchestral.
+- **Evolución:** Debe empezar con sonidos tensos y rítmicos (caos) y hacer un "drop" a un beat limpio y moderno cuando aparece el logo.
+
+---
+
 ## Ver también
 
 - [[01 - Plan de Videos Solennix|Plan General]]

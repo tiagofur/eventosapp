@@ -4,8 +4,8 @@ tags:
   - video
   - v03
 date: 2026-04-21
-status: concept
-duration: 20s
+status: draft
+duration: 15s
 screenshots: pending
 ---
 
@@ -63,6 +63,20 @@ Organizadores que pierden tiempo buscando datos de clientes en WhatsApp o papele
 - Transición entre lista y detalle: `slide({ direction: "from-right" })`
 - Highlight sobre datos de contacto: overlay con `interpolate()` de opacity
 - Datos de contacto pueden animarse con "reveal" individual
+
+---
+
+## Redes Sociales & Promoción
+
+### Descripción sugerida
+"¿Dónde estaba el teléfono de la clienta?" 📱 No busques más en chats infinitos de WhatsApp. Solennix centraliza todo tu historial de clientes, eventos pasados y pagos en un CRM diseñado para organizadores.
+
+### Hashtags
+#Solennix #CRMEventos #ClientesFelices #Organizacion #PlannerLife #Eventos2024 #GestionDeClientes
+
+### Música sugerida
+- **Estilo:** Elegant Chill / Smooth Deep House.
+- **Evolución:** Sonido profesional, ligero y elegante que refuerce la idea de una gestión impecable.
 
 ---
 

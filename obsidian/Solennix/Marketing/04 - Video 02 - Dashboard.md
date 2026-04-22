@@ -75,6 +75,20 @@ Organizadores que cierran el mes sin saber si ganaron o perdieron.
 
 ---
 
+## Redes Sociales & Promoción
+
+### Descripción sugerida
+Dejá de adivinar si tu negocio es rentable. 📈 Con el Dashboard de Solennix, tenés tus ventas, cobros y eventos pendientes de un vistazo. Tomá decisiones basadas en datos, no en presentimientos. ¡Tus números bajo control!
+
+### Hashtags
+#Solennix #FinanzasEventos #DataDriven #WeddingPlanner #EventosMexico #ControlTotal #BusinessIntelligence
+
+### Música sugerida
+- **Estilo:** Upbeat Corporate / Modern Minimal.
+- **Evolución:** Un beat constante y motivador que transmita claridad y progreso.
+
+---
+
 ## Ver también
 
 - [[01 - Plan de Videos Solennix|Plan General]]
