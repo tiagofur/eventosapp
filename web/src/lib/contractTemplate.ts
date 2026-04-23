@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Client, Event, EventProduct, User } from '@/types/entities';
+import { parseEventDate } from '@/lib/dateUtils';
 
 type EventWithClient = Event & {
   client?: Client | null;
@@ -162,11 +163,9 @@ const asText = (value: unknown): string | undefined => {
 };
 
 const getEventDateText = (eventDate: string): string => {
-  const parsed = new Date(eventDate);
+  const parsed = parseEventDate(eventDate);
   if (Number.isNaN(parsed.getTime())) return eventDate;
-  const userTimezoneOffset = parsed.getTimezoneOffset() * 60000;
-  const localDate = new Date(parsed.getTime() + userTimezoneOffset);
-  return format(localDate, "d 'de' MMMM 'de' yyyy", { locale: es });
+  return format(parsed, "d 'de' MMMM 'de' yyyy", { locale: es });
 };
 
 const getCurrentDateText = (): string => {

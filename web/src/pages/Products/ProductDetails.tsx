@@ -25,6 +25,7 @@ import { SkeletonCard } from "@/components/Skeleton";
 import clsx from "clsx";
 import { useProduct, useProductIngredients, useDeleteProduct } from "@/hooks/queries/useProductQueries";
 import type { ProductIngredientWithInventory } from "@/services/productService";
+import { parseEventDate } from "@/lib/dateUtils";
 
 // Alias to the authoritative type from productService (which is the
 // `ProductIngredient` schema from the OpenAPI contract + the optional
@@ -70,7 +71,7 @@ export const ProductDetails: React.FC = () => {
 
       const allEvents = await eventService.getAll();
       const upcomingConfirmed = allEvents.filter(
-        (e) => e.status === "confirmed" && new Date(e.event_date) >= today,
+        (e) => e.status === "confirmed" && parseEventDate(e.event_date) >= today,
       );
 
       if (upcomingConfirmed.length === 0) {

@@ -24,6 +24,7 @@ import { Modal } from "../../components/Modal";
 import { SkeletonCard } from "../../components/Skeleton";
 import clsx from "clsx";
 import { useInventoryItem, useDeleteInventoryItem, useUpdateInventoryItem } from "../../hooks/queries/useInventoryQueries";
+import { parseEventDate } from "../../lib/dateUtils";
 
 type DemandEntry = { date: string; quantity: number };
 
@@ -58,7 +59,7 @@ export const InventoryDetails: React.FC = () => {
 
       const allEvents = await eventService.getAll();
       const upcomingConfirmed = allEvents.filter(
-        (e) => e.status === "confirmed" && new Date(e.event_date) >= today,
+        (e) => e.status === "confirmed" && parseEventDate(e.event_date) >= today,
       );
 
       if (upcomingConfirmed.length === 0) {

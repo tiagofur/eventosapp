@@ -7,6 +7,7 @@ import { logError } from '@/lib/errorHandler';
 import { renderContractTemplate } from '@/lib/contractTemplate';
 import { parseInlineFormatting, renderFormattedJsPDF } from '@/lib/inlineFormatting';
 import { getAssetUrl } from '@/lib/api';
+import { parseEventDate } from '@/lib/dateUtils';
 
 type EventWithClient = Event & {
   client?: Client | null;
@@ -334,9 +335,7 @@ export const generateShoppingListPDF = (
   doc.setFontSize(10);
   doc.setTextColor(GRAY_COLOR);
   doc.setFont('helvetica', 'normal');
-  const eventDate = new Date(event.event_date);
-  const userTimezoneOffset = eventDate.getTimezoneOffset() * 60000;
-  const localDate = new Date(eventDate.getTime() + userTimezoneOffset);
+  const localDate = parseEventDate(event.event_date);
 
   doc.text(`Evento: ${event.service_type}`, 20, currentY);
   doc.text(`Fecha: ${format(localDate, "d 'de' MMMM, yyyy", { locale: es })}`, 20, currentY + 5);
@@ -376,9 +375,7 @@ export const generatePaymentReportPDF = (
   doc.setFontSize(10);
   doc.setTextColor(GRAY_COLOR);
 
-  const eventDate = new Date(event.event_date);
-  const userTimezoneOffset = eventDate.getTimezoneOffset() * 60000;
-  const localDate = new Date(eventDate.getTime() + userTimezoneOffset);
+  const localDate = parseEventDate(event.event_date);
 
   // Left Column
   doc.text(`Cliente: ${event.client?.name || 'N/A'}`, 20, currentY);
@@ -716,9 +713,7 @@ export const generateChecklistPDF = (
   doc.setFontSize(10);
   doc.setTextColor(GRAY_COLOR);
   doc.setFont('helvetica', 'normal');
-  const eventDate = new Date(event.event_date);
-  const userTimezoneOffset = eventDate.getTimezoneOffset() * 60000;
-  const localDate = new Date(eventDate.getTime() + userTimezoneOffset);
+  const localDate = parseEventDate(event.event_date);
 
   doc.text(`Evento: ${event.service_type}`, 20, currentY);
   doc.text(`Fecha: ${format(localDate, "d 'de' MMMM, yyyy", { locale: es })}`, 20, currentY + 5);

@@ -53,6 +53,7 @@ import {
 } from "@/types/entities";
 import { UpgradeBanner } from "@/components/UpgradeBanner";
 import { unavailableDatesService } from "@/services/unavailableDatesService";
+import { parseEventDate } from "@/lib/dateUtils";
 
 // Local types to avoid Supabase dependency
 interface Client {
@@ -926,10 +927,10 @@ export const EventForm: React.FC = () => {
     try {
       // Validate unavailable dates
       if (unavailableDates && unavailableDates.length > 0) {
-        const eventDateObj = new Date(data.event_date);
+        const eventDateObj = parseEventDate(data.event_date);
         const isUnavailable = unavailableDates.some((range) => {
-          const start = new Date(range.start_date);
-          const end = new Date(range.end_date);
+          const start = parseEventDate(range.start_date);
+          const end = parseEventDate(range.end_date);
           return eventDateObj >= start && eventDateObj <= end;
         });
 
