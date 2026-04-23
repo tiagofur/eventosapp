@@ -42,6 +42,7 @@ fun SettingsScreen(
     onAbout: () -> Unit,
     onPrivacy: () -> Unit,
     onTerms: () -> Unit,
+    onDeleteAccount: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
@@ -143,6 +144,7 @@ fun SettingsScreen(
                             SettingsItem(icon = Icons.Default.Info, label = "Acerca de", onClick = onAbout)
                             SettingsItem(icon = Icons.Default.Shield, label = "Política de Privacidad", onClick = onPrivacy)
                             SettingsItem(icon = Icons.Default.Description, label = "Términos y Condiciones", onClick = onTerms)
+                            SettingsItem(icon = Icons.Default.Delete, label = "Eliminar Cuenta", onClick = onDeleteAccount)
                         }
                     }
                 }
@@ -170,6 +172,7 @@ fun SettingsScreen(
                     SettingsItem(icon = Icons.Default.Info, label = "Acerca de", onClick = onAbout)
                     SettingsItem(icon = Icons.Default.Shield, label = "Política de Privacidad", onClick = onPrivacy)
                     SettingsItem(icon = Icons.Default.Description, label = "Términos y Condiciones", onClick = onTerms)
+                    SettingsItem(icon = Icons.Default.Delete, label = "Eliminar Cuenta", onClick = onDeleteAccount)
                 }
             }
 

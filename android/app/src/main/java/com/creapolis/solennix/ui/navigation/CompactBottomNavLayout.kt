@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -281,6 +282,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
             }
 
             composable("settings") {
+                val uriHandler = LocalUriHandler.current
                 SettingsScreen(
                     viewModel = hiltViewModel(),
                     onEditProfile = { navController.navigate("edit_profile") },
@@ -292,6 +294,7 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onAbout = { navController.navigate("about") },
                     onPrivacy = { navController.navigate("privacy") },
                     onTerms = { navController.navigate("terms") },
+                    onDeleteAccount = { uriHandler.openUri("https://solennix.creapolis.dev/eliminar-cuenta") },
                     onSearchClick = { navController.navigate(buildSearchRoute()) },
                     onNavigateBack = { navController.popBackStack() }
                 )
