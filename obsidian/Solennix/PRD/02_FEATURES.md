@@ -797,7 +797,29 @@ Navegacion profunda a pantallas especificas mediante URL schemes e integracion c
 
 El sidebar es colapsable a solo iconos en Web Desktop e iPad.
 
-#### Busqueda Global (Topbar)
+---
+
+### 19. Privacidad y Cumplimiento [Todas]
+
+> [!abstract] Resumen
+> Funcionalidades para garantizar la privacidad del usuario y el cumplimiento con las políticas de las tiendas de aplicaciones (Google Play / App Store).
+
+#### Eliminación de Cuenta
+
+Permite a los usuarios solicitar el borrado permanente de su cuenta y todos los datos asociados (eventos, clientes, inventario).
+
+| Feature | Detalle | Plataforma |
+| --- | --- | --- |
+| Página de borrado pública | Ruta `/eliminar-cuenta` accesible sin autenticación para cumplimiento de Google Play. | [Web] |
+| Botón de eliminación | Acceso directo desde la configuración de la cuenta. | [Todas] |
+| Derecho al olvido | Documentado en la Política de Privacidad con instrucciones claras de contacto (`hola@creapolis.dev`). | [Todas] |
+
+**Vistas por plataforma:**
+- **[iOS]**: Botón en `SettingsView.swift` que abre la URL de eliminación.
+- **[Android]**: Botón en `SettingsScreen.kt` que abre la URL de eliminación.
+- **[Web]**: Página `AccountDeletion.tsx` + botón en `Settings.tsx`.
+
+**Tier:** FREE
 
 | Plataforma                          | Implementacion                                        |
 | ----------------------------------- | ----------------------------------------------------- |

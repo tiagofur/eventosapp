@@ -17,7 +17,12 @@ status: active
 **Fecha:** Abril 2026
 **Version:** 1.2
 
-> [!info] 2026-04-21 — EventForm Paso 4: cards de equipamiento unificados iOS · Android + alerta de overstock inline
+> [!info] 2026-04-23 — Google Play Compliance: Política de Privacidad + Eliminación de Cuenta (Paridad Total)
+> Implementación del flujo completo de cumplimiento para resolver el rechazo de Google Play Store. Aseguramos que el usuario tenga control total sobre sus datos tanto en la web como dentro de las aplicaciones móviles.
+> - **Web (Compliance Base)**: Nueva página pública `/eliminar-cuenta` con instrucciones claras y contacto directo (`hola@creapolis.dev`). Refactorización de `Privacy.tsx` con lenguaje profesional, derecho al olvido y link al flujo de borrado.
+> - **Settings Entry Points**: Botón "Eliminar Cuenta" agregado a la configuración en las tres plataformas (Web, Android, iOS).
+> - **Android (Parity + Versioning)**: Actualización de `PrivacyScreen.kt` con links directos y unificación de contacto. Incremento de `versionCode` (4 → 5) y `versionName` ("1.1.1" → "1.1.2") para resubmisión.
+> - **iOS (Parity)**: Agregado botón de eliminación en `SettingsView.swift` y corrección de acentos en etiquetas legales ("Política", "Términos", "Contraseña").
 > Paridad visual y funcional entre plataformas en el card de equipamiento del formulario de evento. iOS tenía una fila compacta sin stock; Android tenía dos filas con `Icons.Default.Close` (inconsistente con el trash del resto de la app) y mostraba el stock pero sin alerta cuando el usuario pedía más del disponible.
 > - **Layout unificado** (una sola fila): `nombre + "Stock: N · unit" debajo | stepper 44pt/dp | trash rojo`. iOS ahora lee `InventoryItem.currentStock` + `unit` vía lookup en `equipmentInventory` por `inventoryId`.
 > - **Trash icon**: Android cambió `Close` → `Delete` (paridad con cards de Productos/Extras).
