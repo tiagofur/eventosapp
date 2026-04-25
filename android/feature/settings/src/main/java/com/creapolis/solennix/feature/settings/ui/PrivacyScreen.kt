@@ -72,11 +72,11 @@ fun PrivacyScreen(
 
             PolicySection(
                 title = "5. Tus Derechos y Eliminación",
-                content = "Tienes derecho a acceder, corregir y solicitar la eliminación de tus datos personales. Para ejercer tu derecho al borrado, puedes iniciar el proceso desde la configuración de la cuenta o visitar nuestra página web pública de eliminación:\nsolennix.creapolis.dev/eliminar-cuenta"
+                content = "Tienes derecho a acceder, corregir y solicitar la eliminación de tus datos personales. Para ejercer tu derecho al borrado, puedes iniciar el proceso desde la configuración de la cuenta o visitar nuestra página web pública de eliminación:\ncreapolis.dev/delete-account"
             )
 
             TextButton(
-                onClick = { uriHandler.openUri("https://solennix.creapolis.dev/eliminar-cuenta") },
+                onClick = { uriHandler.openUri("https://creapolis.dev/delete-account") },
                 modifier = Modifier.padding(bottom = 16.dp)
             ) {
                 Text("Ir a página de eliminación de cuenta", color = SolennixTheme.colors.primary)

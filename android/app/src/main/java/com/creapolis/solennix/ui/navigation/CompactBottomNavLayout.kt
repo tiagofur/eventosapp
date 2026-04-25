@@ -292,9 +292,9 @@ fun CompactBottomNavLayout(initialDeepLinkRoute: String? = null) {
                     onNotificationPreferences = { navController.navigate("notification_preferences") },
                     onPricing = { navController.navigate("pricing") },
                     onAbout = { navController.navigate("about") },
-                    onPrivacy = { navController.navigate("privacy") },
+                    onPrivacy = { uriHandler.openUri("https://creapolis.dev/privacy-policy") },
                     onTerms = { navController.navigate("terms") },
-                    onDeleteAccount = { uriHandler.openUri("https://solennix.creapolis.dev/eliminar-cuenta") },
+                    onDeleteAccount = { uriHandler.openUri("https://creapolis.dev/delete-account") },
                     onSearchClick = { navController.navigate(buildSearchRoute()) },
                     onNavigateBack = { navController.popBackStack() }
                 )

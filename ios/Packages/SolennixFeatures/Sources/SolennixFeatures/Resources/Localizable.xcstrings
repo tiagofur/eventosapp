@@ -217,10 +217,16 @@
     "A Evento" : {
 
     },
+    "Abre la página de solicitud de eliminación de cuenta en Safari" : {
+
+    },
     "Abre la politica de privacidad en Safari" : {
 
     },
-    "Abre los terminos de servicio en Safari" : {
+    "Abre la política de privacidad en Safari" : {
+
+    },
+    "Abre los términos de servicio en Safari" : {
 
     },
     "Abre los terminos de uso en Safari" : {
@@ -1172,6 +1178,9 @@
     "Cambiar Contrasena" : {
 
     },
+    "Cambiar Contraseña" : {
+
+    },
     "Cambiar estado" : {
 
     },
@@ -1513,6 +1522,9 @@
 
     },
     "Eliminar cliente" : {
+
+    },
+    "Eliminar Cuenta" : {
 
     },
     "Eliminar equipo" : {
@@ -2102,6 +2114,9 @@
     "Politica de Privacidad" : {
 
     },
+    "Política de Privacidad" : {
+
+    },
     "Porcentaje (%)" : {
 
     },
@@ -2418,7 +2433,7 @@
     "Terminos" : {
 
     },
-    "Terminos de Servicio" : {
+    "Términos de Servicio" : {
 
     },
     "Terminos de Uso (EULA)" : {

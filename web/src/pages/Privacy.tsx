@@ -96,9 +96,9 @@ export const Privacy: React.FC = () => {
           </ul>
           <p className="text-sm text-text-secondary leading-relaxed">
             Para ejercer tu derecho al borrado, puedes visitar nuestra página dedicada de{' '}
-            <Link to="/eliminar-cuenta" className="text-brand-orange font-bold hover:underline">
+            <a href="https://creapolis.dev/delete-account" target="_blank" rel="noopener noreferrer" className="text-brand-orange font-bold hover:underline">
               Solicitud de Eliminación de Cuenta
-            </Link> o contactarnos directamente.
+            </a> o contactarnos directamente.
           </p>
         </div>
 

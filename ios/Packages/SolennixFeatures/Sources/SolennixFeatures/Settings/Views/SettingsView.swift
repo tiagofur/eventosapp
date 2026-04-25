@@ -170,7 +170,9 @@ public struct SettingsView: View {
 
         Button {
             HapticsHelper.play(.selection)
-            legalSheetURL = IdentifiableURL(LegalURL.privacy)
+            if let url = URL(string: "https://creapolis.dev/privacy-policy") {
+                legalSheetURL = IdentifiableURL(url)
+            }
         } label: {
             HStack {
                 Label("Política de Privacidad", systemImage: "hand.raised")
@@ -202,7 +204,7 @@ public struct SettingsView: View {
 
         Button {
             HapticsHelper.play(.selection)
-            if let url = URL(string: "https://solennix.creapolis.dev/eliminar-cuenta") {
+            if let url = URL(string: "https://creapolis.dev/delete-account") {
                 legalSheetURL = IdentifiableURL(url)
             }
         } label: {

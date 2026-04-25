@@ -953,20 +953,24 @@ export const Settings: React.FC = () => {
               <FileText className="h-4 w-4 text-primary" />
               Términos y Condiciones
             </Link>
-            <Link
-              to="/privacy"
+            <a
+              href="https://creapolis.dev/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
               <Shield className="h-4 w-4 text-primary" />
               Política de Privacidad
-            </Link>
-            <Link
-              to="/eliminar-cuenta"
+            </a>
+            <a
+              href="https://creapolis.dev/delete-account"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
               <Trash2 className="h-4 w-4 text-error" />
               Eliminar Cuenta
-            </Link>
+            </a>
           </div>
         </div>
       </div>
