@@ -11,6 +11,7 @@ public struct EventListView: View {
     // MARK: - Properties
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.apiClient) private var apiClient
     @Environment(CacheManager.self) private var cacheManager: CacheManager?
     @Environment(ToastManager.self) private var toastManager
     @State private var viewModel: EventListViewModel
