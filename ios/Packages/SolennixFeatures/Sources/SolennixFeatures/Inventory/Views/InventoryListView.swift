@@ -28,12 +28,12 @@ public struct InventoryListView: View {
                     if viewModel.isShowingCachedData {
                         CachedDataBanner()
                     }
-                    if !planLimitsManager.canCreateCatalogItem {
+                    if !planLimitsManager.canCreateInventoryItem {
                         UpgradeBannerView(
                             type: .limitReached,
-                            resource: "Catalogo",
-                            currentUsage: planLimitsManager.catalogCount,
-                            limit: PlanLimitsManager.catalogLimit
+                            resource: "Inventario",
+                            currentUsage: planLimitsManager.inventoryCount,
+                            limit: PlanLimitsManager.inventoryLimit
                         ) {
                             // Action to go to Pricing
                         }
@@ -50,10 +50,10 @@ public struct InventoryListView: View {
                     NavigationLink(value: Route.inventoryForm()) {
                         Image(systemName: "plus.circle")
                             .font(.body)
-                            .foregroundStyle(planLimitsManager.canCreateCatalogItem ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .foregroundStyle(planLimitsManager.canCreateInventoryItem ? SolennixColors.primary : SolennixColors.textTertiary)
                             .accessibilityLabel("Agregar item de inventario")
                     }
-                    .disabled(!planLimitsManager.canCreateCatalogItem)
+                    .disabled(!planLimitsManager.canCreateInventoryItem)
 
                     lowStockToggle
                     sortMenu

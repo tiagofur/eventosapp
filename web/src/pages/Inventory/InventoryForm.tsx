@@ -49,9 +49,9 @@ export const InventoryForm: React.FC = () => {
   const [isCustomUnit, setIsCustomUnit] = useState(false);
 
   const {
-    canCreateCatalogItem,
-    catalogCount,
-    catalogLimit,
+    canCreateInventoryItem,
+    inventoryCount,
+    inventoryLimit,
     loading: limitsLoading,
   } = usePlanLimits();
 
@@ -136,7 +136,7 @@ export const InventoryForm: React.FC = () => {
     );
   }
 
-  if (!id && !canCreateCatalogItem) {
+  if (!id && !canCreateInventoryItem) {
     return (
       <div className="max-w-4xl mx-auto py-8 px-4">
         <button
@@ -151,9 +151,9 @@ export const InventoryForm: React.FC = () => {
         <div className="flex justify-center mt-12">
           <UpgradeBanner
             type="limit-reached"
-            resource="catalog"
-            currentUsage={catalogCount}
-            limit={catalogLimit}
+            resource="inventario"
+            currentUsage={inventoryCount}
+            limit={inventoryLimit}
           />
         </div>
       </div>

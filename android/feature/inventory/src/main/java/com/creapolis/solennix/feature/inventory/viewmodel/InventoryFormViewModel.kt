@@ -65,17 +65,17 @@ class InventoryFormViewModel @Inject constructor(
                 val limits = planLimitsManager.getLimits(plan)
                 val inventoryCount = inventoryRepository.getInventoryItems().first().size
                 limitCheckResult = when {
-                    inventoryCount >= limits.catalogItems -> LimitCheckResult.LimitReached(
+                    inventoryCount >= limits.totalInventory -> LimitCheckResult.LimitReached(
                         feature = "inventory",
                         current = inventoryCount,
-                        limit = limits.catalogItems,
-                        message = "Has alcanzado el límite de ${limits.catalogItems} ítems de inventario en tu plan."
+                        limit = limits.totalInventory,
+                        message = "Has alcanzado el límite de ${limits.totalInventory} ítems de inventario en tu plan."
                     )
-                    inventoryCount >= limits.catalogItems - 3 -> LimitCheckResult.NearLimit(
+                    inventoryCount >= limits.totalInventory - 3 -> LimitCheckResult.NearLimit(
                         feature = "inventory",
                         current = inventoryCount,
-                        limit = limits.catalogItems,
-                        remaining = limits.catalogItems - inventoryCount
+                        limit = limits.totalInventory,
+                        remaining = limits.totalInventory - inventoryCount
                     )
                     else -> LimitCheckResult.Allowed
                 }

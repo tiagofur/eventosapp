@@ -10,15 +10,17 @@ public final class PlanLimitsManager {
 
     // MARK: - Configuration Limits
     
-    public static let freePlanEventLimit = 3
-    public static let clientLimit = 50
-    public static let catalogLimit = 20
+    public static let freePlanEventLimit = 4
+    public static let clientLimit = 20
+    public static let productLimit = 15
+    public static let inventoryLimit = 30
 
     // MARK: - Properties
 
     public var eventsThisMonth: Int = 0
     public var clientsCount: Int = 0
-    public var catalogCount: Int = 0
+    public var productsCount: Int = 0
+    public var inventoryCount: Int = 0
     public var isLoading: Bool = false
 
     private let apiClient: APIClient
@@ -50,8 +52,12 @@ public final class PlanLimitsManager {
         !isBasicPlan || clientsCount < Self.clientLimit
     }
 
-    public var canCreateCatalogItem: Bool {
-        !isBasicPlan || catalogCount < Self.catalogLimit
+    public var canCreateProduct: Bool {
+        !isBasicPlan || productsCount < Self.productLimit
+    }
+
+    public var canCreateInventoryItem: Bool {
+        !isBasicPlan || inventoryCount < Self.inventoryLimit
     }
 
     // MARK: - Actions
@@ -98,7 +104,8 @@ public final class PlanLimitsManager {
 
                 eventsThisMonth = events.count
                 clientsCount = clients.count
-                catalogCount = products.count + inventory.count
+                productsCount = products.count
+                inventoryCount = inventory.count
             } else {
                 // Only need to count events this month
                 let events: [Event] = (try? await apiClient.getAll(Endpoint.events, params: ["start_date": startStr, "end_date": endStr])) ?? []

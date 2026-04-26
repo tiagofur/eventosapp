@@ -31,12 +31,12 @@ public struct ProductListView: View {
                     if viewModel.isShowingCachedData {
                         CachedDataBanner()
                     }
-                    if !planLimitsManager.canCreateCatalogItem {
+                    if !planLimitsManager.canCreateProduct {
                         UpgradeBannerView(
                             type: .limitReached,
-                            resource: "Catalogo",
-                            currentUsage: planLimitsManager.catalogCount,
-                            limit: PlanLimitsManager.catalogLimit
+                            resource: "Productos",
+                            currentUsage: planLimitsManager.productsCount,
+                            limit: PlanLimitsManager.productLimit
                         ) {
                             // Action to go to Pricing
                         }
@@ -53,10 +53,10 @@ public struct ProductListView: View {
                     NavigationLink(value: Route.productForm()) {
                         Image(systemName: "plus.circle")
                             .font(.body)
-                            .foregroundStyle(planLimitsManager.canCreateCatalogItem ? SolennixColors.primary : SolennixColors.textTertiary)
+                            .foregroundStyle(planLimitsManager.canCreateProduct ? SolennixColors.primary : SolennixColors.textTertiary)
                             .accessibilityLabel("Agregar producto")
                     }
-                    .disabled(!planLimitsManager.canCreateCatalogItem)
+                    .disabled(!planLimitsManager.canCreateProduct)
 
                     sortMenu
                 }

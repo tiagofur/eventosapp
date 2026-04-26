@@ -46,9 +46,9 @@ status: active
 
 | Categoría | Feature | Gratis | Pro | Business |
 |---|---|:---:|:---:|:---:|
-| **Límites de escala** | Eventos activos | 5/mes | ∞ | ∞ |
-| | Clientes guardados | 15 | ∞ | ∞ |
-| | Productos en catálogo | 25 | ∞ | ∞ |
+| **Límites de escala** | Eventos activos | 4/mes | ∞ | ∞ |
+| | Clientes guardados | 20 | ∞ | ∞ |
+| | Productos en catálogo | 15 | ∞ | ∞ |
 | | Items de inventario | 30 | ∞ | ∞ |
 | | Staff seats | 1 | 3 | ∞ |
 | **Documentos** | Cotizaciones / Contratos PDF | ✓ básico | ✓ editable | ✓ con firma digital |
@@ -379,9 +379,10 @@ El `PlanLimitsManager` es el componente central de enforcement en iOS. Es un obj
 **Limites configurados:**
 
 ```swift
-static let freePlanEventLimit = 3     // Eventos por mes
-static let clientLimit = 50           // Clientes totales
-static let catalogLimit = 20          // Productos + items de inventario
+    public static let freePlanEventLimit = 4     // Eventos por mes
+    static let clientLimit = 20           // Clientes totales
+    static let productLimit = 15          // Productos totales
+    static let inventoryLimit = 30        // Items de inventario totales
 ```
 
 **Propiedades de verificacion:**
@@ -389,11 +390,12 @@ static let catalogLimit = 20          // Productos + items de inventario
 | Propiedad | Logica |
 |-----------|--------|
 | `isBasicPlan` | `user.plan == .basic` |
-| `canCreateEvent` | `!isBasicPlan \|\| eventsThisMonth < 3` |
-| `canCreateClient` | `!isBasicPlan \|\| clientsCount < 50` |
-| `canCreateCatalogItem` | `!isBasicPlan \|\| catalogCount < 20` |
+| `canCreateEvent` | `!isBasicPlan \|\| eventsThisMonth < 4` |
+| `canCreateClient` | `!isBasicPlan \|\| clientsCount < 20` |
+| `canCreateProduct` | `!isBasicPlan \|\| productsCount < 15` |
+| `canCreateInventoryItem` | `!isBasicPlan \|\| inventoryCount < 30` |
 
-**Calculo de catalogo:** `catalogCount = products.count + inventory.count` — ambos tipos cuentan contra el mismo limite.
+**Calculo de inventario:** `inventoryCount` es independiente de `productsCount` — cada recurso tiene su propio límite.
 
 ### 8.2 Gating por pantalla
 

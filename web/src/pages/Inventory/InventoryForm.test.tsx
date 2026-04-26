@@ -39,9 +39,9 @@ vi.mock('../../hooks/useToast', () => ({
 }));
 
 let mockPlanLimits = {
-  canCreateCatalogItem: true,
-  catalogCount: 5,
-  catalogLimit: 20,
+  canCreateInventoryItem: true,
+  inventoryCount: 5,
+  inventoryLimit: 30,
   loading: false,
 };
 
@@ -70,9 +70,9 @@ describe('InventoryForm', () => {
     vi.clearAllMocks();
     mockParams = {};
     mockPlanLimits = {
-      canCreateCatalogItem: true,
-      catalogCount: 5,
-      catalogLimit: 20,
+      canCreateInventoryItem: true,
+      inventoryCount: 5,
+      inventoryLimit: 30,
       loading: false,
     };
   });
@@ -228,9 +228,9 @@ describe('InventoryForm', () => {
 
   it('shows loading spinner when plan limits are loading', () => {
     mockPlanLimits = {
-      canCreateCatalogItem: true,
-      catalogCount: 0,
-      catalogLimit: 20,
+      canCreateInventoryItem: true,
+      inventoryCount: 0,
+      inventoryLimit: 30,
       loading: true,
     };
 
@@ -242,9 +242,9 @@ describe('InventoryForm', () => {
 
   it('shows UpgradeBanner when catalog limit is reached on new form', () => {
     mockPlanLimits = {
-      canCreateCatalogItem: false,
-      catalogCount: 20,
-      catalogLimit: 20,
+      canCreateInventoryItem: false,
+      inventoryCount: 30,
+      inventoryLimit: 30,
       loading: false,
     };
 
@@ -256,9 +256,9 @@ describe('InventoryForm', () => {
 
   it('navigates back when clicking Regresar on limit-reached view', () => {
     mockPlanLimits = {
-      canCreateCatalogItem: false,
-      catalogCount: 20,
-      catalogLimit: 20,
+      canCreateInventoryItem: false,
+      inventoryCount: 30,
+      inventoryLimit: 30,
       loading: false,
     };
 
@@ -271,9 +271,9 @@ describe('InventoryForm', () => {
   it('does not show UpgradeBanner when editing an existing item even if limit reached', async () => {
     mockParams = { id: 'inv-1' };
     mockPlanLimits = {
-      canCreateCatalogItem: false,
-      catalogCount: 20,
-      catalogLimit: 20,
+      canCreateInventoryItem: false,
+      inventoryCount: 30,
+      inventoryLimit: 30,
       loading: false,
     };
     (inventoryService.getById as any).mockResolvedValue({

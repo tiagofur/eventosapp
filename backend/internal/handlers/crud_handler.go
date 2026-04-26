@@ -168,8 +168,8 @@ func (h *CRUDHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "Failed to verify client limits")
 			return
 		}
-		if count >= 50 {
-			writePlanLimitError(w, "clients", count, 50)
+		if count >= 20 {
+			writePlanLimitError(w, "clients", count, 20)
 			return
 		}
 	}
@@ -451,8 +451,8 @@ func (h *CRUDHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "Failed to verify event limits")
 			return
 		}
-		if count >= 3 {
-			writePlanLimitError(w, "events", count, 3)
+		if count >= 4 {
+			writePlanLimitError(w, "events", count, 4)
 			return
 		}
 	}
@@ -1317,6 +1317,25 @@ func (h *CRUDHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check limits
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user limits")
+		return
+	}
+
+	if user.Plan == "basic" {
+		productCount, err := h.productRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify product limits")
+			return
+		}
+		if productCount >= 15 {
+			writePlanLimitError(w, "products", productCount, 15)
+			return
+		}
+	}
+
 	// Validate business rules
 	if err := ValidateProduct(&product); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -1605,18 +1624,13 @@ func (h *CRUDHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Request
 	}
 
 	if user.Plan == "basic" {
-		productCount, err := h.productRepo.CountByUserID(r.Context(), userID)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to verify product limits")
-			return
-		}
 		inventoryCount, err := h.inventoryRepo.CountByUserID(r.Context(), userID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Failed to verify inventory limits")
 			return
 		}
-		if productCount+inventoryCount >= 20 {
-			writePlanLimitError(w, "catalog", productCount+inventoryCount, 20)
+		if inventoryCount >= 30 {
+			writePlanLimitError(w, "inventory", inventoryCount, 30)
 			return
 		}
 	}

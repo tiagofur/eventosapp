@@ -2,6 +2,7 @@ package com.creapolis.solennix.core.data.plan
 
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
+import com.creapolis.solennix.core.data.repository.InventoryRepository
 import com.creapolis.solennix.core.data.repository.ProductRepository
 import com.creapolis.solennix.core.model.Plan
 import kotlinx.coroutines.flow.Flow
@@ -18,13 +19,15 @@ import javax.inject.Singleton
 class PlanLimitsManager @Inject constructor(
     private val eventRepository: EventRepository,
     private val clientRepository: ClientRepository,
-    private val productRepository: ProductRepository
+    private val productRepository: ProductRepository,
+    private val inventoryRepository: InventoryRepository
 ) {
     companion object {
         // Basic plan limits (free tier)
-        const val BASIC_EVENTS_PER_MONTH = 3
-        const val BASIC_CLIENTS_TOTAL = 50
-        const val BASIC_CATALOG_ITEMS = 20
+        const val BASIC_EVENTS_PER_MONTH = 4
+        const val BASIC_CLIENTS_TOTAL = 20
+        const val BASIC_PRODUCTS_TOTAL = 15
+        const val BASIC_INVENTORY_TOTAL = 30
 
         // Pro and Business are unlimited. The difference between them lives at
         // the feature level (team seats, multi-business, advanced analytics),
@@ -39,7 +42,8 @@ class PlanLimitsManager @Inject constructor(
             Plan.BASIC -> PlanLimits(
                 eventsPerMonth = BASIC_EVENTS_PER_MONTH,
                 totalClients = BASIC_CLIENTS_TOTAL,
-                catalogItems = BASIC_CATALOG_ITEMS,
+                totalProducts = BASIC_PRODUCTS_TOTAL,
+                totalInventory = BASIC_INVENTORY_TOTAL,
                 hasAdvancedReports = false,
                 hasCustomBranding = false,
                 hasPrioritySupport = false
@@ -47,7 +51,8 @@ class PlanLimitsManager @Inject constructor(
             Plan.PRO, Plan.PREMIUM -> PlanLimits(
                 eventsPerMonth = Int.MAX_VALUE,
                 totalClients = Int.MAX_VALUE,
-                catalogItems = Int.MAX_VALUE,
+                totalProducts = Int.MAX_VALUE,
+                totalInventory = Int.MAX_VALUE,
                 hasAdvancedReports = true,
                 hasCustomBranding = true,
                 hasPrioritySupport = false
@@ -55,7 +60,8 @@ class PlanLimitsManager @Inject constructor(
             Plan.BUSINESS -> PlanLimits(
                 eventsPerMonth = Int.MAX_VALUE,
                 totalClients = Int.MAX_VALUE,
-                catalogItems = Int.MAX_VALUE,
+                totalProducts = Int.MAX_VALUE,
+                totalInventory = Int.MAX_VALUE,
                 hasAdvancedReports = true,
                 hasCustomBranding = true,
                 hasPrioritySupport = true
@@ -74,12 +80,14 @@ class PlanLimitsManager @Inject constructor(
         return combine(
             eventRepository.getEventCountForMonth(monthStart, monthEnd),
             clientRepository.getClientCount(),
-            productRepository.getActiveProductCount()
-        ) { eventsThisMonth, totalClients, catalogItems ->
+            productRepository.getActiveProductCount(),
+            inventoryRepository.getInventoryItems()
+        ) { eventsThisMonth, totalClients, totalProducts, inventoryList ->
             PlanUsage(
                 eventsThisMonth = eventsThisMonth,
                 totalClients = totalClients,
-                catalogItems = catalogItems
+                totalProducts = totalProducts,
+                totalInventory = inventoryList.size
             )
         }
     }
@@ -137,19 +145,42 @@ class PlanLimitsManager @Inject constructor(
         val limits = getLimits(plan)
         val usage = getUsage().first()
 
-        return if (usage.catalogItems >= limits.catalogItems) {
+        return if (usage.totalProducts >= limits.totalProducts) {
             LimitCheckResult.LimitReached(
                 feature = "products",
-                current = usage.catalogItems,
-                limit = limits.catalogItems,
-                message = "Has alcanzado el límite de ${limits.catalogItems} productos."
+                current = usage.totalProducts,
+                limit = limits.totalProducts,
+                message = "Has alcanzado el límite de ${limits.totalProducts} productos."
             )
-        } else if (usage.catalogItems >= limits.catalogItems - 3) {
+        } else if (usage.totalProducts >= limits.totalProducts - 3) {
             LimitCheckResult.NearLimit(
                 feature = "products",
-                current = usage.catalogItems,
-                limit = limits.catalogItems,
-                remaining = limits.catalogItems - usage.catalogItems
+                current = usage.totalProducts,
+                limit = limits.totalProducts,
+                remaining = limits.totalProducts - usage.totalProducts
+            )
+        } else {
+            LimitCheckResult.Allowed
+        }
+    }
+
+    suspend fun canCreateInventoryItem(plan: Plan): LimitCheckResult {
+        val limits = getLimits(plan)
+        val usage = getUsage().first()
+
+        return if (usage.totalInventory >= limits.totalInventory) {
+            LimitCheckResult.LimitReached(
+                feature = "inventory",
+                current = usage.totalInventory,
+                limit = limits.totalInventory,
+                message = "Has alcanzado el límite de ${limits.totalInventory} ítems de inventario."
+            )
+        } else if (usage.totalInventory >= limits.totalInventory - 3) {
+            LimitCheckResult.NearLimit(
+                feature = "inventory",
+                current = usage.totalInventory,
+                limit = limits.totalInventory,
+                remaining = limits.totalInventory - usage.totalInventory
             )
         } else {
             LimitCheckResult.Allowed
@@ -163,7 +194,8 @@ class PlanLimitsManager @Inject constructor(
 data class PlanLimits(
     val eventsPerMonth: Int,
     val totalClients: Int,
-    val catalogItems: Int,
+    val totalProducts: Int,
+    val totalInventory: Int,
     val hasAdvancedReports: Boolean,
     val hasCustomBranding: Boolean,
     val hasPrioritySupport: Boolean
@@ -175,7 +207,8 @@ data class PlanLimits(
 data class PlanUsage(
     val eventsThisMonth: Int,
     val totalClients: Int,
-    val catalogItems: Int
+    val totalProducts: Int,
+    val totalInventory: Int
 )
 
 /**

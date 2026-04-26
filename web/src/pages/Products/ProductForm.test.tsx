@@ -34,9 +34,9 @@ vi.mock('../../services/inventoryService', () => ({
 }));
 
 let mockPlanLimits = {
-  canCreateCatalogItem: true,
-  catalogCount: 0,
-  catalogLimit: 20,
+  canCreateProduct: true,
+  productsCount: 0,
+  productLimit: 15,
   loading: false,
 };
 
@@ -78,9 +78,9 @@ describe('ProductForm', () => {
     vi.clearAllMocks();
     mockParams = {};
     mockPlanLimits = {
-      canCreateCatalogItem: true,
-      catalogCount: 0,
-      catalogLimit: 20,
+      canCreateProduct: true,
+      productsCount: 0,
+      productLimit: 15,
       loading: false,
     };
     (inventoryService.getAll as any).mockResolvedValue([
@@ -244,11 +244,11 @@ describe('ProductForm', () => {
 
   // ---------- NEW TESTS FOR COVERAGE ----------
 
-  it('shows UpgradeBanner when creating and canCreateCatalogItem is false (lines 181-185)', async () => {
+  it('shows UpgradeBanner when creating and canCreateProduct is false (lines 181-185)', async () => {
     mockPlanLimits = {
-      canCreateCatalogItem: false,
-      catalogCount: 20,
-      catalogLimit: 20,
+      canCreateProduct: false,
+      productsCount: 15,
+      productLimit: 15,
       loading: false,
     };
     // No id means we are creating a new product
@@ -272,9 +272,9 @@ describe('ProductForm', () => {
 
   it('shows loading spinner when plan limits are loading', async () => {
     mockPlanLimits = {
-      canCreateCatalogItem: true,
-      catalogCount: 0,
-      catalogLimit: 20,
+      canCreateProduct: true,
+      productsCount: 0,
+      productLimit: 15,
       loading: true,
     };
 
@@ -379,12 +379,12 @@ describe('ProductForm', () => {
     });
   });
 
-  it('allows editing in canCreateCatalogItem=false mode when editing existing product', async () => {
+  it('allows editing in canCreateProduct=false mode when editing existing product', async () => {
     // When editing (id is set), the upgrade banner should NOT appear even if limit reached
     mockPlanLimits = {
-      canCreateCatalogItem: false,
-      catalogCount: 20,
-      catalogLimit: 20,
+      canCreateProduct: false,
+      productsCount: 15,
+      productLimit: 15,
       loading: false,
     };
     mockParams = { id: 'prod-1' };

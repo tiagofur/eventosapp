@@ -45,9 +45,9 @@ export const ProductForm: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
-    canCreateCatalogItem,
-    catalogCount,
-    catalogLimit,
+    canCreateProduct,
+    productsCount,
+    productLimit,
     loading: limitsLoading,
   } = usePlanLimits();
 
@@ -317,7 +317,7 @@ export const ProductForm: React.FC = () => {
     );
   }
 
-  if (!id && !canCreateCatalogItem) {
+  if (!id && !canCreateProduct) {
     return (
       <div className="max-w-4xl mx-auto py-8 px-4">
         <button
@@ -332,9 +332,9 @@ export const ProductForm: React.FC = () => {
         <div className="flex justify-center mt-12">
           <UpgradeBanner
             type="limit-reached"
-            resource="catalog"
-            currentUsage={catalogCount}
-            limit={catalogLimit}
+            resource="productos"
+            currentUsage={productsCount}
+            limit={productLimit}
           />
         </div>
       </div>

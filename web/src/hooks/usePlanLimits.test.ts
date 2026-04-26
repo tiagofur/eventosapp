@@ -74,18 +74,21 @@ describe('usePlanLimits', () => {
     expect(result.current.isBasicPlan).toBe(true);
     expect(result.current.eventsThisMonth).toBe(2);
     expect(result.current.clientsCount).toBe(1);
-    expect(result.current.catalogCount).toBe(3); // 2 products + 1 inventory
-    expect(result.current.canCreateEvent).toBe(true); // 2 < 3
-    expect(result.current.canCreateClient).toBe(true); // 1 < 50
-    expect(result.current.canCreateCatalogItem).toBe(true); // 3 < 20
-    expect(result.current.limit).toBe(3);
-    expect(result.current.clientLimit).toBe(50);
-    expect(result.current.catalogLimit).toBe(20);
+    expect(result.current.productsCount).toBe(2);
+    expect(result.current.inventoryCount).toBe(1);
+    expect(result.current.canCreateEvent).toBe(true); // 2 < 4
+    expect(result.current.canCreateClient).toBe(true); // 1 < 20
+    expect(result.current.canCreateProduct).toBe(true); // 2 < 15
+    expect(result.current.canCreateInventoryItem).toBe(true); // 1 < 30
+    expect(result.current.eventLimit).toBe(4);
+    expect(result.current.clientLimit).toBe(20);
+    expect(result.current.productLimit).toBe(15);
+    expect(result.current.inventoryLimit).toBe(30);
   });
 
   it('blocks event creation when limit reached on basic plan', async () => {
     mockUser = { id: '1', plan: 'basic' };
-    mockMonthEvents = [{ id: '1' }, { id: '2' }, { id: '3' }];
+    mockMonthEvents = [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }];
 
     const { result } = renderHook(() => usePlanLimits());
 
@@ -93,7 +96,7 @@ describe('usePlanLimits', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(result.current.canCreateEvent).toBe(false); // 3 >= 3
+    expect(result.current.canCreateEvent).toBe(false); // 4 >= 4
   });
 
   it('only fetches events for pro plan user', async () => {
@@ -149,6 +152,7 @@ describe('usePlanLimits', () => {
 
     expect(result.current.eventsThisMonth).toBe(0);
     expect(result.current.clientsCount).toBe(0);
-    expect(result.current.catalogCount).toBe(0);
+    expect(result.current.productsCount).toBe(0);
+    expect(result.current.inventoryCount).toBe(0);
   });
 });
