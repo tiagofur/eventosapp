@@ -115,15 +115,15 @@ public final class EventListViewModel {
         }
 
         // Date range filter
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withFullDate]
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
         if let start = dateRangeStart {
-            let startStr = isoFormatter.string(from: Calendar.current.startOfDay(for: start))
+            let startStr = dateFormatter.string(from: Calendar.current.startOfDay(for: start))
             result = result.filter { $0.eventDate >= startStr }
         }
         if let end = dateRangeEnd {
             let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: end) ?? end
-            let endStr = isoFormatter.string(from: Calendar.current.startOfDay(for: nextDay))
+            let endStr = dateFormatter.string(from: Calendar.current.startOfDay(for: nextDay))
             result = result.filter { $0.eventDate < endStr }
         }
 

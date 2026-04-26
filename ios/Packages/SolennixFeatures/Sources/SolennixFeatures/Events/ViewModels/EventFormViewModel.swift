@@ -511,8 +511,8 @@ public final class EventFormViewModel {
                 clientName = client.name
             }
 
-            let dateFormatter = ISO8601DateFormatter()
-            dateFormatter.formatOptions = [.withFullDate]
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
             if let date = dateFormatter.date(from: event.eventDate) {
                 eventDate = date
             }
@@ -833,8 +833,8 @@ public final class EventFormViewModel {
             return
         }
 
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withFullDate]
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
 
         let body: [String: Any] = [
             "event_date": dateFormatter.string(from: eventDate),
@@ -897,8 +897,8 @@ public final class EventFormViewModel {
 
         defer { isSaving = false }
 
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withFullDate]
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
 
         let timeFormatter = DateFormatter()
         timeFormatter.dateFormat = "HH:mm"
