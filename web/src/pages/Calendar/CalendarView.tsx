@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DayPicker, type DayButtonProps } from "react-day-picker";
 import "react-day-picker/style.css";
@@ -15,9 +15,6 @@ import { queryKeys } from "../../hooks/queries/queryKeys";
 import {
   Calendar,
   CalendarDays,
-  CalendarPlus,
-  FileSearch,
-  ChevronDown,
   Users,
   Clock,
   MapPin,
@@ -43,8 +40,6 @@ import { Event } from "../../types/entities";
 type EventWithClient = Event & {
   client?: { name: string; phone: string };
 };
-
-type StatusFilter = Event["status"] | null;
 
 // Parse a yyyy-MM-dd date string as LOCAL date (avoids UTC midnight shifting day in negative-offset timezones)
 const parseLocalDate = (dateStr: string): Date => {
@@ -115,9 +110,6 @@ export const CalendarView: React.FC = () => {
   const [isManagingBlocks, setIsManagingBlocks] = useState(false);
   const [isConfirmingUnblock, setIsConfirmingUnblock] = useState(false);
   const [contextMenuDate, setContextMenuDate] = useState<string | undefined>();
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(null);
-  const createMenuRef = useRef<HTMLDivElement>(null);
 
   // Month boundaries as yyyy-MM-dd strings — used as both query args and
   // React Query keys, so caching is automatic per month.
@@ -144,10 +136,8 @@ export const CalendarView: React.FC = () => {
   // Filtered event list respects the active status chip. Filtering
   // happens client-side from the cached React Query data — no refetch,
   // matching iOS & Android behavior.
-  const filteredEvents = useMemo(
-    () => (statusFilter === null ? events : events.filter((e) => e.status === statusFilter)),
-    [events, statusFilter],
-  );
+  // FASE 7C: status filter removed (moved to Events section), filteredEvents = events
+  const filteredEvents = events;
 
   // Surface query errors via toast (once per transition).
   useEffect(() => {
@@ -286,15 +276,6 @@ export const CalendarView: React.FC = () => {
     () => makeDayButton(handleContextMenu, getDayInfo, overflowLabel),
     [handleContextMenu, getDayInfo, overflowLabel],
   );
-
-  // No listener necesario — dropdown de crear evento eliminado en refactor FASE 7C
-
-  const createMenuDate = selectedDate
-    ? format(selectedDate, "yyyy-MM-dd")
-    : format(new Date(), "yyyy-MM-dd");
-
-  /// REFACTOR FASE 7C — REMOVIDO dropdown crear evento/Quick Quote (ya están en FAB global)
-  /// Estado showCreateMenu y ref createMenuRef ya no necesarios
 
   const statusLabel = (status: string): string => {
     switch (status) {

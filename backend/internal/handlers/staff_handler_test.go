@@ -140,7 +140,11 @@ func TestCreateStaff_Success(t *testing.T) {
 		s.ID = uuid.New()
 	})
 
-	h := NewStaffHandler(staffRepo, nil)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro"}, nil)
+	staffRepo.On("CountByUserID", mock.Anything, userID).Return(0, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
 	body := `{"name":"Maria","role_label":"Fotógrafa","email":"maria@example.com","notification_email_opt_in":true}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -158,8 +162,11 @@ func TestCreateStaff_Success(t *testing.T) {
 func TestCreateStaff_MissingName_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro"}, nil)
+	staffRepo.On("CountByUserID", mock.Anything, userID).Return(0, nil)
 
-	h := NewStaffHandler(staffRepo, nil)
+	h := NewStaffHandler(staffRepo, userRepo)
 	body := `{"role_label":"DJ"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -172,8 +179,11 @@ func TestCreateStaff_MissingName_Returns400(t *testing.T) {
 func TestCreateStaff_InvalidEmail_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro"}, nil)
+	staffRepo.On("CountByUserID", mock.Anything, userID).Return(0, nil)
 
-	h := NewStaffHandler(staffRepo, nil)
+	h := NewStaffHandler(staffRepo, userRepo)
 	body := `{"name":"Bad","email":"not-an-email"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -187,8 +197,11 @@ func TestCreateStaff_RepoError_Returns500(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.Staff")).Return(errTest)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro"}, nil)
+	staffRepo.On("CountByUserID", mock.Anything, userID).Return(0, nil)
 
-	h := NewStaffHandler(staffRepo, nil)
+	h := NewStaffHandler(staffRepo, userRepo)
 	body := `{"name":"Maria"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
