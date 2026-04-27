@@ -24,7 +24,7 @@ func TestListStaff_Empty_Returns200(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("GetAll", mock.Anything, userID).Return([]models.Staff{}, nil)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff", "", userID)
 	rr := httptest.NewRecorder()
 	h.ListStaff(rr, req)
@@ -40,7 +40,7 @@ func TestListStaff_WithResults_Returns200(t *testing.T) {
 		{ID: uuid.New(), UserID: userID, Name: "Maria Fotógrafa"},
 	}, nil)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff", "", userID)
 	rr := httptest.NewRecorder()
 	h.ListStaff(rr, req)
@@ -56,7 +56,7 @@ func TestListStaff_Search_HitsSearchRepo(t *testing.T) {
 		{ID: uuid.New(), UserID: userID, Name: "DJ Alejo"},
 	}, nil)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff?q=DJ", "", userID)
 	rr := httptest.NewRecorder()
 	h.ListStaff(rr, req)
@@ -72,7 +72,7 @@ func TestListStaff_RepoError_Returns500(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("GetAll", mock.Anything, userID).Return(nil, errTest)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff", "", userID)
 	rr := httptest.NewRecorder()
 	h.ListStaff(rr, req)
@@ -93,7 +93,7 @@ func TestGetStaff_Success(t *testing.T) {
 		nil,
 	)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithIDParam(http.MethodGet, "/api/staff/"+staffID.String(), "", staffID.String(), userID)
 	rr := httptest.NewRecorder()
 	h.GetStaff(rr, req)
@@ -108,7 +108,7 @@ func TestGetStaff_NotFound_Returns404(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("GetByID", mock.Anything, staffID, userID).Return(nil, errTest)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithIDParam(http.MethodGet, "/api/staff/"+staffID.String(), "", staffID.String(), userID)
 	rr := httptest.NewRecorder()
 	h.GetStaff(rr, req)
@@ -120,7 +120,7 @@ func TestGetStaff_InvalidID_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithIDParam(http.MethodGet, "/api/staff/bad", "", "bad", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaff(rr, req)
@@ -140,7 +140,7 @@ func TestCreateStaff_Success(t *testing.T) {
 		s.ID = uuid.New()
 	})
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	body := `{"name":"Maria","role_label":"Fotógrafa","email":"maria@example.com","notification_email_opt_in":true}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -159,7 +159,7 @@ func TestCreateStaff_MissingName_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	body := `{"role_label":"DJ"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -173,7 +173,7 @@ func TestCreateStaff_InvalidEmail_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	body := `{"name":"Bad","email":"not-an-email"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -188,7 +188,7 @@ func TestCreateStaff_RepoError_Returns500(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.Staff")).Return(errTest)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	body := `{"name":"Maria"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
 	rr := httptest.NewRecorder()
@@ -207,7 +207,7 @@ func TestUpdateStaff_Success(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("Update", mock.Anything, mock.AnythingOfType("*models.Staff")).Return(nil)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	body := `{"name":"Maria Updated","role_label":"Fotógrafa"}`
 	req := makeReqWithIDParam(http.MethodPut, "/api/staff/"+staffID.String(), body, staffID.String(), userID)
 	rr := httptest.NewRecorder()
@@ -221,7 +221,7 @@ func TestUpdateStaff_InvalidID_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithIDParam(http.MethodPut, "/api/staff/bad", `{"name":"X"}`, "bad", userID)
 	rr := httptest.NewRecorder()
 	h.UpdateStaff(rr, req)
@@ -239,7 +239,7 @@ func TestDeleteStaff_Success_Returns204(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("Delete", mock.Anything, staffID, userID).Return(nil)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithIDParam(http.MethodDelete, "/api/staff/"+staffID.String(), "", staffID.String(), userID)
 	rr := httptest.NewRecorder()
 	h.DeleteStaff(rr, req)
@@ -253,7 +253,7 @@ func TestDeleteStaff_NotFound_Returns404(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("Delete", mock.Anything, staffID, userID).Return(errTest)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithIDParam(http.MethodDelete, "/api/staff/"+staffID.String(), "", staffID.String(), userID)
 	rr := httptest.NewRecorder()
 	h.DeleteStaff(rr, req)
@@ -392,7 +392,7 @@ func TestGetStaffAvailability_MissingParams_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -406,7 +406,7 @@ func TestGetStaffAvailability_OnlyStart_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?start=2026-05-01", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -419,7 +419,7 @@ func TestGetStaffAvailability_InvalidDateFormat_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?date=2026-13-40", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -433,7 +433,7 @@ func TestGetStaffAvailability_InvalidEndDate_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?start=2026-05-01&end=not-a-date", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -447,7 +447,7 @@ func TestGetStaffAvailability_EndBeforeStart_Returns400(t *testing.T) {
 	userID := uuid.New()
 	staffRepo := new(MockStaffRepo)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?start=2026-05-10&end=2026-05-01", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -478,7 +478,7 @@ func TestGetStaffAvailability_SingleDate_Success(t *testing.T) {
 	}
 	staffRepo.On("GetAvailability", mock.Anything, userID, "2026-05-01", "2026-05-01").Return(expected, nil)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?date=2026-05-01", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -503,7 +503,7 @@ func TestGetStaffAvailability_Range_Success(t *testing.T) {
 		[]repository.StaffAvailability{}, nil,
 	)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?start=2026-05-01&end=2026-05-07", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)
@@ -522,7 +522,7 @@ func TestGetStaffAvailability_DateOverridesStartEnd(t *testing.T) {
 		[]repository.StaffAvailability{}, nil,
 	)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(
 		http.MethodGet,
 		"/api/staff/availability?date=2026-05-15&start=2026-01-01&end=2026-12-31",
@@ -540,7 +540,7 @@ func TestGetStaffAvailability_RepoError_Returns500(t *testing.T) {
 	staffRepo := new(MockStaffRepo)
 	staffRepo.On("GetAvailability", mock.Anything, userID, "2026-05-01", "2026-05-01").Return(nil, errTest)
 
-	h := NewStaffHandler(staffRepo)
+	h := NewStaffHandler(staffRepo, nil)
 	req := makeReqWithUserID(http.MethodGet, "/api/staff/availability?date=2026-05-01", "", userID)
 	rr := httptest.NewRecorder()
 	h.GetStaffAvailability(rr, req)

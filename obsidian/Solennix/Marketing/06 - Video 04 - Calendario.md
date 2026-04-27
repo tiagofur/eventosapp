@@ -4,9 +4,9 @@ tags:
   - video
   - v04
 date: 2026-04-21
-status: concept
-duration: 20s
-screenshots: pending
+status: done
+duration: 15s
+screenshots: done
 ---
 
 # V04 — Calendario Inteligente
@@ -28,27 +28,27 @@ Organizadores que usan Google Calendar + papel para llevar la agenda de eventos.
 
 ## Storyboard
 
-### Escena 1: Hook (Frames 0-60 / 0-2s)
+### Escena 1: Hook (0-2s)
 
 - Pregunta: "¿Qué eventos tenés esta semana?"
 - Fondo oscuro
 
-### Escena 2: Calendario Mensual (Frames 60-210 / 2-7s)
+### Escena 2: Calendario Mensual (2-7s)
 
-- Screenshot `calendar-view.png` aparece con scale-up
-- Días con eventos se "encienden" uno por uno con efecto de pulso
-- Cada día ilumina → muestra badge de evento
+- Screenshot `02-calendario.png` aparece con scale-up
+- Efecto de pulso suave en días con eventos
+- Texto: "Tu agenda visual. Sin sorpresas."
 
-### Escena 3: Detalle del Día (Frames 210-390 / 7-13s)
+### Escena 3: Detalle del Evento (7-11s)
 
-- Zoom in a un día específico
-- Aparece `calendar-day-detail.png` con slide-up
-- Muestra: nombre del cliente, tipo de evento, cantidad de personas, estado
+- Screenshot `04-evento-detalle.png` con zoom-in
+- Overlay: "DETALLE TOTAL — Toda la info de tus eventos en un solo lugar."
 
-### Escena 4: Beneficio + CTA (Frames 390-600 / 13-20s)
+### Escena 4: CTA (11-15s)
 
-- Texto: "Tu agenda visual. Sin Google Calendar. Sin papel."
-- Logo + CTA
+- Logo Solennix animado
+- "SIN EXCEL. SIN CAOS."
+- Badges de App Store + Google Play + solennix.com
 
 ---
 
@@ -56,14 +56,35 @@ Organizadores que usan Google Calendar + papel para llevar la agenda de eventos.
 
 | Archivo | Qué mostrar | Listo |
 |---------|-------------|-------|
-| `calendar-view.png` | Calendario mensual con eventos | ⬜ |
-| `calendar-day-detail.png` | Detalle de un día con eventos | ⬜ |
+| `02-calendario.png` | Calendario mensual con eventos | ✅ |
+| `04-evento-detalle.png` | Detalle de un evento | ✅ |
 
 ## Notas Técnicas
 
-- Efecto de "pulso" en días: `interpolate()` con `scale` y `opacity`
-- Zoom in: `transform: scale()` interpolado desde 1.0 a 2.0
-- Los días pueden encenderse en secuencia con `delayRender` pattern
+- Duración implementada: **15s (450 frames a 30fps)**
+- Composiciones: `V04-Calendar-Reel` (9:16) y `V04-Calendar-Square` (1:1)
+- `TransitionSeries`: 60+150+120+150 − 30 (3 transiciones × 10) = 450 frames exactos
+- Efecto de pulso en calendario: `Math.sin(frame / 5)`
+- Zoom en detalle: `interpolate(frame, [0, 120], [1.1, 1.3])`
+
+---
+
+## Redes Sociales & Promoción
+
+### Descripción sugerida
+
+¿Cuántas veces revisaste el teléfono esta semana para recordar qué eventos tenías? 📅 Con el Calendario de Solennix, visualizás todo tu mes de un vistazo: nombre del cliente, tipo de evento, horarios y estado — todo en una sola pantalla. Cero Google Calendar. Cero papelitos. Cero sorpresas.
+
+👇 Probalo gratis en solennix.com
+
+### Hashtags
+
+#Solennix #OrganizadorDeEventos #WeddingPlanner #AgendaDeEventos #EventosMexico
+
+### Música sugerida
+
+- **Estilo:** Ambient moderno / Corporate Minimal.
+- **Evolución:** Comienza tranquilo y crece sutilmente hacia el CTA, transmitiendo orden y claridad.
 
 ---
 

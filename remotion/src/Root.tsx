@@ -35,6 +35,8 @@ import { V02_Dashboard } from './marketing/V02Dashboard';
 import { V02_DashboardSquare } from './marketing/V02DashboardSquare';
 import { V02_Clients } from './marketing/V03Clients';
 import { V02_ClientsSquare } from './marketing/V03ClientsSquare';
+import { V04_Calendar } from './marketing/V04Calendar';
+import { V04_CalendarSquare } from './marketing/V04CalendarSquare';
 
 export const RemotionRoot = () => {
   return (
@@ -358,6 +360,22 @@ export const RemotionRoot = () => {
         <Composition
           id="V03-Clients-Square"
           component={V02_ClientsSquare}
+          durationInFrames={450}
+          fps={SOCIAL_FPS}
+          width={SOCIAL_FORMATS.FEED.width}
+          height={SOCIAL_FORMATS.FEED.height}
+        />
+        <Composition
+          id="V04-Calendar-Reel"
+          component={V04_Calendar}
+          durationInFrames={450}
+          fps={SOCIAL_FPS}
+          width={SOCIAL_FORMATS.REEL.width}
+          height={SOCIAL_FORMATS.REEL.height}
+        />
+        <Composition
+          id="V04-Calendar-Square"
+          component={V04_CalendarSquare}
           durationInFrames={450}
           fps={SOCIAL_FPS}
           width={SOCIAL_FORMATS.FEED.width}

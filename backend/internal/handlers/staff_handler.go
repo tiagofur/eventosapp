@@ -14,10 +14,11 @@ import (
 // StaffHandler handles CRUD for the organizer's staff catalog (PRD: Personal feature).
 type StaffHandler struct {
 	staffRepo StaffRepository
+	userRepo  UserRepository
 }
 
-func NewStaffHandler(staffRepo StaffRepository) *StaffHandler {
-	return &StaffHandler{staffRepo: staffRepo}
+func NewStaffHandler(staffRepo StaffRepository, userRepo UserRepository) *StaffHandler {
+	return &StaffHandler{staffRepo: staffRepo, userRepo: userRepo}
 }
 
 var staffSortAllowlist = map[string]string{
@@ -85,11 +86,42 @@ func (h *StaffHandler) GetStaff(w http.ResponseWriter, r *http.Request) {
 // CreateStaff creates a new staff member.
 // POST /api/staff
 //
-// Phase 1 has no tier gating — all plans can manage staff. Phase 2 will
-// gate `notification_email_opt_in = true` to Pro+; Phase 3 will gate the
+// Staff seats are gated by plan: Gratis=1, Pro=3, Business=∞.
+// Phase 2 gates `notification_email_opt_in` to Pro+; Phase 3 gates the
 // invitation flow to Business+.
 func (h *StaffHandler) CreateStaff(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
+
+	// Check staff seat limits
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user limits")
+		return
+	}
+
+	if user.Plan == "basic" {
+		count, err := h.staffRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify staff limits")
+			return
+		}
+		if count >= 1 {
+			writePlanLimitError(w, "staff_seats", count, 1)
+			return
+		}
+	} else if user.Plan == "pro" || user.Plan == "premium" {
+		count, err := h.staffRepo.CountByUserID(r.Context(), userID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to verify staff limits")
+			return
+		}
+		if count >= 3 {
+			writePlanLimitError(w, "staff_seats", count, 3)
+			return
+		}
+	}
+	// Business: unlimited — no check needed
+
 	var s models.Staff
 	if err := decodeJSON(r, &s); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
