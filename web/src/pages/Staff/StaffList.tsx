@@ -16,6 +16,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import Empty from "@/components/Empty";
 import { Pagination } from "@/components/Pagination";
 import { SkeletonTable } from "@/components/Skeleton";
+import { useTranslation } from "react-i18next";
 import {
   useStaff,
   useStaffPaginated,
@@ -25,6 +26,7 @@ import {
 const ITEMS_PER_PAGE = 10;
 
 export const StaffList: React.FC = () => {
+  const { t } = useTranslation(["staff"]);
   const deleteStaff = useDeleteStaff();
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -82,10 +84,10 @@ export const StaffList: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmOpen}
-        title="Eliminar colaborador"
-        description="Se eliminará del catálogo y de los eventos donde esté asignado. Esta acción no se puede deshacer."
-        confirmText="Eliminar permanentemente"
-        cancelText="Cancelar"
+        title={t("staff:list.delete_confirm.title")}
+        description={t("staff:list.delete_confirm.description")}
+        confirmText={t("staff:list.delete_confirm.confirm")}
+        cancelText={t("staff:list.delete_confirm.cancel")}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);
@@ -95,9 +97,9 @@ export const StaffList: React.FC = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text tracking-tight">Personal</h1>
+          <h1 className="text-2xl font-bold text-text tracking-tight">{t("staff:list.title")}</h1>
           <p className="text-sm text-text-secondary mt-1">
-            Tu agenda de colaboradores: fotógrafos, DJs, meseros, coordinadores.
+            {t("staff:list.description")}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -106,21 +108,21 @@ export const StaffList: React.FC = () => {
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl text-text bg-surface-alt hover:bg-card border border-border transition-colors"
           >
             <Users className="h-4 w-4 mr-2" aria-hidden="true" />
-            Equipos
+            {t("staff:list.teams")}
           </Link>
           <Link
             to="/staff/new"
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
           >
             <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-            Nuevo colaborador
+            {t("staff:list.new_staff")}
           </Link>
         </div>
       </div>
 
       <div className="relative max-w-md">
         <label htmlFor="staff-search" className="sr-only">
-          Buscar personal
+          {t("staff:list.search_placeholder")}
         </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
@@ -129,7 +131,7 @@ export const StaffList: React.FC = () => {
           id="staff-search"
           type="search"
           className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm"
-          placeholder="Buscar por nombre, rol, email o teléfono..."
+          placeholder={t("staff:list.search_placeholder")}
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -144,11 +146,11 @@ export const StaffList: React.FC = () => {
         ) : rows.length === 0 ? (
           <Empty
             icon={UserCog}
-            title="Sin colaboradores todavía"
+            title={t("staff:list.empty.title")}
             description={
               searchTerm
-                ? "No hay colaboradores que coincidan. Probá con otro término."
-                : "Agregá fotógrafos, DJs, meseros, coordinadores y asignalos a tus eventos."
+                ? t("staff:list.empty.description_search")
+                : t("staff:list.empty.description_base")
             }
             action={
               !searchTerm ? (
@@ -157,7 +159,7 @@ export const StaffList: React.FC = () => {
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg transition-all hover:scale-[1.02]"
                 >
                   <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-                  Agregar colaborador
+                  {t("staff:list.empty.action")}
                 </Link>
               ) : undefined
             }
@@ -166,21 +168,25 @@ export const StaffList: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-border" aria-label="Tabla de colaboradores">
               <caption className="sr-only">
-                {totalItems} colaboradores, página {currentPage} de {totalPages}.
+                {t("staff:list.table.summary", {
+                  count: totalItems,
+                  page: currentPage,
+                  totalPages,
+                })}
               </caption>
               <thead className="bg-surface-alt">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-text-secondary">
-                    Nombre
+                    {t("staff:list.table.name")}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-text-secondary">
-                    Rol
+                    {t("staff:list.table.role")}
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-text-secondary">
-                    Contacto
+                    {t("staff:list.table.contact")}
                   </th>
                   <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Acciones</span>
+                    <span className="sr-only">{t("staff:list.table.actions")}</span>
                   </th>
                 </tr>
               </thead>
@@ -233,9 +239,9 @@ export const StaffList: React.FC = () => {
                       <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowActionMenu
                           items={[
-                            { label: "Ver detalle", icon: Eye, onClick: () => navigate(`/staff/${s.id}`) },
-                            { label: "Editar", icon: Edit, onClick: () => navigate(`/staff/${s.id}/edit`) },
-                            { label: "Eliminar", icon: Trash2, onClick: () => requestDelete(s.id), variant: "destructive" as const },
+                            { label: t("staff:list.table.view_detail"), icon: Eye, onClick: () => navigate(`/staff/${s.id}`) },
+                            { label: t("staff:list.table.edit"), icon: Edit, onClick: () => navigate(`/staff/${s.id}/edit`) },
+                            { label: t("staff:list.table.delete"), icon: Trash2, onClick: () => requestDelete(s.id), variant: "destructive" as const },
                           ]}
                         />
                       </div>

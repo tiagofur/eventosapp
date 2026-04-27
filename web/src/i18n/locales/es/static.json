@@ -1,0 +1,158 @@
+{
+  "about": {
+    "back": "Volver",
+    "version": "Versión",
+    "developed_by": "Desarrollado por",
+    "legal": "Legal",
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad",
+    "about_app": "Sobre la app",
+    "description": "Solennix es una aplicación SaaS diseñada para organizadores de eventos de todo tipo. Gestiona clientes, eventos, catálogo de productos, inventario, cotizaciones y pagos en un solo lugar.",
+    "footer": "Hecho con {{heart}} por el equipo de Creapolis.Dev"
+  },
+  "privacy": {
+    "back": "Volver",
+    "title": "Política de Privacidad",
+    "last_update": "Última actualización: 23 de abril de 2026",
+    "sections": {
+      "1": {
+        "title": "1. Información que recopilamos",
+        "content": "Recopilamos la información que nos proporcionas al registrarte en Solennix, incluyendo tu nombre, correo electrónico y datos de tu negocio. También recopilamos información sobre el uso de la aplicación para mejorar nuestros servicios y garantizar la seguridad de la plataforma."
+      },
+      "2": {
+        "title": "2. Cómo usamos tu información",
+        "content": "Utilizamos tu información para:",
+        "items": [
+          "Proporcionar y mejorar los servicios de Solennix",
+          "Gestionar tu cuenta y suscripción",
+          "Enviarte comunicaciones sobre el servicio",
+          "Procesar pagos a través de proveedores seguros",
+          "Cumplir con obligaciones legales y regulatorias"
+        ]
+      },
+      "3": {
+        "title": "3. Almacenamiento y seguridad",
+        "content": "Tus datos se almacenan en servidores seguros con cifrado de nivel industrial. Implementamos medidas técnicas y organizativas apropiadas para proteger tu información contra acceso no autorizado, alteración, divulgación o destrucción."
+      },
+      "4": {
+        "title": "4. Compartir información",
+        "content": "No vendemos, intercambiamos ni transferimos tu información personal a terceros con fines publicitarios. Compartimos datos únicamente cuando sea estrictamente necesario para proporcionar el servicio (procesadores de pago, proveedores de infraestructura) o cuando lo exija la ley."
+      },
+      "5": {
+        "title": "5. Tus derechos y eliminación de datos",
+        "content": "De acuerdo con las leyes de protección de datos, tienes derecho a:",
+        "items": [
+          "Acceder a tu información personal",
+          "Corregir datos inexactos",
+          "Solicitar la eliminación de tu cuenta y todos tus datos asociados",
+          "Oponerte al tratamiento de ciertos datos",
+          "Exportar tu información en un formato estándar"
+        ],
+        "footer": "Para ejercer tu derecho al borrado, puedes visitar nuestra página dedicada de <link>Solicitud de Eliminación de Cuenta</link> o contactarnos directamente."
+      },
+      "6": {
+        "title": "6. Cookies y tecnologías similares",
+        "content": "La aplicación utiliza almacenamiento local seguro para mantener tu sesión iniciada y preferencias. No utilizamos cookies de rastreo con fines publicitarios ni compartimos hábitos de navegación con terceros."
+      },
+      "7": {
+        "title": "7. Cambios a esta política",
+        "content": "Podemos actualizar esta Política de Privacidad periódicamente para reflejar cambios en el servicio o requisitos legales. Te notificaremos sobre cambios significativos a través de la aplicación o por correo electrónico."
+      },
+      "8": {
+        "title": "8. Contacto",
+        "content": "Si tienes preguntas sobre esta política o el tratamiento de tus datos, contáctanos:"
+      }
+    }
+  },
+  "terms": {
+    "back": "Volver",
+    "title": "Términos y Condiciones",
+    "last_update": "Última actualización: 1 de enero de 2025",
+    "sections": {
+      "1": {
+        "title": "1. Uso del servicio",
+        "content": "Al usar Solennix, aceptas estos términos. Solennix es una plataforma SaaS para organizadores de eventos. Te otorgamos una licencia limitada, no exclusiva y no transferible para usar el servicio según tu plan de suscripción activo.",
+        "list_header": "Te comprometes a:",
+        "items": [
+          "Proporcionar información veraz al registrarte",
+          "Mantener la confidencialidad de tu cuenta",
+          "No usar el servicio para actividades ilegales",
+          "No intentar acceder a datos de otros usuarios"
+        ]
+      },
+      "2": {
+        "title": "2. Suscripción y pagos",
+        "content": "Solennix ofrece planes de suscripción mensual. Los cobros se realizan a través de procesadores de pago seguros como Stripe.",
+        "items": [
+          "El plan Básico es gratuito con funcionalidades limitadas",
+          "El plan Pro incluye todas las funcionalidades sin restricciones",
+          "Los precios pueden variar según tu región",
+          "Las suscripciones se renuevan automáticamente salvo cancelación"
+        ]
+      },
+      "3": {
+        "title": "3. Cancelación",
+        "content": "Puedes cancelar tu suscripción en cualquier momento desde la configuración de tu cuenta. La cancelación será efectiva al final del periodo de facturación actual.",
+        "list_header": "Al cancelar:",
+        "items": [
+          "Mantendrás acceso hasta el final del periodo pagado",
+          "No se realizan reembolsos proporcionales",
+          "Tus datos se conservan por 30 días adicionales",
+          "Puedes exportar tus datos antes de eliminar la cuenta"
+        ]
+      },
+      "4": {
+        "title": "4. Propiedad intelectual",
+        "content": "Solennix y su contenido son propiedad de Creapolis.Dev. Los datos que introduces en la aplicación (clientes, eventos, productos) son de tu propiedad. Nos otorgas una licencia para almacenarlos y procesarlos únicamente con el fin de prestarte el servicio."
+      },
+      "5": {
+        "title": "5. Disponibilidad del servicio",
+        "content": "Nos esforzamos por mantener Solennix disponible 24/7, pero no garantizamos disponibilidad ininterrumpida. Podemos realizar mantenimientos programados con previo aviso. No somos responsables por interrupciones causadas por factores externos."
+      },
+      "6": {
+        "title": "6. Limitación de responsabilidad",
+        "content": "Solennix se proporciona \"tal cual\". En la máxima medida permitida por la ley aplicable:",
+        "items": [
+          "No garantizamos que el servicio sea libre de errores",
+          "No somos responsables de pérdidas de datos por causas ajenas a nosotros",
+          "Nuestra responsabilidad total no superará el monto pagado en los últimos 3 meses de servicio",
+          "No somos responsables de daños indirectos o consecuentes"
+        ]
+      },
+      "7": {
+        "title": "7. Modificaciones",
+        "content": "Nos reservamos el derecho de modificar estos términos. Te notificaremos con al menos 15 días de anticipación sobre cambios materiales. El uso continuado del servicio tras los cambios implica aceptación."
+      },
+      "8": {
+        "title": "8. Ley aplicable",
+        "content": "Estos términos se rigen por las leyes de México. Cualquier disputa se resolverá en los tribunales competentes de la Ciudad de México."
+      },
+      "9": {
+        "title": "9. Contacto",
+        "content": "Para cualquier consulta sobre estos términos:"
+      }
+    }
+  },
+  "account_deletion": {
+    "back": "Volver",
+    "title": "Eliminación de Cuenta",
+    "subtitle": "Información sobre el proceso de borrado de datos en Solennix.",
+    "request_title": "Solicitud de eliminación",
+    "request_subtitle": "Tu privacidad y el control de tus datos son nuestra prioridad.",
+    "intro": "De acuerdo con las políticas de Google Play y Apple App Store, así como con las regulaciones de protección de datos, Solennix proporciona a sus usuarios un camino claro para solicitar la eliminación de su cuenta y todos los datos personales asociados.",
+    "what_happens_title": "¿Qué sucede al eliminar tu cuenta?",
+    "what_happens_items": [
+      "Se eliminarán permanentemente tus datos de perfil (nombre, email, foto).",
+      "Se borrarán todos tus eventos, clientes, productos e inventario.",
+      "Se cancelará cualquier suscripción activa (aunque te recomendamos hacerlo primero desde tu tienda de aplicaciones).",
+      "<strong>Esta acción es irreversible.</strong> Una vez completada, no podremos recuperar tu información."
+    ],
+    "how_to_request_title": "Cómo solicitar el borrado",
+    "how_to_request_desc": "Para iniciar el proceso de eliminación, por favor envía un correo electrónico desde la dirección vinculada a tu cuenta:",
+    "email_button": "Enviar solicitud a hola@creapolis.dev",
+    "email_subject": "Solicitud de eliminación de cuenta - Solennix",
+    "footer_note": "* Nuestro equipo procesará tu solicitud en un plazo máximo de 48 a 72 horas hábiles. Recibirás un correo de confirmación una vez que el proceso haya finalizado.",
+    "other_queries_title": "Otras consultas sobre tus datos",
+    "other_queries_desc": "Si solo deseas corregir información o tienes dudas sobre cómo tratamos tus datos, te invitamos a revisar nuestra <link>Política de Privacidad</link>."
+  }
+}

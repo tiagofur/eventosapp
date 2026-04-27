@@ -38,8 +38,11 @@ interface SelectedExtra {
 }
 
 export const QuickQuotePage: React.FC = () => {
+  const { t, i18n } = useTranslation(["quotes", "common", "events"]);
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const moneyLocale = i18n.language === "en" ? "en-US" : "es-MX";
 
   // Minimal form for EventProducts compatibility (uses watch('num_people'))
   const methods = useForm({ defaultValues: { num_people: 100 } });
@@ -268,7 +271,7 @@ export const QuickQuotePage: React.FC = () => {
       event_date: today,
       start_time: null,
       end_time: null,
-      service_type: "Cotización Rápida",
+      service_type: t("quotes:title"),
       num_people: methods.getValues("num_people") || 1,
       status: "quoted" as const,
       discount: discountValue,
@@ -355,9 +358,9 @@ export const QuickQuotePage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-text">Cotización Rápida</h1>
+            <h1 className="text-2xl font-bold text-text">{t("quotes:title")}</h1>
             <p className="text-sm text-text-secondary mt-1">
-              Arma una cotización sin registrar cliente ni fecha
+              {t("quotes:subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:justify-end">
@@ -368,7 +371,7 @@ export const QuickQuotePage: React.FC = () => {
               className="inline-flex items-center px-4 py-2 border border-border shadow-xs text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FileDown className="h-4 w-4 mr-2" />
-              Exportar PDF
+              {t("quotes:export_pdf")}
             </button>
             <button
               type="button"
@@ -377,7 +380,7 @@ export const QuickQuotePage: React.FC = () => {
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-xs text-sm font-medium rounded-xl text-white bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowRight className="h-4 w-4 mr-2" />
-              Convertir a Evento
+              {t("quotes:convert_to_event")}
             </button>
           </div>
         </div>
@@ -394,7 +397,7 @@ export const QuickQuotePage: React.FC = () => {
             ) : (
               <ChevronDown className="h-4 w-4" />
             )}
-            Datos del cliente (opcional, para el PDF)
+            {t("quotes:client_data")}
           </button>
           {showClientInfo && (
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -403,14 +406,14 @@ export const QuickQuotePage: React.FC = () => {
                   htmlFor="client-name"
                   className="block text-xs text-text-secondary mb-1"
                 >
-                  Nombre
+                  {t("quotes:labels.name")}
                 </label>
                 <input
                   id="client-name"
                   type="text"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Nombre del cliente"
+                  placeholder={t("quotes:placeholder.name")}
                   className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
                 />
               </div>
@@ -419,14 +422,14 @@ export const QuickQuotePage: React.FC = () => {
                   htmlFor="client-phone"
                   className="block text-xs text-text-secondary mb-1"
                 >
-                  Teléfono
+                  {t("quotes:labels.phone")}
                 </label>
                 <input
                   id="client-phone"
                   type="tel"
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="Teléfono"
+                  placeholder={t("quotes:placeholder.phone")}
                   className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
                 />
               </div>
@@ -435,14 +438,14 @@ export const QuickQuotePage: React.FC = () => {
                   htmlFor="client-email"
                   className="block text-xs text-text-secondary mb-1"
                 >
-                  Email
+                  {t("quotes:labels.email")}
                 </label>
                 <input
                   id="client-email"
                   type="email"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
-                  placeholder="Email"
+                  placeholder={t("quotes:placeholder.email")}
                   className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
                 />
               </div>
@@ -461,7 +464,7 @@ export const QuickQuotePage: React.FC = () => {
                 className="flex items-center gap-2 text-sm font-medium text-text-secondary mb-2"
               >
                 <Users className="h-4 w-4" />
-                Número de Personas
+                {t("quotes:num_people")}
               </label>
               <input
                 id="num-people"
@@ -497,7 +500,7 @@ export const QuickQuotePage: React.FC = () => {
             {/* Discount & Invoice controls */}
             <div className="bg-card p-4 sm:p-6 rounded-xl shadow-xs border border-border space-y-4">
               <h3 className="text-lg font-medium text-text">
-                Descuento y Facturación
+                {t("quotes:discount_invoice")}
               </h3>
 
               <div className="flex items-center gap-3">
@@ -512,7 +515,7 @@ export const QuickQuotePage: React.FC = () => {
                   htmlFor="requires-invoice"
                   className="text-sm text-text-secondary"
                 >
-                  Requiere factura (IVA {taxRate}%)
+                  {t("quotes:invoice_required", { rate: taxRate })}
                 </label>
               </div>
 
@@ -522,7 +525,7 @@ export const QuickQuotePage: React.FC = () => {
                     htmlFor="discount-value"
                     className="text-sm font-medium text-text-secondary"
                   >
-                    Descuento General
+                    {t("quotes:general_discount")}
                   </label>
                   <div className="flex rounded-lg border border-border overflow-hidden text-xs">
                     <button
@@ -558,39 +561,39 @@ export const QuickQuotePage: React.FC = () => {
           {/* Right: Financial summary (sticky) */}
           <div className="lg:col-span-2">
             <div className="lg:sticky lg:top-24 bg-surface-alt p-6 rounded-2xl shadow-sm border border-border">
-              <h4 className="text-lg font-medium text-text mb-4">Resumen</h4>
+              <h4 className="text-lg font-medium text-text mb-4">{t("quotes:summary.title")}</h4>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between text-text-secondary">
-                  <span>Subtotal Productos:</span>
-                  <span>${financials.productsSubtotal.toFixed(2)}</span>
+                  <span>{t("quotes:summary.subtotal_products")}:</span>
+                  <span>${financials.productsSubtotal.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-text-secondary">
-                  <span>Subtotal Extras:</span>
-                  <span>${financials.extrasTotal.toFixed(2)}</span>
+                  <span>{t("quotes:summary.subtotal_extras")}:</span>
+                  <span>${financials.extrasTotal.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
                 </div>
 
                 {financials.discountAmount > 0 && (
                   <div className="flex justify-between text-success font-medium">
                     <span>
-                      Descuento{" "}
+                      {t("quotes:summary.discount")}{" "}
                       {discountType === "percent" ? `(${discountValue}%)` : ""}:
                     </span>
-                    <span>-${financials.discountAmount.toFixed(2)}</span>
+                    <span>-${financials.discountAmount.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
 
                 {requiresInvoice && (
                   <div className="flex justify-between text-text-secondary">
-                    <span>IVA ({taxRate}%):</span>
-                    <span>${financials.taxAmount.toFixed(2)}</span>
+                    <span>{t("quotes:invoice_required", { rate: taxRate })}:</span>
+                    <span>${financials.taxAmount.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
 
                 <div className="border-t border-border pt-3 flex justify-between text-xl font-bold text-text">
-                  <span>Total:</span>
+                  <span>{t("common:status.total")}:</span>
                   <span className="text-primary">
-                    ${financials.total.toFixed(2)}
+                    ${financials.total.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
@@ -598,33 +601,33 @@ export const QuickQuotePage: React.FC = () => {
               {/* Internal metrics */}
               <div className="mt-6 pt-4 border-t border-border">
                 <h5 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
-                  Métricas de Rentabilidad (Interno)
+                  {t("quotes:summary.internal_metrics")}
                 </h5>
 
                 <div className="grid grid-cols-2 gap-y-2 text-sm">
-                  <div className="text-text-secondary">Costo Productos:</div>
+                  <div className="text-text-secondary">{t("quotes:summary.product_cost")}:</div>
                   <div className="text-right font-medium text-text">
-                    ${financials.productCost.toFixed(2)}
+                    ${financials.productCost.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </div>
 
-                  <div className="text-text-secondary">Costo Extras:</div>
+                  <div className="text-text-secondary">{t("quotes:summary.extras_cost")}:</div>
                   <div className="text-right font-medium text-text">
-                    ${financials.extrasCost.toFixed(2)}
+                    ${financials.extrasCost.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </div>
 
                   <div className="text-text-secondary font-medium border-t border-border pt-2">
-                    Costo Total:
+                    {t("quotes:summary.total_cost")}:
                   </div>
                   <div className="text-right font-medium text-text border-t border-border pt-2">
-                    ${financials.totalCost.toFixed(2)}
+                    ${financials.totalCost.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </div>
 
-                  <div className="text-text-secondary">Utilidad Neta:</div>
+                  <div className="text-text-secondary">{t("quotes:summary.net_profit")}:</div>
                   <div className="text-right font-bold text-success">
-                    ${financials.profit.toFixed(2)}
+                    ${financials.profit.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </div>
 
-                  <div className="text-text-secondary">Margen:</div>
+                  <div className="text-text-secondary">{t("quotes:summary.margin")}:</div>
                   <div className="text-right font-bold text-info">
                     {financials.margin.toFixed(1)}%
                   </div>
@@ -634,7 +637,7 @@ export const QuickQuotePage: React.FC = () => {
               {/* Empty state */}
               {!hasItems && (
                 <div className="mt-6 text-center text-text-secondary text-sm">
-                  Agrega productos o extras para ver el resumen
+                  {t("quotes:summary.empty_state")}
                 </div>
               )}
             </div>

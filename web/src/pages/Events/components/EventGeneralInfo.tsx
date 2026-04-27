@@ -29,12 +29,16 @@ interface EventGeneralInfoProps {
   unavailableDates?: UnavailableDate[];
 }
 
+import { useTranslation } from 'react-i18next';
+
 export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
   clients,
   clientIdValue,
   onClientCreated,
   unavailableDates,
 }) => {
+  const { t, i18n } = useTranslation(['events', 'common']);
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
   const { register, formState: { errors }, watch } = useFormContext();
   const [isQuickClientModalOpen, setIsQuickClientModalOpen] = useState(false);
   const selectedDate = watch('event_date');
@@ -58,16 +62,16 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         <div className="sm:col-span-3">
           <div className="flex justify-between items-center mb-1">
             <label htmlFor="client_id" className="block text-sm font-medium text-text-secondary">
-              Cliente *
+              {t('events:general.client')} *
             </label>
             <button
               type="button"
               onClick={() => setIsQuickClientModalOpen(true)}
               className="inline-flex items-center text-xs font-medium text-primary hover:text-primary/80"
-              aria-label="Crear nuevo cliente rápidamente"
+              aria-label={t('events:general.new_client')}
             >
               <UserPlus className="h-3 w-3 mr-1" aria-hidden="true" />
-              Nuevo Cliente
+              {t('events:general.new_client')}
             </button>
           </div>
           <div className="mt-1">
@@ -79,7 +83,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               aria-invalid={errors.client_id ? "true" : "false"}
               aria-describedby={errors.client_id ? "client_id-error" : undefined}
             >
-              <option value="">Seleccionar cliente</option>
+              <option value="">{t('events:general.select_client')}</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
                   {client.name}
@@ -99,10 +103,10 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
                     return (
                       <>
                         <span className="font-medium text-text-secondary">
-                          Historial del Cliente:
+                          {t('events:general.client_history')}
                         </span>{' '}
-                        {selectedClient.total_events} eventos realizados, Total gastado: $
-                        {selectedClient.total_spent?.toFixed(2) || '0.00'}
+                        {selectedClient.total_events} {t('events:general.events_performed')}, {t('events:general.total_spent')} $
+                        {selectedClient.total_spent?.toLocaleString(moneyLocale, { minimumFractionDigits: 2 }) || '0.00'}
                       </>
                     );
                   }
@@ -126,7 +130,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         {/* Fecha */}
         <div className="sm:col-span-3">
           <label htmlFor="event_date" className="block text-sm font-medium text-text-secondary">
-            Fecha del Evento *
+            {t('events:general.event_date')} *
           </label>
           <div className="mt-1">
             <input
@@ -145,7 +149,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
             )}
             {unavailable && (
               <p className="mt-2 text-sm text-error" role="alert">
-                Esta fecha no está disponible por vacaciones o bloqueo manual. Selecciona otra fecha.
+                {t('events:general.date_unavailable')}
               </p>
             )}
           </div>
@@ -155,7 +159,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="start_time" className="block text-sm font-medium text-text-secondary">
-              Hora de Inicio
+              {t('events:general.start_time')}
             </label>
             <div className="mt-1">
               <input
@@ -168,7 +172,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
           </div>
           <div>
             <label htmlFor="end_time" className="block text-sm font-medium text-text-secondary">
-              Hora de Fin
+              {t('events:general.end_time')}
             </label>
             <div className="mt-1">
               <input
@@ -184,14 +188,14 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         {/* Tipo de Servicio */}
         <div className="sm:col-span-3">
           <label htmlFor="service_type" className="block text-sm font-medium text-text-secondary">
-            Tipo de Servicio *
+            {t('events:general.service_type')} *
           </label>
           <div className="mt-1">
             <input
               id="service_type"
               type="text"
               {...register('service_type')}
-              placeholder="Ej. Decoración, Banquete, Fotografía"
+              placeholder={t('events:general.service_placeholder')}
               className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               aria-required="true"
               aria-invalid={errors.service_type ? "true" : "false"}
@@ -208,7 +212,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         {/* Número de Personas */}
         <div className="sm:col-span-3">
           <label htmlFor="num_people" className="block text-sm font-medium text-text-secondary">
-            Número de Personas *
+            {t('events:general.num_people')} *
           </label>
           <div className="mt-1">
             <div className="relative rounded-xl shadow-xs">
@@ -236,7 +240,7 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         {/* Estado */}
         <div className="sm:col-span-3">
           <label htmlFor="status" className="block text-sm font-medium text-text-secondary">
-            Estado *
+            {t('events:general.status')} *
           </label>
           <div className="mt-1">
             <select
@@ -245,10 +249,10 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
               className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
               aria-required="true"
             >
-              <option value="quoted">Cotizado</option>
-              <option value="confirmed">Confirmado</option>
-              <option value="completed">Completado</option>
-              <option value="cancelled">Cancelado</option>
+              <option value="quoted">{t('events:general.status_options.quoted')}</option>
+              <option value="confirmed">{t('events:general.status_options.confirmed')}</option>
+              <option value="completed">{t('events:general.status_options.completed')}</option>
+              <option value="cancelled">{t('events:general.status_options.cancelled')}</option>
             </select>
           </div>
         </div>
@@ -256,14 +260,14 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
         {/* Ubicación */}
         <div className="sm:col-span-6">
           <label htmlFor="location" className="block text-sm font-medium text-text-secondary">
-            Ubicación del Evento
+            {t('events:general.location')}
           </label>
           <div className="mt-1">
             <input
               id="location"
               type="text"
               {...register('location')}
-              placeholder="Dirección del evento (opcional, por defecto dirección del cliente)"
+              placeholder={t('events:general.location_placeholder')}
               className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -271,14 +275,14 @@ export const EventGeneralInfo: React.FC<EventGeneralInfoProps> = ({
 
         <div className="sm:col-span-6">
           <label htmlFor="city" className="block text-sm font-medium text-text-secondary">
-            Ciudad del Evento
+            {t('events:general.city')}
           </label>
           <div className="mt-1">
             <input
               id="city"
               type="text"
               {...register('city')}
-              placeholder="Ciudad del evento (para contrato)"
+              placeholder={t('events:general.city_placeholder')}
               className="shadow-xs rounded-xl p-2 border bg-card text-text border-border transition-shadow focus:ring-2 focus:ring-primary/20"
             />
           </div>

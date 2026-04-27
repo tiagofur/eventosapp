@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,73 +32,28 @@ import {
 } from "@/lib/contractTemplate";
 import { ContractTemplateEditor } from "@/components/ContractTemplateEditor";
 
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Ingresa tu contraseña actual"),
-    newPassword: z.string().min(8, "La nueva contraseña debe tener al menos 8 caracteres"),
-    confirmPassword: z.string().min(1, "Confirma tu nueva contraseña"),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"],
-  });
-
-type PasswordFormData = z.infer<typeof passwordSchema>;
-
-const formatSubDate = (dateStr?: string) => {
+const formatSubDate = (dateStr: string | undefined, i18n: any) => {
   if (!dateStr) return null;
   try {
-    return new Date(dateStr).toLocaleDateString("es-MX", {
+    const locale = i18n.language === "es" ? "es-MX" : "en-US";
+    return new Date(dateStr).toLocaleDateString(locale, {
       year: "numeric", month: "long", day: "numeric",
     });
   } catch { return null; }
 };
 
-const SUB_STATUS_LABEL: Record<string, { text: string; color: string }> = {
-  active: { text: "Activa", color: "text-success bg-success/10" },
-  past_due: { text: "Pago pendiente", color: "text-warning bg-warning/10" },
-  canceled: { text: "Cancelada", color: "text-error bg-error/5" },
-  trialing: { text: "Periodo de prueba", color: "text-info bg-info/10" },
-};
-
-// Plan label mapping. 'premium' is a legacy DB value kept by migration 040
-// and always rendered as "Pro" — never surface the word "Premium".
-const PLAN_LABEL: Record<string, string> = {
-  basic: "Básico",
-  pro: "Pro",
-  business: "Business",
-  premium: "Pro",
-};
-
-// Fallback provider copy — used only when talking to an older backend that
-// did not yet return `source_badge` and `cancel_instructions`. Once the
-// backend is deployed with those fields, the server strings take over.
-const FALLBACK_PROVIDER_LABEL: Record<string, { badge: string; cancelInstructions: string }> = {
-  stripe: {
-    badge: "Suscrito vía Web",
-    cancelInstructions: "Podés gestionar o cancelar tu suscripción desde el portal de pagos web.",
-  },
-  apple: {
-    badge: "Suscrito vía App Store",
-    cancelInstructions: "Tu suscripción fue realizada desde iOS. Para cancelarla, abrí Configuración > tu Apple ID > Suscripciones en tu iPhone o iPad.",
-  },
-  google: {
-    badge: "Suscrito vía Google Play",
-    cancelInstructions: "Tu suscripción fue realizada desde Android. Para cancelarla, abrí Google Play Store > Pagos y suscripciones.",
-  },
-};
-
 /** Formats the renewal price when the backend exposes it (Stripe provider). */
-const formatSubPrice = (sub: { amount_cents?: number | null; currency?: string | null; billing_interval?: string | null } | null | undefined) => {
+const formatSubPrice = (sub: { amount_cents?: number | null; currency?: string | null; billing_interval?: string | null } | null | undefined, t: any) => {
   if (!sub?.amount_cents || !sub?.currency) return null;
-  const amount = (sub.amount_cents / 100).toFixed(2);
-  const interval = sub.billing_interval === "year" ? "/año"
-    : sub.billing_interval === "month" ? "/mes"
+  const amount = (sub.amount_cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const interval = sub.billing_interval === "year" ? t("common:time.per_year")
+    : sub.billing_interval === "month" ? t("common:time.per_month")
     : "";
   return `${sub.currency.toUpperCase()} ${amount}${interval}`;
 };
 
 export const Settings: React.FC = () => {
+  const { t, i18n } = useTranslation(["settings", "common"]);
   const { user: profile, updateProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const {
@@ -109,6 +65,19 @@ export const Settings: React.FC = () => {
   } = usePlanLimits();
   const { addToast } = useToast();
   const { isDark, toggleTheme } = useTheme();
+
+  const passwordSchema = useMemo(() => z
+    .object({
+      currentPassword: z.string().min(1, t("settings:validation.current_password_required")),
+      newPassword: z.string().min(8, t("settings:validation.new_password_min")),
+      confirmPassword: z.string().min(1, t("settings:validation.confirm_password_required")),
+    })
+    .refine((d) => d.newPassword === d.confirmPassword, {
+      message: t("settings:validation.passwords_mismatch"),
+      path: ["confirmPassword"],
+    }), [t]);
+
+  type PasswordFormData = z.infer<typeof passwordSchema>;
 
   const [isEditingBusiness, setIsEditingBusiness] = useState(false);
   const [businessName, setBusinessName] = useState(
@@ -142,7 +111,7 @@ export const Settings: React.FC = () => {
     push_payment_received: profile?.push_payment_received ?? true,
   });
   const initialTab = searchParams.get("tab") === "subscription" ? "subscription" : searchParams.get("tab") === "notifications" ? "notifications" : "profile";
-  const [activeTab, setActiveTab] = useState<"profile" | "business" | "subscription" | "contracts" | "notifications">(initialTab);
+  const [activeTab, setActiveTab] = useState<"profile" | "business" | "subscription" | "contracts" | "notifications">(initialTab as any);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
 
@@ -176,6 +145,35 @@ export const Settings: React.FC = () => {
       });
     }
   }, [profile]);
+
+  const subStatusLabels = useMemo<Record<string, { text: string; color: string }>>(() => ({
+    active: { text: t("settings:subscription.status.active"), color: "text-success bg-success/10" },
+    past_due: { text: t("settings:subscription.status.past_due"), color: "text-warning bg-warning/10" },
+    canceled: { text: t("settings:subscription.status.canceled"), color: "text-error bg-error/5" },
+    trialing: { text: t("settings:subscription.status.trialing"), color: "text-info bg-info/10" },
+  }), [t]);
+
+  const planLabels = useMemo<Record<string, string>>(() => ({
+    basic: t("settings:plans.basic"),
+    pro: t("settings:plans.pro"),
+    business: t("settings:plans.business"),
+    premium: t("settings:plans.pro"),
+  }), [t]);
+
+  const fallbackProviderLabels = useMemo<Record<string, { badge: string; cancelInstructions: string }>>(() => ({
+    stripe: {
+      badge: t("settings:subscription.provider.stripe.badge"),
+      cancelInstructions: t("settings:subscription.provider.stripe.cancel"),
+    },
+    apple: {
+      badge: t("settings:subscription.provider.apple.badge"),
+      cancelInstructions: t("settings:subscription.provider.apple.cancel"),
+    },
+    google: {
+      badge: t("settings:subscription.provider.google.badge"),
+      cancelInstructions: t("settings:subscription.provider.google.cancel"),
+    },
+  }), [t]);
 
 
 
@@ -211,7 +209,7 @@ export const Settings: React.FC = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      addToast("El archivo es demasiado grande (máximo 2MB).", "error");
+      addToast(t("settings:business.logo_error_size"), "error");
       return;
     }
 
@@ -231,7 +229,7 @@ export const Settings: React.FC = () => {
   const handleUpdateContractSettings = async () => {
     const { invalidTokens } = validateContractTemplate(contractTemplate);
     if (invalidTokens.length > 0) {
-      addToast(`La plantilla contiene placeholders no soportados: ${invalidTokens.map((t) => `[${t}]`).join(", ")}`, "error");
+      addToast(t("settings:contracts.validation_error", { tokens: invalidTokens.map((t) => `[${t}]`).join(", ") }), "error");
       return;
     }
 
@@ -242,10 +240,10 @@ export const Settings: React.FC = () => {
         default_refund_percent: contractSettings.refund,
         contract_template: contractTemplate,
       });
-      addToast("Configuración del contrato guardada correctamente", "success");
+      addToast(t("settings:contracts.success"), "success");
     } catch (error) {
       logError("Error updating contract settings", error);
-      addToast("Error al guardar la configuración", "error");
+      addToast(t("settings:contracts.error"), "error");
     }
   };
 
@@ -256,13 +254,13 @@ export const Settings: React.FC = () => {
         current_password: data.currentPassword,
         new_password: data.newPassword,
       });
-      addToast("Contraseña actualizada correctamente", "success");
+      addToast(t("settings:profile.password_form.success"), "success");
       setShowPasswordForm(false);
       resetPassword();
     } catch (error: unknown) {
       const msg = error instanceof Error && error.message.includes("incorrect")
-        ? "La contraseña actual es incorrecta"
-        : "Error al cambiar la contraseña";
+        ? t("settings:profile.password_form.error_incorrect")
+        : t("settings:profile.password_form.error_generic");
       addToast(msg, "error");
     } finally {
       setIsChangingPassword(false);
@@ -308,7 +306,7 @@ export const Settings: React.FC = () => {
         aria-live="polite"
       >
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="sr-only">Cargando configuración...</span>
+        <span className="sr-only">{t("settings:loading")}</span>
       </div>
     );
   }
@@ -319,10 +317,10 @@ export const Settings: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-text">
-            Configuración
+            {t("settings:title")}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Personaliza tu experiencia y gestiona tu negocio.
+            {t("settings:subtitle")}
           </p>
         </div>
       </div>
@@ -330,11 +328,11 @@ export const Settings: React.FC = () => {
       <div className="flex justify-center w-full">
         <div className="inline-flex bg-surface-alt rounded-2xl p-1 overflow-x-auto border border-border" role="tablist">
           {[
-            { id: "profile", label: "Mi Cuenta", icon: User },
-            { id: "business", label: "Mi Negocio", icon: Building },
-            { id: "contracts", label: "Contratos", icon: FileText },
-            { id: "notifications", label: "Notificaciones", icon: Bell },
-            { id: "subscription", label: "Suscripción", icon: CreditCard },
+            { id: "profile", label: t("settings:tabs.profile"), icon: User },
+            { id: "business", label: t("settings:tabs.business"), icon: Building },
+            { id: "contracts", label: t("settings:tabs.contracts"), icon: FileText },
+            { id: "notifications", label: t("settings:tabs.notifications"), icon: Bell },
+            { id: "subscription", label: t("settings:tabs.subscription"), icon: CreditCard },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -362,20 +360,20 @@ export const Settings: React.FC = () => {
             <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
                 <h3 className="text-lg font-bold text-text mb-1">
-                  Perfil de Usuario
+                  {t("settings:profile.title")}
                 </h3>
                 <p className="text-sm text-text-secondary">
-                  Información básica de tu cuenta personal.
+                  {t("settings:profile.description")}
                 </p>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-8">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-text-secondary">Nombre</label>
+                  <label className="text-xs font-medium text-text-secondary">{t("settings:profile.name")}</label>
                   <p className="text-lg font-bold text-text">{profile?.name}</p>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-text-secondary">Email</label>
+                  <label className="text-xs font-medium text-text-secondary">{t("settings:profile.email")}</label>
                   <p className="text-lg font-bold text-text">{profile?.email}</p>
                 </div>
               </div>
@@ -388,16 +386,16 @@ export const Settings: React.FC = () => {
                       onClick={() => setShowPasswordForm(true)}
                       className="flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all"
                     >
-                      Cambiar contraseña <Shield className="h-4 w-4" />
+                      {t("settings:profile.change_password")} <Shield className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-4 max-w-md">
-                    <h4 className="font-bold text-text">Cambiar contraseña</h4>
+                    <h4 className="font-bold text-text">{t("settings:profile.password_form.title")}</h4>
                     <div>
                       <input
                         type="password"
-                        placeholder="Contraseña actual"
+                        placeholder={t("settings:profile.password_form.current")}
                         {...registerPassword("currentPassword")}
                         className="w-full bg-surface border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                         aria-invalid={passwordErrors.currentPassword ? "true" : "false"}
@@ -409,7 +407,7 @@ export const Settings: React.FC = () => {
                     <div>
                       <input
                         type="password"
-                        placeholder="Nueva contraseña (mín. 8 caracteres)"
+                        placeholder={t("settings:profile.password_form.new")}
                         {...registerPassword("newPassword")}
                         className="w-full bg-surface border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                         aria-invalid={passwordErrors.newPassword ? "true" : "false"}
@@ -421,7 +419,7 @@ export const Settings: React.FC = () => {
                     <div>
                       <input
                         type="password"
-                        placeholder="Confirmar nueva contraseña"
+                        placeholder={t("settings:profile.password_form.confirm")}
                         {...registerPassword("confirmPassword")}
                         className="w-full bg-surface border border-border rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                         aria-invalid={passwordErrors.confirmPassword ? "true" : "false"}
@@ -437,7 +435,7 @@ export const Settings: React.FC = () => {
                         disabled={isChangingPassword}
                         className="bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark transition-colors shadow-sm disabled:opacity-50"
                       >
-                        {isChangingPassword ? "Guardando..." : "Guardar"}
+                        {isChangingPassword ? t("common:action.saving") : t("common:action.save")}
                       </button>
                       <button
                         type="button"
@@ -447,15 +445,15 @@ export const Settings: React.FC = () => {
                         }}
                         className="bg-surface-alt text-text font-bold px-4 py-2 rounded-xl border border-border hover:bg-border transition-all"
                       >
-                        Cancelar
+                        {t("common:action.cancel")}
                       </button>
                     </div>
                   </div>
                 )}
                 <div className="flex items-center justify-between sm:justify-end gap-4">
                   <div>
-                    <p className="font-bold text-text text-sm">Modo Oscuro</p>
-                    <p className="text-xs text-text-secondary">Apariencia de la aplicación</p>
+                    <p className="font-bold text-text">{t("settings:profile.dark_mode")}</p>
+                    <p className="text-xs text-text-secondary">{t("settings:profile.dark_mode_desc")}</p>
                   </div>
                   <button
                     type="button"
@@ -466,7 +464,7 @@ export const Settings: React.FC = () => {
                     )}
                     role="switch"
                     aria-checked={isDark}
-                    aria-label="Modo oscuro"
+                    aria-label={t("settings:profile.dark_mode")}
                   >
                     <span
                       className={clsx(
@@ -482,10 +480,10 @@ export const Settings: React.FC = () => {
                     to="/eliminar-cuenta"
                     className="flex items-center gap-2 text-error font-bold hover:gap-3 transition-all"
                   >
-                    Eliminar mi cuenta <Trash2 className="h-4 w-4" />
+                    {t("settings:profile.delete_account")} <Trash2 className="h-4 w-4" />
                   </Link>
                   <p className="text-xs text-text-secondary mt-1">
-                    Esta acción es irreversible y borrará todos tus datos permanentemente.
+                    {t("settings:profile.delete_account_desc")}
                   </p>
                 </div>
               </div>
@@ -495,17 +493,13 @@ export const Settings: React.FC = () => {
           {activeTab === "business" && (
             <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
-                <h3 className="text-lg font-bold text-text mb-1">
-                  Identidad de Negocio
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Personaliza cómo te ven tus clientes en presupuestos y contratos.
-                </p>
+                <h3 className="text-lg font-bold text-text mb-1">{t("settings:business.title")}</h3>
+                <p className="text-sm text-text-secondary">{t("settings:business.description")}</p>
               </div>
 
               {/* Business Name */}
               <div className="space-y-4">
-                <label className="text-xs font-medium text-text-secondary">Nombre Comercial</label>
+                <label className="text-xs font-medium text-text-secondary">{t("settings:business.name_label")}</label>
                 {isEditingBusiness ? (
                   <div className="flex flex-col sm:flex-row gap-3 max-w-2xl">
                     <input
@@ -513,7 +507,7 @@ export const Settings: React.FC = () => {
                       value={businessName}
                       onChange={(e) => setBusinessName(e.target.value)}
                       className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
-                      placeholder="Ej. Mi Evento Pro"
+                      placeholder={t("settings:business.name_placeholder")}
                     />
                     <div className="flex gap-2">
                       <button
@@ -521,28 +515,28 @@ export const Settings: React.FC = () => {
                         onClick={handleUpdateBusinessName}
                         className="bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark transition-colors shadow-sm"
                       >
-                        Guardar
+                        {t("common:action.save")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsEditingBusiness(false)}
                         className="bg-surface-alt text-text font-bold px-6 py-3 rounded-xl border border-border hover:bg-border transition-all"
                       >
-                        Cancelar
+                        {t("common:action.cancel")}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border group hover:border-primary/30 transition-all">
                     <span className="text-lg font-bold">
-                      {profile?.business_name || "No configurado"}
+                      {profile?.business_name || t("settings:business.not_configured")}
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsEditingBusiness(true)}
                       className="text-primary font-bold text-sm bg-primary/10 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                     >
-                      Editar
+                      {t("common:action.edit")}
                     </button>
                   </div>
                 )}
@@ -550,7 +544,7 @@ export const Settings: React.FC = () => {
 
               {/* Logo Upload */}
               <div className="space-y-4">
-                <label className="text-xs font-medium text-text-secondary">Logo de Marca</label>
+                <label className="text-xs font-medium text-text-secondary">{t("settings:business.logo_label")}</label>
                 <div className="flex flex-col sm:flex-row items-center gap-6 p-6 bg-surface-alt/30 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-all text-center sm:text-left">
                   <div className="relative h-24 w-24 shrink-0 bg-card rounded-2xl shadow-inner border border-border overflow-hidden flex items-center justify-center p-2">
                     {profile?.logo_url ? (
@@ -565,10 +559,10 @@ export const Settings: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1 space-y-2">
-                    <h4 className="font-bold">Sube tu logo profesional</h4>
-                    <p className="text-xs text-text-secondary">PNG transparente recomendado. Máx 2MB.</p>
+                    <h4 className="font-bold">{t("settings:business.logo_title")}</h4>
+                    <p className="text-xs text-text-secondary">{t("settings:business.logo_desc")}</p>
                     <label className="inline-block bg-card text-text font-bold text-sm px-6 py-2.5 rounded-xl border border-border shadow-sm hover:shadow-md transition-all cursor-pointer">
-                      Seleccionar archivo
+                      {t("settings:business.logo_select")}
                       <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
                     </label>
                   </div>
@@ -577,11 +571,11 @@ export const Settings: React.FC = () => {
 
               {/* Show Business Name in PDFs */}
               <div className="space-y-4">
-                <label className="text-xs font-medium text-text-secondary">PDFs</label>
+                <label className="text-xs font-medium text-text-secondary">{t("settings:business.pdf_settings")}</label>
                 <div className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border">
                   <div>
-                    <p className="font-bold text-text">Mostrar nombre en PDFs</p>
-                    <p className="text-xs text-text-secondary mt-0.5">Incluye el nombre de tu negocio en presupuestos y contratos</p>
+                    <p className="font-bold text-text">{t("settings:business.show_name_pdf")}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">{t("settings:business.show_name_pdf_desc")}</p>
                   </div>
                   <button
                     type="button"
@@ -592,7 +586,7 @@ export const Settings: React.FC = () => {
                     )}
                     role="switch"
                     aria-checked={showBusinessNameInPdf}
-                    aria-label="Mostrar nombre en PDFs"
+                    aria-label={t("settings:business.show_name_pdf")}
                   >
                     <span
                       className={clsx(
@@ -606,7 +600,7 @@ export const Settings: React.FC = () => {
 
               {/* Brand Color */}
               <div className="space-y-4">
-                <label className="text-xs font-medium text-text-secondary">Color de Marca</label>
+                <label className="text-xs font-medium text-text-secondary">{t("settings:business.brand_color")}</label>
                 <div className="flex items-center gap-4">
                   <input
                     type="color"
@@ -620,7 +614,7 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-xs text-text-secondary italic">
-                  Este color se aplicará automáticamente a tus presupuestos y contratos en PDF.
+                  {t("settings:business.brand_color_help")}
                 </p>
               </div>
             </div>
@@ -629,18 +623,14 @@ export const Settings: React.FC = () => {
           {activeTab === "contracts" && (
             <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
-                <h3 className="text-lg font-bold text-text mb-1">
-                  Valores Predeterminados
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Configura los valores que aparecerán por defecto en tus nuevos eventos.
-                </p>
+                <h3 className="text-lg font-bold text-text mb-1">{t("settings:contracts.title")}</h3>
+                <p className="text-sm text-text-secondary">{t("settings:contracts.description")}</p>
               </div>
 
               <div className="space-y-8">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-text-secondary">Anticipo Sugerido</label>
+                    <label className="text-xs font-medium text-text-secondary">{t("settings:contracts.deposit")}</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -652,7 +642,7 @@ export const Settings: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-text-secondary">Días para cancelar</label>
+                    <label className="text-xs font-medium text-text-secondary">{t("settings:contracts.cancellation")}</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -660,11 +650,11 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setContractSettings({...contractSettings, cancellation: Number(e.target.value)})}
                         className="w-full bg-surface-alt border border-border rounded-xl px-4 py-3 font-bold text-xl"
                       />
-                      <span className="text-lg font-bold text-text-secondary uppercase">Días</span>
+                      <span className="text-lg font-bold text-text-secondary uppercase">{t("settings:contracts.days")}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-text-secondary">Reembolso</label>
+                    <label className="text-xs font-medium text-text-secondary">{t("settings:contracts.refund")}</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="number"
@@ -690,23 +680,19 @@ export const Settings: React.FC = () => {
           {activeTab === "notifications" && (
             <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
               <div>
-                <h3 className="text-lg font-bold text-text mb-1">
-                  Preferencias de Notificación
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Controla qué correos electrónicos y notificaciones push recibes.
-                </p>
+                <h3 className="text-lg font-bold text-text mb-1">{t("settings:notifications.title")}</h3>
+                <p className="text-sm text-text-secondary">{t("settings:notifications.description")}</p>
               </div>
 
               {/* Email Notifications */}
               <div className="space-y-4">
-                <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">Correos Electrónicos</label>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">{t("settings:notifications.email_group")}</label>
                 {([
-                  { key: "email_payment_receipt" as const, label: "Recibos de Pago", desc: "Recibe un correo cuando se registra un pago" },
-                  { key: "email_event_reminder" as const, label: "Recordatorio de Eventos", desc: "Recibe un correo 24h antes de tu evento" },
-                  { key: "email_subscription_updates" as const, label: "Actualizaciones de Suscripción", desc: "Correos sobre cambios en tu plan" },
-                  { key: "email_weekly_summary" as const, label: "Resumen Semanal", desc: "Resumen de actividad de la semana" },
-                  { key: "email_marketing" as const, label: "Noticias y Tips", desc: "Novedades y consejos de Solennix" },
+                  { key: "email_payment_receipt" as const, label: t("settings:notifications.items.email_payment_receipt.label"), desc: t("settings:notifications.items.email_payment_receipt.desc") },
+                  { key: "email_event_reminder" as const, label: t("settings:notifications.items.email_event_reminder.label"), desc: t("settings:notifications.items.email_event_reminder.desc") },
+                  { key: "email_subscription_updates" as const, label: t("settings:notifications.items.email_subscription_updates.label"), desc: t("settings:notifications.items.email_subscription_updates.desc") },
+                  { key: "email_weekly_summary" as const, label: t("settings:notifications.items.email_weekly_summary.label"), desc: t("settings:notifications.items.email_weekly_summary.desc") },
+                  { key: "email_marketing" as const, label: t("settings:notifications.items.email_marketing.label"), desc: t("settings:notifications.items.email_marketing.desc") },
                 ]).map((item) => (
                   <div key={item.key} className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border">
                     <div>
@@ -737,11 +723,11 @@ export const Settings: React.FC = () => {
 
               {/* Push Notifications */}
               <div className="space-y-4">
-                <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">Notificaciones Push</label>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">{t("settings:notifications.push_group")}</label>
                 <div className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border">
                   <div>
-                    <p className="font-bold text-text">Notificaciones Push</p>
-                    <p className="text-xs text-text-secondary mt-0.5">Habilitar o deshabilitar todas las notificaciones push</p>
+                    <p className="font-bold text-text">{t("settings:notifications.items.push_enabled.label")}</p>
+                    <p className="text-xs text-text-secondary mt-0.5">{t("settings:notifications.items.push_enabled.desc")}</p>
                   </div>
                   <button
                     type="button"
@@ -752,7 +738,7 @@ export const Settings: React.FC = () => {
                     )}
                     role="switch"
                     aria-checked={notifPrefs.push_enabled}
-                    aria-label="Notificaciones Push"
+                    aria-label={t("settings:notifications.items.push_enabled.label")}
                   >
                     <span
                       className={clsx(
@@ -764,8 +750,8 @@ export const Settings: React.FC = () => {
                 </div>
                 <div className={clsx(!notifPrefs.push_enabled && "opacity-50 pointer-events-none")}>
                   {([
-                    { key: "push_event_reminder" as const, label: "Recordatorio de Eventos", desc: "Notificación push antes de tu evento" },
-                    { key: "push_payment_received" as const, label: "Pago Recibido", desc: "Notificación push cuando se registra un pago" },
+                    { key: "push_event_reminder" as const, label: t("settings:notifications.items.push_event_reminder.label"), desc: t("settings:notifications.items.push_event_reminder.desc") },
+                    { key: "push_payment_received" as const, label: t("settings:notifications.items.push_payment_received.label"), desc: t("settings:notifications.items.push_payment_received.desc") },
                   ]).map((item) => (
                     <div key={item.key} className="flex items-center justify-between p-4 bg-surface-alt/50 rounded-2xl border border-border mt-4">
                       <div>
@@ -797,133 +783,177 @@ export const Settings: React.FC = () => {
             </div>
           )}
 
+            </div>
+          )}
+
           {activeTab === "subscription" && (
-            <div className="space-y-6">
-              <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border relative overflow-hidden">
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 bg-surface-alt px-3 py-1 rounded-full text-xs font-medium text-text-secondary">
-                      Plan Actual
-                    </div>
-                    <h2 className="text-4xl font-bold tracking-tight text-text">
-                      {PLAN_LABEL[profile?.plan ?? ""] ?? "Básico"}
-                    </h2>
-                    <p className="text-text-secondary font-medium text-sm max-w-md">
-                      {profile?.plan === "pro" || profile?.plan === "business" || profile?.plan === "premium"
-                        ? "Disfrutás de acceso ilimitado a todas nuestras herramientas profesionales."
-                        : "Potenciá tu negocio con el plan Pro: eventos ilimitados, gestión de inventario y más."}
-                    </p>
+            <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 space-y-8 border border-border">
+              <div>
+                <h3 className="text-lg font-bold text-text mb-1">
+                  {t("settings:subscription.title")}
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  {t("settings:subscription.description")}
+                </p>
+              </div>
 
-                    {/* Subscription details */}
-                    {subStatus?.subscription && (
-                      <div className="flex flex-wrap items-center gap-3 pt-2">
-                        {(() => {
-                          const info = SUB_STATUS_LABEL[subStatus.subscription!.status] || { text: subStatus.subscription!.status, color: "text-text-secondary bg-surface-alt" };
-                          return (
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${info.color}`}>
-                              {info.text}
-                            </span>
-                          );
-                        })()}
-                        {subStatus.subscription.provider && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-text-secondary bg-surface-alt">
-                            {subStatus.subscription.source_badge
-                              || FALLBACK_PROVIDER_LABEL[subStatus.subscription.provider]?.badge
-                              || subStatus.subscription.provider}
-                          </span>
-                        )}
-                        {formatSubPrice(subStatus.subscription) && (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-text-secondary bg-surface-alt">
-                            {formatSubPrice(subStatus.subscription)}
-                          </span>
-                        )}
-                        {subStatus.subscription.current_period_end && (
-                          <span className="text-xs text-text-secondary">
-                            {subStatus.subscription.cancel_at_period_end
-                              ? `Se cancela el ${formatSubDate(subStatus.subscription.current_period_end)}`
-                              : `Próxima renovación: ${formatSubDate(subStatus.subscription.current_period_end)}`}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {subStatus?.subscription?.cancel_at_period_end && (
-                      <div className="mt-2 p-3 bg-warning/10 border border-warning/30 rounded-xl text-sm text-warning">
-                        Tu suscripción se cancelará al final del periodo actual. Puedes reactivarla desde el portal de pagos.
-                      </div>
-                    )}
-
-                    {/* Cross-platform cancellation instructions. Prefer the
-                        server-authored string; fall back to the hardcoded map
-                        only against older backend builds. */}
-                    {subStatus?.subscription?.provider && subStatus.subscription.provider !== "stripe" && (
-                      <div className="mt-2 p-3 bg-info/10 border border-info/30 rounded-xl text-sm text-info flex items-start gap-2">
-                        <Info className="h-4 w-4 mt-0.5 shrink-0" />
-                        <span>
-                          {subStatus.subscription.cancel_instructions
-                            || FALLBACK_PROVIDER_LABEL[subStatus.subscription.provider]?.cancelInstructions}
-                        </span>
-                      </div>
-                    )}
+              {/* Status Badge */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-surface-alt/50 rounded-2xl border border-border">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Zap className="h-6 w-6" />
                   </div>
-
-                  <div className="flex flex-col gap-3">
-                    {profile?.plan === "basic" && (
-                      <Link
-                        to="/pricing"
-                        className="bg-primary text-white px-6 py-3 rounded-md font-medium text-center shadow-sm hover:bg-primary-dark transition-colors"
-                      >
-                        Subir a Pro
-                      </Link>
-                    )}
-                    {(profile?.stripe_customer_id || subStatus?.has_stripe_account) && (!subStatus?.subscription?.provider || subStatus.subscription.provider === "stripe") && (
-                      <button
-                        type="button"
-                        onClick={handleManageSubscription}
-                        disabled={isPortalLoading}
-                        className="bg-card border border-border text-text-secondary px-6 py-3 rounded-md font-medium hover:bg-surface-alt transition-colors flex items-center justify-center gap-2"
-                      >
-                        {isPortalLoading ? "Cargando..." : (
-                          <>Gestionar <ExternalLink className="h-4 w-4" /></>
-                        )}
-                      </button>
-                    )}
+                  <div>
+                    <h4 className="font-bold text-text">
+                      {t("settings:subscription.current_plan", {
+                        plan:
+                          planLabels[subStatus?.plan_id || "basic"] ||
+                          (subStatus?.plan_id ?? t("settings:plans.basic")),
+                      })}
+                    </h4>
+                    <span
+                      className={clsx(
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold mt-1",
+                        subStatusLabels[subStatus?.status || "active"]?.color ||
+                          "bg-surface-alt text-text-secondary"
+                      )}
+                    >
+                      {subStatusLabels[subStatus?.status || "active"]?.text ||
+                        subStatus?.status}
+                    </span>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                    {subStatus?.source_badge ||
+                      fallbackProviderLabels[subStatus?.provider || "stripe"].badge}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleManageSubscription}
+                    disabled={isPortalLoading}
+                    className="inline-flex items-center justify-center px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/20 hover:shadow-lg disabled:opacity-50"
+                  >
+                    {isPortalLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        {t("settings:subscription.manage")}{" "}
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              {/* Limits / Usage section */}
-              <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
-                <h3 className="text-lg font-bold text-text mb-6">Uso de este mes</h3>
-                <div className="grid sm:grid-cols-2 gap-8">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-text-secondary">Eventos este mes</span>
-                      <span>
-                        {isBasicPlan ? `${eventsThisMonth} / ${eventLimit}` : 'Ilimitados'}
-                      </span>
-                    </div>
-                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-1000"
-                        style={{ width: isBasicPlan ? `${Math.min((eventsThisMonth / eventLimit) * 100, 100)}%` : '100%' }}
-                      />
+              {/* Renewal info & limits */}
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3 text-text-secondary">
+                    <Info className="h-5 w-5 shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-text">
+                        {subStatus?.cancel_instructions ||
+                          fallbackProviderLabels[subStatus?.provider || "stripe"]
+                            .cancelInstructions}
+                      </p>
+                      {subStatus?.status !== "canceled" && (
+                        <div className="mt-2 space-y-1">
+                          {subStatus?.current_period_end && (
+                            <p className="text-text-secondary">
+                              {t("settings:subscription.next_payment", {
+                                date: formatSubDate(subStatus.current_period_end, i18n),
+                              })}
+                            </p>
+                          )}
+                          {formatSubPrice(subStatus, t) && (
+                            <p className="font-bold text-text">
+                              {t("settings:subscription.renewal_price", {
+                                price: formatSubPrice(subStatus, t),
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-text-secondary">Clientes totales</span>
-                      <span>
-                        {isBasicPlan ? `${clientsCount} / ${clientLimit}` : 'Ilimitados'}
-                      </span>
+                </div>
+
+                <div className="bg-surface-alt/30 rounded-2xl p-6 border border-border space-y-6">
+                  <h5 className="text-xs font-bold text-text-secondary uppercase tracking-widest">
+                    {t("settings:subscription.usage")}
+                  </h5>
+
+                  <div className="space-y-4">
+                    {/* Events Usage */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-text-secondary">
+                          {t("settings:subscription.events")}
+                        </span>
+                        <span className="font-bold text-text">
+                          {eventsThisMonth}{" "}
+                          <span className="text-text-secondary font-normal">
+                            {t("settings:subscription.of")}{" "}
+                            {eventLimit === 999999
+                              ? t("settings:subscription.unlimited")
+                              : eventLimit}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="h-2 bg-surface rounded-full overflow-hidden border border-border/50">
+                        <div
+                          className="h-full bg-primary transition-all duration-1000"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (eventsThisMonth / (eventLimit || 1)) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-3 bg-surface-alt rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-green transition-all duration-1000"
-                        style={{ width: isBasicPlan ? `${Math.min((clientsCount / clientLimit) * 100, 100)}%` : '100%' }}
-                      />
+
+                    {/* Clients Usage */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-text-secondary">
+                          {t("settings:subscription.clients")}
+                        </span>
+                        <span className="font-bold text-text">
+                          {clientsCount}{" "}
+                          <span className="text-text-secondary font-normal">
+                            {t("settings:subscription.of")}{" "}
+                            {clientLimit === 999999
+                              ? t("settings:subscription.unlimited")
+                              : clientLimit}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="h-2 bg-surface rounded-full overflow-hidden border border-border/50">
+                        <div
+                          className="h-full bg-primary transition-all duration-1000"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (clientsCount / (clientLimit || 1)) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  {isBasicPlan && (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/pricing")}
+                      className="w-full mt-2 py-3 rounded-xl border border-primary/20 text-primary text-sm font-bold hover:bg-primary/5 transition-colors"
+                    >
+                      {t("settings:subscription.upgrade_pro")}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -933,10 +963,10 @@ export const Settings: React.FC = () => {
         {/* ── LEGAL LINKS ── */}
         <div className="bg-card shadow-sm rounded-2xl p-6 sm:p-8 border border-border">
           <h3 className="text-lg font-bold text-text mb-1">
-            Información Legal
+            {t("common:legal.title")}
           </h3>
           <p className="text-sm text-text-secondary mb-4">
-            Conoce más sobre Solennix y nuestras políticas.
+            {t("common:legal.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
@@ -944,14 +974,14 @@ export const Settings: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
               <Info className="h-4 w-4 text-primary" />
-              Acerca de Solennix
+              {t("common:legal.about")}
             </Link>
             <Link
               to="/terms"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
               <FileText className="h-4 w-4 text-primary" />
-              Términos y Condiciones
+              {t("common:legal.terms")}
             </Link>
             <a
               href="https://creapolis.dev/privacy-policy"
@@ -960,7 +990,7 @@ export const Settings: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
               <Shield className="h-4 w-4 text-primary" />
-              Política de Privacidad
+              {t("common:legal.privacy")}
             </a>
             <a
               href="https://creapolis.dev/delete-account"
@@ -969,7 +999,7 @@ export const Settings: React.FC = () => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface-alt/50 text-text hover:bg-border transition-colors text-sm font-medium"
             >
               <Trash2 className="h-4 w-4 text-error" />
-              Eliminar Cuenta
+              {t("common:legal.delete_account")}
             </a>
           </div>
         </div>

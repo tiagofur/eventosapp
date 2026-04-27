@@ -1,0 +1,173 @@
+{
+  "action": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "search": "Search",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "create": "Create",
+    "add": "Add",
+    "remove": "Remove",
+    "start": "Get started",
+    "more": "More",
+    "more_options": "More options",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "select": "Select",
+    "view": "View",
+    "download": "Download",
+    "upload": "Upload",
+    "hide": "Hide",
+    "show": "Show"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "events": "Events",
+    "clients": "Clients",
+    "products": "Products",
+    "inventory": "Inventory",
+    "calendar": "Calendar",
+    "quotes": "Quotes",
+    "settings": "Settings",
+    "staff": "Staff",
+    "search": "Search",
+    "main_nav": "Main navigation",
+    "open_nav": "Open navigation menu",
+    "close_nav": "Close navigation menu",
+    "collapse_menu": "Collapse menu",
+    "expand_menu": "Expand menu",
+    "logout": "Sign out",
+    "search_placeholder": "Search or go to...",
+    "forms": "Forms",
+    "admin": "Admin",
+    "skip_to_content": "Skip to content",
+    "open_search": "Open search",
+    "collapse": "Collapse",
+    "search_or_shortcut": "Search or press ⌘K..."
+  },
+  "auth": {
+    "sign_in_google": "Continue with Google",
+    "sign_in_apple": "Continue with Apple",
+    "signing_in_google": "Signing in with Google...",
+    "signing_in_apple": "Signing in with Apple...",
+    "sign_in_error_google": "Google sign-in failed",
+    "sign_in_error_apple": "Apple sign-in failed",
+    "apple_token_error": "Apple token not received. Please try again.",
+    "apple_unavailable": "Apple Sign-In is not available. Please try again.",
+    "signed_in": "Signed in",
+    "signed_out": "Signed out"
+  },
+  "status": {
+    "quoted": "Quoted",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "pending": "Pending",
+    "active": "Active",
+    "inactive": "Inactive",
+    "select_status": "Select status"
+  },
+  "error": {
+    "generic": "Something went wrong",
+    "try_again": "Please try again",
+    "not_found": "Not found",
+    "unauthorized": "Unauthorized",
+    "network": "Connection error"
+  },
+  "pagination": {
+    "page_previous": "Previous page",
+    "page_next": "Next page",
+    "go_previous": "Go to previous page",
+    "go_next": "Go to next page",
+    "go_to_page": "Go to page {{page}}",
+    "previous": "Previous",
+    "next": "Next",
+    "showing": "Showing",
+    "to": "to",
+    "of": "of",
+    "results": "results"
+  },
+  "modal": {
+    "close": "Close modal",
+    "close_notification": "Dismiss notification"
+  },
+  "command_palette": {
+    "title": "Command palette",
+    "search": "Search commands",
+    "placeholder": "Search or go to...",
+    "keyboard_help": "Keyboard shortcuts",
+    "toggle_help": "Show/hide this help",
+    "quick_actions_group": "Quick Actions",
+    "navigation_group": "Navigation",
+    "new_inventory_item": "New Inventory Item",
+    "search_all": "Search \"{{query}}\" in the app",
+    "no_results": "No results found",
+    "hint_navigate": "navigate",
+    "hint_select": "select",
+    "hint_close": "close"
+  },
+  "activity": {
+    "recent": "Recent activity",
+    "created": "Created",
+    "updated": "Updated",
+    "deleted": "Deleted",
+    "registered": "Registered",
+    "event_list_label": "Recent activity events list"
+  },
+  "onboarding": {
+    "hide_forever": "Hide checklist forever",
+    "hide_confirm": "Hide forever"
+  },
+  "plan": {
+    "upgrade_banner": "Upgrade to Pro for unlimited events",
+    "view_plans": "View Pro Plans",
+    "view_plans_description": "View available subscription plans"
+  },
+  "payment": {
+    "confirm": "Confirm Payment",
+    "complete": "Pay and complete",
+    "amount_required": "Amount required",
+    "reference_placeholder": "Payment ref..."
+  },
+  "format": {
+    "bold": "Bold (**text**)",
+    "italic": "Italic (*text*)",
+    "underline": "Underline (__text__)"
+  },
+  "quick_actions": {
+    "new_event": "New Event",
+    "new_client": "New Client",
+    "new_product": "New Product",
+    "quick_quote": "Quick Quote",
+    "close_quick_actions": "Close quick actions",
+    "open_quick_actions": "Quick actions"
+  },
+  "theme": {
+    "switch_light": "Switch to light mode",
+    "switch_dark": "Switch to dark mode"
+  },
+  "image": {
+    "drag_reorder": "Drag to reorder"
+  },
+  "contract": {
+    "editor_placeholder": "Write your contract template here..."
+  },
+  "upcoming_events": "Upcoming Events",
+  "critical_inventory": "Critical Inventory",
+  "user": "User",
+  "not_found": {
+    "title": "Page not found",
+    "description": "The URL you are trying to open does not exist or was moved.",
+    "go_home": "Go Home",
+    "go_dashboard": "Go to Dashboard",
+    "aria_home": "Go to the home page",
+    "aria_dashboard": "Go to the control panel"
+  }
+}

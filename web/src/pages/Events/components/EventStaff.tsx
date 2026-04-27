@@ -38,12 +38,8 @@ interface EventStaffProps {
   onAddTeamMembers?: (rows: SelectedStaffAssignment[]) => void;
 }
 
-const STATUS_OPTIONS: { value: AssignmentStatus; label: string }[] = [
-  { value: 'pending', label: 'Sin confirmar' },
-  { value: 'confirmed', label: 'Confirmado' },
-  { value: 'declined', label: 'Rechazó' },
-  { value: 'cancelled', label: 'Cancelado' },
-];
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const EventStaff: React.FC<EventStaffProps> = ({
   staffCatalog,
@@ -55,18 +51,20 @@ export const EventStaff: React.FC<EventStaffProps> = ({
   onChange,
   onAddTeamMembers,
 }) => {
+  const { t } = useTranslation(['events', 'common']);
   const emptyCatalog = staffCatalog.length === 0;
   const [teamPickerOpen, setTeamPickerOpen] = useState(false);
   const { data: teams = [], isLoading: loadingTeams } = useStaffTeams();
 
+  const STATUS_OPTIONS: { value: AssignmentStatus; label: string }[] = [
+    { value: 'pending', label: t('events:staff.status_options.pending') },
+    { value: 'confirmed', label: t('events:staff.status_options.confirmed') },
+    { value: 'declined', label: t('events:staff.status_options.declined') },
+    { value: 'cancelled', label: t('events:staff.status_options.cancelled') },
+  ];
+
   const handlePickTeam = async (teamId: string) => {
     if (!onAddTeamMembers) return;
-    // Evitamos el fetch por-id desde acá para no dependency-injectar un hook
-    // dinámico. Usamos el ListTeams (member_count) solo para el menú; al
-    // seleccionar delegamos el fetch-and-expand al padre vía callback con
-    // el id, pero por simplicidad buscamos miembros con un extra fetch en
-    // el padre. Para mantener este componente self-contained: resolvemos
-    // via fetch directo al service.
     const { staffService } = await import('@/services/staffService');
     try {
       const team = await staffService.getTeam(teamId);
@@ -76,8 +74,6 @@ export const EventStaff: React.FC<EventStaffProps> = ({
       for (const m of members) {
         if (existingIds.has(m.staff_id)) continue;
         const staff = staffCatalog.find((s) => s.id === m.staff_id);
-        // Si el staff del equipo no está en el catálogo local (p.ej. filtro),
-        // igual lo agregamos por id — el backend valida en el upsert.
         const staffRole = staff?.role_label ?? null;
         const teamRole = team.role_label ?? null;
         const roleOverride = staffRole ? '' : teamRole ?? '';
@@ -94,16 +90,12 @@ export const EventStaff: React.FC<EventStaffProps> = ({
       if (rows.length > 0) onAddTeamMembers(rows);
       setTeamPickerOpen(false);
     } catch {
-      // El service/api ya muestra toasts globales para errores HTTP.
       setTeamPickerOpen(false);
     }
   };
 
-  // Availability — solo pedimos si tenemos fecha. El hook se skipea en caso contrario.
   const { data: availability = [] } = useStaffAvailability(eventDate || null);
 
-  // Excluimos el evento actual al calcular busy: un staff ya asignado a este
-  // mismo evento NO debe mostrarse como "Ocupado ese día" consigo mismo.
   const busyStaffIds = useMemo(() => {
     const set = new Set<string>();
     for (const row of availability) {
@@ -115,7 +107,6 @@ export const EventStaff: React.FC<EventStaffProps> = ({
     return set;
   }, [availability, eventId]);
 
-  // Track which rows have expanded the "Agregar horario (opcional)" panel.
   const [shiftExpanded, setShiftExpanded] = useState<Record<number, boolean>>({});
 
   const toggleShift = (index: number) => {
@@ -126,19 +117,18 @@ export const EventStaff: React.FC<EventStaffProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <UserCog className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-medium text-text">Personal asignado</h3>
+        <h3 className="text-lg font-medium text-text">{t('events:staff.title')}</h3>
       </div>
 
       <p className="text-sm text-text-tertiary">
-        Asigná colaboradores al evento (fotógrafo, DJ, meseros, coordinador). El costo es opcional y se
-        registra por evento — el mismo colaborador puede cobrar distinto en cada uno.
+        {t('events:staff.description')}
       </p>
 
       {emptyCatalog ? (
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-text-secondary">
-          Aún no tenés colaboradores en tu catálogo.{' '}
+          {t('events:staff.empty_catalog')}{' '}
           <a href="/staff/new" className="text-primary font-medium hover:underline">
-            Crear el primero
+            {t('common:actions.create_new')}
           </a>
           .
         </div>
@@ -150,7 +140,6 @@ export const EventStaff: React.FC<EventStaffProps> = ({
             );
             const isShiftOpen =
               shiftExpanded[index] || !!item.shift_start || !!item.shift_end;
-            // Default mostrado del select cuando no hay status seteado = "confirmed".
             const statusValue: AssignmentStatus = item.status ?? 'confirmed';
 
             return (
@@ -159,34 +148,34 @@ export const EventStaff: React.FC<EventStaffProps> = ({
                 className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-4 bg-surface-alt/40 border border-border rounded-xl"
               >
                 <div className="sm:col-span-4">
-                  <label className="block text-xs font-medium text-text-secondary mb-1">Colaborador</label>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">{t('events:staff.label')}</label>
                   <select
                     value={item.staff_id}
                     onChange={(e) => onChange(index, 'staff_id', e.target.value)}
                     className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
                   >
-                    <option value="">Seleccionar…</option>
+                    <option value="">{t('common:actions.select')}…</option>
                     {availableCatalog.map((s) => {
                       const busy = eventDate && busyStaffIds.has(s.id) && s.id !== item.staff_id;
                       return (
                         <option key={s.id} value={s.id}>
                           {s.name}
                           {s.role_label ? ` · ${s.role_label}` : ''}
-                          {busy ? ' · Ocupado ese día' : ''}
+                          {busy ? ` · ${t('events:staff.busy_day')}` : ''}
                         </option>
                       );
                     })}
                   </select>
                   {eventDate && item.staff_id && busyStaffIds.has(item.staff_id) && (
                     <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-                      Ocupado ese día
+                      {t('events:staff.busy_day')}
                     </span>
                   )}
                 </div>
 
                 <div className="sm:col-span-3">
                   <label className="block text-xs font-medium text-text-secondary mb-1">
-                    Costo (opcional)
+                    {t('events:staff.cost')} ({t('common:optional').toLowerCase()})
                   </label>
                   <input
                     type="number"
@@ -203,14 +192,14 @@ export const EventStaff: React.FC<EventStaffProps> = ({
 
                 <div className="sm:col-span-4">
                   <label className="block text-xs font-medium text-text-secondary mb-1">
-                    Rol en este evento
+                    {t('events:staff.role')}
                   </label>
                   <input
                     type="text"
                     value={item.role_override}
                     onChange={(e) => onChange(index, 'role_override', e.target.value)}
                     className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                    placeholder="Mismo del catálogo si vacío"
+                    placeholder={t('events:staff.role_placeholder')}
                   />
                 </div>
 
@@ -219,14 +208,14 @@ export const EventStaff: React.FC<EventStaffProps> = ({
                     type="button"
                     onClick={() => onRemove(index)}
                     className="w-full inline-flex items-center justify-center px-2 py-2 text-sm rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors"
-                    aria-label="Quitar colaborador"
+                    aria-label={t('events:staff.remove')}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="block text-xs font-medium text-text-secondary mb-1">Estado</label>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">{t('common:status')}</label>
                   <select
                     value={statusValue}
                     onChange={(e) => onChange(index, 'status', e.target.value as AssignmentStatus)}
@@ -241,13 +230,13 @@ export const EventStaff: React.FC<EventStaffProps> = ({
                 </div>
 
                 <div className="sm:col-span-8">
-                  <label className="block text-xs font-medium text-text-secondary mb-1">Notas</label>
+                  <label className="block text-xs font-medium text-text-secondary mb-1">{t('common:notes')}</label>
                   <input
                     type="text"
                     value={item.notes}
                     onChange={(e) => onChange(index, 'notes', e.target.value)}
                     className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-                    placeholder="Hora de llegada, indicaciones…"
+                    placeholder={t('events:staff.notes_placeholder')}
                   />
                 </div>
 
@@ -259,13 +248,13 @@ export const EventStaff: React.FC<EventStaffProps> = ({
                       className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                     >
                       <Clock className="h-4 w-4" aria-hidden="true" />
-                      Agregar horario (opcional)
+                      {t('events:staff.add_shift')}
                     </button>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-text-secondary mb-1">
-                          Entrada
+                          {t('events:general.start_time')}
                         </label>
                         <input
                           type="time"
@@ -278,7 +267,7 @@ export const EventStaff: React.FC<EventStaffProps> = ({
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-text-secondary mb-1">
-                          Salida
+                          {t('events:general.end_time')}
                         </label>
                         <input
                           type="time"
@@ -303,7 +292,7 @@ export const EventStaff: React.FC<EventStaffProps> = ({
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Agregar colaborador
+              {t('events:staff.add')}
             </button>
             {onAddTeamMembers && (
               <button
@@ -312,7 +301,7 @@ export const EventStaff: React.FC<EventStaffProps> = ({
                 className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-text bg-surface-alt hover:bg-card border border-border rounded-lg transition-colors"
               >
                 <Users className="h-4 w-4" aria-hidden="true" />
-                Agregar equipo completo
+                {t('events:staff.add_team')}
               </button>
             )}
           </div>
@@ -322,20 +311,20 @@ export const EventStaff: React.FC<EventStaffProps> = ({
       <Modal
         isOpen={teamPickerOpen}
         onClose={() => setTeamPickerOpen(false)}
-        title="Seleccioná un equipo"
+        title={t('events:staff.select_team')}
         maxWidth="lg"
       >
         {loadingTeams ? (
-          <p className="text-sm text-text-secondary">Cargando equipos…</p>
+          <p className="text-sm text-text-secondary">{t('common:loading')}…</p>
         ) : teams.length === 0 ? (
           <div className="text-sm text-text-secondary space-y-2">
-            <p>Sin equipos todavía.</p>
+            <p>{t('events:staff.no_teams')}</p>
             <Link
               to="/staff/teams/new"
               onClick={() => setTeamPickerOpen(false)}
               className="inline-flex items-center gap-1 text-primary hover:underline"
             >
-              <Plus className="h-4 w-4" aria-hidden="true" /> Agregá tu primera cuadrilla
+              <Plus className="h-4 w-4" aria-hidden="true" /> {t('common:actions.create_new')}
             </Link>
           </div>
         ) : (

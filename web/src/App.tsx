@@ -62,12 +62,15 @@ const EventFormLinksPage = React.lazy(() => import("@/pages/EventForms/EventForm
 const AdminDashboard = React.lazy(() => import("@/pages/Admin/AdminDashboard").then((m) => ({ default: m.AdminDashboard })));
 const AdminUsers = React.lazy(() => import("@/pages/Admin/AdminUsers").then((m) => ({ default: m.AdminUsers })));
 
+import { useTranslation } from "react-i18next";
+
 // ── Loading fallback ──
 function PageFallback() {
+  const { t } = useTranslation(["common"]);
   return (
     <div className="flex justify-center items-center h-64 animate-fade-in" role="status" aria-live="polite">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true" />
-      <span className="sr-only">Cargando página...</span>
+      <span className="sr-only">{t("common:action.loading")}</span>
     </div>
   );
 }

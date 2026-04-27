@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { eventService } from "@/services/eventService";
 import {
   ArrowLeft,
@@ -27,10 +28,6 @@ import { useProduct, useProductIngredients, useDeleteProduct } from "@/hooks/que
 import type { ProductIngredientWithInventory } from "@/services/productService";
 import { parseEventDate } from "@/lib/dateUtils";
 
-// Alias to the authoritative type from productService (which is the
-// `ProductIngredient` schema from the OpenAPI contract + the optional
-// `inventory` join that the backend attaches on this endpoint). Keeping
-// the local alias name so the rest of the file needs minimal churn.
 type ProductIngredientRow = ProductIngredientWithInventory;
 
 type EventWithClientName = { client?: { name: string } | null };
@@ -44,6 +41,7 @@ type DemandEntry = {
 };
 
 export const ProductDetails: React.FC = () => {
+  const { t, i18n } = useTranslation(["products", "common", "clients"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: product, isLoading: productLoading, error: productError } = useProduct(id);
@@ -53,8 +51,10 @@ export const ProductDetails: React.FC = () => {
   const [demandForecast, setDemandForecast] = useState<DemandEntry[]>([]);
   const [demandLoading, setDemandLoading] = useState(false);
 
+  const moneyLocale = i18n.language === "en" ? "en-US" : "es-MX";
+
   const loading = productLoading;
-  const error = productError ? "Error al cargar los datos del producto." : null;
+  const error = productError ? t("products:form.validation.loading_error") : null;
 
   useEffect(() => {
     if (id && product) {
@@ -93,8 +93,8 @@ export const ProductDetails: React.FC = () => {
                 date: event.event_date.slice(0, 10),
                 eventId: event.id,
                 eventName: (event as EventWithClientName).client?.name
-                  ? `Evento - ${(event as EventWithClientName).client.name}`
-                  : event.service_type || "Evento",
+                  ? `${t("common:nav.events")} - ${(event as EventWithClientName).client.name}`
+                  : event.service_type || t("common:nav.events"),
                 quantity: match.quantity,
                 numPeople: event.num_people || 0,
               });
@@ -156,13 +156,13 @@ export const ProductDetails: React.FC = () => {
   if (error || !product) {
     return (
       <div className="text-center p-8">
-        <p className="text-error">{error || "Producto no encontrado"}</p>
+        <p className="text-error">{error || t("products:list.no_results")}</p>
         <button
           type="button"
           onClick={() => navigate("/products")}
           className="mt-4 text-primary hover:underline"
         >
-          Volver a productos
+          {t("common:action.back")}
         </button>
       </div>
     );
@@ -200,17 +200,16 @@ export const ProductDetails: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmDeleteOpen}
-        title="Eliminar producto"
-        description="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title={t("products:details.delete_confirm_title")}
+        description={t("products:details.delete_confirm_desc")}
+        confirmText={t("common:action.delete")}
+        cancelText={t("common:action.cancel")}
         onConfirm={handleDeleteProduct}
         onCancel={() => setConfirmDeleteOpen(false)}
       />
 
-      <Breadcrumb items={[{ label: 'Productos', href: '/products' }, { label: product.name }]} />
+      <Breadcrumb items={[{ label: t("products:title"), href: '/products' }, { label: product.name }]} />
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
@@ -235,7 +234,7 @@ export const ProductDetails: React.FC = () => {
             className="inline-flex items-center px-4 py-2 border border-border rounded-xl bg-card text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
           >
             <Edit className="h-4 w-4 mr-2" />
-            Editar
+            {t("common:action.edit")}
           </Link>
           <button
             type="button"
@@ -243,40 +242,39 @@ export const ProductDetails: React.FC = () => {
             className="inline-flex items-center px-4 py-2 border border-error/20 rounded-xl bg-error/5 text-sm font-medium text-error hover:bg-error/10 transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar
+            {t("common:action.delete")}
           </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-primary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
-              Precio Base
+              {t("products:form.base_price")}
             </p>
           </div>
           <p className="text-3xl font-black text-text">
             $
-            {product.base_price.toLocaleString("es-MX", {
+            {product.base_price.toLocaleString(moneyLocale, {
               minimumFractionDigits: 2,
             })}
           </p>
-          <p className="text-xs text-text-secondary mt-1">por unidad</p>
+          <p className="text-xs text-text-secondary mt-1">{t("products:details.per_unit")}</p>
         </div>
 
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="h-4 w-4 text-text-secondary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
-              Costo por Unidad
+              {t("products:details.unit_cost")}
             </p>
           </div>
           <p className="text-3xl font-black text-text">
-            ${unitCost.toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+            ${unitCost.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
           </p>
-          <p className="text-xs text-text-secondary mt-1">en insumos</p>
+          <p className="text-xs text-text-secondary mt-1">{t("products:details.in_supplies")}</p>
         </div>
 
         <div
@@ -301,7 +299,7 @@ export const ProductDetails: React.FC = () => {
               )}
             />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
-              Margen Est.
+              {t("products:details.margin")}
             </p>
           </div>
           <p
@@ -316,14 +314,14 @@ export const ProductDetails: React.FC = () => {
           >
             {margin.toFixed(1)}%
           </p>
-          <p className="text-xs text-text-secondary mt-1">utilidad estimada</p>
+          <p className="text-xs text-text-secondary mt-1">{t("products:details.margin_desc")}</p>
         </div>
 
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Calendar className="h-4 w-4 text-primary" />
             <p className="text-xs text-text-secondary uppercase tracking-wide">
-              Próximos Eventos
+              {t("products:details.upcoming_events")}
             </p>
           </div>
           {demandLoading ? (
@@ -333,13 +331,11 @@ export const ProductDetails: React.FC = () => {
               {demandForecast.length}
             </p>
           )}
-          <p className="text-xs text-text-secondary mt-1">confirmados</p>
+          <p className="text-xs text-text-secondary mt-1">{t("clients:details.confirmed")}</p>
         </div>
       </div>
 
-      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: image + general info */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
             {product.image_url && (
@@ -355,13 +351,13 @@ export const ProductDetails: React.FC = () => {
               </div>
             )}
             <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4 border-b border-border pb-2">
-              Información General
+              {t("clients:details.general_info")}
             </h2>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <Tag className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-text-secondary">Categoría</p>
+                  <p className="text-xs text-text-secondary">{t("products:form.category")}</p>
                   <p className="text-sm font-medium text-text">
                     {product.category}
                   </p>
@@ -370,10 +366,10 @@ export const ProductDetails: React.FC = () => {
               <div className="flex items-start gap-3">
                 <DollarSign className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-text-secondary">Precio Base</p>
+                  <p className="text-xs text-text-secondary">{t("products:form.base_price")}</p>
                   <p className="text-sm font-medium text-text">
                     $
-                    {product.base_price.toLocaleString("es-MX", {
+                    {product.base_price.toLocaleString(moneyLocale, {
                       minimumFractionDigits: 2,
                     })}
                   </p>
@@ -382,26 +378,25 @@ export const ProductDetails: React.FC = () => {
               <div className="flex items-start gap-3">
                 <Layers className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs text-text-secondary">Composición</p>
+                  <p className="text-xs text-text-secondary">{t("products:form.composition")}</p>
                   <p className="text-sm font-medium text-text">
                     {
                       ingredients.filter((i: ProductIngredientRow) => i.type === "ingredient")
                         .length
                     }{" "}
-                    insumos
+                    {t("products:list.ingredients")}
                     {ingredients.filter((i: ProductIngredientRow) => i.type === "supply")
                       .length > 0 &&
-                      `, ${ingredients.filter((i: ProductIngredientRow) => i.type === "supply").length} insumo(s) por evento`}
+                      `, ${ingredients.filter((i: ProductIngredientRow) => i.type === "supply").length} ${t("products:form.add_supply")}`}
                     {ingredients.filter((i: ProductIngredientRow) => i.type === "equipment")
                       .length > 0 &&
-                      `, ${ingredients.filter((i: ProductIngredientRow) => i.type === "equipment").length} equipo(s)`}
+                      `, ${ingredients.filter((i: ProductIngredientRow) => i.type === "equipment").length} ${t("products:form.equipment")}`}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Smart alert */}
           {!demandLoading && (
             <div
               className={clsx(
@@ -427,21 +422,21 @@ export const ProductDetails: React.FC = () => {
                     )}
                   >
                     {demand7Days > 0
-                      ? `${demand7Days} unidades en los próximos 7 días`
+                      ? t("products:details.demand_warning", { count: demand7Days })
                       : demandForecast.length > 0
-                        ? "Sin demanda inmediata"
-                        : "Sin eventos próximos"}
+                        ? t("products:details.demand_no_urgent")
+                        : t("products:details.demand_no_events")}
                   </p>
                   <p className="text-sm text-text-secondary mt-1">
                     {demand7Days > 0 ? (
                       <>
-                        Alta demanda esta semana.{" "}
+                        {t("products:details.demand_high_this_week")}{" "}
                         {estimatedRevenue > 0 && (
                           <>
-                            Ingreso estimado total:{" "}
+                            {t("products:details.estimated_revenue")}:{" "}
                             <strong className="text-text">
                               $
-                              {estimatedRevenue.toLocaleString("es-MX", {
+                              {estimatedRevenue.toLocaleString(moneyLocale, {
                                 minimumFractionDigits: 2,
                               })}
                             </strong>
@@ -451,11 +446,13 @@ export const ProductDetails: React.FC = () => {
                       </>
                     ) : demandForecast.length > 0 ? (
                       <>
-                        {totalDemand} unidades en {demandForecast.length} evento
-                        {demandForecast.length !== 1 ? "s" : ""} próximos.
+                        {t("products:details.demand_forecast_summary", { 
+                          units: totalDemand, 
+                          events: demandForecast.length 
+                        })}
                       </>
                     ) : (
-                      "No hay eventos confirmados que incluyan este producto."
+                      t("products:details.demand_no_data")
                     )}
                   </p>
                 </div>
@@ -464,17 +461,15 @@ export const ProductDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Right 2 columns */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Demand by date */}
           <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
               <Calendar className="h-5 w-5 text-primary" />
               <h2 className="text-sm font-semibold text-text">
-                Demanda por Fecha
+                {t("products:details.demand_by_date")}
               </h2>
               <span className="ml-auto text-xs text-text-secondary">
-                Eventos confirmados
+                {t("clients:details.confirmed")}
               </span>
             </div>
 
@@ -484,7 +479,7 @@ export const ProductDetails: React.FC = () => {
               <div className="text-center py-10">
                 <Calendar className="h-9 w-9 text-text-secondary opacity-25 mx-auto mb-3" />
                 <p className="text-sm text-text-secondary">
-                  Sin eventos confirmados que usen este producto.
+                  {t("products:details.demand_no_data")}
                 </p>
               </div>
             ) : (
@@ -523,24 +518,24 @@ export const ProductDetails: React.FC = () => {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium text-text">
-                              {dateObj.toLocaleDateString("es-MX", {
+                              {dateObj.toLocaleDateString(moneyLocale, {
                                 day: "numeric",
                                 month: "short",
                               })}
                             </span>
                             {diffDays === 0 && (
                               <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
-                                Hoy
+                                {t("common:date.today")}
                               </span>
                             )}
                             {diffDays === 1 && (
                               <span className="text-xs bg-warning/10 text-warning px-1.5 py-0.5 rounded-md">
-                                Mañana
+                                {t("common:date.tomorrow")}
                               </span>
                             )}
                             {diffDays > 1 && diffDays <= 7 && (
                               <span className="text-xs text-text-secondary">
-                                en {diffDays} días
+                                {t("common:date.in_days", { count: diffDays })}
                               </span>
                             )}
                           </div>
@@ -562,12 +557,12 @@ export const ProductDetails: React.FC = () => {
                       </div>
                       <div className="text-right shrink-0 ml-3">
                         <span className="text-sm font-bold text-text">
-                          {entry.quantity} uds
+                          {entry.quantity} {t("products:list.units")}
                         </span>
                         <p className="text-xs text-text-secondary">
                           $
                           {(entry.quantity * product.base_price).toLocaleString(
-                            "es-MX",
+                            moneyLocale,
                             {
                               minimumFractionDigits: 2,
                             },
@@ -582,23 +577,22 @@ export const ProductDetails: React.FC = () => {
                   <div className="flex items-center justify-between px-4 py-3 mt-2 border-t border-border">
                     <div>
                       <span className="text-xs text-text-secondary uppercase tracking-wide">
-                        Total demanda
+                        {t("products:details.total_demand")}
                       </span>
                       <p className="text-xs text-text-secondary">
-                        {demandForecast.length} evento
-                        {demandForecast.length !== 1 ? "s" : ""}
+                        {demandForecast.length} {demandForecast.length !== 1 ? t("common:nav.events") : t("common:nav.events").slice(0,-1)}
                       </p>
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-bold text-text">
-                        {totalDemand} unidades
+                        {totalDemand} {t("products:list.units")}
                       </span>
                       <p className="text-xs text-text-secondary">
                         $
-                        {estimatedRevenue.toLocaleString("es-MX", {
+                        {estimatedRevenue.toLocaleString(moneyLocale, {
                           minimumFractionDigits: 2,
                         })}{" "}
-                        est.
+                        {t("products:details.est_suffix")}
                       </p>
                     </div>
                   </div>
@@ -607,13 +601,12 @@ export const ProductDetails: React.FC = () => {
             )}
           </div>
 
-          {/* Composición / Insumos */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
             <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Layers className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-semibold text-text">
-                  Composición / Insumos
+                  {t("products:form.composition")}
                 </h2>
               </div>
             </div>
@@ -623,13 +616,13 @@ export const ProductDetails: React.FC = () => {
               <div className="p-12 text-center">
                 <Package className="h-12 w-12 text-text-secondary mx-auto mb-4 opacity-20" />
                 <p className="text-text-secondary">
-                  Este producto no tiene insumos configurados.
+                  {t("products:details.no_ingredients")}
                 </p>
                 <Link
                   to={`/products/${id}/edit`}
                   className="text-primary hover:underline mt-2 inline-block text-sm"
                 >
-                  Configurar composición
+                  {t("products:details.configure_composition")}
                 </Link>
               </div>
             ) : (
@@ -638,13 +631,13 @@ export const ProductDetails: React.FC = () => {
                   <thead className="bg-surface-alt">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        Insumo
+                        {t("products:form.inventory")}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        Cantidad
+                        {t("products:list.quantity")}
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        Costo Est.
+                        {t("products:form.cost")} Est.
                       </th>
                     </tr>
                   </thead>
@@ -661,7 +654,7 @@ export const ProductDetails: React.FC = () => {
                               to={`/inventory/${ing.inventory_id}`}
                               className="text-sm font-medium text-text hover:text-primary transition-colors"
                             >
-                              {ing.ingredient_name || "Insumo desconocido"}
+                              {ing.ingredient_name || t("products:list.unknown")}
                             </Link>
                           </td>
                           <td className="px-6 py-4 text-right">
@@ -672,7 +665,7 @@ export const ProductDetails: React.FC = () => {
                           <td className="px-6 py-4 text-right">
                             <span className="text-sm font-medium text-text">
                               {ing.unit_cost
-                                ? `$${(ing.quantity_required * ing.unit_cost).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`
+                                ? `$${(ing.quantity_required * ing.unit_cost).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}`
                                 : "—"}
                             </span>
                           </td>
@@ -682,11 +675,11 @@ export const ProductDetails: React.FC = () => {
                 </table>
                 <div className="px-6 py-4 border-t border-border flex justify-between items-center">
                   <span className="text-sm text-text-secondary">
-                    Costo Total por Unidad
+                    {t("products:form.total_unit_cost")}
                   </span>
                   <span className="text-lg font-bold text-text">
                     $
-                    {unitCost.toLocaleString("es-MX", {
+                    {unitCost.toLocaleString(moneyLocale, {
                       minimumFractionDigits: 2,
                     })}
                   </span>
@@ -695,31 +688,30 @@ export const ProductDetails: React.FC = () => {
             )}
           </div>
 
-          {/* Insumos por Evento */}
           {ingredients.filter((i: ProductIngredientRow) => i.type === "supply").length > 0 && (
             <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
               <div className="p-6 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Fuel className="h-5 w-5 text-warning" />
                   <h2 className="text-lg font-semibold text-text">
-                    Insumos por Evento
+                    {t("products:form.event_supplies")}
                   </h2>
                 </div>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-warning/10 text-warning">
-                  Costo fijo por evento
+                  {t("products:details.fixed_cost_per_event")}
                 </span>
               </div>
               <table className="min-w-full divide-y divide-border">
                 <thead className="bg-surface-alt">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                      Insumo
+                      {t("products:form.inventory")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                      Cantidad
+                      {t("products:list.quantity")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                      Costo
+                      {t("products:form.cost")}
                     </th>
                   </tr>
                 </thead>
@@ -736,7 +728,7 @@ export const ProductDetails: React.FC = () => {
                             to={`/inventory/${ing.inventory_id}`}
                             className="text-sm font-medium text-text hover:text-primary transition-colors"
                           >
-                            {ing.ingredient_name || "Insumo desconocido"}
+                            {ing.ingredient_name || t("products:list.unknown")}
                           </Link>
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -747,7 +739,7 @@ export const ProductDetails: React.FC = () => {
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm font-medium text-warning">
                             {ing.unit_cost
-                              ? `$${(ing.quantity_required * ing.unit_cost).toLocaleString("es-MX", { minimumFractionDigits: 2 })}`
+                              ? `$${(ing.quantity_required * ing.unit_cost).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}`
                               : "—"}
                           </span>
                         </td>
@@ -757,7 +749,7 @@ export const ProductDetails: React.FC = () => {
               </table>
               <div className="px-6 py-4 border-t border-border flex justify-between items-center">
                 <span className="text-sm text-text-secondary">
-                  Costo por Evento (Insumos Fijos)
+                  {t("products:form.total_event_cost")}
                 </span>
                 <span className="text-lg font-bold text-warning">
                   $
@@ -768,13 +760,12 @@ export const ProductDetails: React.FC = () => {
                         sum + ing.quantity_required * (ing.unit_cost || 0),
                       0,
                     )
-                    .toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                    .toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
           )}
 
-          {/* Maquinaria / Equipo Necesario */}
           {ingredients.filter((i: ProductIngredientRow) => i.type === "equipment").length >
             0 && (
             <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
@@ -782,21 +773,24 @@ export const ProductDetails: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Wrench className="h-5 w-5 text-info" />
                   <h2 className="text-lg font-semibold text-text">
-                    Equipo Necesario
+                    {t("products:form.equipment")}
                   </h2>
                 </div>
                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-info/10 text-info">
-                  Sin costo - Reutilizable
+                  {t("products:form.reusable_no_cost")}
                 </span>
               </div>
               <table className="min-w-full divide-y divide-border">
                 <thead className="bg-surface-alt">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                      Equipo
+                      {t("products:form.equipment")}
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                      Cantidad
+                      {t("products:list.quantity")}
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                      {t("products:form.capacity")}
                     </th>
                   </tr>
                 </thead>
@@ -813,12 +807,19 @@ export const ProductDetails: React.FC = () => {
                             to={`/inventory/${ing.inventory_id}`}
                             className="text-sm font-medium text-text hover:text-primary transition-colors"
                           >
-                            {ing.ingredient_name || "Equipo desconocido"}
+                            {ing.ingredient_name || t("products:list.unknown")}
                           </Link>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-sm text-text font-bold">
                             {ing.quantity_required} {ing.unit || ""}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-xs text-text-secondary">
+                            {ing.capacity
+                              ? t("products:form.capacity_help", { count: ing.capacity })
+                              : t("products:form.capacity_fixed")}
                           </span>
                         </td>
                       </tr>

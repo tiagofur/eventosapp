@@ -10,43 +10,54 @@ import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
 import { useInventoryItem, useCreateInventoryItem, useUpdateInventoryItem } from "../../hooks/queries/useInventoryQueries";
 
-const COMMON_UNITS = [
-  { value: "pieza", label: "Pieza (pza)" },
-  { value: "kg", label: "Kilogramos (kg)" },
-  { value: "g", label: "Gramos (g)" },
-  { value: "l", label: "Litros (l)" },
-  { value: "ml", label: "Mililitros (ml)" },
-  { value: "caja", label: "Caja" },
-  { value: "paquete", label: "Paquete" },
-  { value: "servicio", label: "Servicio" },
-  { value: "hora", label: "Hora" },
-  { value: "dia", label: "Día" },
-];
+import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
 
-const inventorySchema = z.object({
-  ingredient_name: z
-    .string()
-    .min(2, "El nombre debe tener al menos 2 caracteres"),
-  type: z.enum(["ingredient", "equipment", "supply"]),
-  current_stock: z.coerce.number().min(0, "El stock no puede ser negativo"),
-  minimum_stock: z.coerce
-    .number()
-    .min(0, "El stock mínimo no puede ser negativo"),
-  unit: z.string().min(1, "La unidad es requerida"),
-  unit_cost: z.coerce
-    .number()
-    .min(0, "El costo no puede ser negativo")
-    .optional(),
-});
-
-type InventoryFormData = z.infer<typeof inventorySchema>;
+type InventoryFormData = {
+  ingredient_name: string;
+  type: "ingredient" | "equipment" | "supply";
+  current_stock: number;
+  minimum_stock: number;
+  unit: string;
+  unit_cost?: number;
+};
 
 export const InventoryForm: React.FC = () => {
+  const { t } = useTranslation(["inventory", "common"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isCustomUnit, setIsCustomUnit] = useState(false);
+
+  const COMMON_UNITS = useMemo(() => [
+    { value: "pieza", label: t("inventory:form.unit_pieza", { defaultValue: "Pieza (pza)" }) },
+    { value: "kg", label: t("inventory:form.unit_kg", { defaultValue: "Kilogramos (kg)" }) },
+    { value: "g", label: t("inventory:form.unit_g", { defaultValue: "Gramos (g)" }) },
+    { value: "l", label: t("inventory:form.unit_l", { defaultValue: "Litros (l)" }) },
+    { value: "ml", label: t("inventory:form.unit_ml", { defaultValue: "Mililitros (ml)" }) },
+    { value: "caja", label: t("inventory:form.unit_caja", { defaultValue: "Caja" }) },
+    { value: "paquete", label: t("inventory:form.unit_paquete", { defaultValue: "Paquete" }) },
+    { value: "servicio", label: t("inventory:form.unit_servicio", { defaultValue: "Servicio" }) },
+    { value: "hora", label: t("inventory:form.unit_hora", { defaultValue: "Hora" }) },
+    { value: "dia", label: t("inventory:form.unit_dia", { defaultValue: "Día" }) },
+  ], [t]);
+
+  const inventorySchema = useMemo(() => z.object({
+    ingredient_name: z
+      .string()
+      .min(2, t("inventory:form.validation.name_required")),
+    type: z.enum(["ingredient", "equipment", "supply"]),
+    current_stock: z.coerce.number().min(0, t("inventory:form.validation.stock_min")),
+    minimum_stock: z.coerce
+      .number()
+      .min(0, t("inventory:form.validation.stock_min")),
+    unit: z.string().min(1, t("inventory:form.validation.unit_required")),
+    unit_cost: z.coerce
+      .number()
+      .min(0, t("inventory:form.validation.cost_min"))
+      .optional(),
+  }), [t]);
 
   const {
     canCreateInventoryItem,
@@ -94,7 +105,7 @@ export const InventoryForm: React.FC = () => {
         unit_cost: existingItem.unit_cost || 0,
       });
     }
-  }, [existingItem, reset]);
+  }, [existingItem, reset, COMMON_UNITS]);
 
   const onSubmit = (data: InventoryFormData) => {
     if (!user) return;
@@ -112,7 +123,6 @@ export const InventoryForm: React.FC = () => {
         { onSuccess: () => navigate("/inventory") },
       );
     } else {
-      // `user_id` no se envía — el backend lo toma del JWT.
       createItem.mutate(
         payload,
         { onSuccess: () => navigate("/inventory") },
@@ -131,7 +141,7 @@ export const InventoryForm: React.FC = () => {
           className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
           aria-hidden="true"
         ></div>
-        <span className="sr-only">Cargando límites de plan...</span>
+        <span className="sr-only">{t("common:status.loading")}...</span>
       </div>
     );
   }
@@ -143,10 +153,9 @@ export const InventoryForm: React.FC = () => {
           type="button"
           onClick={() => navigate(-1)}
           className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
-          aria-label="Regresar a la página anterior"
         >
           <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
-          Regresar
+          {t("common:action.back")}
         </button>
         <div className="flex justify-center mt-12">
           <UpgradeBanner
@@ -160,21 +169,22 @@ export const InventoryForm: React.FC = () => {
     );
   }
 
+  const title = id ? t("common:action.edit") : t("inventory:new_item");
+
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ label: 'Inventario', href: '/inventory' }, { label: id ? (watch("ingredient_name") || 'Editar Ítem') : 'Nuevo Ítem' }]} />
+      <Breadcrumb items={[{ label: t("inventory:title"), href: '/inventory' }, { label: id ? (watch("ingredient_name") || title) : title }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button
             type="button"
             onClick={() => navigate("/inventory")}
             className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary transition-colors"
-            aria-label="Volver a la lista de inventario"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
           <h1 className="text-2xl font-bold text-text tracking-tight">
-            {id ? "Editar Ítem" : "Nuevo Ítem"}
+            {title}
           </h1>
         </div>
       </div>
@@ -200,7 +210,7 @@ export const InventoryForm: React.FC = () => {
                 htmlFor="ingredient_name"
                 className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Nombre del Ítem *
+                {t("inventory:form.name")} *
               </label>
               <input
                 id="ingredient_name"
@@ -209,13 +219,9 @@ export const InventoryForm: React.FC = () => {
                 className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
                 aria-invalid={errors.ingredient_name ? "true" : "false"}
-                aria-describedby={
-                  errors.ingredient_name ? "ingredient_name-error" : undefined
-                }
               />
               {errors.ingredient_name && (
                 <p
-                  id="ingredient_name-error"
                   className="mt-2 text-sm text-error"
                   role="alert"
                 >
@@ -229,25 +235,22 @@ export const InventoryForm: React.FC = () => {
                 htmlFor="type"
                 className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Tipo *
+                {t("inventory:form.type")} *
               </label>
               <select
                 id="type"
                 {...register("type")}
                 className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
-                aria-invalid={errors.type ? "true" : "false"}
-                aria-describedby={errors.type ? "type-error" : undefined}
               >
-                <option value="ingredient">Insumo (Consumible)</option>
+                <option value="ingredient">{t("inventory:list.type_ingredient")}</option>
                 <option value="supply">
-                  Insumo por Evento (Costo fijo por evento)
+                  {t("inventory:list.type_supply")}
                 </option>
-                <option value="equipment">Activo / Equipo (Retornable)</option>
+                <option value="equipment">{t("inventory:list.type_equipment")}</option>
               </select>
               {errors.type && (
                 <p
-                  id="type-error"
                   className="mt-2 text-sm text-error"
                   role="alert"
                 >
@@ -261,7 +264,7 @@ export const InventoryForm: React.FC = () => {
                 htmlFor="unit"
                 className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Unidad (kg, l, pza, etc.) *
+                {t("inventory:form.unit")} *
               </label>
               {!isCustomUnit ? (
                 <select
@@ -276,18 +279,16 @@ export const InventoryForm: React.FC = () => {
                   })}
                   className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                   aria-required="true"
-                  aria-invalid={errors.unit ? "true" : "false"}
-                  aria-describedby={errors.unit ? "unit-error" : undefined}
                 >
                   <option value="" disabled>
-                    Selecciona una unidad
+                    {t("common:action.select")}
                   </option>
                   {COMMON_UNITS.map((u) => (
                     <option key={u.value} value={u.value}>
                       {u.label}
                     </option>
                   ))}
-                  <option value="otro">Otra / Personalizada...</option>
+                  <option value="otro">{t("common:action.other")}...</option>
                 </select>
               ) : (
                 <div className="flex gap-2 relative">
@@ -296,10 +297,8 @@ export const InventoryForm: React.FC = () => {
                     type="text"
                     {...register("unit")}
                     className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
-                    placeholder="Ej. tambor, lata"
+                    placeholder={t("inventory:form.unit_placeholder")}
                     aria-required="true"
-                    aria-invalid={errors.unit ? "true" : "false"}
-                    aria-describedby={errors.unit ? "unit-error" : undefined}
                     autoFocus
                   />
                   <button
@@ -310,13 +309,12 @@ export const InventoryForm: React.FC = () => {
                     }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text text-sm bg-card px-1"
                   >
-                    Volver a lista
+                    {t("common:action.back")}
                   </button>
                 </div>
               )}
               {errors.unit && (
                 <p
-                  id="unit-error"
                   className="mt-2 text-sm text-error"
                   role="alert"
                 >
@@ -330,7 +328,7 @@ export const InventoryForm: React.FC = () => {
                 htmlFor="current_stock"
                 className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Stock Actual *
+                {t("inventory:form.current_stock")} *
               </label>
               <input
                 id="current_stock"
@@ -339,14 +337,9 @@ export const InventoryForm: React.FC = () => {
                 {...register("current_stock")}
                 className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
-                aria-invalid={errors.current_stock ? "true" : "false"}
-                aria-describedby={
-                  errors.current_stock ? "current_stock-error" : undefined
-                }
               />
               {errors.current_stock && (
                 <p
-                  id="current_stock-error"
                   className="mt-2 text-sm text-error"
                   role="alert"
                 >
@@ -360,7 +353,7 @@ export const InventoryForm: React.FC = () => {
                 htmlFor="minimum_stock"
                 className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Stock Mínimo *
+                {t("inventory:form.minimum_stock")} *
               </label>
               <input
                 id="minimum_stock"
@@ -369,14 +362,9 @@ export const InventoryForm: React.FC = () => {
                 {...register("minimum_stock")}
                 className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
                 aria-required="true"
-                aria-invalid={errors.minimum_stock ? "true" : "false"}
-                aria-describedby={
-                  errors.minimum_stock ? "minimum_stock-error" : undefined
-                }
               />
               {errors.minimum_stock && (
                 <p
-                  id="minimum_stock-error"
                   className="mt-2 text-sm text-error"
                   role="alert"
                 >
@@ -390,7 +378,7 @@ export const InventoryForm: React.FC = () => {
                 htmlFor="unit_cost"
                 className="block text-sm font-medium text-text-secondary mb-2"
               >
-                Costo Unitario ($)
+                {t("inventory:form.cost")}
               </label>
               <input
                 id="unit_cost"
@@ -398,14 +386,9 @@ export const InventoryForm: React.FC = () => {
                 step="0.01"
                 {...register("unit_cost")}
                 className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
-                aria-invalid={errors.unit_cost ? "true" : "false"}
-                aria-describedby={
-                  errors.unit_cost ? "unit_cost-error" : undefined
-                }
               />
               {errors.unit_cost && (
                 <p
-                  id="unit_cost-error"
                   className="mt-2 text-sm text-error"
                   role="alert"
                 >
@@ -421,16 +404,15 @@ export const InventoryForm: React.FC = () => {
               onClick={() => navigate("/inventory")}
               className="bg-card py-2.5 px-6 border border-border rounded-xl shadow-sm text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
             >
-              Cancelar
+              {t("common:action.cancel")}
             </button>
             <button
               type="submit"
               disabled={isLoading}
               className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/40 disabled:opacity-50 transition-opacity"
-              aria-label={isLoading ? "Guardando ítem..." : "Guardar ítem"}
             >
               <Save className="h-5 w-5 mr-2" aria-hidden="true" />
-              {isLoading ? "Guardando..." : "Guardar Ítem"}
+              {isLoading ? t("common:action.saving") : t("common:action.save")}
             </button>
           </div>
         </form>

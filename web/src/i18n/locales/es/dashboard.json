@@ -1,0 +1,58 @@
+{
+  "title": "Dashboard",
+  "welcome": "Bienvenido, {{name}}",
+  "kpis": {
+    "net_sales": "Ventas Netas",
+    "cash_collected": "Cobrado Real",
+    "vat_outstanding": "IVA por Cobrar",
+    "total_revenue": "Ingresos totales",
+    "active_events": "Eventos activos",
+    "new_clients": "Nuevos clientes",
+    "average_ticket": "Ticket promedio"
+  },
+  "status_chart": {
+    "title": "Estado de Eventos",
+    "events_this_month": "eventos este mes",
+    "no_data": "Sin datos para graficar este mes",
+    "create_first": "Crear primer evento"
+  },
+  "revenue_chart": {
+    "title": "Ingresos — Últimos 6 meses",
+    "aria_label": "Gráfico de ingresos por mes en los últimos 6 meses",
+    "revenue": "Ingresos"
+  },
+  "attention": {
+    "title": "Requieren atención",
+    "description": "Eventos próximos o vencidos con seguimiento pendiente.",
+    "alerts_count_one": "1 alerta",
+    "alerts_count_other": "{{count}} alertas",
+    "pending_balance": "Saldo pendiente {{pending}} de {{total}}",
+    "past_confirmed": "Evento pasado aún confirmado",
+    "past_quoted": "Cotización vencida sin cerrar",
+    "register_payment": "Registrar pago",
+    "pay_and_complete": "Pagar y completar",
+    "complete_only": "Solo completar",
+    "view_detail": "Ver detalle",
+    "confirmed_payment_title": "Saldos próximos",
+    "confirmed_payment_desc": "Eventos confirmados en los próximos 7 días con saldo pendiente.",
+    "past_active_title": "Eventos vencidos",
+    "past_active_desc": "Eventos que ya pasaron pero no han sido completados o cancelados."
+  },
+  "upcoming": {
+    "no_events": "No hay eventos próximos"
+  },
+  "inventory": {
+    "no_items": "Stock saludable en todos los ítems"
+  },
+  "messages": {
+    "event_completed": "Evento marcado como completado.",
+    "event_cancelled": "Evento cancelado.",
+    "payment_registered": "Pago registrado.",
+    "payment_partial": "Pago parcial registrado. Pagá el saldo completo para marcar el evento como completado.",
+    "payment_complete_manual": "Pago registrado. Marcá el evento como completado manualmente."
+  },
+  "event": {
+    "no_client": "Sin cliente",
+    "pax": "pax"
+  }
+}

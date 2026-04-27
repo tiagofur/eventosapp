@@ -12,26 +12,25 @@ import {
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
-
-const TABS = [
-  { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Calendario', href: '/calendar', icon: Calendar },
-  // Events uses PartyPopper to match Android's Celebration icon — conveys
-  // "event / party" instead of "another calendar" which is what
-  // CalendarCheck read as next to the Calendario tab.
-  { name: 'Eventos', href: '/events', icon: PartyPopper },
-  { name: 'Clientes', href: '/clients', icon: Users },
-];
-
-const MORE_ITEMS = [
-  { name: 'Productos', href: '/products', icon: Package },
-  { name: 'Inventario', href: '/inventory', icon: Boxes },
-  { name: 'Configuración', href: '/settings', icon: Settings },
-];
+import { useTranslation } from 'react-i18next';
 
 export const BottomTabBar: React.FC = () => {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { t } = useTranslation('common');
+
+  const TABS = [
+    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.calendar'), href: '/calendar', icon: Calendar },
+    { name: t('nav.events'), href: '/events', icon: PartyPopper },
+    { name: t('nav.clients'), href: '/clients', icon: Users },
+  ];
+
+  const MORE_ITEMS = [
+    { name: t('nav.products'), href: '/products', icon: Package },
+    { name: t('nav.inventory'), href: '/inventory', icon: Boxes },
+    { name: t('nav.settings'), href: '/settings', icon: Settings },
+  ];
 
   const isActive = (href: string) =>
     location.pathname === href ||
@@ -56,13 +55,13 @@ export const BottomTabBar: React.FC = () => {
         <div className="fixed bottom-[4.5rem] left-4 right-4 z-50 bg-card rounded-2xl border border-border shadow-2xl p-2 md:hidden">
           <div className="flex items-center justify-between px-3 py-2 mb-1">
             <span className="text-xs font-medium text-text-secondary">
-              Más opciones
+              {t('action.more_options')}
             </span>
             <button
               type="button"
               onClick={() => setMoreOpen(false)}
               className="p-1 text-text-secondary hover:text-text rounded-lg transition-colors"
-              aria-label="Cerrar menú"
+              aria-label={t('nav.close_nav')}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -93,7 +92,7 @@ export const BottomTabBar: React.FC = () => {
       {/* Bottom tab bar */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-40 bg-surface-grouped border-t border-border md:hidden safe-area-bottom"
-        aria-label="Navegación principal"
+        aria-label={t('nav.main_nav')}
       >
         <div className="flex items-center justify-around h-[4.5rem] px-2">
           {TABS.map((tab) => {
@@ -127,7 +126,7 @@ export const BottomTabBar: React.FC = () => {
               'flex flex-col items-center justify-center flex-1 py-2 transition-colors',
               moreOpen || isMoreActive ? 'text-primary' : 'text-text-secondary',
             )}
-            aria-label="Más opciones"
+            aria-label={t('action.more_options')}
           >
             <MoreHorizontal
               className={clsx('h-5 w-5 mb-1', (moreOpen || isMoreActive) && 'drop-shadow-sm')}
@@ -139,7 +138,7 @@ export const BottomTabBar: React.FC = () => {
                 (moreOpen || isMoreActive) && 'font-bold',
               )}
             >
-              Más
+              {t('action.more')}
             </span>
           </button>
         </div>

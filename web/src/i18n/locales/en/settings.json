@@ -1,0 +1,121 @@
+{
+  "title": "Settings",
+  "subtitle": "Customize your experience and manage your business.",
+  "tabs": {
+    "profile": "My Account",
+    "business": "My Business",
+    "contracts": "Contracts",
+    "notifications": "Notifications",
+    "subscription": "Subscription"
+  },
+  "profile": {
+    "title": "User Profile",
+    "description": "Basic information of your personal account.",
+    "name": "Name",
+    "email": "Email",
+    "change_password": "Change password",
+    "dark_mode": "Dark Mode",
+    "dark_mode_desc": "Application appearance",
+    "delete_account": "Delete my account",
+    "delete_account_desc": "This action is irreversible and will permanently delete all your data.",
+    "password_form": {
+      "title": "Change password",
+      "current": "Current password",
+      "new": "New password (min. 8 characters)",
+      "confirm": "Confirm new password",
+      "success": "Password updated successfully",
+      "error_incorrect": "Current password is incorrect",
+      "error_generic": "Error changing password"
+    }
+  },
+  "business": {
+    "title": "Business Identity",
+    "description": "Customize how your clients see you on quotes and contracts.",
+    "name_label": "Business Name",
+    "name_placeholder": "e.g. My Pro Event",
+    "not_configured": "Not configured",
+    "logo_label": "Brand Logo",
+    "logo_title": "Upload your professional logo",
+    "logo_desc": "Transparent PNG recommended. Max 2MB.",
+    "logo_select": "Select file",
+    "logo_error_size": "The file is too large (max 2MB).",
+    "pdf_settings": "PDFs",
+    "show_name_pdf": "Show name in PDFs",
+    "show_name_pdf_desc": "Include your business name in quotes and contracts",
+    "brand_color": "Brand Color",
+    "brand_color_help": "This color will be automatically applied to your PDF quotes and contracts."
+  },
+  "contracts": {
+    "title": "Default Values",
+    "description": "Set the default values that will appear in your new events.",
+    "deposit": "Suggested Deposit",
+    "cancellation": "Days to cancel",
+    "refund": "Refund",
+    "days": "Days",
+    "success": "Contract settings saved successfully",
+    "error": "Error saving settings",
+    "validation_error": "The template contains unsupported placeholders: {{tokens}}"
+  },
+  "notifications": {
+    "title": "Notification Preferences",
+    "description": "Control which emails and push notifications you receive.",
+    "email_group": "Email Notifications",
+    "push_group": "Push Notifications",
+    "items": {
+      "email_payment_receipt": { "label": "Payment Receipts", "desc": "Receive an email when a payment is registered" },
+      "email_event_reminder": { "label": "Event Reminder", "desc": "Receive an email 24h before your event" },
+      "email_subscription_updates": { "label": "Subscription Updates", "desc": "Emails about changes in your plan" },
+      "email_weekly_summary": { "label": "Weekly Summary", "desc": "Summary of the week's activity" },
+      "email_marketing": { "label": "News and Tips", "desc": "Solennix news and advice" },
+      "push_enabled": { "label": "Push Notifications", "desc": "Enable or disable all push notifications" },
+      "push_event_reminder": { "label": "Event Reminder", "desc": "Push notification before your event" },
+      "push_payment_received": { "label": "Payment Received", "desc": "Push notification when a payment is registered" }
+    }
+  },
+  "subscription": {
+    "title": "Subscription and Billing",
+    "description": "Manage your current plan and payment methods.",
+    "current_plan": "Your current plan is {{plan}}",
+    "status": {
+      "active": "Active",
+      "past_due": "Payment pending",
+      "canceled": "Canceled",
+      "trialing": "Trial period"
+    },
+    "provider": {
+      "stripe": {
+        "badge": "Subscribed via Web",
+        "cancel": "You can manage or cancel your subscription from the web payment portal."
+      },
+      "apple": {
+        "badge": "Subscribed via App Store",
+        "cancel": "Your subscription was made via iOS. To cancel it, open Settings > your Apple ID > Subscriptions on your iPhone or iPad."
+      },
+      "google": {
+        "badge": "Subscribed via Google Play",
+        "cancel": "Your subscription was made via Android. To cancel it, open Google Play Store > Payments & subscriptions."
+      }
+    },
+    "manage": "Manage Subscription",
+    "next_payment": "Next payment: {{date}}",
+    "renewal_price": "Renewal price: {{price}}",
+    "usage": "Plan usage",
+    "events": "Events this month",
+    "clients": "Registered clients",
+    "unlimited": "Unlimited",
+    "of": "of",
+    "upgrade_pro": "Upgrade to Pro for unlimited limits"
+  },
+  "loading": "Loading settings...",
+  "validation": {
+    "current_password_required": "Please enter your current password",
+    "new_password_min": "The new password must be at least 8 characters long",
+    "confirm_password_required": "Please confirm your new password",
+    "passwords_mismatch": "Passwords do not match"
+  },
+  "plans": {
+    "basic": "Basic",
+    "pro": "Pro",
+    "business": "Business"
+  }
+}

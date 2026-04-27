@@ -133,28 +133,26 @@ const serializeShift = (
   };
 };
 
-const eventSchema = z.object({
-  client_id: z.string().min(1, "Selecciona un cliente"),
-  event_date: z.string().min(1, "Selecciona una fecha"),
-  start_time: z.string().optional().nullable(),
-  end_time: z.string().optional().nullable(),
-  service_type: z.string().min(2, "Tipo de servicio requerido"),
-  num_people: z.coerce.number().min(1, "Mínimo 1 persona"),
-  status: z.enum(["quoted", "confirmed", "completed", "cancelled"]),
-  discount: z.coerce.number().min(0).default(0),
-  requires_invoice: z.boolean().default(false),
-  tax_rate: z.coerce.number().min(0).max(100).default(16),
-  tax_amount: z.coerce.number().min(0).default(0),
-  total_amount: z.coerce.number().min(0).default(0),
-  location: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  deposit_percent: z.coerce.number().min(0).max(100).default(50),
-  cancellation_days: z.coerce.number().min(0).default(15),
-  refund_percent: z.coerce.number().min(0).max(100).default(0),
-  notes: z.string().optional().nullable(),
-});
-
-type EventFormData = z.infer<typeof eventSchema>;
+type EventFormData = {
+  client_id: string;
+  event_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
+  service_type: string;
+  num_people: number;
+  status: "quoted" | "confirmed" | "completed" | "cancelled";
+  discount: number;
+  requires_invoice: boolean;
+  tax_rate: number;
+  tax_amount: number;
+  total_amount: number;
+  location?: string | null;
+  city?: string | null;
+  deposit_percent: number;
+  cancellation_days: number;
+  refund_percent: number;
+  notes?: string | null;
+};
 
 interface QuickQuoteState {
   fromQuickQuote: boolean;
@@ -165,17 +163,6 @@ interface QuickQuoteState {
   requiresInvoice?: boolean;
   numPeople?: number;
 }
-
-// Iconos unificados cross-platform (iOS SF Symbols + Android Material + lucide
-// aquí). Paso 4 cubre supplies + equipment + staff — mismo contenido que
-// Android/iOS StepInventoryAndPersonnel.
-const STEPS = [
-  { id: 1, title: "Información General", icon: Info },
-  { id: 2, title: "Productos", icon: Package },
-  { id: 3, title: "Extras", icon: Sparkles },
-  { id: 4, title: "Inventario y Personal", icon: ShoppingCart },
-  { id: 5, title: "Finanzas y Contrato", icon: DollarSign },
-];
 
 // Fields belonging to each step. Steps 2-4 manage local state (selectedProducts,
 // extras, selectedEquipment/Supplies) instead of form fields, so they have no
@@ -208,7 +195,10 @@ const FIELDS_PER_STEP: Record<number, (keyof EventFormData)[]> = {
   ],
 };
 
+import { useTranslation } from "react-i18next";
+
 export const EventForm: React.FC = () => {
+  const { t } = useTranslation(["events", "common"]);
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -216,6 +206,37 @@ export const EventForm: React.FC = () => {
   const { user } = useAuth();
   const locationState = location.state as QuickQuoteState | null;
   const quickQuoteData = locationState?.fromQuickQuote ? locationState : null;
+
+  // Icons unified cross-platform (iOS SF Symbols + Android Material + lucide here)
+  const STEPS = [
+    { id: 1, title: t("events:form.steps.general"), icon: Info },
+    { id: 2, title: t("events:form.steps.products"), icon: Package },
+    { id: 3, title: t("events:form.steps.extras"), icon: Sparkles },
+    { id: 4, title: t("events:form.steps.inventory_staff"), icon: ShoppingCart },
+    { id: 5, title: t("events:form.steps.financials"), icon: DollarSign },
+  ];
+
+  // Zod Reactivo: validation schema inside useMemo to reflect language changes
+  const eventSchema = useMemo(() => z.object({
+    client_id: z.string().min(1, t("events:form.validation.client_required")),
+    event_date: z.string().min(1, t("events:form.validation.date_required")),
+    start_time: z.string().optional().nullable(),
+    end_time: z.string().optional().nullable(),
+    service_type: z.string().min(2, t("events:form.validation.service_required")),
+    num_people: z.coerce.number().min(1, t("events:form.validation.people_min")),
+    status: z.enum(["quoted", "confirmed", "completed", "cancelled"]),
+    discount: z.coerce.number().min(0).default(0),
+    requires_invoice: z.boolean().default(false),
+    tax_rate: z.coerce.number().min(0).max(100).default(16),
+    tax_amount: z.coerce.number().min(0).default(0),
+    total_amount: z.coerce.number().min(0).default(0),
+    location: z.string().optional().nullable(),
+    city: z.string().optional().nullable(),
+    deposit_percent: z.coerce.number().min(0).max(100).default(50),
+    cancellation_days: z.coerce.number().min(0).default(15),
+    refund_percent: z.coerce.number().min(0).max(100).default(0),
+    notes: z.string().optional().nullable(),
+  }), [t]);
 
   const [activeStep, setActiveStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);

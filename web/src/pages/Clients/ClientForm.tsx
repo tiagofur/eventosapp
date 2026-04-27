@@ -11,20 +11,10 @@ import { usePlanLimits } from "../../hooks/usePlanLimits";
 import { UpgradeBanner } from "../../components/UpgradeBanner";
 import { useClient, useCreateClient, useUpdateClient, useUploadClientPhoto } from "../../hooks/queries/useClientQueries";
 
-const clientSchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  phone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
-  email: z.string().email("Email inválido. Usa el formato: nombre@dominio.com").optional().or(z.literal("")),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type ClientFormData = z.infer<typeof clientSchema>;
-
 export const ClientForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation(["clients", "common"]);
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -37,6 +27,17 @@ export const ClientForm: React.FC = () => {
   const createClient = useCreateClient();
   const updateClient = useUpdateClient();
   const uploadPhoto = useUploadClientPhoto();
+
+  const clientSchema = useMemo(() => z.object({
+    name: z.string().min(2, t("clients:form.validation.name_min")),
+    phone: z.string().min(10, t("clients:form.validation.phone_min")),
+    email: z.string().email(t("clients:form.validation.email_invalid")).optional().or(z.literal("")),
+    address: z.string().optional(),
+    city: z.string().optional(),
+    notes: z.string().optional(),
+  }), [t]);
+
+  type ClientFormData = z.infer<typeof clientSchema>;
 
   const isLoading = isLoadingClient || createClient.isPending || updateClient.isPending;
 
@@ -72,7 +73,7 @@ export const ClientForm: React.FC = () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setError("La foto es demasiado grande (máximo 10MB).");
+      setError(t("common:error.generic")); // Or add specific key if needed
       return;
     }
 
@@ -85,7 +86,7 @@ export const ClientForm: React.FC = () => {
       onSuccess: (result) => setPhotoUrl(result.url),
       onError: (err) => {
         logError("Error uploading photo", err);
-        setError("Error al subir la foto.");
+        setError(t("common:error.network"));
         setPhotoPreview(photoUrl); // revert preview
       },
     });
@@ -113,9 +114,6 @@ export const ClientForm: React.FC = () => {
         { onSuccess: () => navigate("/clients") },
       );
     } else {
-      // `user_id` is NOT included in the payload — the backend reads the
-      // authenticated user from the JWT and ignores any user_id in the body.
-      // Previously the form was sending it anyway as dead weight.
       createClient.mutate(
         payload,
         { onSuccess: () => navigate("/clients") },
@@ -127,7 +125,7 @@ export const ClientForm: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-64" role="status" aria-live="polite">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" aria-hidden="true"></div>
-        <span className="sr-only">Cargando límites de plan...</span>
+        <span className="sr-only">{t("common:action.loading")}</span>
       </div>
     );
   }
@@ -139,10 +137,9 @@ export const ClientForm: React.FC = () => {
           type="button"
           onClick={() => navigate(-1)}
           className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
-          aria-label="Regresar a la página anterior"
         >
           <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
-          Regresar
+          {t("common:action.back")}
         </button>
         <div className="flex justify-center mt-12">
           <UpgradeBanner type="limit-reached" resource="clients" currentUsage={clientsCount} limit={clientLimit} />
@@ -153,19 +150,18 @@ export const ClientForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ label: 'Clientes', href: '/clients' }, { label: id ? (watch("name") || 'Editar Cliente') : 'Nuevo Cliente' }]} />
+      <Breadcrumb items={[{ label: t("clients:title"), href: '/clients' }, { label: id ? (watch("name") || t("clients:details.edit")) : t("clients:new_client") }]} />
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <button
             type="button"
             onClick={() => navigate("/clients")}
             className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary"
-            aria-label="Volver a la lista de clientes"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
           <h1 className="text-2xl font-bold text-text tracking-tight">
-            {id ? "Editar Cliente" : "Nuevo Cliente"}
+            {id ? t("clients:details.edit") : t("clients:new_client")}
           </h1>
         </div>
       </div>
@@ -191,10 +187,9 @@ export const ClientForm: React.FC = () => {
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
-                  aria-label="Subir foto del cliente"
                 >
                   {photoPreview ? (
-                    <img src={photoPreview} alt="Foto del cliente" className="h-full w-full object-cover" />
+                    <img src={photoPreview} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <Camera className="h-8 w-8 text-text-secondary" aria-hidden="true" />
                   )}
@@ -209,7 +204,6 @@ export const ClientForm: React.FC = () => {
                     type="button"
                     onClick={removePhoto}
                     className="absolute -top-1 -right-1 bg-error text-white rounded-full p-0.5 hover:bg-error/90 transition-colors"
-                    aria-label="Eliminar foto"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -220,28 +214,25 @@ export const ClientForm: React.FC = () => {
                   accept="image/*"
                   className="hidden"
                   onChange={handlePhotoChange}
-                  aria-label="Seleccionar foto del cliente"
                 />
-                <p className="text-xs text-text-secondary text-center mt-2">Foto (opcional)</p>
+                <p className="text-xs text-text-secondary text-center mt-2">Photo (optional)</p>
               </div>
             </div>
 
             <div className="sm:col-span-6">
               <label htmlFor="name" className="block text-sm font-medium text-text-secondary mb-2">
-                Nombre Completo *
+                {t("clients:form.name")} *
               </label>
               <input
                 id="name"
                 type="text"
                 {...register("name")}
                 className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                placeholder="Nombre del cliente"
-                aria-required="true"
+                placeholder={t("clients:form.name")}
                 aria-invalid={errors.name ? "true" : "false"}
-                aria-describedby={errors.name ? "name-error" : undefined}
               />
               {errors.name && (
-                <p id="name-error" className="mt-2 text-sm text-error" role="alert">
+                <p className="mt-2 text-sm text-error" role="alert">
                   {errors.name.message}
                 </p>
               )}
@@ -249,19 +240,18 @@ export const ClientForm: React.FC = () => {
 
             <div className="sm:col-span-3">
               <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-2">
-                Email
+                {t("clients:form.email")}
               </label>
               <input
                 id="email"
                 type="email"
                 {...register("email")}
                 className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                placeholder="ejemplo@correo.com"
+                placeholder="example@mail.com"
                 aria-invalid={errors.email ? "true" : "false"}
-                aria-describedby={errors.email ? "email-error" : undefined}
               />
               {errors.email && (
-                <p id="email-error" className="mt-2 text-sm text-error" role="alert">
+                <p className="mt-2 text-sm text-error" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -269,7 +259,7 @@ export const ClientForm: React.FC = () => {
 
             <div className="sm:col-span-3">
               <label htmlFor="phone" className="block text-sm font-medium text-text-secondary mb-2">
-                Teléfono *
+                {t("clients:form.phone")} *
               </label>
               <input
                 id="phone"
@@ -277,12 +267,10 @@ export const ClientForm: React.FC = () => {
                 {...register("phone")}
                 className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
                 placeholder="00 0000 0000"
-                aria-required="true"
                 aria-invalid={errors.phone ? "true" : "false"}
-                aria-describedby={errors.phone ? "phone-error" : undefined}
               />
               {errors.phone && (
-                <p id="phone-error" className="mt-2 text-sm text-error" role="alert">
+                <p className="mt-2 text-sm text-error" role="alert">
                   {errors.phone.message}
                 </p>
               )}
@@ -290,40 +278,40 @@ export const ClientForm: React.FC = () => {
 
             <div className="sm:col-span-4">
               <label htmlFor="address" className="block text-sm font-medium text-text-secondary mb-2">
-                Dirección
+                {t("clients:form.address")}
               </label>
               <input
                 id="address"
                 type="text"
                 {...register("address")}
                 className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                placeholder="Calle, Número, Colonia"
+                placeholder={t("clients:form.address")}
               />
             </div>
 
             <div className="sm:col-span-2">
               <label htmlFor="city" className="block text-sm font-medium text-text-secondary mb-2">
-                Ciudad
+                City
               </label>
               <input
                 id="city"
                 type="text"
                 {...register("city")}
                 className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                placeholder="Ciudad"
+                placeholder="City"
               />
             </div>
 
             <div className="sm:col-span-6">
               <label htmlFor="notes" className="block text-sm font-medium text-text-secondary mb-2">
-                Notas
+                {t("clients:form.notes")}
               </label>
               <textarea
                 id="notes"
                 {...register("notes")}
                 rows={4}
                 className="w-full shadow-sm rounded-xl p-3 border border-border bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                placeholder="Detalles adicionales sobre el cliente..."
+                placeholder={t("clients:form.notes_placeholder")}
               />
             </div>
           </div>
@@ -334,16 +322,15 @@ export const ClientForm: React.FC = () => {
               onClick={() => navigate("/clients")}
               className="bg-card py-2.5 px-6 border border-border rounded-xl shadow-sm text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
             >
-              Cancelar
+              {t("common:action.cancel")}
             </button>
             <button
               type="submit"
               disabled={isLoading}
               className="inline-flex justify-center py-2.5 px-8 border border-transparent shadow-sm text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary/40 disabled:opacity-50 transition-opacity"
-              aria-label={isLoading ? "Guardando cliente..." : "Guardar cliente"}
             >
               <Save className="h-5 w-5 mr-2" aria-hidden="true" />
-              {isLoading ? "Guardando..." : "Guardar Cliente"}
+              {isLoading ? t("common:action.saving") : t("common:action.save")}
             </button>
           </div>
         </form>

@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   ArrowLeft,
@@ -25,15 +26,8 @@ import { useProduct, useProductIngredients, useCreateProduct, useUpdateProduct, 
 import { useInventoryItems } from "../../hooks/queries/useInventoryQueries";
 import { useStaffTeams } from "../../hooks/queries/useStaffQueries";
 
-const productSchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  category: z.string().min(2, "La categoría es requerida"),
-  base_price: z.coerce.number().min(0, "El precio no puede ser negativo"),
-});
-
-type ProductFormData = z.infer<typeof productSchema>;
-
 export const ProductForm: React.FC = () => {
+  const { t } = useTranslation(["products", "common"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -43,6 +37,14 @@ export const ProductForm: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [staffTeamId, setStaffTeamId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const productSchema = useMemo(() => z.object({
+    name: z.string().min(2, t("products:form.validation.name_min")),
+    category: z.string().min(2, t("products:form.validation.category_required")),
+    base_price: z.coerce.number().min(0, t("products:form.validation.price_negative")),
+  }), [t]);
+
+  type ProductFormData = z.infer<typeof productSchema>;
 
   const {
     canCreateProduct,
@@ -130,7 +132,7 @@ export const ProductForm: React.FC = () => {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setError("La imagen es demasiado grande (máximo 10MB).");
+      setError(t("clients:form.photo_too_large"));
       return;
     }
 
@@ -142,7 +144,7 @@ export const ProductForm: React.FC = () => {
       onSuccess: (result) => setImageUrl(result.url),
       onError: (err) => {
         logError("Error uploading product image", err);
-        setError("Error al subir la imagen.");
+        setError(t("clients:form.photo_upload_error"));
         setImagePreview(imageUrl);
       },
     });
@@ -284,7 +286,6 @@ export const ProductForm: React.FC = () => {
         { onSuccess: () => navigate("/products") },
       );
     } else {
-      // `user_id` no se envía — el backend lo toma del JWT.
       createProduct.mutate(
         {
           product: {
@@ -312,7 +313,7 @@ export const ProductForm: React.FC = () => {
           className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"
           aria-hidden="true"
         ></div>
-        <span className="sr-only">Cargando límites de plan...</span>
+        <span className="sr-only">{t("common:action.loading")}</span>
       </div>
     );
   }
@@ -324,10 +325,9 @@ export const ProductForm: React.FC = () => {
           type="button"
           onClick={() => navigate(-1)}
           className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
-          aria-label="Regresar a la página anterior"
         >
           <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
-          Regresar
+          {t("common:action.back")}
         </button>
         <div className="flex justify-center mt-12">
           <UpgradeBanner
@@ -341,27 +341,27 @@ export const ProductForm: React.FC = () => {
     );
   }
 
+  const title = id ? t("products:details.edit") : t("products:new_product");
+
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ label: 'Productos', href: '/products' }, { label: id ? (watch("name") || 'Editar Producto') : 'Nuevo Producto' }]} />
+      <Breadcrumb items={[{ label: t("products:title"), href: '/products' }, { label: id ? (watch("name") || title) : title }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button
             type="button"
             onClick={() => navigate("/products")}
             className="mr-4 p-2 rounded-full hover:bg-surface-alt text-text-secondary"
-            aria-label="Volver a la lista de productos"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
           </button>
           <h1 className="text-2xl font-bold text-text tracking-tight">
-            {id ? "Editar Producto" : "Nuevo Producto"}
+            {title}
           </h1>
         </div>
       </div>
 
       <div className="space-y-6">
-        {/* Formulario Principal */}
         <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10">
           <form
             id="product-form"
@@ -393,12 +393,11 @@ export const ProductForm: React.FC = () => {
                       if (e.key === "Enter" || e.key === " ")
                         fileInputRef.current?.click();
                     }}
-                    aria-label="Subir imagen del producto"
                   >
                     {imagePreview ? (
                       <img
                         src={imagePreview}
-                        alt="Imagen del producto"
+                        alt=""
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -407,18 +406,12 @@ export const ProductForm: React.FC = () => {
                         aria-hidden="true"
                       />
                     )}
-                    {uploadImage.isPending && (
-                      <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white" />
-                      </div>
-                    )}
                   </div>
                   {imagePreview && (
                     <button
                       type="button"
                       onClick={removeImage}
                       className="absolute -top-1 -right-1 bg-error text-white rounded-full p-0.5 hover:bg-error/80 transition-colors"
-                      aria-label="Eliminar imagen"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -429,10 +422,9 @@ export const ProductForm: React.FC = () => {
                     accept="image/*"
                     className="hidden"
                     onChange={handleImageChange}
-                    aria-label="Seleccionar imagen del producto"
                   />
                   <p className="text-xs text-text-secondary text-center mt-2">
-                    Foto (opcional)
+                    {t("products:form.photo")}
                   </p>
                 </div>
               </div>
@@ -442,26 +434,16 @@ export const ProductForm: React.FC = () => {
                   htmlFor="name"
                   className="block text-sm font-medium text-text-secondary mb-2"
                 >
-                  Nombre del Producto *
+                  {t("products:form.name")} *
                 </label>
                 <input
                   id="name"
                   type="text"
                   {...register("name")}
                   className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
-                  placeholder="Ej. Paquete Premium"
-                  aria-required="true"
-                  aria-invalid={errors.name ? "true" : "false"}
-                  aria-describedby={errors.name ? "name-error" : undefined}
                 />
                 {errors.name && (
-                  <p
-                    id="name-error"
-                    className="mt-2 text-sm text-error"
-                    role="alert"
-                  >
-                    {errors.name.message}
-                  </p>
+                  <p className="mt-2 text-sm text-error">{errors.name.message}</p>
                 )}
               </div>
 
@@ -470,28 +452,16 @@ export const ProductForm: React.FC = () => {
                   htmlFor="category"
                   className="block text-sm font-medium text-text-secondary mb-2"
                 >
-                  Categoría *
+                  {t("products:form.category")} *
                 </label>
                 <input
                   id="category"
                   type="text"
                   {...register("category")}
                   className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
-                  placeholder="Ej. Servicios"
-                  aria-required="true"
-                  aria-invalid={errors.category ? "true" : "false"}
-                  aria-describedby={
-                    errors.category ? "category-error" : undefined
-                  }
                 />
                 {errors.category && (
-                  <p
-                    id="category-error"
-                    className="mt-2 text-sm text-error"
-                    role="alert"
-                  >
-                    {errors.category.message}
-                  </p>
+                  <p className="mt-2 text-sm text-error">{errors.category.message}</p>
                 )}
               </div>
 
@@ -500,7 +470,7 @@ export const ProductForm: React.FC = () => {
                   htmlFor="base_price"
                   className="block text-sm font-medium text-text-secondary mb-2"
                 >
-                  Precio Base ($) *
+                  {t("products:form.base_price")} ($) *
                 </label>
                 <input
                   id="base_price"
@@ -508,20 +478,9 @@ export const ProductForm: React.FC = () => {
                   step="0.01"
                   {...register("base_price")}
                   className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
-                  aria-required="true"
-                  aria-invalid={errors.base_price ? "true" : "false"}
-                  aria-describedby={
-                    errors.base_price ? "base_price-error" : undefined
-                  }
                 />
                 {errors.base_price && (
-                  <p
-                    id="base_price-error"
-                    className="mt-2 text-sm text-error"
-                    role="alert"
-                  >
-                    {errors.base_price.message}
-                  </p>
+                  <p className="mt-2 text-sm text-error">{errors.base_price.message}</p>
                 )}
               </div>
 
@@ -529,11 +488,10 @@ export const ProductForm: React.FC = () => {
                 <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface-alt">
                   <div>
                     <p className="text-sm font-medium text-text">
-                      Producto activo
+                      {t("products:form.is_active")}
                     </p>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      Los productos inactivos no aparecen disponibles en
-                      cotizaciones
+                      {t("products:form.active_desc")}
                     </p>
                   </div>
                   <button
@@ -553,15 +511,13 @@ export const ProductForm: React.FC = () => {
           </form>
         </div>
 
-        {/* Composición / Insumos */}
         <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
             <Layers className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
-            Composición / Insumos (por unidad/persona)
+            {t("products:form.composition")}
           </h3>
           <p className="text-xs text-text-secondary mb-4">
-            Define qué insumos y qué cantidad se necesitan para 1 unidad de este
-            producto. Solo insumos generan costo.
+            {t("products:form.composition_desc")}
           </p>
 
           <div className="flex-1 overflow-y-auto mb-4 space-y-3">
@@ -574,7 +530,6 @@ export const ProductForm: React.FC = () => {
                   type="button"
                   onClick={() => handleRemoveIngredient(originalIndex)}
                   className="absolute top-1 right-1 text-text-secondary hover:text-error transition-colors"
-                  aria-label={`Eliminar insumo`}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -583,7 +538,7 @@ export const ProductForm: React.FC = () => {
                     htmlFor={`ingredient-select-${originalIndex}`}
                     className="block text-xs text-text-secondary mb-1"
                   >
-                    Insumo
+                    {t("products:form.inventory")}
                   </label>
                   <select
                     id={`ingredient-select-${originalIndex}`}
@@ -596,9 +551,8 @@ export const ProductForm: React.FC = () => {
                       )
                     }
                     className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                    aria-label={`Seleccionar insumo`}
                   >
-                    <option value="">Seleccionar insumo</option>
+                    <option value="">{t("common:action.select")} {t("products:form.inventory")}</option>
                     {ingredientInventoryItems.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.ingredient_name} ({i.unit})
@@ -612,7 +566,7 @@ export const ProductForm: React.FC = () => {
                       htmlFor={`quantity-${originalIndex}`}
                       className="text-xs text-text-secondary"
                     >
-                      Cant.
+                      {t("products:form.quantity")}
                     </label>
                     <input
                       id={`quantity-${originalIndex}`}
@@ -627,12 +581,11 @@ export const ProductForm: React.FC = () => {
                         )
                       }
                       className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                      aria-label={`Cantidad de insumo`}
                     />
                   </div>
                   <div className="w-1/2 text-right">
                     <span className="text-xs text-text-secondary block">
-                      Costo Est.
+                      {t("products:form.cost")} Est.
                     </span>
                     <span className="text-sm font-medium text-text">
                       ${(item.quantity_required * item.unit_cost).toFixed(2)}
@@ -653,7 +606,7 @@ export const ProductForm: React.FC = () => {
                     className="rounded border-border text-primary focus:ring-primary/20 h-4 w-4"
                   />
                   <span className="text-xs text-text-secondary">
-                    Llevar al evento
+                    {t("products:form.bring_to_event")}
                   </span>
                 </label>
               </div>
@@ -663,17 +616,15 @@ export const ProductForm: React.FC = () => {
               type="button"
               onClick={handleAddIngredient}
               className="w-full flex items-center justify-center px-4 py-3 border border-border shadow-sm text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
-              aria-label="Agregar un insumo adicional a la composición"
             >
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar
-              Insumo
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> {t("products:form.add_ingredient")}
             </button>
           </div>
 
           <div className="border-t border-border pt-4 space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm text-text-secondary">
-                Costo Total por Unidad
+                {t("products:form.total_unit_cost")}
               </span>
               <span className="text-lg font-bold text-text">
                 ${calculateTotalCost().toFixed(2)}
@@ -682,15 +633,13 @@ export const ProductForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Maquinaria / Equipo Necesario */}
         <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
             <Wrench className="h-5 w-5 mr-2 text-info" aria-hidden="true" />
-            Maquinaria / Equipo Necesario
+            {t("products:form.equipment")}
           </h3>
           <p className="text-xs text-text-secondary mb-4">
-            Equipo y maquinaria necesaria para preparar este producto. No se
-            incluye en el costo (activos reutilizables).
+            {t("products:form.equipment_desc")}
           </p>
 
           <div className="flex-1 overflow-y-auto mb-4 space-y-3">
@@ -703,7 +652,6 @@ export const ProductForm: React.FC = () => {
                   type="button"
                   onClick={() => handleRemoveIngredient(originalIndex)}
                   className="absolute top-1 right-1 text-text-secondary hover:text-error transition-colors"
-                  aria-label={`Eliminar equipo`}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -712,7 +660,7 @@ export const ProductForm: React.FC = () => {
                     htmlFor={`equipment-select-${originalIndex}`}
                     className="block text-xs text-text-secondary mb-1"
                   >
-                    Equipo
+                    {t("products:form.equipment")}
                   </label>
                   <select
                     id={`equipment-select-${originalIndex}`}
@@ -725,9 +673,8 @@ export const ProductForm: React.FC = () => {
                       )
                     }
                     className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                    aria-label={`Seleccionar equipo`}
                   >
-                    <option value="">Seleccionar equipo</option>
+                    <option value="">{t("common:action.select")} {t("products:form.equipment")}</option>
                     {equipmentInventoryItems.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.ingredient_name} ({i.unit})
@@ -741,14 +688,14 @@ export const ProductForm: React.FC = () => {
                       htmlFor={`eq-capacity-${originalIndex}`}
                       className="text-xs text-text-secondary"
                     >
-                      Capacidad (unid./equipo)
+                      {t("products:form.capacity")}
                     </label>
                     <input
                       id={`eq-capacity-${originalIndex}`}
                       type="number"
                       step="1"
                       min="1"
-                      placeholder="Ej: 100"
+                      placeholder={t("products:form.example_placeholder")}
                       value={item.capacity ?? ""}
                       onChange={(e) =>
                         handleIngredientChange(
@@ -758,17 +705,16 @@ export const ProductForm: React.FC = () => {
                         )
                       }
                       className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                      aria-label={`Capacidad del equipo (unidades de producto por pieza)`}
                     />
                     <p className="text-xs text-text-secondary mt-1">
                       {item.capacity
-                        ? `1 pieza por cada ${item.capacity} unid.`
-                        : "Fijo: 1 pieza siempre"}
+                        ? t("products:form.capacity_help", { count: item.capacity })
+                        : t("products:form.capacity_fixed")}
                     </p>
                   </div>
                   <div className="w-1/2 text-right">
                     <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-info/10 text-info">
-                      Sin costo - Reutilizable
+                      {t("products:form.reusable_no_cost")}
                     </span>
                   </div>
                 </div>
@@ -779,23 +725,19 @@ export const ProductForm: React.FC = () => {
               type="button"
               onClick={handleAddEquipment}
               className="w-full flex items-center justify-center px-4 py-3 border border-border shadow-sm text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
-              aria-label="Agregar equipo necesario"
             >
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar
-              Equipo
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> {t("products:form.add_equipment")}
             </button>
           </div>
         </div>
 
-        {/* Insumos por Evento */}
         <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
             <Fuel className="h-5 w-5 mr-2 text-warning" aria-hidden="true" />
-            Insumos por Evento (costo fijo por evento)
+            {t("products:form.event_supplies")}
           </h3>
           <p className="text-xs text-text-secondary mb-4">
-            Insumos con cantidad fija por evento que no escala con unidades del
-            producto (ej. aceite, gas). Se contabilizan como costo del evento.
+            {t("products:form.event_supplies_desc")}
           </p>
 
           <div className="flex-1 overflow-y-auto mb-4 space-y-3">
@@ -808,7 +750,6 @@ export const ProductForm: React.FC = () => {
                   type="button"
                   onClick={() => handleRemoveIngredient(originalIndex)}
                   className="absolute top-1 right-1 text-text-secondary hover:text-error transition-colors"
-                  aria-label="Eliminar insumo por evento"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -817,7 +758,7 @@ export const ProductForm: React.FC = () => {
                     htmlFor={`supply-select-${originalIndex}`}
                     className="block text-xs text-text-secondary mb-1"
                   >
-                    Insumo por Evento
+                    {t("products:form.inventory")}
                   </label>
                   <select
                     id={`supply-select-${originalIndex}`}
@@ -830,9 +771,8 @@ export const ProductForm: React.FC = () => {
                       )
                     }
                     className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                    aria-label="Seleccionar insumo por evento"
                   >
-                    <option value="">Seleccionar insumo</option>
+                    <option value="">{t("common:action.select")} {t("products:form.inventory")}</option>
                     {supplyInventoryItems.map((i) => (
                       <option key={i.id} value={i.id}>
                         {i.ingredient_name} ({i.unit})
@@ -846,7 +786,7 @@ export const ProductForm: React.FC = () => {
                       htmlFor={`supply-qty-${originalIndex}`}
                       className="text-xs text-text-secondary"
                     >
-                      Cant. por evento
+                      {t("products:form.quantity")}
                     </label>
                     <input
                       id={`supply-qty-${originalIndex}`}
@@ -861,14 +801,13 @@ export const ProductForm: React.FC = () => {
                         )
                       }
                       className="block w-full p-2.5 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
-                      aria-label="Cantidad por evento"
                     />
                   </div>
                   <div className="w-1/2 text-right">
                     <span className="text-xs text-text-secondary block">
-                      Costo por evento
+                      {t("products:form.cost")} Est.
                     </span>
-                    <span className="text-sm font-medium text-warning">
+                    <span className="text-sm font-medium text-text">
                       ${(item.quantity_required * item.unit_cost).toFixed(2)}
                     </span>
                   </div>
@@ -880,60 +819,46 @@ export const ProductForm: React.FC = () => {
               type="button"
               onClick={handleAddSupply}
               className="w-full flex items-center justify-center px-4 py-3 border border-border shadow-sm text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
-              aria-label="Agregar insumo por evento"
             >
-              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar
-              Insumo por Evento
+              <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> {t("products:form.add_supply")}
             </button>
           </div>
 
-          {supplyEntries.length > 0 && (
-            <div className="border-t border-border pt-4 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-text-secondary">
-                  Costo por Evento (Insumos Fijos)
-                </span>
-                <span className="text-lg font-bold text-warning">
-                  ${calculatePerEventCost().toFixed(2)}
-                </span>
-              </div>
-              <p className="text-xs text-text-secondary">
-                Este costo se suma al costo total del evento, no al costo por
-                unidad.
-              </p>
+          <div className="border-t border-border pt-4 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-text-secondary">
+                {t("products:form.total_event_cost")}
+              </span>
+              <span className="text-lg font-bold text-text">
+                ${calculatePerEventCost().toFixed(2)}
+              </span>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Equipo asociado (Ola 3 — opcional) */}
         <div className="bg-card shadow-sm border border-border px-4 py-8 rounded-2xl sm:p-10 flex flex-col">
           <h3 className="text-lg leading-6 font-medium text-text mb-4 flex items-center">
-            <Users className="h-5 w-5 mr-2 text-accent" aria-hidden="true" />
-            Equipo asociado
+            <Users className="h-5 w-5 mr-2 text-primary" aria-hidden="true" />
+            {t("products:form.staff_team")}
           </h3>
           <p className="text-xs text-text-secondary mb-4">
-            Agregá un equipo para vender el servicio de meseros con este producto.
-            Cuando agregues este producto a un evento, se asignan automáticamente
-            los miembros del equipo como personal.
+            {t("products:form.staff_team_desc")}
           </p>
 
-          <div>
+          <div className="space-y-4">
             <label
               htmlFor="staff-team-select"
-              className="block text-sm font-medium text-text-secondary mb-2"
+              className="block text-sm font-medium text-text-secondary"
             >
-              Equipo
+              Equipo Responsable
             </label>
             <select
               id="staff-team-select"
-              value={staffTeamId ?? ""}
-              onChange={(e) =>
-                setStaffTeamId(e.target.value === "" ? null : e.target.value)
-              }
-              className="w-full rounded-xl shadow-sm border border-border bg-card text-text p-3 transition-shadow focus:ring-2 focus:ring-primary/20"
-              aria-label="Seleccionar equipo asociado al producto"
+              value={staffTeamId || ""}
+              onChange={(e) => setStaffTeamId(e.target.value || null)}
+              className="block w-full p-3 text-sm border-border rounded-xl shadow-sm bg-card text-text transition-shadow focus:ring-2 focus:ring-primary/20"
             >
-              <option value="">Sin equipo</option>
+              <option value="">(Ninguno)</option>
               {staffTeams.map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.name}

@@ -42,7 +42,7 @@ func TestEmailService_GeneratePasswordResetHTML(t *testing.T) {
 	}
 	emailService := NewEmailService(cfg)
 
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "John Doe", "ResetLink": "http://localhost:5173/reset?token=123"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "John Doe", "ResetLink": "http://localhost:5173/reset?token=123"})
 
 	if !strings.Contains(html, "John Doe") {
 		t.Errorf("expected HTML to contain user name: %s", "John Doe")
@@ -92,7 +92,7 @@ func TestEmailService_SendPasswordReset_LinkFormat(t *testing.T) {
 
 	// SendPasswordReset will fail because no API key, but the HTML should
 	// contain the correctly formatted link. We test generatePasswordResetHTML directly.
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "Maria", "ResetLink": "https://app.solennix.com/reset-password?token=abc123"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "Maria", "ResetLink": "https://app.solennix.com/reset-password?token=abc123"})
 	if !strings.Contains(html, "Maria") {
 		t.Error("expected HTML to contain user name")
 	}
@@ -127,7 +127,7 @@ func TestEmailService_GeneratePasswordResetHTML_EmptyName(t *testing.T) {
 	emailService := NewEmailService(cfg)
 
 	// Test with empty username — should not panic
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "", "ResetLink": "http://localhost:5173/reset?token=xyz"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "", "ResetLink": "http://localhost:5173/reset?token=xyz"})
 	if !strings.Contains(html, "Hola ") {
 		t.Error("expected HTML to contain greeting")
 	}
@@ -169,7 +169,7 @@ func TestEmailService_GeneratePasswordResetHTML_SpecialCharsInUserName(t *testin
 	// Test with HTML/XSS special characters in userName
 	// Go's html/template auto-escapes, so <script> should become &lt;script&gt;
 	xssName := `<script>alert("xss")</script>`
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": xssName, "ResetLink": "http://localhost:5173/reset?token=abc"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": xssName, "ResetLink": "http://localhost:5173/reset?token=abc"})
 
 	// The raw <script> tag should NOT appear in the output
 	if strings.Contains(html, "<script>") {
@@ -192,7 +192,7 @@ func TestEmailService_GeneratePasswordResetHTML_AmpersandInUserName(t *testing.T
 	emailService := NewEmailService(cfg)
 
 	// Test with ampersand and quotes in userName
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": `John "O'Brien" & Co.`, "ResetLink": "http://localhost:5173/reset?token=def"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": `John "O'Brien" & Co.`, "ResetLink": "http://localhost:5173/reset?token=def"})
 
 	// html/template should escape & to &amp; and quotes appropriately
 	if strings.Contains(html, `& Co.`) && !strings.Contains(html, `&amp; Co.`) {
@@ -210,7 +210,7 @@ func TestEmailService_GeneratePasswordResetHTML_UnicodeUserName(t *testing.T) {
 	emailService := NewEmailService(cfg)
 
 	// Test with Unicode characters (common in Spanish names)
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "Jose Garcia", "ResetLink": "http://localhost:5173/reset?token=ghi"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "Jose Garcia", "ResetLink": "http://localhost:5173/reset?token=ghi"})
 
 	if !strings.Contains(html, "Jose Garcia") {
 		t.Error("expected HTML to contain Unicode user name")
@@ -227,7 +227,7 @@ func TestEmailService_SendPasswordReset_VerifiesResetLinkFormat(t *testing.T) {
 
 	// SendPasswordReset will fail due to no API key, but we can verify
 	// that generatePasswordResetHTML builds the correct link format
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "Verify User", "ResetLink": "https://myapp.example.com/reset-password?token=mytoken123"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "Verify User", "ResetLink": "https://myapp.example.com/reset-password?token=mytoken123"})
 	if !strings.Contains(html, "https://myapp.example.com/reset-password?token=mytoken123") {
 		t.Error("expected HTML to contain full reset link with frontend URL")
 	}
@@ -312,7 +312,7 @@ func TestEmailService_GeneratePasswordResetHTML_ContainsStructure(t *testing.T) 
 	}
 	emailService := NewEmailService(cfg)
 
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "Test User", "ResetLink": "http://localhost:5173/reset?token=abc"})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "Test User", "ResetLink": "http://localhost:5173/reset?token=abc"})
 
 	// Verify HTML doctype and lang
 	if !strings.Contains(html, "<!DOCTYPE html>") {
@@ -356,7 +356,7 @@ func TestEmailService_SendPasswordReset_BuildsCorrectLink(t *testing.T) {
 	// which fails), but we verify that generatePasswordResetHTML produces the
 	// same link format SendPasswordReset would construct.
 	expectedLink := "https://app.solennix.com/reset-password?token=tok123"
-	html := emailService.renderTemplate(passwordResetBody, map[string]string{"UserName": "Link Test", "ResetLink": expectedLink})
+	html := emailService.renderTemplate(passwordResetBody, map[string]any{"UserName": "Link Test", "ResetLink": expectedLink})
 	if !strings.Contains(html, expectedLink) {
 		t.Errorf("expected HTML to contain link %q", expectedLink)
 	}
@@ -404,7 +404,7 @@ func TestEmailService_SendWelcome_GivenValidData_WhenRendered_ThenTemplateContai
 	}
 	svc := NewEmailService(cfg)
 
-	html := svc.renderTemplate(welcomeBody, map[string]string{
+	html := svc.renderTemplate(welcomeBody, map[string]any{
 		"UserName":      "Maria",
 		"DashboardLink": "https://app.solennix.com/dashboard",
 	})
@@ -461,7 +461,7 @@ func TestEmailService_SendEventReminder_GivenValidData_WhenRendered_ThenTemplate
 	}
 	svc := NewEmailService(cfg)
 
-	html := svc.renderTemplate(eventReminderBody, map[string]string{
+	html := svc.renderTemplate(eventReminderBody, map[string]any{
 		"UserName":  "Carlos",
 		"EventName": "Boda Rodriguez",
 		"EventDate": "2026-04-15",
@@ -520,7 +520,7 @@ func TestEmailService_SendPaymentReceipt_GivenValidData_WhenRendered_ThenTemplat
 	}
 	svc := NewEmailService(cfg)
 
-	html := svc.renderTemplate(paymentReceiptBody, map[string]string{
+	html := svc.renderTemplate(paymentReceiptBody, map[string]any{
 		"UserName":    "Ana",
 		"EventName":   "Quinceañera",
 		"Amount":      "$5,000 MXN",
@@ -579,7 +579,7 @@ func TestEmailService_SendSubscriptionConfirmation_GivenValidData_WhenRendered_T
 	}
 	svc := NewEmailService(cfg)
 
-	html := svc.renderTemplate(subscriptionConfirmationBody, map[string]string{
+	html := svc.renderTemplate(subscriptionConfirmationBody, map[string]any{
 		"UserName": "Luis",
 		"PlanName": "Pro",
 	})
@@ -605,27 +605,27 @@ func TestEmailService_RenderTemplate_GivenAllTemplates_WhenRendered_ThenContains
 
 	templates := map[string]struct {
 		tmpl string
-		data map[string]string
+		data map[string]any
 	}{
 		"welcome": {
 			tmpl: welcomeBody,
-			data: map[string]string{"UserName": "Test", "DashboardLink": "http://test.com"},
+			data: map[string]any{"UserName": "Test", "DashboardLink": "http://test.com"},
 		},
 		"eventReminder": {
 			tmpl: eventReminderBody,
-			data: map[string]string{"UserName": "Test", "EventName": "Evt", "EventDate": "2026-01-01", "EventLink": "http://test.com"},
+			data: map[string]any{"UserName": "Test", "EventName": "Evt", "EventDate": "2026-01-01", "EventLink": "http://test.com"},
 		},
 		"paymentReceipt": {
 			tmpl: paymentReceiptBody,
-			data: map[string]string{"UserName": "Test", "EventName": "Evt", "Amount": "$100", "PaymentDate": "2026-01-01"},
+			data: map[string]any{"UserName": "Test", "EventName": "Evt", "Amount": "$100", "PaymentDate": "2026-01-01"},
 		},
 		"subscriptionConfirmation": {
 			tmpl: subscriptionConfirmationBody,
-			data: map[string]string{"UserName": "Test", "PlanName": "Pro"},
+			data: map[string]any{"UserName": "Test", "PlanName": "Pro"},
 		},
 		"passwordReset": {
 			tmpl: passwordResetBody,
-			data: map[string]string{"UserName": "Test", "ResetLink": "http://test.com"},
+			data: map[string]any{"UserName": "Test", "ResetLink": "http://test.com"},
 		},
 	}
 

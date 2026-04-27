@@ -1,0 +1,101 @@
+{
+  "list": {
+    "title": "Staff",
+    "description": "Your staff directory: photographers, DJs, waiters, coordinators.",
+    "new_staff": "New staff member",
+    "teams": "Teams",
+    "search_placeholder": "Search by name, role, email or phone...",
+    "table": {
+      "name": "Name",
+      "role": "Role",
+      "contact": "Contact",
+      "actions": "Actions",
+      "summary": "{{count}} members, page {{page}} of {{totalPages}}.",
+      "view_detail": "View detail",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "empty": {
+      "title": "No staff members yet",
+      "description_search": "No matching staff members found. Try another term.",
+      "description_base": "Add photographers, DJs, waiters, coordinators and assign them to your events.",
+      "action": "Add staff member"
+    },
+    "delete_confirm": {
+      "title": "Delete staff member",
+      "description": "They will be removed from the catalog and any assigned events. This action cannot be undone.",
+      "confirm": "Permanently delete",
+      "cancel": "Cancel"
+    }
+  },
+  "details": {
+    "back": "Back to Staff",
+    "loading": "Loading…",
+    "not_found": "Staff member not found.",
+    "return_list": "Back to list",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "fields": {
+      "phone": "Phone",
+      "email": "Email",
+      "notes": "Notes",
+      "notifications": "Email notifications",
+      "notifications_desc": "Opted in · will be activated when feature is released (Pro+).",
+      "notifications_off": "Not opted in."
+    },
+    "upcoming": {
+      "title": "Upcoming assignments",
+      "empty": "No events assigned in the next 90 days.",
+      "shift_from": "From {{time}}",
+      "shift_to": "To {{time}}"
+    },
+    "delete_confirm": {
+      "title": "Delete staff member",
+      "description": "{{name}} will be removed from the catalog and any assigned events.",
+      "confirm": "Permanently delete",
+      "cancel": "Cancel"
+    },
+    "status": {
+      "pending": "Unconfirmed",
+      "confirmed": "Confirmed",
+      "declined": "Declined",
+      "cancelled": "Cancelled"
+    }
+  },
+  "form": {
+    "back": "Back to Staff",
+    "loading": "Loading staff member…",
+    "title_new": "New staff member",
+    "title_edit": "Edit staff member",
+    "help_text": "Phase 2 will activate email notifications when assigned to an event. The toggle is already being saved.",
+    "fields": {
+      "name": "Name",
+      "name_placeholder": "Maria Lopez",
+      "role": "Role",
+      "role_placeholder": "Photographer · DJ · Coordinator · Waiter",
+      "phone": "Phone",
+      "phone_placeholder": "+52 55 1234 5678",
+      "email": "Email",
+      "email_placeholder": "maria@example.com",
+      "notes": "Notes",
+      "notes_placeholder": "Typical rate, specialty, availability…",
+      "notifications": "Notify by email when assigned to an event.",
+      "notifications_help": "Pro plan feature (coming soon) — toggle is saved from now."
+    },
+    "errors": {
+      "name_required": "Name is required.",
+      "email_invalid": "Invalid email format."
+    },
+    "messages": {
+      "created": "Staff member created.",
+      "updated": "Staff member updated."
+    },
+    "actions": {
+      "save": "Save changes",
+      "create": "Create staff member",
+      "cancel": "Cancel"
+    }
+  }
+}

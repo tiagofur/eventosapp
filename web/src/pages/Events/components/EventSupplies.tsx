@@ -21,6 +21,8 @@ interface EventSuppliesProps {
   onQuickAddSuggestion: (inventoryId: string, suggestedQty: number, unitCost: number) => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export const EventSupplies: React.FC<EventSuppliesProps> = ({
   supplyInventory,
   selectedSupplies,
@@ -30,6 +32,8 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
   onSupplyChange,
   onQuickAddSuggestion,
 }) => {
+  const { t, i18n } = useTranslation(['events', 'common']);
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const pendingDeleteName = pendingDeleteIndex !== null
     ? supplyInventory.find(s => s.id === selectedSupplies[pendingDeleteIndex]?.inventory_id)?.ingredient_name
@@ -52,11 +56,11 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <Fuel className="h-5 w-5 text-warning" />
-        <h3 className="text-lg font-medium text-text">Insumos por Evento</h3>
+        <h3 className="text-lg font-medium text-text">{t('events:supplies.title')}</h3>
       </div>
 
       <p className="text-sm text-text-tertiary">
-        Insumos de costo fijo por evento (ej. aceite, gas). Este costo se suma al costo total del evento para calcular tu margen.
+        {t('events:supplies.description')}
       </p>
 
       {/* Auto-suggestions from products */}
@@ -64,7 +68,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
         <div className="bg-warning/10 border border-warning/30 rounded-xl p-4">
           <div className="flex items-center gap-2 text-warning font-medium text-sm mb-2">
             <Lightbulb className="h-4 w-4" />
-            Insumos sugeridos por tus productos
+            {t('events:supplies.suggestions')}
           </div>
           <div className="flex flex-wrap gap-2">
             {availableSuggestions.map(s => (
@@ -75,7 +79,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-warning/10 text-warning rounded-lg hover:bg-warning/20 transition-colors"
               >
                 <Plus className="h-3 w-3" />
-                {s.ingredient_name} ×{s.suggested_quantity} (${s.unit_cost}/{s.unit})
+                {s.ingredient_name} ×{s.suggested_quantity} ({s.unit_cost.toLocaleString(moneyLocale, { style: 'currency', currency: 'MXN' })}/{s.unit})
               </button>
             ))}
           </div>
@@ -94,13 +98,13 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
               type="button"
               onClick={() => setPendingDeleteIndex(index)}
               className="absolute top-2 right-2 text-text-secondary hover:text-error transition-colors"
-              aria-label={`Eliminar insumo ${index + 1}`}
+              aria-label={t('common:actions.delete')}
             >
               <Trash2 className="h-4 w-4" />
             </button>
 
             <div className="mb-2 pr-6">
-              <label htmlFor={`supply-select-${index}`} className="block text-xs text-text-secondary mb-1">Insumo</label>
+              <label htmlFor={`supply-select-${index}`} className="block text-xs text-text-secondary mb-1">{t('events:supplies.label')}</label>
               <select
                 id={`supply-select-${index}`}
                 value={item.inventory_id}
@@ -114,10 +118,10 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
                 }}
                 className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
               >
-                <option value="">Seleccionar insumo</option>
+                <option value="">{t('common:actions.select')}…</option>
                 {supplyInventory.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.ingredient_name} ({s.current_stock} {s.unit} disp. — ${s.unit_cost || 0}/{s.unit})
+                    {s.ingredient_name} ({s.current_stock} {s.unit} {t('common:available')} — {s.unit_cost?.toLocaleString(moneyLocale, { style: 'currency', currency: 'MXN' })}/{s.unit})
                   </option>
                 ))}
               </select>
@@ -125,7 +129,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
 
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
               <div className="w-full sm:w-1/4">
-                <label htmlFor={`supply-qty-${index}`} className="text-xs text-text-secondary block mb-1">Cantidad</label>
+                <label htmlFor={`supply-qty-${index}`} className="text-xs text-text-secondary block mb-1">{t('common:quantity')}</label>
                 <input
                   id={`supply-qty-${index}`}
                   type="number"
@@ -139,7 +143,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
 
               <div className="w-full sm:w-1/4">
                 <label htmlFor={`supply-cost-${index}`} className="text-xs text-text-secondary block mb-1">
-                  Costo/{inventoryItem?.unit || 'unid.'}
+                  {t('events:supplies.cost_unit')}/{inventoryItem?.unit || t('common:units').toLowerCase()}
                 </label>
                 <input
                   id={`supply-cost-${index}`}
@@ -153,7 +157,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
               </div>
 
               <div className="w-full sm:w-1/4">
-                <label htmlFor={`supply-source-${index}`} className="text-xs text-text-secondary block mb-1">Fuente</label>
+                <label htmlFor={`supply-source-${index}`} className="text-xs text-text-secondary block mb-1">{t('events:supplies.source')}</label>
                 <select
                   id={`supply-source-${index}`}
                   value={item.source}
@@ -165,8 +169,8 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
                   }}
                   className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
                 >
-                  <option value="purchase">Compra nueva</option>
-                  <option value="stock">Del stock</option>
+                  <option value="purchase">{t('events:supplies.source_purchase')}</option>
+                  <option value="stock">{t('events:supplies.source_stock')}</option>
                 </select>
               </div>
 
@@ -183,7 +187,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
                   htmlFor={`supply-exclude-cost-${index}`}
                   className="text-xs text-text-secondary whitespace-nowrap"
                 >
-                  Sin costo
+                  {t('events:supplies.no_cost')}
                 </label>
               </div>
               )}
@@ -194,7 +198,7 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
                     ? 'line-through text-text-tertiary'
                     : 'text-warning'
                 }`}>
-                  ${(item.quantity * item.unit_cost).toFixed(2)}
+                  {(item.quantity * item.unit_cost).toLocaleString(moneyLocale, { style: 'currency', currency: 'MXN' })}
                 </span>
               </div>
             </div>
@@ -206,8 +210,8 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
                     ? 'bg-success/10 text-success border border-success/20'
                     : 'bg-error/10 text-error border border-error/20'
                 }`}>
-                  Stock: {inventoryItem.current_stock} {inventoryItem.unit}
-                  {inventoryItem.current_stock < item.quantity && ' — Insuficiente'}
+                  {t('common:stock')}: {inventoryItem.current_stock} {inventoryItem.unit}
+                  {inventoryItem.current_stock < item.quantity && ` — ${t('common:insufficient')}`}
                 </span>
               </div>
             )}
@@ -220,28 +224,28 @@ export const EventSupplies: React.FC<EventSuppliesProps> = ({
         onClick={onAddSupply}
         className="w-full flex items-center justify-center px-4 py-2 border border-border shadow-xs text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
       >
-        <Plus className="h-4 w-4 mr-2" /> Agregar Insumo por Evento
+        <Plus className="h-4 w-4 mr-2" /> {t('events:supplies.add')}
       </button>
 
       {selectedSupplies.length > 0 && (
         <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
           <span className="text-sm text-text-secondary">
-            Costo total insumos por evento
+            {t('events:supplies.total_cost')}
           </span>
           <span className="text-lg font-bold text-warning">
-            ${totalSupplyCost.toFixed(2)}
+            {totalSupplyCost.toLocaleString(moneyLocale, { style: 'currency', currency: 'MXN' })}
           </span>
         </div>
       )}
 
       <ConfirmDialog
         open={pendingDeleteIndex !== null}
-        title="¿Eliminar insumo?"
+        title={t('events:supplies.delete_confirm_title')}
         description={pendingDeleteName
-          ? `¿Quitar "${pendingDeleteName}" de este evento?`
-          : '¿Quitar este insumo del evento?'}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+          ? t('events:supplies.delete_confirm_desc', { name: pendingDeleteName })
+          : t('events:supplies.delete_confirm_desc_generic')}
+        confirmText={t('common:actions.delete')}
+        cancelText={t('common:actions.cancel')}
         onConfirm={() => {
           if (pendingDeleteIndex !== null) onRemoveSupply(pendingDeleteIndex);
           setPendingDeleteIndex(null);

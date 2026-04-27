@@ -1,0 +1,136 @@
+{
+  "form": {
+    "title_new": "Nuevo Evento",
+    "title_edit": "Editar Evento",
+    "steps": {
+      "general": "Información General",
+      "products": "Productos",
+      "extras": "Extras",
+      "inventory_staff": "Inventario y Personal",
+      "financials": "Finanzas y Contrato"
+    },
+    "validation": {
+      "client_required": "Selecciona un cliente",
+      "date_required": "Selecciona una fecha",
+      "service_required": "Tipo de servicio requerido",
+      "people_min": "Mínimo 1 persona"
+    }
+  },
+  "general": {
+    "client": "Cliente",
+    "new_client": "Nuevo Cliente",
+    "select_client": "Seleccionar cliente",
+    "client_history": "Historial del Cliente:",
+    "events_performed": "eventos realizados",
+    "total_spent": "Total gastado:",
+    "event_date": "Fecha del Evento",
+    "start_time": "Hora de Inicio",
+    "end_time": "Hora de Fin",
+    "service_type": "Tipo de Servicio",
+    "service_placeholder": "Ej. Decoración, Banquete, Fotografía",
+    "num_people": "Número de Personas",
+    "status": "Estado",
+    "location": "Ubicación del Evento",
+    "location_placeholder": "Dirección del evento (opcional, por defecto dirección del cliente)",
+    "city": "Ciudad del Evento",
+    "city_placeholder": "Ciudad del evento (para contrato)",
+    "date_unavailable": "Esta fecha no está disponible por vacaciones o bloqueo manual. Selecciona otra fecha.",
+    "status_options": {
+      "quoted": "Cotizado",
+      "confirmed": "Confirmado",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    }
+  },
+  "products": {
+    "title": "Selección de Productos",
+    "add": "Agregar Producto",
+    "subtotal": "Subtotal Productos",
+    "quantity": "Cant.",
+    "price": "Precio Unit.",
+    "discount": "Desc. Unit.",
+    "total": "Total",
+    "unit_cost": "Costo est. unitario",
+    "select_placeholder": "Seleccionar producto",
+    "delete_confirm_title": "¿Eliminar producto?",
+    "delete_confirm_desc": "¿Quitar \"{{name}}\" de este evento?",
+    "delete_confirm_desc_generic": "¿Quitar este producto del evento?",
+    "include_team": "Incluye equipo",
+    "include_team_tooltip": "Este producto agrega automáticamente miembros del equipo asociado como personal"
+  },
+  "extras": {
+    "title": "Extras (Transporte, Personal, etc.)",
+    "add": "Agregar Extra",
+    "subtotal": "Subtotal Extras",
+    "description": "Descripción",
+    "cost": "Costo (Gasto)",
+    "price": "Precio (Cobro)",
+    "exclude_utility": "Solo cobrar costo (Sin utilidad)",
+    "include_checklist": "Incluir en checklist",
+    "delete_confirm_title": "¿Eliminar extra?",
+    "delete_confirm_desc": "¿Quitar \"{{name}}\" de este evento?",
+    "delete_confirm_desc_generic": "¿Quitar este extra del evento?"
+  },
+  "financials": {
+    "title": "Configuración Financiera y Contrato",
+    "discount": "Descuento Global",
+    "discount_type": "Tipo de Descuento",
+    "discount_fixed": "Monto Fijo ($)",
+    "discount_percent": "Porcentaje (%)",
+    "invoice": "¿Requiere Factura? (+IVA)",
+    "tax_rate": "Tasa de Impuesto (%)",
+    "deposit_percent": "Porcentaje de Anticipo (%)",
+    "cancellation_days": "Días Límite para Cancelar",
+    "refund_percent": "Porcentaje de Reembolso (%)",
+    "notes": "Notas del Evento",
+    "notes_placeholder": "Notas internas o para el contrato...",
+    "subtotal": "Subtotal",
+    "tax": "Impuesto",
+    "total": "Total del Evento",
+    "profit_metrics": "Métricas de Rentabilidad (Interno)",
+    "est_cost": "Costo Estimado:",
+    "est_profit": "Utilidad Estimada:",
+    "est_margin": "Margen de Utilidad:"
+  },
+  "staff": {
+    "title": "Personal y Colaboradores",
+    "add": "Asignar Personal",
+    "select_staff": "Seleccionar integrante",
+    "role": "Rol / Cargo",
+    "fee": "Pago / Honorarios",
+    "shift_start": "Inicio Turno",
+    "shift_end": "Fin Turno",
+    "delete_confirm_title": "¿Quitar personal?",
+    "delete_confirm_desc": "¿Quitar a \"{{name}}\" de este evento?"
+  },
+  "supplies": {
+    "title": "Insumos y Consumibles",
+    "add": "Agregar Insumo",
+    "select_item": "Seleccionar insumo",
+    "source_stock": "Del Inventario",
+    "source_purchase": "Para Comprar",
+    "unit_cost": "Costo Unit.",
+    "exclude_cost": "No incluir en costo total",
+    "delete_confirm_title": "¿Quitar insumo?",
+    "delete_confirm_desc": "¿Quitar \"{{name}}\" de este evento?"
+  },
+  "equipment": {
+    "title": "Equipo e Inmobiliario",
+    "add": "Asignar Equipo",
+    "select_item": "Seleccionar equipo",
+    "conflicts": "Conflictos de Disponibilidad",
+    "suggestions": "Sugerencias de Equipo",
+    "no_items": "No hay equipo asignado aún"
+  },
+  "quick_client": {
+    "title": "Nuevo Cliente Rápido",
+    "name": "Nombre Completo",
+    "phone": "Teléfono",
+    "email": "Email",
+    "validation": {
+      "name_min": "El nombre debe tener al menos 2 caracteres",
+      "phone_min": "El teléfono debe tener al menos 10 dígitos",
+      "email_invalid": "Email inválido"
+    }
+  }
+}

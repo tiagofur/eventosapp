@@ -30,6 +30,7 @@ import {
 const ITEMS_PER_PAGE = 8;
 
 export const ClientList: React.FC = () => {
+  const { t, i18n } = useTranslation(["clients", "common"]);
   const deleteClient = useDeleteClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -163,10 +164,10 @@ export const ClientList: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmOpen}
-        title="Eliminar cliente"
-        description="Se eliminará el cliente y todos sus datos. Los eventos existentes quedarán sin cliente asignado. Esta acción no se puede deshacer."
-        confirmText="Eliminar permanentemente"
-        cancelText="Cancelar"
+        title={t("common:action.delete")}
+        description={t("clients:delete_confirm")}
+        confirmText={t("common:action.delete")}
+        cancelText={t("common:action.cancel")}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);
@@ -175,7 +176,7 @@ export const ClientList: React.FC = () => {
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-text tracking-tight">
-          Clientes
+          {t("clients:title")}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           {hasAnyClients && (
@@ -185,14 +186,14 @@ export const ClientList: React.FC = () => {
                 exportToCsv(
                   "clientes",
                   [
-                    "Nombre",
-                    "Teléfono",
-                    "Email",
-                    "Dirección",
-                    "Ciudad",
-                    "Eventos",
+                    t("clients:form.name"),
+                    t("clients:form.phone"),
+                    t("clients:form.email"),
+                    t("clients:form.address"),
+                    "Ciudad", // Assuming this is fixed or add it to i18n
+                    t("clients:table.events"),
                     "Total Gastado",
-                    "Notas",
+                    t("clients:form.notes"),
                   ],
                   allClients.map((c) => [
                     c.name,
@@ -207,7 +208,6 @@ export const ClientList: React.FC = () => {
                 )
               }
               className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
-              aria-label="Exportar clientes a CSV"
             >
               <Download className="h-4 w-4 mr-2" aria-hidden="true" />
               CSV
@@ -218,14 +218,14 @@ export const ClientList: React.FC = () => {
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
           >
             <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-            Nuevo Cliente
+            {t("clients:new_client")}
           </Link>
         </div>
       </div>
 
       <div className="relative max-w-md">
         <label htmlFor="client-search" className="sr-only">
-          Buscar clientes
+          {t("common:action.search")}
         </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
@@ -234,13 +234,12 @@ export const ClientList: React.FC = () => {
           id="client-search"
           type="search"
           className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
-          placeholder="Buscar clientes..."
+          placeholder={t("clients:search_placeholder")}
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setPage(1);
           }}
-          aria-label="Buscar clientes por nombre, email o teléfono"
         />
       </div>
 
@@ -259,11 +258,11 @@ export const ClientList: React.FC = () => {
         ) : paginatedClients.length === 0 ? (
           <Empty
             icon={Users}
-            title="No se encontraron clientes"
+            title={t("clients:no_clients")}
             description={
               searchTerm
-                ? "No hay clientes que coincidan. Prueba con otro nombre, teléfono o ciudad."
-                : "Comienza agregando tu primer cliente."
+                ? t("common:command_palette.no_results")
+                : t("clients:details.no_events")
             }
             action={
               !searchTerm ? (
@@ -272,7 +271,7 @@ export const ClientList: React.FC = () => {
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg transition-all hover:scale-[1.02]"
                 >
                   <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-                  Agregar Cliente
+                  {t("clients:new_client")}
                 </Link>
               ) : undefined
             }
@@ -281,11 +280,10 @@ export const ClientList: React.FC = () => {
           <div className="overflow-x-auto">
             <table
               className="min-w-full divide-y divide-border"
-              aria-label="Tabla de clientes"
+              aria-label={t("clients:title")}
             >
               <caption className="sr-only">
-                Lista de clientes con {totalItems} resultados. Mostrando página{" "}
-                {currentPage} de {totalPages}.
+                {t("common:pagination.showing")} {currentPage} {t("common:pagination.of")} {totalPages}
               </caption>
               <thead className="bg-surface-alt">
                 <tr>
@@ -295,13 +293,13 @@ export const ClientList: React.FC = () => {
                     onClick={() => handleSort("name")}
                     aria-sort={getSortAriaSort("name")}
                   >
-                    Cliente {renderSortIcon("name")}
+                    {t("clients:table.name")} {renderSortIcon("name")}
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-semibold text-text-secondary"
                   >
-                    Contacto
+                    {t("clients:table.contact")}
                   </th>
                   <th
                     scope="col"
@@ -309,7 +307,7 @@ export const ClientList: React.FC = () => {
                     onClick={() => handleSort("total_events")}
                     aria-sort={getSortAriaSort("total_events")}
                   >
-                    Eventos {renderSortIcon("total_events")}
+                    {t("clients:table.events")} {renderSortIcon("total_events")}
                   </th>
                   <th
                     scope="col"
@@ -317,10 +315,10 @@ export const ClientList: React.FC = () => {
                     onClick={() => handleSort("total_spent")}
                     aria-sort={getSortAriaSort("total_spent")}
                   >
-                    Total Gastado {renderSortIcon("total_spent")}
+                    Total {renderSortIcon("total_spent")}
                   </th>
                   <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Acciones</span>
+                    <span className="sr-only">{t("clients:table.actions")}</span>
                   </th>
                 </tr>
               </thead>
@@ -367,7 +365,6 @@ export const ClientList: React.FC = () => {
                           href={`tel:${client.phone}`}
                           className="text-primary hover:text-primary-dark transition-colors"
                           onClick={(e) => e.stopPropagation()}
-                          aria-label={`Llamar a ${client.name} al ${client.phone}`}
                         >
                           {client.phone}
                         </a>
@@ -382,7 +379,6 @@ export const ClientList: React.FC = () => {
                             href={`mailto:${client.email}`}
                             className="text-primary hover:text-primary-dark transition-colors"
                             onClick={(e) => e.stopPropagation()}
-                            aria-label={`Enviar email a ${client.name} a ${client.email}`}
                           >
                             {client.email}
                           </a>
@@ -392,23 +388,23 @@ export const ClientList: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-success/10 text-success">
                         {client.total_events}{" "}
-                        {client.total_events === 1 ? "evento" : "eventos"}
+                        {client.total_events === 1 ? t("common:nav.events").slice(0,-1).toLowerCase() : t("common:nav.events").toLowerCase()}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text">
                       $
-                      {(client.total_spent ?? 0).toLocaleString("es-MX", {
+                      {(client.total_spent ?? 0).toLocaleString(i18n.language === "en" ? "en-US" : "es-MX", {
                         minimumFractionDigits: 2,
                       })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowActionMenu items={[
-                          { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/clients/${client.id}`) },
-                          { label: 'Editar', icon: Edit, onClick: () => navigate(`/clients/${client.id}/edit`) },
-                          ...(client.phone ? [{ label: 'Llamar', icon: Phone, onClick: () => window.open(`tel:${client.phone}`) }] : []),
-                          ...(client.email ? [{ label: 'Email', icon: Mail, onClick: () => window.open(`mailto:${client.email}`) }] : []),
-                          { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(client.id), variant: 'destructive' as const },
+                          { label: t("common:action.view"), icon: Eye, onClick: () => navigate(`/clients/${client.id}`) },
+                          { label: t("common:action.edit"), icon: Edit, onClick: () => navigate(`/clients/${client.id}/edit`) },
+                          ...(client.phone ? [{ label: t("clients:form.phone"), icon: Phone, onClick: () => window.open(`tel:${client.phone}`) }] : []),
+                          ...(client.email ? [{ label: t("clients:form.email"), icon: Mail, onClick: () => window.open(`mailto:${client.email}`) }] : []),
+                          { label: t("common:action.delete"), icon: Trash2, onClick: () => requestDelete(client.id), variant: 'destructive' as const },
                         ]} />
                       </div>
                     </td>

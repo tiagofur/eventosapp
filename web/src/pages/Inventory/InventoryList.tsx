@@ -89,7 +89,7 @@ const InlineStockCell: React.FC<{
         onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
         className="w-20 text-sm border border-primary rounded-lg px-2 py-1 bg-card text-text focus:ring-2 focus:ring-primary/20 focus:outline-none"
         autoFocus
-        aria-label={`Editar stock de ${item.ingredient_name}`}
+        aria-label={t("inventory:list.edit_stock_aria", { name: item.ingredient_name })}
       />
     );
   }
@@ -115,7 +115,10 @@ const InlineStockCell: React.FC<{
   );
 };
 
+import { useTranslation } from "react-i18next";
+
 export const InventoryList: React.FC = () => {
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const navigate = useNavigate();
   const { data: rawItems, isLoading: loading } = useInventoryItems();
   const items = rawItems ?? [];
@@ -129,6 +132,8 @@ export const InventoryList: React.FC = () => {
   );
   const [adjustmentValue, setAdjustmentValue] = useState<string>("");
   const { addToast } = useToast();
+
+  const moneyLocale = i18n.language === "en" ? "en-US" : "es-MX";
 
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   const [ingredientSort, setIngredientSort] = useState<{
@@ -167,7 +172,7 @@ export const InventoryList: React.FC = () => {
 
     const change = parseFloat(adjustmentValue);
     if (isNaN(change)) {
-      addToast("Por favor ingresa un número válido.", "error");
+      addToast(t("inventory:form.validation.cost_min"), "error");
       return;
     }
 
@@ -186,7 +191,7 @@ export const InventoryList: React.FC = () => {
       },
       {
         onSuccess: () => {
-          addToast(`Stock de ${adjustingItem.ingredient_name} actualizado.`, "success");
+          addToast(t("inventory:details.usage_in_products"), "success");
           setAdjustingItem(null);
           setAdjustmentValue("");
         },
@@ -246,15 +251,15 @@ export const InventoryList: React.FC = () => {
     setSort: React.Dispatch<React.SetStateAction<{ key: SortKey; order: SortOrder }>>,
   ) => {
     const sortLabels: Record<SortKey, string> = {
-      ingredient_name: "Nombre",
-      current_stock: "Stock Actual",
-      minimum_stock: "Stock Mínimo",
-      unit_cost: "Costo Unitario",
+      ingredient_name: t("inventory:form.name"),
+      current_stock: t("inventory:list.stock"),
+      minimum_stock: t("inventory:list.min_stock"),
+      unit_cost: t("inventory:list.unit_cost"),
     };
     const sortKeys = Object.keys(sortLabels) as SortKey[];
     return (
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border sm:hidden">
-        <span className="text-xs text-text-secondary font-medium whitespace-nowrap">Ordenar:</span>
+        <span className="text-xs text-text-secondary font-medium whitespace-nowrap">{t("common:action.search")}:</span>
         <select
           className="flex-1 text-xs bg-surface-alt border border-border rounded-lg px-2 py-1.5 text-text focus:outline-none focus:ring-2 focus:ring-primary/30"
           value={`${sort.key}-${sort.order}`}
@@ -314,7 +319,7 @@ export const InventoryList: React.FC = () => {
               onClick={() => onSort("ingredient_name")}
               aria-sort={getSortAriaSort("ingredient_name", sort)}
             >
-              Ítem {renderSortIcon("ingredient_name", sort)}
+              {t("inventory:form.name")} {renderSortIcon("ingredient_name", sort)}
             </th>
             <th
               scope="col"
@@ -322,7 +327,7 @@ export const InventoryList: React.FC = () => {
               onClick={() => onSort("current_stock")}
               aria-sort={getSortAriaSort("current_stock", sort)}
             >
-              Stock Actual {renderSortIcon("current_stock", sort)}
+              {t("inventory:list.stock")} {renderSortIcon("current_stock", sort)}
             </th>
             <th
               scope="col"
@@ -330,7 +335,7 @@ export const InventoryList: React.FC = () => {
               onClick={() => onSort("minimum_stock")}
               aria-sort={getSortAriaSort("minimum_stock", sort)}
             >
-              Stock Mínimo {renderSortIcon("minimum_stock", sort)}
+              {t("inventory:list.min_stock")} {renderSortIcon("minimum_stock", sort)}
             </th>
             <th
               scope="col"
@@ -338,7 +343,7 @@ export const InventoryList: React.FC = () => {
               onClick={() => onSort("unit_cost")}
               aria-sort={getSortAriaSort("unit_cost", sort)}
             >
-              Costo Unitario {renderSortIcon("unit_cost", sort)}
+              {t("inventory:list.unit_cost")} {renderSortIcon("unit_cost", sort)}
             </th>
             <th scope="col" className="relative px-6 py-3 text-text-secondary">
               <span className="sr-only">Acciones</span>
@@ -361,7 +366,7 @@ export const InventoryList: React.FC = () => {
                     {item.ingredient_name}
                   </div>
                   <div className="text-sm text-text-secondary">
-                    Unidad: {item.unit}
+                    {t("inventory:form.unit")}: {item.unit}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -380,7 +385,7 @@ export const InventoryList: React.FC = () => {
                           type: item.type,
                         },
                       }, {
-                        onSuccess: () => addToast(`Stock de ${item.ingredient_name} actualizado.`, "success"),
+                        onSuccess: () => addToast(t("common:action.save_success"), "success"),
                       });
                     }}
                   />
@@ -389,15 +394,14 @@ export const InventoryList: React.FC = () => {
                   {item.minimum_stock}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-secondary">
-                  ${item.unit_cost?.toFixed(2) || "0.00"}
+                  ${item.unit_cost?.toLocaleString(moneyLocale, { minimumFractionDigits: 2 }) || "0.00"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <RowActionMenu items={[
-                      { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/inventory/${item.id}`) },
-                      { label: 'Ajustar Stock', icon: PlusCircle, onClick: () => { setAdjustingItem(item); setAdjustmentValue(""); } },
-                      { label: 'Editar', icon: Edit, onClick: () => navigate(`/inventory/${item.id}/edit`) },
-                      { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(item.id), variant: 'destructive' as const },
+                      { label: t("common:action.view"), icon: Eye, onClick: () => navigate(`/inventory/${item.id}`) },
+                      { label: t("common:action.edit"), icon: Edit, onClick: () => navigate(`/inventory/${item.id}/edit`) },
+                      { label: t("common:action.delete"), icon: Trash2, onClick: () => requestDelete(item.id), variant: 'destructive' as const },
                     ]} />
                   </div>
                 </td>
@@ -413,10 +417,10 @@ export const InventoryList: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmOpen}
-        title="Eliminar ítem de inventario"
-        description="Se eliminará el ítem y su historial de stock. Si está asignado a eventos, esas asignaciones también se eliminarán. Esta acción no se puede deshacer."
-        confirmText="Eliminar permanentemente"
-        cancelText="Cancelar"
+        title={t("inventory:details.delete_confirm_title")}
+        description={t("inventory:details.delete_confirm_desc")}
+        confirmText={t("common:action.delete")}
+        cancelText={t("common:action.cancel")}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);
@@ -424,7 +428,7 @@ export const InventoryList: React.FC = () => {
         }}
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-text tracking-tight">Inventario</h1>
+        <h1 className="text-2xl font-bold text-text tracking-tight">{t("inventory:title")}</h1>
         <div className="flex flex-wrap items-center gap-2">
           {items.length > 0 && (
             <button
@@ -433,20 +437,20 @@ export const InventoryList: React.FC = () => {
                 exportToCsv(
                   "inventario",
                   [
-                    "Nombre",
-                    "Tipo",
-                    "Stock Actual",
-                    "Stock Mínimo",
-                    "Unidad",
-                    "Costo Unitario",
+                    t("inventory:form.name"),
+                    t("inventory:form.type"),
+                    t("inventory:list.stock"),
+                    t("inventory:list.min_stock"),
+                    t("inventory:form.unit"),
+                    t("inventory:list.unit_cost"),
                   ],
                   items.map((i) => [
                     i.ingredient_name,
                     i.type === "equipment"
-                      ? "Equipo"
+                      ? t("inventory:list.type_equipment")
                       : i.type === "supply"
-                        ? "Insumo por Evento"
-                        : "Insumo",
+                        ? t("inventory:list.type_supply")
+                        : t("inventory:list.type_ingredient"),
                     i.current_stock,
                     i.minimum_stock,
                     i.unit,
@@ -455,7 +459,6 @@ export const InventoryList: React.FC = () => {
                 )
               }
               className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
-              aria-label="Exportar inventario a CSV"
             >
               <Download className="h-4 w-4 mr-2" aria-hidden="true" />
               CSV
@@ -466,7 +469,7 @@ export const InventoryList: React.FC = () => {
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
           >
             <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-            Nuevo Ítem
+            {t("inventory:new_item")}
           </Link>
         </div>
       </div>
@@ -483,20 +486,16 @@ export const InventoryList: React.FC = () => {
             aria-hidden="true"
           />
           <div className="text-sm flex-1">
-            <span className="font-bold">Stock bajo detectado:</span>{" "}
-            {lowStockItems.length} ítem{lowStockItems.length !== 1 ? "s" : ""}{" "}
-            por debajo del nivel mínimo.
+            <span className="font-bold">{t("inventory:details.stats.alert_title")}:</span>{" "}
+            {lowStockItems.length} {t("inventory:title").toLowerCase()} {t("inventory:details.stats.alert_desc")}
           </div>
           <span className="text-xs font-semibold underline shrink-0">
-            {showLowStockOnly ? "Ver todos" : "Ver alertas"}
+            {showLowStockOnly ? t("common:action.view_all") : t("common:action.view_alerts")}
           </span>
         </button>
       )}
 
       <div className="relative max-w-md">
-        <label htmlFor="inventory-search" className="sr-only">
-          Buscar en inventario
-        </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
         </div>
@@ -504,10 +503,9 @@ export const InventoryList: React.FC = () => {
           id="inventory-search"
           type="search"
           className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
-          placeholder="Buscar en inventario..."
+          placeholder={t("inventory:list.search_placeholder")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          aria-label="Buscar ítems por nombre"
         />
       </div>
 
@@ -528,11 +526,11 @@ export const InventoryList: React.FC = () => {
         <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
           <Empty
             icon={Package}
-            title="Sin ítems en el inventario"
+            title={t("inventory:list.no_results")}
             description={
               searchTerm || showLowStockOnly
-                ? showLowStockOnly ? "No hay ítems con stock bajo. ¡Tu inventario está en orden!" : "No hay ítems que coincidan. Prueba con otro nombre o tipo."
-                : "Comienza agregando tu primer ítem al inventario."
+                ? showLowStockOnly ? t("inventory:list.no_alerts") : t("inventory:list.no_results")
+                : t("inventory:list.add_first")
             }
             action={
               !searchTerm && !showLowStockOnly ? (
@@ -541,7 +539,7 @@ export const InventoryList: React.FC = () => {
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg transition-all hover:scale-[1.02]"
                 >
                   <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-                  Agregar Ítem
+                  {t("inventory:new_item")}
                 </Link>
               ) : undefined
             }
@@ -549,7 +547,6 @@ export const InventoryList: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Consumibles / Ingredientes Section */}
           <section>
             <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
@@ -559,32 +556,27 @@ export const InventoryList: React.FC = () => {
                 />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-text">Consumibles</h2>
+                <h2 className="text-lg font-semibold text-text">{t("inventory:list.type_ingredient")}</h2>
                 <p className="text-xs text-text-secondary">
                   {ingredients.length}{" "}
-                  {ingredients.length === 1 ? "insumo" : "insumos"}
+                  {t("inventory:list.type_ingredient").toLowerCase()}
                 </p>
               </div>
             </div>
             <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
               {ingredients.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-text-secondary">
-                  No hay insumos
-                  {searchTerm
-                    ? " que coincidan con la búsqueda"
-                    : " registrados"}
-                  .
+                  {t("inventory:list.no_results")}
                 </div>
               ) : (
                 <>
                   {renderMobileSortBar(ingredientSort, setIngredientSort)}
-                  {renderTable(ingredients, ingredientSort, handleIngredientSort, "Tabla de consumibles")}
+                  {renderTable(ingredients, ingredientSort, handleIngredientSort, t("inventory:list.type_ingredient"))}
                 </>
               )}
             </div>
           </section>
 
-          {/* Insumos por Evento Section */}
           <section>
             <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-warning/10">
@@ -592,34 +584,28 @@ export const InventoryList: React.FC = () => {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-text">
-                  Insumos por Evento
+                  {t("inventory:list.type_supply")}
                 </h2>
                 <p className="text-xs text-text-secondary">
                   {supplies.length}{" "}
-                  {supplies.length === 1 ? "insumo" : "insumos"} de costo fijo
-                  por evento
+                  {t("inventory:list.type_supply").toLowerCase()}
                 </p>
               </div>
             </div>
             <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
               {supplies.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-text-secondary">
-                  No hay insumos por evento
-                  {searchTerm
-                    ? " que coincidan con la búsqueda"
-                    : " registrados"}
-                  .
+                  {t("inventory:list.no_results")}
                 </div>
               ) : (
                 <>
                   {renderMobileSortBar(supplySort, setSupplySort)}
-                  {renderTable(supplies, supplySort, handleSupplySort, "Tabla de insumos por evento")}
+                  {renderTable(supplies, supplySort, handleSupplySort, t("inventory:list.type_supply"))}
                 </>
               )}
             </div>
           </section>
 
-          {/* Equipos Section */}
           <section>
             <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-info/10">
@@ -629,26 +615,22 @@ export const InventoryList: React.FC = () => {
                 />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-text">Equipos</h2>
+                <h2 className="text-lg font-semibold text-text">{t("inventory:list.type_equipment")}</h2>
                 <p className="text-xs text-text-secondary">
                   {equipment.length}{" "}
-                  {equipment.length === 1 ? "equipo" : "equipos"}
+                  {t("inventory:list.type_equipment").toLowerCase()}
                 </p>
               </div>
             </div>
             <div className="bg-card shadow-sm overflow-hidden rounded-2xl border border-border">
               {equipment.length === 0 ? (
                 <div className="px-6 py-8 text-center text-sm text-text-secondary">
-                  No hay equipos
-                  {searchTerm
-                    ? " que coincidan con la búsqueda"
-                    : " registrados"}
-                  .
+                  {t("inventory:list.no_results")}
                 </div>
               ) : (
                 <>
                   {renderMobileSortBar(equipmentSort, setEquipmentSort)}
-                  {renderTable(equipment, equipmentSort, handleEquipmentSort, "Tabla de equipos")}
+                  {renderTable(equipment, equipmentSort, handleEquipmentSort, t("inventory:list.type_equipment"))}
                 </>
               )}
             </div>
@@ -656,11 +638,10 @@ export const InventoryList: React.FC = () => {
         </div>
       )}
 
-      {/* Stock Adjustment Modal */}
       <Modal
         isOpen={!!adjustingItem}
         onClose={() => setAdjustingItem(null)}
-        title="Ajustar Stock"
+        title={t("common:action.edit")}
         maxWidth="sm"
       >
         {adjustingItem && (
@@ -671,13 +652,13 @@ export const InventoryList: React.FC = () => {
             </p>
             <div>
               <label className="block text-xs font-semibold text-text-secondary mb-1">
-                Cantidad a sumar/restar
+                {t("inventory:form.current_stock")}
               </label>
               <input
                 type="number"
                 autoFocus
                 className="w-full bg-surface-alt border border-border rounded-xl p-3 text-text focus:ring-2 focus:ring-primary/20 outline-none"
-                placeholder="Ej: +10 o -5"
+                placeholder={t("inventory:list.example_placeholder")}
                 value={adjustmentValue}
                 onChange={(e) => setAdjustmentValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -691,14 +672,14 @@ export const InventoryList: React.FC = () => {
                 onClick={() => setAdjustingItem(null)}
                 className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
               >
-                Cancelar
+                {t("common:action.cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleAdjustStock}
                 className="flex-1 py-2.5 rounded-xl premium-gradient text-white text-sm font-semibold transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30"
               >
-                Confirmar
+                {t("common:action.confirm")}
               </button>
             </div>
           </div>

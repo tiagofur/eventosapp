@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PaginationProps {
   currentPage: number;
@@ -16,6 +17,8 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalItems,
   itemsPerPage = 10
 }) => {
+  const { t } = useTranslation('common');
+
   if (totalPages <= 1) return null;
 
   // Calculate generic page range to show (e.g. max 5 buttons)
@@ -44,26 +47,26 @@ export const Pagination: React.FC<PaginationProps> = ({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={`relative inline-flex items-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-alt ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-          aria-label="Ir a la página anterior"
+          aria-label={t('pagination.go_previous')}
         >
-          Anterior
+          {t('pagination.previous')}
         </button>
         <button
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={`relative ml-3 inline-flex items-center rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-alt ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-          aria-label="Ir a la página siguiente"
+          aria-label={t('pagination.go_next')}
         >
-          Siguiente
+          {t('pagination.next')}
         </button>
       </div>
 
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-text-secondary">
-            Mostrando <span className="font-medium">{startItem}</span> a <span className="font-medium">{endItem}</span> de{' '}
-            <span className="font-medium">{totalItems}</span> resultados
+            {t('pagination.showing')} <span className="font-medium">{startItem}</span> {t('pagination.to')} <span className="font-medium">{endItem}</span> {t('pagination.of')}{' '}
+            <span className="font-medium">{totalItems}</span> {t('pagination.results')}
           </p>
         </div>
         <div>
@@ -73,9 +76,9 @@ export const Pagination: React.FC<PaginationProps> = ({
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={`relative inline-flex items-center rounded-l-xl px-2 py-2 text-text-tertiary ring-1 ring-inset ring-border hover:bg-surface-alt focus:z-20 focus:outline-offset-0 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-              aria-label="Ir a la página anterior"
+              aria-label={t('pagination.go_previous')}
             >
-              <span className="sr-only">Anterior</span>
+              <span className="sr-only">{t('pagination.previous')}</span>
               <ChevronLeft className="h-5 w-5" aria-hidden="true" />
             </button>
 
@@ -84,7 +87,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                 key={page}
                 type="button"
                 onClick={() => onPageChange(page)}
-                aria-label={`Ir a la página ${page}`}
+                aria-label={t('pagination.go_to_page', { page })}
                 aria-current={currentPage === page ? 'page' : undefined}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold focus:z-20 focus:outline-offset-0 ${
                   currentPage === page
@@ -101,9 +104,9 @@ export const Pagination: React.FC<PaginationProps> = ({
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className={`relative inline-flex items-center rounded-r-xl px-2 py-2 text-text-tertiary ring-1 ring-inset ring-border hover:bg-surface-alt focus:z-20 focus:outline-offset-0 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-              aria-label="Ir a la página siguiente"
+              aria-label={t('pagination.go_next')}
             >
-              <span className="sr-only">Siguiente</span>
+              <span className="sr-only">{t('pagination.next')}</span>
               <ChevronRight className="h-5 w-5" aria-hidden="true" />
             </button>
           </nav>

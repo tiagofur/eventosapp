@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface CommandItem {
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,25 +46,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
   const quickActions: CommandItem[] = useMemo(
     () => [
-      { label: 'Nuevo Evento', icon: Plus, action: () => navigate('/events/new'), group: 'Acciones Rápidas' },
-      { label: 'Nuevo Cliente', icon: UserPlus, action: () => navigate('/clients/new'), group: 'Acciones Rápidas' },
-      { label: 'Nuevo Producto', icon: Package, action: () => navigate('/products/new'), group: 'Acciones Rápidas' },
-      { label: 'Nuevo Ítem de Inventario', icon: Boxes, action: () => navigate('/inventory/new'), group: 'Acciones Rápidas' },
+      { label: t('quick_actions.new_event'), icon: Plus, action: () => navigate('/events/new'), group: t('command_palette.quick_actions_group') },
+      { label: t('quick_actions.new_client'), icon: UserPlus, action: () => navigate('/clients/new'), group: t('command_palette.quick_actions_group') },
+      { label: t('quick_actions.new_product'), icon: Package, action: () => navigate('/products/new'), group: t('command_palette.quick_actions_group') },
+      { label: t('command_palette.new_inventory_item'), icon: Boxes, action: () => navigate('/inventory/new'), group: t('command_palette.quick_actions_group') },
     ],
-    [navigate],
+    [navigate, t],
   );
 
   const navItems: CommandItem[] = useMemo(
     () => [
-      { label: 'Dashboard', icon: LayoutDashboard, action: () => navigate('/dashboard'), group: 'Navegación' },
-      { label: 'Calendario', icon: Calendar, action: () => navigate('/calendar'), group: 'Navegación' },
-      { label: 'Eventos', icon: PartyPopper, action: () => navigate('/events'), group: 'Navegación' },
-      { label: 'Clientes', icon: Users, action: () => navigate('/clients'), group: 'Navegación' },
-      { label: 'Productos', icon: Package, action: () => navigate('/products'), group: 'Navegación' },
-      { label: 'Inventario', icon: Boxes, action: () => navigate('/inventory'), group: 'Navegación' },
-      { label: 'Configuración', icon: Settings, action: () => navigate('/settings'), group: 'Navegación' },
+      { label: t('nav.dashboard'), icon: LayoutDashboard, action: () => navigate('/dashboard'), group: t('command_palette.navigation_group') },
+      { label: t('nav.calendar'), icon: Calendar, action: () => navigate('/calendar'), group: t('command_palette.navigation_group') },
+      { label: t('nav.events'), icon: PartyPopper, action: () => navigate('/events'), group: t('command_palette.navigation_group') },
+      { label: t('nav.clients'), icon: Users, action: () => navigate('/clients'), group: t('command_palette.navigation_group') },
+      { label: t('nav.products'), icon: Package, action: () => navigate('/products'), group: t('command_palette.navigation_group') },
+      { label: t('nav.inventory'), icon: Boxes, action: () => navigate('/inventory'), group: t('command_palette.navigation_group') },
+      { label: t('nav.settings'), icon: Settings, action: () => navigate('/settings'), group: t('command_palette.navigation_group') },
     ],
-    [navigate],
+    [navigate, t],
   );
 
   const allItems = useMemo(() => [...quickActions, ...navItems], [quickActions, navItems]);
@@ -168,7 +170,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Paleta de comandos"
+      aria-label={t('command_palette.title')}
     >
       <div
         className="w-full max-w-lg bg-card rounded-2xl border border-border shadow-2xl overflow-hidden"
@@ -183,9 +185,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar o ir a..."
+            placeholder={t('command_palette.placeholder')}
             className="flex-1 bg-transparent text-base text-text placeholder-text-tertiary outline-none"
-            aria-label="Buscar comandos"
+            aria-label={t('command_palette.search')}
           />
           <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 text-xs text-text-tertiary bg-surface-alt rounded-lg border border-border font-mono">
             ESC
@@ -237,7 +239,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
             >
               <Search className="h-5 w-5 text-text-secondary shrink-0" aria-hidden="true" />
               <span className="text-sm text-text font-medium">
-                Buscar &quot;{query.trim()}&quot; en toda la app
+                {t('command_palette.search_all', { query: query.trim() })}
               </span>
               <ArrowRight className="h-4 w-4 text-text-tertiary ml-auto" aria-hidden="true" />
             </button>
@@ -245,15 +247,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
 
           {/* Empty state when no query */}
           {filteredItems.length === 0 && !hasFallbackSearch && (
-            <p className="px-3 py-6 text-sm text-text-tertiary text-center">No se encontraron resultados</p>
+            <p className="px-3 py-6 text-sm text-text-tertiary text-center">{t('command_palette.no_results')}</p>
           )}
         </div>
 
         {/* Footer hints */}
         <div className="px-5 py-3 border-t border-border flex items-center gap-4 text-xs text-text-tertiary">
-          <span><kbd className="font-mono">↑↓</kbd> navegar</span>
-          <span><kbd className="font-mono">↵</kbd> seleccionar</span>
-          <span><kbd className="font-mono">esc</kbd> cerrar</span>
+          <span><kbd className="font-mono">↑↓</kbd> {t('command_palette.hint_navigate')}</span>
+          <span><kbd className="font-mono">↵</kbd> {t('command_palette.hint_select')}</span>
+          <span><kbd className="font-mono">esc</kbd> {t('command_palette.hint_close')}</span>
         </div>
       </div>
     </div>

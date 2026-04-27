@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/hooks/useTheme';
 import { logError } from '@/lib/errorHandler';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { ToastContainer } from './ToastContainer';
 import { Logo } from './Logo';
 import { CommandPalette } from './CommandPalette';
@@ -35,6 +36,7 @@ import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 export const Layout: React.FC = () => {
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation('common');
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -42,7 +44,7 @@ export const Layout: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const { shortcuts, helpOpen, setHelpOpen, currentSection } = useKeyboardShortcuts();
 
-  const firstName = user?.name ? user.name.split(' ')[0] : "Usuario";
+  const firstName = user?.name ? user.name.split(' ')[0] : t('user');
   const avatarInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U';
 
   // Persist sidebar collapsed state
@@ -94,17 +96,17 @@ export const Layout: React.FC = () => {
   }, [location.pathname, navigate]);
 
   const navigation = [
-    { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Calendario', href: '/calendar', icon: Calendar },
-    { name: 'Eventos', href: '/events', icon: PartyPopper },
-    { name: 'Clientes', href: '/clients', icon: Users },
-    { name: 'Personal', href: '/staff', icon: UserCog },
-    { name: 'Productos', href: '/products', icon: Package },
-    { name: 'Inventario', href: '/inventory', icon: Boxes },
-    { name: 'Formularios', href: '/event-forms', icon: Link2 },
-    { name: 'Configuración', href: '/settings', icon: Settings },
+    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.calendar'), href: '/calendar', icon: Calendar },
+    { name: t('nav.events'), href: '/events', icon: PartyPopper },
+    { name: t('nav.clients'), href: '/clients', icon: Users },
+    { name: t('nav.staff'), href: '/staff', icon: UserCog },
+    { name: t('nav.products'), href: '/products', icon: Package },
+    { name: t('nav.inventory'), href: '/inventory', icon: Boxes },
+    { name: t('nav.forms'), href: '/event-forms', icon: Link2 },
+    { name: t('nav.settings'), href: '/settings', icon: Settings },
     // Admin link — only visible to admins
-    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
+    ...(user?.role === 'admin' ? [{ name: t('nav.admin'), href: '/admin', icon: Shield }] : []),
   ];
 
   const handleSignOut = async () => {
@@ -125,7 +127,7 @@ export const Layout: React.FC = () => {
   return (
     <div className="h-screen bg-bg flex transition-colors relative overflow-hidden">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[999] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-xl focus:text-sm focus:font-bold">
-        Saltar al contenido
+        {t('nav.skip_to_content')}
       </a>
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
@@ -133,7 +135,7 @@ export const Layout: React.FC = () => {
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={() => setIsSidebarOpen(false)}
           role="button"
-          aria-label="Cerrar menú de navegación"
+          aria-label={t('nav.close_nav')}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -153,7 +155,7 @@ export const Layout: React.FC = () => {
           isCollapsed ? "lg:w-20" : "lg:w-64",
           isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
-        aria-label="Menú de navegación principal"
+        aria-label={t('nav.main_nav')}
       >
         <div className="flex flex-col h-full lg:px-4 lg:py-4">
           {/* Logo / Header */}
@@ -166,7 +168,7 @@ export const Layout: React.FC = () => {
               type="button"
               className="lg:hidden"
               onClick={() => setIsSidebarOpen(false)}
-              aria-label="Cerrar menú"
+              aria-label={t('nav.close_nav')}
             >
               <X className="h-6 w-6 text-text-secondary" aria-hidden="true" />
             </button>
@@ -174,7 +176,7 @@ export const Layout: React.FC = () => {
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto py-2">
-            <nav className={clsx("space-y-1", isCollapsed ? "lg:flex lg:flex-col lg:items-center lg:px-0 px-3" : "px-3 lg:px-2")} aria-label="Navegación principal">
+            <nav className={clsx("space-y-1", isCollapsed ? "lg:flex lg:flex-col lg:items-center lg:px-0 px-3" : "px-3 lg:px-2")} aria-label={t('nav.main_nav')}>
               {navigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -211,10 +213,10 @@ export const Layout: React.FC = () => {
                 "flex items-center w-full py-2 text-text-secondary hover:text-text hover:bg-surface-alt rounded-xl transition-colors",
                 isCollapsed ? "justify-center px-2" : "px-4"
               )}
-              aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+              aria-label={isCollapsed ? t('nav.expand_menu') : t('nav.collapse_menu')}
             >
               {isCollapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
-              {!isCollapsed && <span className="ml-2 text-sm">Colapsar</span>}
+              {!isCollapsed && <span className="ml-2 text-sm">{t('nav.collapse')}</span>}
             </button>
           </div>
 
@@ -240,7 +242,7 @@ export const Layout: React.FC = () => {
                 type="button"
                 onClick={toggleTheme}
                 className="flex-1 flex items-center justify-center px-3 py-2.5 text-sm font-semibold rounded-xl bg-surface hover:bg-surface-alt transition-colors border border-border text-text shadow-sm"
-                aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                aria-label={theme === 'dark' ? t('theme.switch_light') : t('theme.switch_dark')}
               >
                 {theme === 'dark' ? (
                   <Sun className="h-4 w-4" aria-hidden="true" />
@@ -252,7 +254,7 @@ export const Layout: React.FC = () => {
                 type="button"
                 onClick={handleSignOut}
                 className="flex-1 flex items-center justify-center px-3 py-2.5 text-sm font-semibold rounded-xl bg-surface hover:bg-error/10 hover:text-error hover:border-error/30 transition-colors border border-border text-text shadow-sm"
-                aria-label="Cerrar sesión"
+                aria-label={t('nav.logout')}
               >
                 <LogOut className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -270,7 +272,7 @@ export const Layout: React.FC = () => {
               type="button"
               onClick={() => setIsSidebarOpen(true)}
               className="text-text-secondary hover:text-text transition-colors"
-              aria-label="Abrir menú de navegación"
+              aria-label={t('nav.open_nav')}
             >
               <Menu className="h-6 w-6" aria-hidden="true" />
             </button>
@@ -291,9 +293,9 @@ export const Layout: React.FC = () => {
                   type="button"
                   onClick={() => setIsCommandPaletteOpen(true)}
                   className="w-full rounded-2xl border-0 bg-surface-alt py-3.5 pl-12 pr-4 text-sm text-text-tertiary text-left focus:ring-2 focus:ring-primary focus:bg-surface transition-all shadow-inner cursor-pointer"
-                  aria-label="Abrir búsqueda"
+                  aria-label={t('nav.open_search')}
                 >
-                  Buscar o presiona ⌘K...
+                  {t('nav.search_or_shortcut')}
                 </button>
               </div>
             </div>

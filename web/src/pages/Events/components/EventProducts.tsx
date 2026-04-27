@@ -33,6 +33,8 @@ interface EventProductsProps {
   onReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export const EventProducts: React.FC<EventProductsProps> = ({
   products,
   selectedProducts,
@@ -42,8 +44,10 @@ export const EventProducts: React.FC<EventProductsProps> = ({
   onProductChange,
   onReorder,
 }) => {
+  const { t, i18n } = useTranslation(['events', 'common']);
   const { watch } = useFormContext();
   const numPeople = watch('num_people');
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
 
   // Indice del producto pendiente de eliminacion — null = no hay dialog.
   // Paridad con mobile: antes el tap al trash borraba sin preguntar.
@@ -75,7 +79,7 @@ export const EventProducts: React.FC<EventProductsProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-text">Selección de Productos</h3>
+      <h3 className="text-lg font-medium text-text">{t('events:products.title')}</h3>
 
       <DndContext
         sensors={sensors}
@@ -93,21 +97,23 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                   type="button"
                   onClick={() => setPendingDeleteIndex(index)}
                   className="absolute top-2 right-2 text-text-secondary hover:text-error transition-colors"
-                  aria-label={`Eliminar producto ${index + 1}`}
+                  aria-label={`${t('common:action.remove')} product ${index + 1}`}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
 
                 <div className="mb-2 pr-6">
                   <div className="flex items-center justify-between mb-1">
-                    <label htmlFor={`product-select-${index}`} className="block text-xs text-text-secondary">Producto</label>
+                    <label htmlFor={`product-select-${index}`} className="block text-xs text-text-secondary">
+                      {t('common:nav.products')}
+                    </label>
                     {hasTeam && (
                       <span
                         className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent dark:bg-accent/20"
-                        title="Este producto agrega automáticamente miembros del equipo asociado como personal"
+                        title={t('events:products.include_team_tooltip')}
                       >
                         <Users className="h-3 w-3" aria-hidden="true" />
-                        Incluye equipo
+                        {t('events:products.include_team')}
                       </span>
                     )}
                   </div>
@@ -116,9 +122,9 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                     value={item.product_id}
                     onChange={(e) => onProductChange(index, 'product_id', e.target.value)}
                     className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
-                    aria-label={`Seleccionar producto ${index + 1}`}
+                    aria-label={`${t('common:action.select')} product ${index + 1}`}
                   >
-                    <option value="">Seleccionar producto</option>
+                    <option value="">{t('events:products.select_placeholder')}</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -129,7 +135,9 @@ export const EventProducts: React.FC<EventProductsProps> = ({
 
                 <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                   <div className="w-full sm:w-[20%]">
-                    <label htmlFor={`quantity-${index}`} className="text-xs text-text-secondary block mb-1">Cant.</label>
+                    <label htmlFor={`quantity-${index}`} className="text-xs text-text-secondary block mb-1">
+                      {t('events:products.quantity')}
+                    </label>
                     <div className="flex rounded-md shadow-xs">
                       <input
                         id={`quantity-${index}`}
@@ -137,13 +145,13 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                         value={item.quantity}
                         onChange={(e) => onProductChange(index, 'quantity', Number(e.target.value))}
                         className="flex-1 min-w-0 block w-full px-2 py-2 rounded-none rounded-l-xl text-sm border-border focus:ring-2 focus:ring-primary/20 border bg-card text-text transition-shadow"
-                        aria-label={`Cantidad de producto ${index + 1}`}
+                        aria-label={`Quantity of product ${index + 1}`}
                       />
                       <button
                         type="button"
                         onClick={() => onProductChange(index, 'quantity', Number(numPeople || 1))}
                         className="inline-flex items-center px-2 rounded-r-xl border border-l-0 border-border bg-surface-alt text-text-secondary sm:text-sm hover:bg-surface-alt transition-colors"
-                        aria-label="Igualar cantidad a número de personas"
+                        aria-label="Equal quantity to number of people"
                       >
                         <Users className="h-3 w-3" aria-hidden="true" />
                       </button>
@@ -151,19 +159,23 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                   </div>
 
                   <div className="w-1/2 sm:w-[25%]">
-                    <label htmlFor={`price-${index}`} className="text-xs text-text-secondary block mb-1">Precio Unit.</label>
+                    <label htmlFor={`price-${index}`} className="text-xs text-text-secondary block mb-1">
+                      {t('events:products.price')}
+                    </label>
                     <input
                       id={`price-${index}`}
                       type="number"
                       value={item.price}
                       readOnly
                       className="block w-full text-sm border-border rounded-xl shadow-xs bg-surface-alt text-text-secondary p-2 border cursor-not-allowed opacity-80"
-                      aria-label={`Precio unitario de producto ${index + 1} (solo lectura)`}
+                      aria-label={`Unit price of product ${index + 1}`}
                     />
                   </div>
 
                   <div className="w-1/2 sm:w-[20%]">
-                    <label htmlFor={`discount-${index}`} className="text-xs text-text-secondary block mb-1">Desc. Unit.</label>
+                    <label htmlFor={`discount-${index}`} className="text-xs text-text-secondary block mb-1">
+                      {t('events:products.discount')}
+                    </label>
                     <input
                       id={`discount-${index}`}
                       type="number"
@@ -175,12 +187,14 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                         if (val >= 0 && val <= item.price) onProductChange(index, 'discount', val);
                       }}
                       className="block w-full text-sm border-border rounded-md shadow-xs focus:ring-primary/20 focus:border-primary p-2 border bg-card text-text"
-                      aria-label={`Descuento unitario de producto ${index + 1}`}
+                      aria-label={`Unit discount of product ${index + 1}`}
                     />
                   </div>
 
                   <div className="w-full sm:w-[35%]">
-                    <label htmlFor={`total-${index}`} className="text-xs text-text-secondary block mb-1">Total</label>
+                    <label htmlFor={`total-${index}`} className="text-xs text-text-secondary block mb-1">
+                      {t('events:products.total')}
+                    </label>
                     <input
                       id={`total-${index}`}
                       type="number"
@@ -194,14 +208,14 @@ export const EventProducts: React.FC<EventProductsProps> = ({
                         }
                       }}
                       className="block w-full text-sm border-border rounded-md shadow-xs focus:ring-primary/20 focus:border-primary p-2 border bg-card text-text font-bold"
-                      aria-label={`Total de producto ${index + 1}`}
+                      aria-label={`Total of product ${index + 1}`}
                     />
                   </div>
                 </div>
 
                 {item.product_id && productUnitCosts[item.product_id] !== undefined && (
                   <div className="mt-2 text-xs text-text-secondary">
-                    Costo est. unitario: ${productUnitCosts[item.product_id].toFixed(2)}
+                    {t('events:products.unit_cost')}: ${productUnitCosts[item.product_id].toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </div>
                 )}
               </div>
@@ -215,26 +229,26 @@ export const EventProducts: React.FC<EventProductsProps> = ({
         type="button"
         onClick={onAddProduct}
         className="w-full flex items-center justify-center px-4 py-2 border border-border shadow-xs text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
-        aria-label="Agregar un producto adicional"
+        aria-label={t('events:products.add')}
       >
-        <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar Producto
+        <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> {t('events:products.add')}
       </button>
 
       <div className="mt-4 text-right">
-        <span className="text-sm text-text-secondary mr-2">Subtotal Productos:</span>
+        <span className="text-sm text-text-secondary mr-2">{t('events:products.subtotal')}:</span>
         <span className="text-lg font-semibold text-text">
-          ${selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0).toFixed(2)}
+          ${selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
         </span>
       </div>
 
       <ConfirmDialog
         open={pendingDeleteIndex !== null}
-        title="¿Eliminar producto?"
+        title={t('events:products.delete_confirm_title')}
         description={pendingDeleteProduct
-          ? `¿Quitar "${pendingDeleteProduct.name}" de este evento?`
-          : '¿Quitar este producto del evento?'}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+          ? t('events:products.delete_confirm_desc', { name: pendingDeleteProduct.name })
+          : t('events:products.delete_confirm_desc_generic')}
+        confirmText={t('common:action.delete')}
+        cancelText={t('common:action.cancel')}
         onConfirm={() => {
           if (pendingDeleteIndex !== null) onRemoveProduct(pendingDeleteIndex);
           setPendingDeleteIndex(null);

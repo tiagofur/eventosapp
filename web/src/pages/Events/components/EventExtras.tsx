@@ -22,6 +22,8 @@ interface EventExtrasProps {
   onReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export const EventExtras: React.FC<EventExtrasProps> = ({
   extras,
   onAddExtra,
@@ -29,6 +31,9 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
   onExtraChange,
   onReorder,
 }) => {
+  const { t, i18n } = useTranslation(['events', 'common']);
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor),
@@ -55,7 +60,7 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-text">Extras (Transporte, Personal, etc.)</h3>
+      <h3 className="text-lg font-medium text-text">{t('events:extras.title')}</h3>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
@@ -66,21 +71,23 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
             type="button"
             onClick={() => setPendingDeleteIndex(index)}
             className="absolute top-2 right-2 text-text-secondary hover:text-error transition-colors"
-            aria-label={`Eliminar extra ${index + 1}`}
+            aria-label={`${t('common:action.remove')} extra ${index + 1}`}
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
 
           <div className="mb-2 pr-6">
-            <label htmlFor={`extra-description-${index}`} className="block text-xs text-text-secondary mb-1">Descripción</label>
+            <label htmlFor={`extra-description-${index}`} className="block text-xs text-text-secondary mb-1">
+              {t('events:extras.description')}
+            </label>
             <input
               id={`extra-description-${index}`}
               type="text"
-              placeholder="Descripción"
+              placeholder={t('events:extras.description')}
               value={item.description}
               onChange={(e) => onExtraChange(index, 'description', e.target.value)}
               className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
-              aria-label={`Descripción del extra ${index + 1}`}
+              aria-label={`Description of extra ${index + 1}`}
             />
           </div>
 
@@ -95,7 +102,7 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
                 aria-describedby={`extra-exclude-utility-label-${index}`}
               />
               <label id={`extra-exclude-utility-label-${index}`} htmlFor={`extra-exclude-utility-${index}`} className="ml-2 text-xs text-text-secondary">
-                Solo cobrar costo (Sin utilidad)
+                {t('events:extras.exclude_utility')}
               </label>
             </div>
             <div className="flex items-center">
@@ -109,25 +116,29 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
               />
               <label id={`extra-include-checklist-label-${index}`} htmlFor={`extra-include-checklist-${index}`} className="ml-2 text-xs text-text-secondary flex items-center gap-1">
                 <ClipboardCheck className="h-3 w-3" aria-hidden="true" />
-                Incluir en checklist
+                {t('events:extras.include_checklist')}
               </label>
             </div>
           </div>
 
           <div className="flex gap-2">
             <div className="w-1/2">
-              <label htmlFor={`extra-cost-${index}`} className="text-xs text-text-secondary">Costo (Gasto)</label>
+              <label htmlFor={`extra-cost-${index}`} className="text-xs text-text-secondary">
+                {t('events:extras.cost')}
+              </label>
               <input
                 id={`extra-cost-${index}`}
                 type="number"
                 value={item.cost}
                 onChange={(e) => onExtraChange(index, 'cost', Number(e.target.value))}
                 className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
-                aria-label={`Costo del extra ${index + 1}`}
+                aria-label={`Cost of extra ${index + 1}`}
               />
             </div>
             <div className="w-1/2">
-              <label htmlFor={`extra-price-${index}`} className="text-xs text-text-secondary">Precio (Cobro)</label>
+              <label htmlFor={`extra-price-${index}`} className="text-xs text-text-secondary">
+                {t('events:extras.price')}
+              </label>
               <input
                 id={`extra-price-${index}`}
                 type="number"
@@ -137,7 +148,7 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
                 className={`block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border ${
                   item.exclude_utility ? 'bg-surface-alt' : ''
                 }`}
-                aria-label={`Precio de cobro del extra ${index + 1}`}
+                aria-label={`Charge price of extra ${index + 1}`}
               />
             </div>
           </div>
@@ -151,26 +162,26 @@ export const EventExtras: React.FC<EventExtrasProps> = ({
         type="button"
         onClick={onAddExtra}
         className="w-full flex items-center justify-center px-4 py-2 border border-border shadow-xs text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
-        aria-label="Agregar un extra adicional"
+        aria-label={t('events:extras.add')}
       >
-        <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> Agregar Extra
+        <Plus className="h-4 w-4 mr-2" aria-hidden="true" /> {t('events:extras.add')}
       </button>
 
       <div className="mt-4 text-right">
-        <span className="text-sm text-text-secondary mr-2">Subtotal Extras:</span>
+        <span className="text-sm text-text-secondary mr-2">{t('events:extras.subtotal')}:</span>
         <span className="text-lg font-semibold text-text">
-          ${extras.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+          ${extras.reduce((sum, item) => sum + item.price, 0).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
         </span>
       </div>
 
       <ConfirmDialog
         open={pendingDeleteIndex !== null}
-        title="¿Eliminar extra?"
+        title={t('events:extras.delete_confirm_title')}
         description={pendingDeleteExtra?.description
-          ? `¿Quitar "${pendingDeleteExtra.description}" de este evento?`
-          : '¿Quitar este extra del evento?'}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+          ? t('events:extras.delete_confirm_desc', { name: pendingDeleteExtra.description })
+          : t('events:extras.delete_confirm_desc_generic')}
+        confirmText={t('common:action.delete')}
+        cancelText={t('common:action.cancel')}
         onConfirm={() => {
           if (pendingDeleteIndex !== null) onRemoveExtra(pendingDeleteIndex);
           setPendingDeleteIndex(null);

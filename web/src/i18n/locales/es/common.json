@@ -1,0 +1,173 @@
+{
+  "action": {
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "search": "Buscar",
+    "continue": "Continuar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "create": "Crear",
+    "add": "Agregar",
+    "remove": "Quitar",
+    "start": "Comenzar",
+    "more": "Más",
+    "more_options": "Más opciones",
+    "retry": "Reintentar",
+    "loading": "Cargando...",
+    "select": "Seleccionar",
+    "view": "Ver",
+    "download": "Descargar",
+    "upload": "Subir",
+    "hide": "Ocultar",
+    "show": "Mostrar"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "events": "Eventos",
+    "clients": "Clientes",
+    "products": "Productos",
+    "inventory": "Inventario",
+    "calendar": "Calendario",
+    "quotes": "Cotizaciones",
+    "settings": "Configuración",
+    "staff": "Personal",
+    "search": "Buscar",
+    "main_nav": "Navegación principal",
+    "open_nav": "Abrir menú de navegación",
+    "close_nav": "Cerrar menú de navegación",
+    "collapse_menu": "Colapsar menú",
+    "expand_menu": "Expandir menú",
+    "logout": "Cerrar sesión",
+    "search_placeholder": "Buscar o ir a...",
+    "forms": "Formularios",
+    "admin": "Admin",
+    "skip_to_content": "Saltar al contenido",
+    "open_search": "Abrir búsqueda",
+    "collapse": "Colapsar",
+    "search_or_shortcut": "Buscar o presiona ⌘K..."
+  },
+  "auth": {
+    "sign_in_google": "Continuar con Google",
+    "sign_in_apple": "Continuar con Apple",
+    "signing_in_google": "Iniciando sesión con Google...",
+    "signing_in_apple": "Iniciando sesión con Apple...",
+    "sign_in_error_google": "Error al iniciar sesión con Google",
+    "sign_in_error_apple": "Error al iniciar sesión con Apple",
+    "apple_token_error": "No se recibió el token de Apple. Intenta de nuevo.",
+    "apple_unavailable": "Apple Sign-In no está disponible. Intenta de nuevo.",
+    "signed_in": "Inició sesión",
+    "signed_out": "Cerró sesión"
+  },
+  "status": {
+    "quoted": "Cotizado",
+    "confirmed": "Confirmado",
+    "completed": "Completado",
+    "cancelled": "Cancelado",
+    "pending": "Pendiente",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "select_status": "Seleccionar estado"
+  },
+  "error": {
+    "generic": "Algo salió mal",
+    "try_again": "Intenta de nuevo",
+    "not_found": "No encontrado",
+    "unauthorized": "No autorizado",
+    "network": "Error de conexión"
+  },
+  "pagination": {
+    "page_previous": "Página anterior",
+    "page_next": "Página siguiente",
+    "go_previous": "Ir a la página anterior",
+    "go_next": "Ir a la página siguiente",
+    "go_to_page": "Ir a la página {{page}}",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "showing": "Mostrando",
+    "to": "a",
+    "of": "de",
+    "results": "resultados"
+  },
+  "modal": {
+    "close": "Cerrar modal",
+    "close_notification": "Cerrar notificación"
+  },
+  "command_palette": {
+    "title": "Paleta de comandos",
+    "search": "Buscar comandos",
+    "placeholder": "Buscar o ir a...",
+    "keyboard_help": "Atajos de teclado",
+    "toggle_help": "Mostrar/ocultar esta ayuda",
+    "quick_actions_group": "Acciones Rápidas",
+    "navigation_group": "Navegación",
+    "new_inventory_item": "Nuevo Ítem de Inventario",
+    "search_all": "Buscar \"{{query}}\" en toda la app",
+    "no_results": "No se encontraron resultados",
+    "hint_navigate": "navegar",
+    "hint_select": "seleccionar",
+    "hint_close": "cerrar"
+  },
+  "activity": {
+    "recent": "Actividad reciente",
+    "created": "Creó",
+    "updated": "Actualizó",
+    "deleted": "Eliminó",
+    "registered": "Se registró",
+    "event_list_label": "Lista de eventos de actividad reciente"
+  },
+  "onboarding": {
+    "hide_forever": "Ocultar lista de verificación para siempre",
+    "hide_confirm": "Ocultar para siempre"
+  },
+  "plan": {
+    "upgrade_banner": "Mejorar al plan Pro para eventos ilimitados",
+    "view_plans": "Ver Planes Pro",
+    "view_plans_description": "Ver planes de suscripción disponibles"
+  },
+  "payment": {
+    "confirm": "Confirmar Pago",
+    "complete": "Pagar y completar",
+    "amount_required": "Monto requerido",
+    "reference_placeholder": "Ref. de pago..."
+  },
+  "format": {
+    "bold": "Negrita (**texto**)",
+    "italic": "Cursiva (*texto*)",
+    "underline": "Subrayado (__texto__)"
+  },
+  "quick_actions": {
+    "new_event": "Nuevo Evento",
+    "new_client": "Nuevo Cliente",
+    "new_product": "Nuevo Producto",
+    "quick_quote": "Cotización Rápida",
+    "close_quick_actions": "Cerrar acciones rápidas",
+    "open_quick_actions": "Acciones rápidas"
+  },
+  "theme": {
+    "switch_light": "Cambiar a modo claro",
+    "switch_dark": "Cambiar a modo oscuro"
+  },
+  "image": {
+    "drag_reorder": "Arrastrar para reordenar"
+  },
+  "contract": {
+    "editor_placeholder": "Escribe la plantilla de tu contrato aquí..."
+  },
+  "upcoming_events": "Próximos Eventos",
+  "critical_inventory": "Inventario crítico",
+  "user": "Usuario",
+  "not_found": {
+    "title": "Página no encontrada",
+    "description": "La URL que intentas abrir no existe o fue movida.",
+    "go_home": "Ir al inicio",
+    "go_dashboard": "Ir al dashboard",
+    "aria_home": "Ir a la página de inicio",
+    "aria_dashboard": "Ir al panel de control"
+  }
+}

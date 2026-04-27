@@ -1,11 +1,13 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Globe, Mail, FileText, Shield, Heart } from 'lucide-react';
+import { useTranslation, Trans } from 'react-i18next';
 
 const APP_VERSION = '1.0.0';
 
 export const About: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(['static']);
 
   return (
     <div className="min-h-screen bg-surface-alt">
@@ -16,7 +18,7 @@ export const About: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver
+          {t('static:about.back')}
         </button>
 
         {/* Logo & Version */}
@@ -28,14 +30,14 @@ export const About: React.FC = () => {
           />
           <h1 className="text-3xl font-bold text-text">Solennix</h1>
           <p className="text-sm text-text-secondary mt-1">
-            Version {APP_VERSION}
+            {t('static:about.version')} {APP_VERSION}
           </p>
         </div>
 
         {/* Developer info */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
-            Desarrollado por
+            {t('static:about.developed_by')}
           </h2>
           <p className="text-xl font-bold text-text mb-4">
             Creapolis.Dev
@@ -65,7 +67,7 @@ export const About: React.FC = () => {
         {/* Legal */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
-            Legal
+            {t('static:about.legal')}
           </h2>
 
           <Link
@@ -73,7 +75,7 @@ export const About: React.FC = () => {
             className="flex items-center gap-3 py-2 text-primary hover:underline"
           >
             <FileText className="h-5 w-5" />
-            <span className="text-sm font-medium">Terminos y Condiciones</span>
+            <span className="text-sm font-medium">{t('static:about.terms')}</span>
           </Link>
 
           <Link
@@ -81,26 +83,30 @@ export const About: React.FC = () => {
             className="flex items-center gap-3 py-2 text-primary hover:underline"
           >
             <Shield className="h-5 w-5" />
-            <span className="text-sm font-medium">Politica de Privacidad</span>
+            <span className="text-sm font-medium">{t('static:about.privacy')}</span>
           </Link>
         </div>
 
         {/* About the app */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-3">
-            Sobre la app
+            {t('static:about.about_app')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Solennix es una aplicacion SaaS disenada para organizadores de eventos
-            de todo tipo. Gestiona clientes, eventos, catalogo de productos,
-            inventario, cotizaciones y pagos en un solo lugar.
+            {t('static:about.description')}
           </p>
         </div>
 
         {/* Footer */}
         <div className="text-center mt-10">
           <p className="text-xs text-text-secondary flex items-center justify-center gap-1">
-            Hecho con <Heart className="h-3 w-3 text-error fill-error" /> por el equipo de Creapolis.Dev
+            <Trans
+              i18nKey="static:about.footer"
+              values={{ heart: '' }}
+              components={{
+                heart: <Heart className="h-3 w-3 text-error fill-error" />
+              }}
+            />
           </p>
         </div>
       </div>

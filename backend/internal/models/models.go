@@ -28,6 +28,8 @@ type User struct {
 	PushEnabled              *bool `json:"push_enabled,omitempty"`
 	PushEventReminder        *bool `json:"push_event_reminder,omitempty"`
 	PushPaymentReceived      *bool `json:"push_payment_received,omitempty"`
+	// i18n: user's preferred language for emails and notifications ('es' | 'en')
+	PreferredLanguage       string     `json:"preferred_language"`
 	Plan                    string     `json:"plan"`
 	Role                    string     `json:"role"`
 	StripeCustomerID        *string    `json:"stripe_customer_id,omitempty"`

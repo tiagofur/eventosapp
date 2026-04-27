@@ -25,7 +25,7 @@ func NewEmailService(cfg *config.Config) *EmailService {
 // SendPasswordReset sends password reset email with token.
 func (s *EmailService) SendPasswordReset(email, token, userName string) error {
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", s.cfg.FrontendURL, token)
-	body := s.renderTemplate(passwordResetBody, map[string]string{
+	body := s.renderTemplate(passwordResetBody, map[string]any{
 		"UserName":  userName,
 		"ResetLink": resetLink,
 	})
@@ -35,7 +35,7 @@ func (s *EmailService) SendPasswordReset(email, token, userName string) error {
 // SendWelcome sends a welcome/onboarding email after registration.
 func (s *EmailService) SendWelcome(email, userName string) error {
 	dashboardLink := fmt.Sprintf("%s/dashboard", s.cfg.FrontendURL)
-	body := s.renderTemplate(welcomeBody, map[string]string{
+	body := s.renderTemplate(welcomeBody, map[string]any{
 		"UserName":      userName,
 		"DashboardLink": dashboardLink,
 	})
@@ -44,7 +44,7 @@ func (s *EmailService) SendWelcome(email, userName string) error {
 
 // SendEventReminder sends a reminder about an upcoming event.
 func (s *EmailService) SendEventReminder(email, userName, eventName, eventDate, eventLink string) error {
-	body := s.renderTemplate(eventReminderBody, map[string]string{
+	body := s.renderTemplate(eventReminderBody, map[string]any{
 		"UserName":  userName,
 		"EventName": eventName,
 		"EventDate": eventDate,
@@ -55,7 +55,7 @@ func (s *EmailService) SendEventReminder(email, userName, eventName, eventDate, 
 
 // SendPaymentReceipt sends a payment confirmation email.
 func (s *EmailService) SendPaymentReceipt(email, userName, eventName, amount, paymentDate string) error {
-	body := s.renderTemplate(paymentReceiptBody, map[string]string{
+	body := s.renderTemplate(paymentReceiptBody, map[string]any{
 		"UserName":    userName,
 		"EventName":   eventName,
 		"Amount":      amount,
@@ -74,7 +74,7 @@ func (s *EmailService) SendPaymentReceipt(email, userName, eventName, amount, pa
 func (s *EmailService) SendCollaboratorAssigned(
 	email, staffName, orgName, eventName, eventDate, role, fee string,
 ) error {
-	body := s.renderTemplate(collaboratorAssignedBody, map[string]string{
+	body := s.renderTemplate(collaboratorAssignedBody, map[string]any{
 		"StaffName": staffName,
 		"OrgName":   orgName,
 		"EventName": eventName,
@@ -87,7 +87,7 @@ func (s *EmailService) SendCollaboratorAssigned(
 
 // SendQuotationReceived sends a notification reminding the user about an unconfirmed quotation.
 func (s *EmailService) SendQuotationReceived(email, userName, eventName, eventDate, quotationLink string) error {
-	body := s.renderTemplate(quotationReceivedBody, map[string]string{
+	body := s.renderTemplate(quotationReceivedBody, map[string]any{
 		"UserName":      userName,
 		"EventName":     eventName,
 		"EventDate":     eventDate,
@@ -98,7 +98,7 @@ func (s *EmailService) SendQuotationReceived(email, userName, eventName, eventDa
 
 // SendSubscriptionConfirmation sends a plan upgrade/renewal confirmation.
 func (s *EmailService) SendSubscriptionConfirmation(email, userName, planName string) error {
-	body := s.renderTemplate(subscriptionConfirmationBody, map[string]string{
+	body := s.renderTemplate(subscriptionConfirmationBody, map[string]any{
 		"UserName": userName,
 		"PlanName": planName,
 	})
@@ -107,19 +107,19 @@ func (s *EmailService) SendSubscriptionConfirmation(email, userName, planName st
 
 // SendWeeklySummary sends a weekly summary of upcoming events and payments.
 func (s *EmailService) SendWeeklySummary(email, userName, nextEventsHTML, paymentsHTML string) error {
-	body := s.renderTemplate(weeklySummaryBody, map[string]string{
-		"UserName":      userName,
-		"NextEvents":    nextEventsHTML,
-		"PaymentsSummary": paymentsHTML,
+	body := s.renderTemplate(weeklySummaryBody, map[string]any{
+		"UserName":        userName,
+		"NextEvents":      template.HTML(nextEventsHTML),
+		"PaymentsSummary": template.HTML(paymentsHTML),
 	})
 	return s.sendEmail(email, "Tu Resumen Semanal - Solennix", body)
 }
 
 // SendMarketingUpdate sends marketing/tips email.
 func (s *EmailService) SendMarketingUpdate(email, userName, tipsHTML string) error {
-	body := s.renderTemplate(marketingUpdateBody, map[string]string{
+	body := s.renderTemplate(marketingUpdateBody, map[string]any{
 		"UserName": userName,
-		"Tips":     tipsHTML,
+		"Tips":     template.HTML(tipsHTML),
 	})
 	return s.sendEmail(email, "Tips y Novedades - Solennix", body)
 }
@@ -128,7 +128,7 @@ func (s *EmailService) SendMarketingUpdate(email, userName, tipsHTML string) err
 // Base Layout & Template Rendering
 // ---------------------------------------------------------------------------
 
-func (s *EmailService) renderTemplate(bodyTemplate string, data map[string]string) string {
+func (s *EmailService) renderTemplate(bodyTemplate string, data map[string]any) string {
 	full := fmt.Sprintf(baseLayout, bodyTemplate)
 	t := template.Must(template.New("email").Parse(full))
 	var buf bytes.Buffer

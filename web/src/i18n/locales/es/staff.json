@@ -1,0 +1,101 @@
+{
+  "list": {
+    "title": "Personal",
+    "description": "Tu agenda de colaboradores: fotógrafos, DJs, meseros, coordinadores.",
+    "new_staff": "Nuevo colaborador",
+    "teams": "Equipos",
+    "search_placeholder": "Buscar por nombre, rol, email o teléfono...",
+    "table": {
+      "name": "Nombre",
+      "role": "Rol",
+      "contact": "Contacto",
+      "actions": "Acciones",
+      "summary": "{{count}} colaboradores, página {{page}} de {{totalPages}}.",
+      "view_detail": "Ver detalle",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "empty": {
+      "title": "Sin colaboradores todavía",
+      "description_search": "No hay colaboradores que coincidan. Probá con otro término.",
+      "description_base": "Agregá fotógrafos, DJs, meseros, coordinadores y asignalos a tus eventos.",
+      "action": "Agregar colaborador"
+    },
+    "delete_confirm": {
+      "title": "Eliminar colaborador",
+      "description": "Se eliminará del catálogo y de los eventos donde esté asignado. Esta acción no se puede deshacer.",
+      "confirm": "Eliminar permanentemente",
+      "cancel": "Cancelar"
+    }
+  },
+  "details": {
+    "back": "Volver a Personal",
+    "loading": "Cargando…",
+    "not_found": "Colaborador no encontrado.",
+    "return_list": "Volver al listado",
+    "actions": {
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "fields": {
+      "phone": "Teléfono",
+      "email": "Email",
+      "notes": "Notas",
+      "notifications": "Notificaciones por email",
+      "notifications_desc": "Aceptado · se activará al liberar la feature (Pro+).",
+      "notifications_off": "No aceptado."
+    },
+    "upcoming": {
+      "title": "Próximas asignaciones",
+      "empty": "No tiene eventos asignados en los próximos 90 días.",
+      "shift_from": "Desde {{time}}",
+      "shift_to": "Hasta {{time}}"
+    },
+    "delete_confirm": {
+      "title": "Eliminar colaborador",
+      "description": "{{name}} se eliminará del catálogo y de los eventos donde esté asignado.",
+      "confirm": "Eliminar permanentemente",
+      "cancel": "Cancelar"
+    },
+    "status": {
+      "pending": "Sin confirmar",
+      "confirmed": "Confirmado",
+      "declined": "Rechazó",
+      "cancelled": "Cancelado"
+    }
+  },
+  "form": {
+    "back": "Volver a Personal",
+    "loading": "Cargando colaborador…",
+    "title_new": "Nuevo colaborador",
+    "title_edit": "Editar colaborador",
+    "help_text": "Phase 2 activará notificaciones por email al asignarlos a un evento. El toggle ya queda guardado.",
+    "fields": {
+      "name": "Nombre",
+      "name_placeholder": "María López",
+      "role": "Rol",
+      "role_placeholder": "Fotógrafa · DJ · Coordinador · Mesero",
+      "phone": "Teléfono",
+      "phone_placeholder": "+52 55 1234 5678",
+      "email": "Email",
+      "email_placeholder": "maria@ejemplo.com",
+      "notes": "Notas",
+      "notes_placeholder": "Tarifa habitual, especialidad, disponibilidad…",
+      "notifications": "Avisarle por email al asignarlo a un evento.",
+      "notifications_help": "Feature del plan Pro (próximamente) — el toggle se guarda desde ahora."
+    },
+    "errors": {
+      "name_required": "El nombre es obligatorio.",
+      "email_invalid": "Formato de email inválido."
+    },
+    "messages": {
+      "created": "Colaborador creado.",
+      "updated": "Colaborador actualizado."
+    },
+    "actions": {
+      "save": "Guardar cambios",
+      "create": "Crear colaborador",
+      "cancel": "Cancelar"
+    }
+  }
+}

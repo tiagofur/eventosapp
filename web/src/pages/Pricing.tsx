@@ -3,10 +3,12 @@ import { Shield, Zap, CheckCircle, ArrowRight, Star, Building2 } from 'lucide-re
 import { subscriptionService } from '../services/subscriptionService';
 import { useAuth } from '../contexts/AuthContext';
 import { logError } from '../lib/errorHandler';
+import { useTranslation } from 'react-i18next';
 
 type PlanKey = 'pro' | 'business';
 
 export const Pricing: React.FC = () => {
+  const { t } = useTranslation(['pricing']);
   // `upgradingPlan` doubles as a per-plan loading flag — both buttons can't
   // be spinning at once and we need to know WHICH button was clicked.
   const [upgradingPlan, setUpgradingPlan] = useState<PlanKey | null>(null);
@@ -25,7 +27,7 @@ export const Pricing: React.FC = () => {
       logError('Failed to create checkout session', err);
       const detail = err instanceof Error ? err.message : '';
       setError(
-        'Hubo un error al iniciar el proceso de pago. Por favor intenta nuevamente.' +
+        t('pricing:error.checkout_failed') +
           (detail ? ` (${detail})` : ''),
       );
     } finally {
@@ -39,42 +41,18 @@ export const Pricing: React.FC = () => {
       setError(null);
       await subscriptionService.debugUpgrade();
       await checkAuth(); // Refrescar contexto para obtener el nuevo plan
-      alert('Plan actualizado a Pro (Modo Debug)');
+      alert(t('pricing:debug.upgrade_success'));
     } catch (err: unknown) {
       logError('Failed to debug upgrade', err);
-      setError('Error al actualizar plan en modo debug.');
+      setError(t('pricing:debug.upgrade_error'));
     } finally {
       setUpgradingPlan(null);
     }
   };
 
-  const featuresFree = [
-    'Hasta 3 eventos por mes',
-    'Hasta 50 clientes registrados',
-    'Hasta 20 ítems en catálogo',
-    'Gestión básica de clientes',
-    'Calendario de eventos',
-    'Generación de PDFs (cotizaciones, contratos y más)',
-  ];
-
-  const featuresPro = [
-    'Eventos ilimitados',
-    'Clientes y catálogo ilimitados',
-    'Control de pagos e ingresos en múltiples plazos',
-    'Reportes y analíticas avanzadas',
-    'Portal del cliente con tu marca',
-    'Soporte prioritario',
-  ];
-
-  const featuresBusiness = [
-    'Todo lo de Pro, sin excepción',
-    'Hasta 3 usuarios del equipo con roles',
-    'WhatsApp Business API para notificaciones al cliente',
-    'Firma digital de contratos con validez legal',
-    'Dominio propio + emails con tu marca (DKIM)',
-    'Integraciones webhooks + API pública',
-    'Soporte 1:1 con onboarding personalizado',
-  ];
+  const featuresFree = t('pricing:features.free', { returnObjects: true }) as string[];
+  const featuresPro = t('pricing:features.pro', { returnObjects: true }) as string[];
+  const featuresBusiness = t('pricing:features.business', { returnObjects: true }) as string[];
 
   const isOnPaidPlan = user?.plan === 'pro' || user?.plan === 'business' || user?.plan === 'premium';
   const isOnBusiness = user?.plan === 'business';
@@ -83,14 +61,14 @@ export const Pricing: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
       <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
         <h1 className="text-4xl font-extrabold text-text tracking-tight sm:text-5xl lg:text-6xl">
-          Planes y Precios
+          {t('pricing:title')}
         </h1>
-        <p className="mt-2 text-xl text-text-secondary">Potencia tu negocio de eventos</p>
+        <p className="mt-2 text-xl text-text-secondary">{t('pricing:subtitle')}</p>
         <p className="mt-5 text-xl text-text-secondary">
-          Elegí el plan que se adapte al tamaño y crecimiento de tus eventos.
+          {t('pricing:description')}
         </p>
         <p className="mt-2 text-sm text-text-tertiary">
-          14 días de prueba gratis en Pro y Business. Cancelás cuando quieras.
+          {t('pricing:trial_info')}
         </p>
       </div>
 
@@ -111,20 +89,20 @@ export const Pricing: React.FC = () => {
         {/* Free Plan */}
         <div className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden flex flex-col">
           <div className="p-8">
-            <h3 className="text-2xl font-semibold text-text mb-2">Básico</h3>
-            <p className="text-text-secondary mb-6">Perfecto para empezar y organizar eventos pequeños.</p>
+            <h3 className="text-2xl font-semibold text-text mb-2">{t('pricing:plans.basic.name')}</h3>
+            <p className="text-text-secondary mb-6">{t('pricing:plans.basic.description')}</p>
             <div className="flex items-baseline mb-8">
-              <span className="text-5xl font-extrabold text-text">$0</span>
-              <span className="text-xl text-text-secondary ml-2">/mes</span>
+              <span className="text-5xl font-extrabold text-text">{t('pricing:plans.basic.price')}</span>
+              <span className="text-xl text-text-secondary ml-2">{t('pricing:plans.basic.interval')}</span>
             </div>
 
             <button
               type="button"
               disabled
               className="w-full bg-surface-alt text-text-secondary font-medium py-3 px-4 rounded-xl cursor-not-allowed"
-              aria-label="Plan Básico - Plan actual"
+              aria-label={t('pricing:plans.basic.name') + ' - ' + (isOnPaidPlan ? t('pricing:plans.basic.downgrade') : t('pricing:plans.basic.current'))}
             >
-              {isOnPaidPlan ? 'Downgrade' : 'Plan Actual'}
+              {isOnPaidPlan ? t('pricing:plans.basic.downgrade') : t('pricing:plans.basic.current')}
             </button>
           </div>
           <div className="bg-surface-alt p-8 flex-1 border-t border-border">
@@ -148,28 +126,28 @@ export const Pricing: React.FC = () => {
           }}
         >
           <div className="absolute top-0 right-0 bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl uppercase tracking-widest">
-            Recomendado
+            {t('pricing:plans.pro.badge')}
           </div>
           <div className="p-8">
             <div className="flex items-center mb-2">
-              <h3 className="text-2xl font-semibold text-white">Pro</h3>
+              <h3 className="text-2xl font-semibold text-white">{t('pricing:plans.pro.name')}</h3>
               <Star className="h-5 w-5 text-warning ml-2 fill-current" aria-hidden="true" />
             </div>
             <p className="text-primary-light mb-4">
-              Todas las herramientas para escalar tu negocio sin límites.
+              {t('pricing:plans.pro.description')}
             </p>
             <div className="inline-flex items-center gap-1.5 bg-primary-light/20 text-primary-light text-xs font-bold px-3 py-1 rounded-full mb-4">
-              🎉 Precio de lanzamiento — ¡Por tiempo limitado!
+              {t('pricing:plans.pro.launch_price')}
             </div>
             <div className="flex items-baseline mb-6">
-              <span className="text-4xl font-black text-white">$1,499</span>
-              <span className="text-xl text-primary-light line-through opacity-75 ml-2">$2,499</span>
-              <span className="text-lg text-primary-light font-medium ml-2">MXN/año</span>
+              <span className="text-4xl font-black text-white">{t('pricing:plans.pro.price_year')}</span>
+              <span className="text-xl text-primary-light line-through opacity-75 ml-2">{t('pricing:plans.pro.old_price_year')}</span>
+              <span className="text-lg text-primary-light font-medium ml-2">{t('pricing:plans.pro.interval_year')}</span>
             </div>
             <div className="flex items-baseline mb-8">
-              <span className="text-2xl font-bold text-white">$149</span>
-              <span className="text-xl text-primary-light line-through opacity-75 ml-2">$199</span>
-              <span className="text-lg text-primary-light font-medium ml-2">MXN/mes</span>
+              <span className="text-2xl font-bold text-white">{t('pricing:plans.pro.price_month')}</span>
+              <span className="text-xl text-primary-light line-through opacity-75 ml-2">{t('pricing:plans.pro.old_price_month')}</span>
+              <span className="text-lg text-primary-light font-medium ml-2">{t('pricing:plans.pro.interval_month')}</span>
             </div>
 
             {user?.plan === 'pro' || user?.plan === 'premium' ? (
@@ -177,10 +155,10 @@ export const Pricing: React.FC = () => {
                 type="button"
                 disabled
                 className="w-full bg-white/20 backdrop-blur-sm text-white font-semibold py-3 px-4 rounded-xl cursor-not-allowed border border-white/30 flex items-center justify-center gap-2"
-                aria-label="Plan Pro - Tu plan actual"
+                aria-label={t('pricing:plans.pro.name') + ' - ' + t('pricing:plans.pro.current')}
               >
                 <Shield className="h-5 w-5" aria-hidden="true" />
-                Tu plan actual
+                {t('pricing:plans.pro.current')}
               </button>
             ) : (
               <button
@@ -188,14 +166,14 @@ export const Pricing: React.FC = () => {
                 onClick={() => handleUpgrade('pro')}
                 disabled={upgradingPlan !== null || isOnBusiness}
                 className="w-full bg-white text-primary-dark hover:bg-primary-light font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-75 hover:shadow-xl"
-                aria-label="Suscribirse al Plan Pro - Iniciar proceso de pago"
+                aria-label={t('pricing:plans.pro.try_free')}
               >
                 {upgradingPlan === 'pro' ? (
-                  'Procesando...'
+                  t('pricing:plans.pro.processing')
                 ) : (
                   <>
                     <Zap className="h-5 w-5 text-warning" aria-hidden="true" />
-                    Probar 14 días gratis <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    {t('pricing:plans.pro.try_free')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 )}
               </button>
@@ -208,9 +186,9 @@ export const Pricing: React.FC = () => {
                 onClick={handleDebugUpgrade}
                 disabled={upgradingPlan !== null}
                 className="w-full mt-3 bg-black/20 hover:bg-black/30 text-white/80 hover:text-white font-medium py-2 px-4 rounded-lg text-sm border border-white/20 transition-colors"
-                aria-label="Modo desarrollo - Actualizar a Pro sin pago"
+                aria-label={t('pricing:debug.upgrade_button')}
               >
-                [Dev] Upgrade (Mode Debug)
+                {t('pricing:debug.upgrade_button')}
               </button>
             )}
           </div>
@@ -218,7 +196,7 @@ export const Pricing: React.FC = () => {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-white shrink-0 mr-3 mt-0.5" aria-hidden="true" />
-                <span className="text-white font-semibold">Todo lo anterior, y además:</span>
+                <span className="text-white font-semibold">{t('pricing:features.pro_include')}</span>
               </li>
               {featuresPro.map((feature, i) => (
                 <li key={i} className="flex items-start">
@@ -237,19 +215,19 @@ export const Pricing: React.FC = () => {
         <div className="bg-card rounded-2xl shadow-lg border-2 border-accent overflow-hidden flex flex-col">
           <div className="p-8">
             <div className="flex items-center mb-2">
-              <h3 className="text-2xl font-semibold text-text">Business</h3>
+              <h3 className="text-2xl font-semibold text-text">{t('pricing:plans.business.name')}</h3>
               <Building2 className="h-5 w-5 text-accent ml-2" aria-hidden="true" />
             </div>
             <p className="text-text-secondary mb-6">
-              Para equipos que necesitan branding propio, automatización y soporte personalizado.
+              {t('pricing:plans.business.description')}
             </p>
             <div className="flex items-baseline mb-2">
-              <span className="text-4xl font-black text-text">$4,999</span>
-              <span className="text-lg text-text-secondary font-medium ml-2">MXN/año</span>
+              <span className="text-4xl font-black text-text">{t('pricing:plans.business.price_year')}</span>
+              <span className="text-lg text-text-secondary font-medium ml-2">{t('pricing:plans.business.interval_year')}</span>
             </div>
             <div className="flex items-baseline mb-8">
-              <span className="text-2xl font-bold text-text">$499</span>
-              <span className="text-lg text-text-secondary font-medium ml-2">MXN/mes</span>
+              <span className="text-2xl font-bold text-text">{t('pricing:plans.business.price_month')}</span>
+              <span className="text-lg text-text-secondary font-medium ml-2">{t('pricing:plans.business.interval_month')}</span>
             </div>
 
             {isOnBusiness ? (
@@ -257,10 +235,10 @@ export const Pricing: React.FC = () => {
                 type="button"
                 disabled
                 className="w-full bg-accent/10 text-accent font-semibold py-3 px-4 rounded-xl cursor-not-allowed border border-accent/30 flex items-center justify-center gap-2"
-                aria-label="Plan Business - Tu plan actual"
+                aria-label={t('pricing:plans.business.name') + ' - ' + t('pricing:plans.business.current')}
               >
                 <Shield className="h-5 w-5" aria-hidden="true" />
-                Tu plan actual
+                {t('pricing:plans.business.current')}
               </button>
             ) : (
               <button
@@ -268,14 +246,14 @@ export const Pricing: React.FC = () => {
                 onClick={() => handleUpgrade('business')}
                 disabled={upgradingPlan !== null}
                 className="w-full bg-accent text-white hover:bg-accent/90 font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-75"
-                aria-label="Suscribirse al Plan Business - Iniciar proceso de pago"
+                aria-label={t('pricing:plans.business.try_free')}
               >
                 {upgradingPlan === 'business' ? (
-                  'Procesando...'
+                  t('pricing:plans.business.processing')
                 ) : (
                   <>
                     <Building2 className="h-5 w-5" aria-hidden="true" />
-                    Probar 14 días gratis <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    {t('pricing:plans.business.try_free')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </>
                 )}
               </button>

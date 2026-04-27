@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 interface ModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const Modal: React.FC<ModalProps> = ({
   titleId,
   descriptionId,
 }) => {
+  const { t } = useTranslation('common');
   useEffect(() => {
     if (!isOpen) return;
 
@@ -82,7 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
               type="button"
               onClick={onClose}
               className="p-2 text-text-tertiary hover:text-text hover:bg-surface-alt rounded-full transition-colors"
-              aria-label="Cerrar modal"
+              aria-label={t('modal.close')}
             >
               <X className="h-5 w-5" />
             </button>

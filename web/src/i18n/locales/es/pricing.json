@@ -1,0 +1,78 @@
+{
+  "title": "Planes y Precios",
+  "subtitle": "Potencia tu negocio de eventos",
+  "description": "Elegí el plan que se adapte al tamaño y crecimiento de tus eventos.",
+  "trial_info": "14 días de prueba gratis en Pro y Business. Cancelás cuando quieras.",
+  "error": {
+    "checkout_failed": "Hubo un error al iniciar el proceso de pago. Por favor intenta nuevamente."
+  },
+  "plans": {
+    "basic": {
+      "name": "Básico",
+      "description": "Perfecto para empezar y organizar eventos pequeños.",
+      "price": "$0",
+      "interval": "/mes",
+      "current": "Plan Actual",
+      "downgrade": "Downgrade"
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "Todas las herramientas para escalar tu negocio sin límites.",
+      "badge": "Recomendado",
+      "launch_price": "🎉 Precio de lanzamiento — ¡Por tiempo limitado!",
+      "price_year": "$1,499",
+      "old_price_year": "$2,499",
+      "interval_year": "MXN/año",
+      "price_month": "$149",
+      "old_price_month": "$199",
+      "interval_month": "MXN/mes",
+      "current": "Tu plan actual",
+      "try_free": "Probar 14 días gratis",
+      "processing": "Procesando..."
+    },
+    "business": {
+      "name": "Business",
+      "description": "Para equipos que necesitan branding propio, automatización y soporte personalizado.",
+      "price_year": "$4,999",
+      "interval_year": "MXN/año",
+      "price_month": "$499",
+      "interval_month": "MXN/mes",
+      "current": "Tu plan actual",
+      "try_free": "Probar 14 días gratis",
+      "processing": "Procesando..."
+    }
+  },
+  "features": {
+    "free": [
+      "Hasta 3 eventos por mes",
+      "Hasta 50 clientes registrados",
+      "Hasta 20 ítems en catálogo",
+      "Gestión básica de clientes",
+      "Calendario de eventos",
+      "Generación de PDFs (cotizaciones, contratos y más)"
+    ],
+    "pro": [
+      "Eventos ilimitados",
+      "Clientes y catálogo ilimitados",
+      "Control de pagos e ingresos en múltiples plazos",
+      "Reportes y analíticas avanzadas",
+      "Portal del cliente con tu marca",
+      "Soporte prioritario"
+    ],
+    "business": [
+      "Todo lo de Pro, sin excepción",
+      "Hasta 3 usuarios del equipo con roles",
+      "WhatsApp Business API para notificaciones al cliente",
+      "Firma digital de contratos con validez legal",
+      "Dominio propio + emails con tu marca (DKIM)",
+      "Integraciones webhooks + API pública",
+      "Soporte 1:1 con onboarding personalizado"
+    ],
+    "pro_include": "Todo lo anterior, y además:"
+  },
+  "debug": {
+    "upgrade_success": "Plan actualizado a Pro (Modo Debug)",
+    "upgrade_error": "Error al actualizar plan en modo debug.",
+    "upgrade_button": "[Dev] Upgrade (Mode Debug)"
+  }
+}

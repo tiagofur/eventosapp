@@ -1,0 +1,58 @@
+{
+  "title": "Inventario",
+  "new_item": "Nuevo Insumo",
+  "list": {
+    "search_placeholder": "Buscar insumo...",
+    "filter_type": "Todos los tipos",
+    "filter_category": "Todas las categorías",
+    "type_ingredient": "Insumo/Ingrediente",
+    "type_equipment": "Maquinaria/Equipo",
+    "type_supply": "Insumo por Evento",
+    "stock": "Stock",
+    "min_stock": "Stock Mínimo",
+    "unit_cost": "Costo Unitario",
+    "last_update": "Última actualización",
+    "no_results": "No se encontraron insumos",
+    "add_first": "Comenzá agregando tu primer insumo o equipo al catálogo.",
+    "export_csv": "Exportar Inventario",
+    "edit_stock_aria": "Editar stock de {{name}}",
+    "example_placeholder": "Ej: +10 o -5"
+  },
+  "form": {
+    "basic_info": "Información Básica",
+    "name": "Nombre del Insumo",
+    "type": "Tipo de Insumo",
+    "category": "Categoría",
+    "unit": "Unidad de Medida",
+    "unit_placeholder": "Ej. kg, L, pza",
+    "financial_info": "Información Financiera",
+    "cost": "Costo por Unidad ($)",
+    "stock_info": "Control de Stock",
+    "current_stock": "Stock Actual",
+    "minimum_stock": "Stock Mínimo de Alerta",
+    "stock_help": "Te avisaremos cuando el stock sea menor a este valor.",
+    "validation": {
+      "name_required": "El nombre es requerido",
+      "type_required": "El tipo es requerido",
+      "category_required": "La categoría es requerida",
+      "unit_required": "La unidad es requerida",
+      "cost_min": "El costo no puede ser negativo",
+      "stock_min": "El stock no puede ser negativo"
+    }
+  },
+  "details": {
+    "edit": "Editar Insumo",
+    "delete_confirm_title": "Eliminar insumo",
+    "delete_confirm_desc": "¿Estás seguro de que deseas eliminar este insumo? Esta acción no se puede deshacer.",
+    "stats": {
+      "stock_value": "Valor en Stock",
+      "pending_usage": "Uso Pendiente",
+      "forecast_usage": "Uso en 7 días",
+      "alert_title": "Alerta de Stock",
+      "alert_desc": "El stock está por debajo del mínimo. Necesitás reponer pronto."
+    },
+    "history": "Historial de Movimientos",
+    "usage_in_products": "Usado en Productos",
+    "used_in_count": "Se utiliza en {{count}} productos"
+  }
+}

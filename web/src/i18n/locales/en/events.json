@@ -1,0 +1,136 @@
+{
+  "form": {
+    "title_new": "New Event",
+    "title_edit": "Edit Event",
+    "steps": {
+      "general": "General Information",
+      "products": "Products",
+      "extras": "Extras",
+      "inventory_staff": "Inventory and Staff",
+      "financials": "Financials and Contract"
+    },
+    "validation": {
+      "client_required": "Select a client",
+      "date_required": "Select a date",
+      "service_required": "Service type required",
+      "people_min": "Minimum 1 person"
+    }
+  },
+  "general": {
+    "client": "Client",
+    "new_client": "New Client",
+    "select_client": "Select client",
+    "client_history": "Client History:",
+    "events_performed": "events performed",
+    "total_spent": "Total spent:",
+    "event_date": "Event Date",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "service_type": "Service Type",
+    "service_placeholder": "e.g. Decoration, Banquet, Photography",
+    "num_people": "Number of People",
+    "status": "Status",
+    "location": "Event Location",
+    "location_placeholder": "Event address (optional, defaults to client address)",
+    "city": "Event City",
+    "city_placeholder": "Event city (for contract)",
+    "date_unavailable": "This date is not available due to holidays or manual block. Please select another date.",
+    "status_options": {
+      "quoted": "Quoted",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "products": {
+    "title": "Product Selection",
+    "add": "Add Product",
+    "subtotal": "Products Subtotal",
+    "quantity": "Qty.",
+    "price": "Unit Price",
+    "discount": "Unit Disc.",
+    "total": "Total",
+    "unit_cost": "Est. unit cost",
+    "select_placeholder": "Select product",
+    "delete_confirm_title": "Delete product?",
+    "delete_confirm_desc": "Remove \"{{name}}\" from this event?",
+    "delete_confirm_desc_generic": "Remove this product from the event?",
+    "include_team": "Includes team",
+    "include_team_tooltip": "This product automatically adds associated team members as staff"
+  },
+  "extras": {
+    "title": "Extras (Transport, Staff, etc.)",
+    "add": "Add Extra",
+    "subtotal": "Extras Subtotal",
+    "description": "Description",
+    "cost": "Cost (Expense)",
+    "price": "Price (Charge)",
+    "exclude_utility": "Charge cost only (No profit)",
+    "include_checklist": "Include in checklist",
+    "delete_confirm_title": "Remove extra?",
+    "delete_confirm_desc": "Remove \"{{name}}\" from this event?",
+    "delete_confirm_desc_generic": "Remove this extra from the event?"
+  },
+  "financials": {
+    "title": "Financial Setup and Contract",
+    "discount": "Global Discount",
+    "discount_type": "Discount Type",
+    "discount_fixed": "Fixed Amount ($)",
+    "discount_percent": "Percentage (%)",
+    "invoice": "Requires Invoice? (+Tax)",
+    "tax_rate": "Tax Rate (%)",
+    "deposit_percent": "Deposit Percentage (%)",
+    "cancellation_days": "Cancellation Deadline (Days)",
+    "refund_percent": "Refund Percentage (%)",
+    "notes": "Event Notes",
+    "notes_placeholder": "Internal notes or for the contract...",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Event Total",
+    "profit_metrics": "Profitability Metrics (Internal)",
+    "est_cost": "Estimated Cost:",
+    "est_profit": "Estimated Profit:",
+    "est_margin": "Profit Margin:"
+  },
+  "staff": {
+    "title": "Staff and Collaborators",
+    "add": "Assign Staff",
+    "select_staff": "Select member",
+    "role": "Role / Position",
+    "fee": "Fee / Payment",
+    "shift_start": "Shift Start",
+    "shift_end": "Shift End",
+    "delete_confirm_title": "Remove staff?",
+    "delete_confirm_desc": "Remove \"{{name}}\" from this event?"
+  },
+  "supplies": {
+    "title": "Supplies and Consumables",
+    "add": "Add Supply",
+    "select_item": "Select supply",
+    "source_stock": "From Inventory",
+    "source_purchase": "To Purchase",
+    "unit_cost": "Unit Cost",
+    "exclude_cost": "Do not include in total cost",
+    "delete_confirm_title": "Remove supply?",
+    "delete_confirm_desc": "Remove \"{{name}}\" from this event?"
+  },
+  "equipment": {
+    "title": "Equipment and Furniture",
+    "add": "Assign Equipment",
+    "select_item": "Select equipment",
+    "conflicts": "Availability Conflicts",
+    "suggestions": "Equipment Suggestions",
+    "no_items": "No equipment assigned yet"
+  },
+  "quick_client": {
+    "title": "New Quick Client",
+    "name": "Full Name",
+    "phone": "Phone",
+    "email": "Email",
+    "validation": {
+      "name_min": "Name must be at least 2 characters",
+      "phone_min": "Phone must be at least 10 digits",
+      "email_invalid": "Invalid email"
+    }
+  }
+}

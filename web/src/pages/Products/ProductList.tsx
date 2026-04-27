@@ -25,6 +25,7 @@ import { SkeletonTable } from "@/components/Skeleton";
 import { useProducts, useDeleteProduct } from "@/hooks/queries/useProductQueries";
 
 export const ProductList: React.FC = () => {
+  const { t, i18n } = useTranslation(["products", "common"]);
   const navigate = useNavigate();
   const { data: products = [], isLoading: loading } = useProducts();
   const deleteProduct = useDeleteProduct();
@@ -32,6 +33,8 @@ export const ProductList: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const moneyLocale = i18n.language === "en" ? "en-US" : "es-MX";
 
   const requestDelete = (id: string) => {
     setPendingDeleteId(id);
@@ -98,10 +101,10 @@ export const ProductList: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmOpen}
-        title="Eliminar producto"
-        description="Se eliminará el producto y su receta. No se puede usar en nuevas cotizaciones. Esta acción no se puede deshacer."
-        confirmText="Eliminar permanentemente"
-        cancelText="Cancelar"
+        title={t("common:action.delete")}
+        description={t("products:delete_confirm")}
+        confirmText={t("common:action.delete")}
+        cancelText={t("common:action.cancel")}
         onConfirm={confirmDelete}
         onCancel={() => {
           setConfirmOpen(false);
@@ -110,7 +113,7 @@ export const ProductList: React.FC = () => {
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight text-text">
-          Productos
+          {t("products:title")}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           {products.length > 0 && (
@@ -119,7 +122,7 @@ export const ProductList: React.FC = () => {
               onClick={() =>
                 exportToCsv(
                   "productos",
-                  ["Nombre", "Categoría", "Precio Base", "Activo"],
+                  [t("products:table.name"), t("products:table.category"), t("products:table.price"), "Activo"],
                   products.map((p) => [
                     p.name,
                     p.category,
@@ -129,7 +132,6 @@ export const ProductList: React.FC = () => {
                 )
               }
               className="inline-flex items-center justify-center px-4 py-2 border border-border text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt shadow-sm transition-colors"
-              aria-label="Exportar productos a CSV"
             >
               <Download className="h-4 w-4 mr-2" aria-hidden="true" />
               CSV
@@ -140,14 +142,14 @@ export const ProductList: React.FC = () => {
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white premium-gradient shadow-xs transition-opacity hover:opacity-90"
           >
             <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-            Nuevo Producto
+            {t("products:new_product")}
           </Link>
         </div>
       </div>
 
       <div className="relative max-w-md">
         <label htmlFor="product-search" className="sr-only">
-          Buscar productos
+          {t("common:action.search")}
         </label>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-text-secondary" aria-hidden="true" />
@@ -156,17 +158,15 @@ export const ProductList: React.FC = () => {
           id="product-search"
           type="search"
           className="block w-full pl-10 pr-8 py-2 border border-border rounded-xl leading-5 bg-card text-text placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
-          placeholder="Buscar producto..."
+          placeholder={t("products:search_placeholder")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          aria-label="Buscar productos por nombre o categoría"
         />
         {searchTerm && (
           <button
             type="button"
             onClick={() => setSearchTerm("")}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-secondary hover:text-text transition-colors"
-            aria-label="Limpiar búsqueda"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -208,11 +208,11 @@ export const ProductList: React.FC = () => {
         ) : filteredProducts.length === 0 ? (
           <Empty
             icon={UtensilsCrossed}
-            title="Sin productos registrados"
+            title={t("products:no_products")}
             description={
               searchTerm || selectedCategory
-                ? "No hay productos que coincidan. Prueba con otra categoría o borrando el texto de búsqueda."
-                : "Comienza agregando tu primer producto."
+                ? t("common:command_palette.no_results")
+                : t("products:details.no_recipe")
             }
             action={
               !searchTerm && !selectedCategory ? (
@@ -221,16 +221,16 @@ export const ProductList: React.FC = () => {
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white premium-gradient hover:opacity-90"
                 >
                   <Plus className="h-5 w-5 mr-2" />
-                  Agregar Producto
+                  {t("products:new_product")}
                 </Link>
               ) : undefined
             }
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border" aria-label="Tabla de productos">
+            <table className="min-w-full divide-y divide-border" aria-label={t("products:title")}>
               <caption className="sr-only">
-                Lista de productos con {totalItems} resultados. Mostrando página {currentPage} de {totalPages}.
+                {t("common:pagination.showing")} {currentPage} {t("common:pagination.of")} {totalPages}
               </caption>
               <thead className="bg-surface-alt">
                 <tr>
@@ -240,7 +240,7 @@ export const ProductList: React.FC = () => {
                     onClick={() => handleSort("name")}
                     aria-sort={getSortAriaSort("name")}
                   >
-                    Nombre {renderSortIcon("name")}
+                    {t("products:table.name")} {renderSortIcon("name")}
                   </th>
                   <th
                     scope="col"
@@ -248,7 +248,7 @@ export const ProductList: React.FC = () => {
                     onClick={() => handleSort("base_price")}
                     aria-sort={getSortAriaSort("base_price")}
                   >
-                    Precio {renderSortIcon("base_price")}
+                    {t("products:table.price")} {renderSortIcon("base_price")}
                   </th>
                   <th
                     scope="col"
@@ -256,13 +256,13 @@ export const ProductList: React.FC = () => {
                     onClick={() => handleSort("category")}
                     aria-sort={getSortAriaSort("category")}
                   >
-                    Categoría {renderSortIcon("category")}
+                    {t("products:table.category")} {renderSortIcon("category")}
                   </th>
                   <th
                     scope="col"
                     className="relative px-6 py-3 text-text-secondary"
                   >
-                    <span className="sr-only">Acciones</span>
+                    <span className="sr-only">{t("products:table.actions")}</span>
                   </th>
                 </tr>
               </thead>
@@ -295,7 +295,7 @@ export const ProductList: React.FC = () => {
                             </span>
                             {!product.is_active && (
                               <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-error/10 text-error border border-error/20">
-                                Inactivo
+                                {t("products:status.inactive")}
                               </span>
                             )}
                           </div>
@@ -305,7 +305,7 @@ export const ProductList: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-text">
                         $
-                        {product.base_price.toLocaleString("es-MX", {
+                        {product.base_price.toLocaleString(moneyLocale, {
                           minimumFractionDigits: 2,
                         })}
                       </div>
@@ -318,9 +318,9 @@ export const ProductList: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <RowActionMenu items={[
-                          { label: 'Ver Detalle', icon: Eye, onClick: () => navigate(`/products/${product.id}`) },
-                          { label: 'Editar', icon: Edit, onClick: () => navigate(`/products/${product.id}/edit`) },
-                          { label: 'Eliminar', icon: Trash2, onClick: () => requestDelete(product.id), variant: 'destructive' as const },
+                          { label: t("common:action.view"), icon: Eye, onClick: () => navigate(`/products/${product.id}`) },
+                          { label: t("common:action.edit"), icon: Edit, onClick: () => navigate(`/products/${product.id}/edit`) },
+                          { label: t("common:action.delete"), icon: Trash2, onClick: () => requestDelete(product.id), variant: 'destructive' as const },
                         ]} />
                       </div>
                     </td>

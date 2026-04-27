@@ -8,32 +8,29 @@ import {
   SearchX,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import Empty from "../components/Empty";
+import { useTranslation } from "react-i18next";
 import { useSearch } from "../hooks/queries/useSearchQueries";
 
-const STATUS_LABELS: Record<string, string> = {
-  quoted: "Cotizado",
-  confirmed: "Confirmado",
-  completed: "Completado",
-  cancelled: "Cancelado",
-};
-
-const formatEventDate = (value: string) => {
+const formatEventDate = (value: string, locale: string) => {
   try {
-    return format(parseISO(value), "d MMM yyyy", { locale: es });
+    return format(parseISO(value), "d MMM yyyy", {
+      locale: locale === "en" ? enUS : es,
+    });
   } catch {
     return value;
   }
 };
 
 export const SearchPage: React.FC = () => {
+  const { t, i18n } = useTranslation(["search"]);
   const [searchParams] = useSearchParams();
   const query = (searchParams.get("q") || "").trim();
 
   const { data: results, isLoading: loading, error: searchError } = useSearch(query);
   const safeResults = results ?? { clients: [], events: [], products: [], inventory: [] };
-  const error = searchError ? "No pudimos completar la búsqueda. Intenta de nuevo." : null;
+  const error = searchError ? t("search:error") : null;
 
   const totalResults = useMemo(() => {
     return (
@@ -48,8 +45,8 @@ export const SearchPage: React.FC = () => {
     return (
       <Empty
         icon={SearchIcon}
-        title="Busca en toda tu operación"
-        description="Escribe un término en la barra superior para encontrar clientes, eventos, productos e inventario."
+        title={t("search:empty.title")}
+        description={t("search:empty.description")}
       />
     );
   }
@@ -62,8 +59,8 @@ export const SearchPage: React.FC = () => {
         aria-live="polite"
       >
         <Loader2 className="h-5 w-5 animate-spin mr-2" aria-hidden="true" />
-        <span className="sr-only">Buscando resultados...</span>
-        Buscando resultados...
+        <span className="sr-only">{t("search:loading")}</span>
+        {t("search:loading")}
       </div>
     );
   }
@@ -83,8 +80,8 @@ export const SearchPage: React.FC = () => {
     return (
       <Empty
         icon={SearchX}
-        title="Sin resultados"
-        description={`No encontramos coincidencias para "${query}".`}
+        title={t("search:no_results.title")}
+        description={t("search:no_results.description", { query })}
       />
     );
   }
@@ -93,15 +90,19 @@ export const SearchPage: React.FC = () => {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text">Resultados</h1>
+          <h1 className="text-2xl font-bold text-text">{t("search:title")}</h1>
           <p className="text-sm text-text-secondary">
-            {totalResults} resultado{totalResults === 1 ? "" : "s"} para "
-            {query}"
+            {t(
+              totalResults === 1
+                ? "search:subtitle_single"
+                : "search:subtitle_plural",
+              { count: totalResults, query }
+            )}
           </p>
         </div>
         <div className="flex items-center text-sm text-text-secondary">
           <SearchIcon className="h-4 w-4 mr-2" aria-hidden="true" />
-          Búsqueda global
+          {t("search:global_search")}
         </div>
       </div>
 
@@ -110,7 +111,7 @@ export const SearchPage: React.FC = () => {
           <div className="px-4 py-3 border-b border-border bg-surface-alt flex items-center justify-between">
             <h2 className="font-semibold text-text flex items-center">
               <Users className="h-4 w-4 mr-2 text-info" aria-hidden="true" />
-              Clientes ({safeResults.clients.length})
+              {t("search:sections.clients")} ({safeResults.clients.length})
             </h2>
           </div>
           <ul className="divide-y divide-border">
@@ -145,7 +146,7 @@ export const SearchPage: React.FC = () => {
 
       {safeResults.events.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text">Eventos</h2>
+          <h2 className="text-lg font-semibold text-text">{t("search:sections.events")}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             {safeResults.events.map((event) => (
               <Link
@@ -162,9 +163,9 @@ export const SearchPage: React.FC = () => {
                   </p>
                 )}
                 <p className="text-xs text-text-secondary">
-                  {event.meta ? formatEventDate(event.meta) : ""}
+                  {event.meta ? formatEventDate(event.meta, i18n.language) : ""}
                   {event.meta && event.status ? " - " : ""}
-                  {event.status ? STATUS_LABELS[event.status] : ""}
+                  {event.status ? t(`search:status.${event.status}`) : ""}
                 </p>
               </Link>
             ))}
@@ -174,7 +175,7 @@ export const SearchPage: React.FC = () => {
 
       {safeResults.products.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text">Productos</h2>
+          <h2 className="text-lg font-semibold text-text">{t("search:sections.products")}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             {safeResults.products.map((product) => (
               <Link
@@ -201,7 +202,7 @@ export const SearchPage: React.FC = () => {
 
       {safeResults.inventory.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-text">Inventario</h2>
+          <h2 className="text-lg font-semibold text-text">{t("search:sections.inventory")}</h2>
           <div className="grid gap-3 md:grid-cols-2">
             {safeResults.inventory.map((item) => (
               <Link

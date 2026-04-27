@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { Event, Payment, InventoryItem } from "../types/entities";
-import { addDays, differenceInCalendarDays, endOfMonth, format, startOfMonth } from "date-fns";
-import { es } from "date-fns/locale";
+import { addDays, format, startOfMonth, endOfMonth } from "date-fns";
+import { es, enUS } from "date-fns/locale";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Calendar,
   DollarSign,
@@ -37,12 +38,6 @@ import { eventService } from "../services/eventService";
 import { Modal } from "../components/Modal";
 import { PaymentFormFields, PaymentFormData } from "../components/PaymentFormFields";
 import { useToast } from "../hooks/useToast";
-
-// Single source of truth for the "paid enough / has pending balance" cutoff.
-// Used by detection logic, the dashboard CTAs, and the financial-critical
-// auto-complete guard. Keep in sync with mobile's MIN_PENDING_AMOUNT
-// (Android core/dashboard, iOS PendingEventsViewModel).
-const PAYMENT_COMPLETION_EPSILON = 0.01;
 import { getEventTotalCharged } from "../lib/finance";
 import { StatusDropdown, EventStatus } from "../components/StatusDropdown";
 import { OnboardingChecklist } from "../components/OnboardingChecklist";
@@ -57,8 +52,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
+
+const PAYMENT_COMPLETION_EPSILON = 0.01;
 
 type DashboardEvent = Event & {
   client?: { name: string } | null;
@@ -95,10 +91,6 @@ const ATTENTION_TONE_STYLES: Record<AttentionAlertTone, { badge: string; card: s
 
 function parseDashboardEventDate(eventDate: string) {
   return new Date(`${eventDate}T12:00:00`);
-}
-
-function getDashboardEventClientName(event: DashboardEvent) {
-  return event.client?.name ?? "Sin cliente";
 }
 
 // ── Skeleton loader ──────────────────────────────────────────────
@@ -162,8 +154,6 @@ function KpiCard({ icon: Icon, iconBg, iconColor, label, value, sub, compact = f
           <dt className="text-xs font-medium text-text-secondary leading-tight mb-1 truncate">
             {label}
           </dt>
-          {/* Responsive font + truncate so long MXN amounts don't spill out
-              of the 2-column grid on phones. parity with the compact variant. */}
           <dd className="text-base sm:text-xl font-bold text-text tracking-tight truncate">{value}</dd>
         </div>
       </div>
@@ -188,8 +178,8 @@ function QuickActionLink({ icon: Icon, label, primary = false, onClick, to }: Qu
         ? "bg-primary text-white border-primary hover:bg-primary-dark"
         : "bg-card border-border text-text hover:bg-surface-alt hover:border-primary/30"
       }`}>
-      <Icon className={`h-4 w-4 shrink-0 ${primary ? "text-white" : "text-primary"}`} aria-hidden="true" />
-      <span className="text-sm font-semibold">{label}</span>
+    <Icon className={`h-4 w-4 shrink-0 ${primary ? "text-white" : "text-primary"}`} aria-hidden="true" />
+    <span className="text-sm font-semibold">{label}</span>
     </div>
   );
   if (to) return <Link to={to}>{inner}</Link>;
@@ -200,7 +190,9 @@ function QuickActionLink({ icon: Icon, label, primary = false, onClick, to }: Qu
 interface StatusSegment { name: string; value: number; color: string; }
 
 function EventStatusBar({ data, loading }: { data: StatusSegment[]; loading: boolean }) {
+  const { t } = useTranslation(['dashboard', 'common']);
   const total = data.reduce((sum, d) => sum + d.value, 0);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -212,8 +204,8 @@ function EventStatusBar({ data, loading }: { data: StatusSegment[]; loading: boo
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 text-text-tertiary">
         <Calendar className="h-12 w-12 opacity-20" />
-        <p className="text-sm text-text-secondary">Sin datos para graficar este mes</p>
-        <Link to="/events/new" className="text-xs font-semibold text-primary hover:underline">Crear primer evento</Link>
+        <p className="text-sm text-text-secondary">{t('dashboard:status_chart.no_data')}</p>
+        <Link to="/events/new" className="text-xs font-semibold text-primary hover:underline">{t('dashboard:status_chart.create_first')}</Link>
       </div>
     );
   }
@@ -221,7 +213,7 @@ function EventStatusBar({ data, loading }: { data: StatusSegment[]; loading: boo
     <div className="flex-1 flex flex-col justify-center gap-6">
       <div className="text-center">
         <span className="text-4xl font-black text-text">{total}</span>
-        <p className="text-xs text-text-secondary mt-1">eventos este mes</p>
+        <p className="text-xs text-text-secondary mt-1">{t('dashboard:status_chart.events_this_month')}</p>
       </div>
       <div className="flex h-3 rounded-full overflow-hidden w-full" role="img"
         aria-label={`Distribución: ${data.map(d => `${d.name} ${d.value}`).join(', ')}`}>
@@ -245,15 +237,18 @@ function EventStatusBar({ data, loading }: { data: StatusSegment[]; loading: boo
 
 // ── Upcoming Event Card ─────────────────────────────────────────
 function UpcomingEventCard({ event }: { event: DashboardEvent }) {
+  const { i18n } = useTranslation();
   const navigate = useNavigate();
   const dateObj = new Date(event.event_date + "T12:00:00");
+  const dateLocale = i18n.language === 'en' ? enUS : es;
+
   return (
     <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all duration-200"
       onClick={() => navigate(`/events/${event.id}/summary`)} role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/events/${event.id}/summary`); }}>
       <div className="w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0"
         style={{ backgroundColor: "var(--color-primary-light)" }}>
-        <span className="text-xs font-semibold uppercase text-primary leading-none">{format(dateObj, "MMM", { locale: es })}</span>
+        <span className="text-xs font-semibold uppercase text-primary leading-none">{format(dateObj, "MMM", { locale: dateLocale })}</span>
         <span className="text-lg font-bold text-primary leading-tight">{format(dateObj, "d")}</span>
       </div>
       <div className="flex-1 min-w-0">
@@ -310,19 +305,21 @@ function AttentionItemCard({
   onCancel: (eventId: string) => void;
   onRegisterPayment: (event: DashboardEvent, pendingAmount: number) => void;
 }) {
+  const { t, i18n } = useTranslation(['dashboard', 'common']);
   const { event, detail, pendingAmount } = item;
   const isUpdating = updatingEventId === event.id;
   const hasPending = pendingAmount > PAYMENT_COMPLETION_EPSILON;
+  const dateLocale = i18n.language === 'en' ? enUS : es;
 
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-text truncate">{getDashboardEventClientName(event)}</p>
+          <p className="text-sm font-semibold text-text truncate">{event.client?.name ?? t('dashboard:event.no_client')}</p>
           <p className="text-xs text-text-secondary truncate mt-0.5">{event.service_type}</p>
         </div>
         <span className="shrink-0 text-xs text-text-secondary whitespace-nowrap">
-          {format(parseDashboardEventDate(event.event_date), "d MMM", { locale: es })}
+          {format(parseDashboardEventDate(event.event_date), "d MMM", { locale: dateLocale })}
         </span>
       </div>
       <p className={`text-xs font-semibold mt-1.5 ${styles.detail}`}>{detail}</p>
@@ -335,7 +332,7 @@ function AttentionItemCard({
             onClick={() => onRegisterPayment(event, pendingAmount)}
             className="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
-            Registrar pago
+            {t('dashboard:attention.register_payment')}
           </button>
         )}
 
@@ -347,7 +344,7 @@ function AttentionItemCard({
               onClick={() => onRegisterPayment(event, pendingAmount)}
               className="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
-              Pagar y completar
+              {t('dashboard:attention.pay_and_complete')}
             </button>
             <button
               type="button"
@@ -355,7 +352,7 @@ function AttentionItemCard({
               onClick={() => onCancel(event.id)}
               className="px-3 py-1.5 text-xs font-bold rounded-lg border border-error/40 text-error hover:bg-error/10 transition-colors disabled:opacity-50"
             >
-              Cancelar
+              {t('common:action.cancel')}
             </button>
             <button
               type="button"
@@ -363,7 +360,7 @@ function AttentionItemCard({
               onClick={() => onComplete(event.id)}
               className="text-xs font-semibold text-text-secondary hover:text-text underline-offset-2 hover:underline disabled:opacity-50"
             >
-              Solo completar
+              {t('dashboard:attention.complete_only')}
             </button>
           </>
         )}
@@ -376,7 +373,7 @@ function AttentionItemCard({
               onClick={() => onComplete(event.id)}
               className="px-3 py-1.5 text-xs font-bold rounded-lg bg-success text-white hover:bg-success/90 transition-colors disabled:opacity-50"
             >
-              Completar
+              {t('common:action.complete')}
             </button>
             <button
               type="button"
@@ -384,7 +381,7 @@ function AttentionItemCard({
               onClick={() => onCancel(event.id)}
               className="px-3 py-1.5 text-xs font-bold rounded-lg border border-error/40 text-error hover:bg-error/10 transition-colors disabled:opacity-50"
             >
-              Cancelar
+              {t('common:action.cancel')}
             </button>
           </>
         )}
@@ -393,7 +390,7 @@ function AttentionItemCard({
           to={`/events/${event.id}/summary`}
           className="text-xs font-semibold text-primary hover:underline ml-auto inline-flex items-center gap-1"
         >
-          Ver detalle <ArrowRight className="h-3 w-3" />
+          {t('dashboard:attention.view_detail')} <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
     </div>
@@ -407,6 +404,7 @@ function DashboardAttentionSection({
   onCancel,
   onRegisterPayment,
 }: DashboardAttentionSectionProps) {
+  const { t } = useTranslation(['dashboard', 'common']);
   if (alerts.length === 0) return null;
 
   const totalAlerts = alerts.reduce((sum, alert) => sum + alert.items.length, 0);
@@ -419,14 +417,14 @@ function DashboardAttentionSection({
             <AlertTriangle className="h-4.5 w-4.5 text-warning" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-text">Requieren atención</h2>
+            <h2 className="text-sm font-semibold text-text">{t('dashboard:attention.title')}</h2>
             <p className="text-xs text-text-secondary mt-0.5">
-              Eventos próximos o vencidos con seguimiento pendiente.
+              {t('dashboard:attention.description')}
             </p>
           </div>
         </div>
         <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning">
-          {totalAlerts} alerta{totalAlerts === 1 ? "" : "s"}
+          {t('dashboard:attention.alerts_count', { count: totalAlerts })}
         </span>
       </div>
 
@@ -462,7 +460,7 @@ function DashboardAttentionSection({
 
                 {alert.items.length > 3 && (
                   <Link to="/calendar" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
-                    Ver {alert.items.length - 3} más <ArrowRight className="h-3.5 w-3.5" />
+                    {t('common:action.view')} {alert.items.length - 3} {t('common:action.more')} <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 )}
               </div>
@@ -474,23 +472,14 @@ function DashboardAttentionSection({
   );
 }
 
-// Dashboard uses zero-decimal formatting: KPI cards are tight on mobile
-// and cents add noise without insight. Parity with iOS (`Double.asMXN`)
-// and Android (`Double.asMXNCompact`). Detail screens (event summary,
-// payments, invoices) keep their own full-precision formatters.
-function fmt(n: number) {
-  return `$${n.toLocaleString("es-MX", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
 // ── Monthly Revenue Trend Card (premium only) ────────────────────
-// 6-month bar chart of confirmed+completed event revenue. Data comes from
-// `/api/dashboard/revenue-chart?period=year`; we zero-pad the trailing 6
-// months so the chart ALWAYS shows 6 bars even on new accounts or months
-// without activity (matches iOS / Android parity). Backend returns only
-// months with data, so without padding the chart collapses and looks broken.
 function MonthlyRevenueTrendCard({ points }: { points: DashboardRevenuePoint[] }) {
-  const monthLabels = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-  const chartData = React.useMemo(() => {
+  const { t, i18n } = useTranslation(['dashboard']);
+  const monthLabels = i18n.language === 'en' 
+    ? ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+    : ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+  const chartData = useMemo(() => {
     const byMonth = new Map(points.map((p) => [p.month, p.revenue]));
     const today = new Date();
     const bars: { name: string; value: number }[] = [];
@@ -504,14 +493,16 @@ function MonthlyRevenueTrendCard({ points }: { points: DashboardRevenuePoint[] }
       });
     }
     return bars;
-  }, [points]);
+  }, [points, monthLabels]);
+
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
 
   return (
     <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex flex-col">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-semibold text-text">Ingresos — Últimos 6 meses</h3>
+        <h3 className="text-sm font-semibold text-text">{t('dashboard:revenue_chart.title')}</h3>
       </div>
-      <div className="h-60 w-full" role="img" aria-label="Gráfico de ingresos por mes en los últimos 6 meses">
+      <div className="h-60 w-full" role="img" aria-label={t('dashboard:revenue_chart.aria_label')}>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
@@ -529,7 +520,7 @@ function MonthlyRevenueTrendCard({ points }: { points: DashboardRevenuePoint[] }
               width={48}
             />
             <Tooltip
-              formatter={(value: number) => [`$${value.toLocaleString("es-MX")}`, "Ingresos"]}
+              formatter={(value: number) => [`$${value.toLocaleString(moneyLocale)}`, t('dashboard:revenue_chart.revenue')]}
               contentStyle={{
                 background: "var(--color-card)",
                 border: "1px solid var(--color-border)",
@@ -548,55 +539,44 @@ function MonthlyRevenueTrendCard({ points }: { points: DashboardRevenuePoint[] }
 
 // ────────────────────────────────────────────────────────────────
 export const Dashboard: React.FC = () => {
+  const { t, i18n } = useTranslation(['dashboard', 'common']);
   const { user, checkAuth } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const firstName = user?.name ? user.name.split(" ")[0] : "Usuario";
+  const firstName = user?.name ? user.name.split(" ")[0] : t('common:user');
+  const navigate = useNavigate();
 
   const { isBasicPlan, canCreateEvent, eventsThisMonth, eventLimit: limit } = usePlanLimits();
+
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
+  const fmt = (n: number) => `$${n.toLocaleString(moneyLocale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
   // ── Date range for current month ──
   const today = useMemo(() => new Date(), []);
   const monthStart = useMemo(() => format(startOfMonth(today), "yyyy-MM-dd"), [today]);
   const monthEnd = useMemo(() => format(endOfMonth(today), "yyyy-MM-dd"), [today]);
 
-  // ── Queries via React Query (cached, parallel, automatic) ──
-  // NOTE: ?? [] instead of = [] — destructuring defaults only catch undefined, not null
   const { data: _eventsMonth, isLoading: loadingMonth } = useEventsByDateRange(monthStart, monthEnd);
   const { data: _upcoming, isLoading: loadingUpcoming } = useUpcomingEvents(5);
   const { data: _allEvents, isLoading: loadingAttention } = useEvents();
   const { data: _inventory, isLoading: loadingInventory } = useInventoryItems();
   const { data: _clients, isLoading: loadingClients } = useClients();
 
-  // Backend-aggregated header metrics. Single source of truth across iOS,
-  // Android and Web — no client-side aggregation of raw lists.
   const { data: kpis } = useDashboardKpis();
-  // 6-month revenue trend — premium feature, so only fetched for Pro/Business.
   const { data: revenueChartData } = useDashboardRevenueChart("year", !isBasicPlan);
-  // Month-scoped status distribution for the "Estado de Eventos" chart.
-  // Matches the rest of the month-scoped dashboard cards.
   const { data: statusCountsData } = useDashboardEventsByStatus("month");
 
-  const eventsThisMonthList = _eventsMonth ?? [];
-  const upcomingEvents = _upcoming ?? [];
-  const allEvents = _allEvents ?? [];
   const inventoryData = _inventory ?? [];
   const clients = _clients ?? [];
-
-  const attentionEvents = allEvents as DashboardEvent[];
-  const clientCount = clients.length;
-  const error: string | null = null;
+  const upcomingEvents = _upcoming ?? [];
+  const attentionEvents = (_allEvents ?? []) as DashboardEvent[];
 
   // ── Derived: low stock items ──
   const lowStockItems = useMemo(
     () => inventoryData.filter((item) => item.minimum_stock > 0 && item.current_stock <= item.minimum_stock),
     [inventoryData],
   );
-  const lowStockCount = lowStockItems.length;
 
   // ── Derived: attention event IDs for payment query ──
-  // Includes confirmed events in the next 7 days AND past-active events
-  // so the saldo pendiente is available for both categories (used by the
-  // dashboard's pay+complete CTA on past-active events with balance).
   const attentionCandidateIds = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -613,22 +593,18 @@ export const Dashboard: React.FC = () => {
       .map((event) => event.id);
   }, [attentionEvents]);
   const { data: _attentionPayments } = usePaymentsByEventIds(attentionCandidateIds);
-  const attentionPayments = _attentionPayments ?? [];
-
-  // ── Financial KPIs — backend is the single source of truth ──
-  // (iOS / Android / Web read identical numbers from /api/dashboard/kpis)
-  const netSalesThisMonth = kpis?.net_sales_this_month ?? 0;
-  const cashCollectedThisMonth = kpis?.cash_collected_this_month ?? 0;
-  const vatCollectedThisMonth = kpis?.vat_collected_this_month ?? 0;
-  const vatOutstandingThisMonth = kpis?.vat_outstanding_this_month ?? 0;
 
   const attentionPaidByEvent = useMemo(() => {
     const map: Record<string, number> = {};
-    attentionPayments.forEach((payment: Payment) => {
+    (_attentionPayments ?? []).forEach((payment: Payment) => {
       map[payment.event_id] = (map[payment.event_id] || 0) + Number(payment.amount || 0);
     });
     return map;
-  }, [attentionPayments]);
+  }, [_attentionPayments]);
+
+  const netSalesThisMonth = kpis?.net_sales_this_month ?? 0;
+  const cashCollectedThisMonth = kpis?.cash_collected_this_month ?? 0;
+  const vatOutstandingThisMonth = kpis?.vat_outstanding_this_month ?? 0;
 
   useEffect(() => {
     if (searchParams.has("session_id")) {
@@ -637,11 +613,6 @@ export const Dashboard: React.FC = () => {
     }
   }, [searchParams, checkAuth, setSearchParams]);
 
-  // ── Attention actions: complete, cancel, register-payment-and-complete ──
-  // shouldAutoComplete is precomputed at modal-open time using a day-based
-  // comparison against todayStart (00:00) — comparing parseDashboardEventDate
-  // (which sets T12:00) against `new Date()` would flip at midday, so we
-  // store the decision in state and read from there.
   const updateStatusMutation = useUpdateEventStatus();
   const createPaymentMutation = useCreatePayment();
   const [updatingEventId, setUpdatingEventId] = useState<string | null>(null);
@@ -656,7 +627,7 @@ export const Dashboard: React.FC = () => {
     setUpdatingEventId(eventId);
     try {
       await updateStatusMutation.mutateAsync({ id: eventId, status: "completed" });
-      addToast("Evento marcado como completado.", "success");
+      addToast(t('dashboard:messages.event_completed'), "success");
     } catch (err) {
       logError("Error completing event from dashboard", err);
     } finally {
@@ -668,7 +639,7 @@ export const Dashboard: React.FC = () => {
     setUpdatingEventId(eventId);
     try {
       await updateStatusMutation.mutateAsync({ id: eventId, status: "cancelled" });
-      addToast("Evento cancelado.", "success");
+      addToast(t('dashboard:messages.event_cancelled'), "success");
     } catch (err) {
       logError("Error cancelling event from dashboard", err);
     } finally {
@@ -703,24 +674,18 @@ export const Dashboard: React.FC = () => {
       });
 
       if (willAutoComplete) {
-        // Bypass useUpdateEventStatus here: its onError shows a generic
-        // error toast that would compete with the recovery info toast
-        // below (Copilot review). We still mirror the hook's invalidations.
         try {
           await eventService.update(event.id, { status: "completed" });
           queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
           queryClient.invalidateQueries({ queryKey: queryKeys.events.detail(event.id) });
           queryClient.invalidateQueries({ queryKey: queryKeys.events.upcoming(5) });
-          addToast("Evento marcado como completado.", "success");
+          addToast(t('dashboard:messages.event_completed'), "success");
         } catch (statusErr) {
           logError("Error updating status after payment", statusErr);
-          addToast("Pago registrado. Marcá el evento como completado manualmente.", "info");
+          addToast(t('dashboard:messages.payment_complete_manual'), "info");
         }
       } else if (shouldAutoComplete && !willAutoComplete) {
-        addToast(
-          "Pago parcial registrado. Pagá el saldo completo para marcar el evento como completado.",
-          "info",
-        );
+        addToast(t('dashboard:messages.payment_partial'), "info");
       }
       setPaymentModal(null);
     } catch (err) {
@@ -730,16 +695,14 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Event status distribution — single source of truth is the backend
-  // (/api/dashboard/events-by-status?scope=month). The fetched shape is
-  // [{status, count}]; we overlay it on the 4 known buckets so colors /
-  // labels stay deterministic regardless of the server's ordering.
-  const chartData = React.useMemo<StatusSegment[]>(() => {
+
+
+  const statusChartData = useMemo<StatusSegment[]>(() => {
     const buckets = [
-      { status: "quoted" as const,    name: "Cotizado",   color: "var(--color-status-quoted)" },
-      { status: "confirmed" as const, name: "Confirmado", color: "var(--color-status-confirmed)" },
-      { status: "completed" as const, name: "Completado", color: "var(--color-status-completed)" },
-      { status: "cancelled" as const, name: "Cancelado",  color: "var(--color-status-cancelled)" },
+      { status: "quoted" as const,    name: t('common:status.quoted'),    color: "var(--color-status-quoted)" },
+      { status: "confirmed" as const, name: t('common:status.confirmed'), color: "var(--color-status-confirmed)" },
+      { status: "completed" as const, name: t('common:status.completed'), color: "var(--color-status-completed)" },
+      { status: "cancelled" as const, name: t('common:status.cancelled'), color: "var(--color-status-cancelled)" },
     ];
     const byStatus = new Map<string, number>(
       (statusCountsData ?? []).map((row) => [row.status, row.count])
@@ -747,21 +710,14 @@ export const Dashboard: React.FC = () => {
     return buckets
       .map((b) => ({ name: b.name, value: byStatus.get(b.status) ?? 0, color: b.color }))
       .filter((d) => d.value > 0);
-  }, [statusCountsData]);
+  }, [statusCountsData, t]);
 
-  const financialComparisonData = React.useMemo(() => [
-    { name: "Ventas Netas",    value: netSalesThisMonth,       color: "var(--color-success)" },
-    { name: "Cobrado Real",    value: cashCollectedThisMonth,  color: "var(--color-primary)" },
-    { name: "IVA por Cobrar",  value: vatOutstandingThisMonth, color: "var(--color-error)" },
-  ], [netSalesThisMonth, cashCollectedThisMonth, vatOutstandingThisMonth]);
-
-  const attentionAlerts = React.useMemo<DashboardAttentionAlert[]>(() => {
+  const attentionAlerts = useMemo<DashboardAttentionAlert[]>(() => {
     if (loadingAttention || attentionEvents.length === 0) return [];
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const paymentCutoff = addDays(todayStart, 7);
-    const quoteCutoff = addDays(todayStart, 14);
 
     const confirmedWithPendingPayment = attentionEvents
       .filter((event) => {
@@ -780,7 +736,7 @@ export const Dashboard: React.FC = () => {
 
         return {
           event,
-          detail: `Saldo pendiente ${fmt(pendingAmount)} de ${fmt(totalCharged)}`,
+          detail: t('dashboard:attention.pending_balance', { pending: fmt(pendingAmount), total: fmt(totalCharged) }),
           pendingAmount,
         };
       });
@@ -795,105 +751,70 @@ export const Dashboard: React.FC = () => {
         const totalCharged = getEventTotalCharged(event);
         const totalPaid = attentionPaidByEvent[event.id] || 0;
         const pendingAmount = Math.max(totalCharged - totalPaid, 0);
-        const baseDetail = event.status === "confirmed" ? "Evento pasado aún confirmado" : "Cotización vencida sin cerrar";
-        const detail = pendingAmount > PAYMENT_COMPLETION_EPSILON ? `${baseDetail} · saldo ${fmt(pendingAmount)}` : baseDetail;
+        const baseDetail = event.status === "confirmed" ? t('dashboard:attention.past_confirmed') : t('dashboard:attention.past_quoted');
+        const detail = pendingAmount > PAYMENT_COMPLETION_EPSILON ? `${baseDetail} · ${t('common:status.pending').toLowerCase()} ${fmt(pendingAmount)}` : baseDetail;
 
         return { event, detail, pendingAmount };
       });
 
-    const quotesWithoutConfirmation = attentionEvents
-      .filter((event) => {
-        const eventDate = parseDashboardEventDate(event.event_date);
-        return event.status === "quoted" && eventDate >= todayStart && eventDate <= quoteCutoff;
-      })
-      .sort((a, b) => parseDashboardEventDate(a.event_date).getTime() - parseDashboardEventDate(b.event_date).getTime())
-      .map((event) => {
-        const daysUntilEvent = differenceInCalendarDays(parseDashboardEventDate(event.event_date), todayStart);
-
-        return {
-          event,
-          detail: daysUntilEvent === 0
-            ? "La fecha del evento es hoy y sigue sin confirmar"
-            : `Faltan ${daysUntilEvent} día(s) para confirmar`,
-          pendingAmount: 0,
-        };
-      });
-
-    return [
-      {
+    const alerts: DashboardAttentionAlert[] = [];
+    if (confirmedWithPendingPayment.length > 0) {
+      alerts.push({
         key: "confirmed-payment",
-        title: "Cobros por cerrar",
-        description: "Eventos confirmados dentro de 7 días con pago incompleto.",
-        tone: "warning" as const,
+        title: t('dashboard:attention.confirmed_payment_title'),
+        description: t('dashboard:attention.confirmed_payment_desc'),
+        tone: "warning",
         items: confirmedWithPendingPayment,
-      },
-      {
+      });
+    }
+    if (pastActiveEvents.length > 0) {
+      alerts.push({
         key: "past-active",
-        title: "Eventos vencidos",
-        description: "Eventos pasados que siguen activos en flujo comercial u operativo.",
-        tone: "error" as const,
+        title: t('dashboard:attention.past_active_title'),
+        description: t('dashboard:attention.past_active_desc'),
+        tone: "error",
         items: pastActiveEvents,
-      },
-      {
-        key: "quoted-soon",
-        title: "Cotizaciones urgentes",
-        description: "Eventos dentro de 14 días que todavía no fueron confirmados.",
-        tone: "warning" as const,
-        items: quotesWithoutConfirmation,
-      },
-    ].filter((alert) => alert.items.length > 0);
-  }, [attentionEvents, attentionPaidByEvent, loadingAttention]);
-
-  const tooltipStyle = {
-    borderRadius: "12px",
-    border: "1px solid var(--color-border)",
-    boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)",
-    backgroundColor: "var(--color-card)",
-    color: "var(--color-text)",
-    padding: "10px 14px",
-  };
-
-  const currentMonthLabel = format(new Date(), "MMMM yyyy", { locale: es });
+      });
+    }
+    return alerts;
+  }, [loadingAttention, attentionEvents, attentionPaidByEvent, t]);
 
   return (
-    <div className="flex flex-col gap-8">
-
-      {/* ── HEADER ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="space-y-8 pb-12">
+      {/* ── HEADER & QUICK ACTIONS ── */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-text tracking-tight">Hola, {firstName}</h1>
-          <p className="text-sm text-text-secondary mt-0.5 first-letter:uppercase">
-            {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+          <h1 className="text-3xl font-black text-text tracking-tight mb-2">
+            {t('dashboard:welcome', { name: firstName })}
+          </h1>
+          <p className="text-text-secondary text-sm font-medium">
+            {format(today, "EEEE, d 'de' MMMM", { locale: i18n.language === 'en' ? enUS : es })}
           </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <QuickActionLink
+            icon={Plus}
+            label={t('common:quick_actions.new_event')}
+            primary
+            to="/events/new"
+          />
+          <QuickActionLink
+            icon={UserPlus}
+            label={t('common:quick_actions.new_client')}
+            to="/clients/new"
+          />
+          <QuickActionLink
+            icon={Zap}
+            label={t('common:quick_actions.quick_quote')}
+            to="/quotes/quick"
+          />
         </div>
       </div>
 
-      {/* ── ERROR ── */}
-      {error && (
-        <div className="flex items-start gap-3 bg-error/5 border border-error/30 text-error rounded-xl p-4" role="alert">
-          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="flex-1 text-sm">{error}</div>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="text-xs font-bold underline underline-offset-2 shrink-0"
-          >
-            Recargar
-          </button>
-        </div>
-      )}
-
       <OnboardingChecklist />
+      <UpgradeBanner type="upsell" currentUsage={eventsThisMonth} limit={limit} />
 
-      {isBasicPlan && (
-        <UpgradeBanner
-          type={!canCreateEvent ? "limit-reached" : "upsell"}
-          currentUsage={eventsThisMonth}
-          limit={limit}
-        />
-      )}
-
-      {/* ── ALERTAS DE ATENCIÓN ── */}
+      {/* ── ATTENTION SECTION ── */}
       <DashboardAttentionSection
         alerts={attentionAlerts}
         updatingEventId={updatingEventId}
@@ -902,235 +823,199 @@ export const Dashboard: React.FC = () => {
         onRegisterPayment={handleOpenPaymentModal}
       />
 
-      {/* ── PAGO + COMPLETAR (modal) ── */}
-      {paymentModal && (
-        <Modal
-          isOpen
-          onClose={() => setPaymentModal(null)}
-          title={paymentModal.shouldAutoComplete ? "Registrar pago y completar" : "Registrar pago"}
-          maxWidth="2xl"
-          titleId="dashboard-payment-modal-title"
-        >
-          <PaymentFormFields
-            initialAmount={paymentModal.pendingAmount}
-            saldoAmount={paymentModal.pendingAmount > 0 ? paymentModal.pendingAmount : undefined}
-            submitLabel={paymentModal.shouldAutoComplete ? "Pagar y completar" : "Registrar pago"}
-            isSubmitting={createPaymentMutation.isPending || updatingEventId === paymentModal.event.id}
-            onCancel={() => setPaymentModal(null)}
-            onSubmit={handlePayAndComplete}
-          />
-        </Modal>
-      )}
-
-      {/* ── MÉTRICAS + ACCIONES ── */}
-      <section className="flex flex-col gap-3">
-        {/* Section label */}
-        <p className="text-xs font-semibold text-text-tertiary first-letter:uppercase">{currentMonthLabel}</p>
-
-        {/* Primary KPIs — the 4 metrics checked every morning */}
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {(loadingMonth || loadingClients) ? (
-            Array.from({ length: 4 }).map((_, i) => <SkeletonKpi key={i} />)
-          ) : (
-            <>
-              <KpiCard
-                icon={TrendingUp}
-                iconBg="bg-primary/10"
-                iconColor="text-primary"
-                label="Ventas Netas"
-                value={fmt(netSalesThisMonth)}
-                sub="Confirmados y completados"
-              />
-              <KpiCard
-                icon={DollarSign}
-                iconBg="bg-primary/10"
-                iconColor="text-primary"
-                label="Cobrado"
-                value={fmt(cashCollectedThisMonth)}
-                sub="Pagos recibidos este mes"
-              />
-              <KpiCard
-                icon={Calendar}
-                iconBg="bg-primary/10"
-                iconColor="text-primary"
-                label="Eventos"
-                value={String(kpis?.events_this_month ?? eventsThisMonthList.length)}
-                sub="Este mes"
-              />
-              <KpiCard
-                icon={FileText}
-                iconBg={(kpis?.pending_quotes ?? 0) > 0 ? "bg-warning/10" : "bg-surface-alt"}
-                iconColor={(kpis?.pending_quotes ?? 0) > 0 ? "text-warning" : "text-text-tertiary"}
-                label="Cotizaciones"
-                value={String(kpis?.pending_quotes ?? 0)}
-                sub="Pendientes de confirmar"
-              />
-            </>
-          )}
-        </div>
-
-        {/* Secondary KPIs — detail / supporting metrics */}
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          {(loadingMonth || loadingClients) ? (
-            Array.from({ length: 4 }).map((_, i) => <SkeletonKpi key={i} compact />)
-          ) : (
-            <>
-              <KpiCard compact
-                icon={FileCheck}
-                iconBg="bg-surface-alt"
-                iconColor="text-text-secondary"
-                label="IVA Cobrado"
-                value={fmt(vatCollectedThisMonth)}
-              />
-              <KpiCard compact
-                icon={AlertTriangle}
-                iconBg={vatOutstandingThisMonth > 0 ? "bg-error/10" : "bg-surface-alt"}
-                iconColor={vatOutstandingThisMonth > 0 ? "text-error" : "text-text-secondary"}
-                label="IVA Pendiente"
-                value={fmt(vatOutstandingThisMonth)}
-              />
-              <KpiCard compact
-                icon={Package}
-                iconBg={(kpis?.low_stock_items ?? lowStockCount) > 0 ? "bg-error/10" : "bg-surface-alt"}
-                iconColor={(kpis?.low_stock_items ?? lowStockCount) > 0 ? "text-error" : "text-text-secondary"}
-                label="Stock Bajo"
-                value={(kpis?.low_stock_items ?? lowStockCount) > 0 ? `${kpis?.low_stock_items ?? lowStockCount} ítems` : "Sin alertas"}
-              />
-              <KpiCard compact
-                icon={Users}
-                iconBg="bg-surface-alt"
-                iconColor="text-text-secondary"
-                label="Clientes"
-                value={String(kpis?.total_clients ?? clientCount)}
-              />
-            </>
-          )}
-        </div>
-
-        {/* Quick Actions — subordinate strip, not competing cards */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          <QuickActionLink icon={Plus} label="Nuevo Evento" primary to="/events/new" />
-          <QuickActionLink icon={Zap} label="Cotización Rápida" to="/cotizacion-rapida" />
-          <QuickActionLink icon={UserPlus} label="Nuevo Cliente" to="/clients/new" />
-          <QuickActionLink icon={Package} label="Nuevo Producto" to="/products/new" />
-        </div>
-      </section>
-
-      {/* ── CHARTS ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-        {/* Financial Comparison */}
-        <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold text-text">Comparativa Financiera</h3>
-            <span className="text-xs text-text-tertiary bg-surface-alt px-3 py-1 rounded-full first-letter:uppercase">{currentMonthLabel}</span>
-          </div>
-          <div className="h-72 w-full" role="img" aria-label="Gráfico de barras comparando ventas netas, cobrado real e IVA por cobrar">
-            <ResponsiveContainer width="100%" height={288}>
-              <BarChart data={financialComparisonData} layout="vertical" margin={{ left: 20, right: 30 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--color-border)" opacity={0.5} />
-                <XAxis type="number" hide />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "var(--color-text-secondary)", fontSize: 12 }}
-                  width={110}
-                />
-                <Tooltip
-                  formatter={(value: number) => [`$${value.toLocaleString("es-MX")}`, "Monto"]}
-                  contentStyle={tooltipStyle}
-                  cursor={{ fill: "var(--color-surface-alt)" }}
-                />
-                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={28}>
-                  {financialComparisonData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Event Status */}
-        <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold text-text">Estado de Eventos</h3>
-            <span className="text-xs text-text-tertiary bg-surface-alt px-3 py-1 rounded-full first-letter:uppercase">{currentMonthLabel}</span>
-          </div>
-          <EventStatusBar data={chartData} loading={loadingMonth} />
-        </div>
-      </div>
-
-      {/* ── 6-MONTH REVENUE TREND (premium only) ── */}
-      {/* Parity with iOS and Android: non-premium users do not see this card
-          at all (no blur, no upsell). Premium users always see 6 bars,
-          zero-padded for months without data — the padding lives inside
-          MonthlyRevenueTrendCard so the card renders even if the server
-          returns an empty array (brand new premium accounts). */}
-      {!isBasicPlan && (
-        <MonthlyRevenueTrendCard points={revenueChartData ?? []} />
-      )}
-
-      {/* ── LOW STOCK ── */}
-      {lowStockItems.length > 0 && (
-        <div className="bg-card shadow-sm border border-border rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-            <h3 className="text-sm font-semibold text-text flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-error/10 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-3.5 w-3.5 text-error" />
-              </span>
-              Inventario crítico
-              <span className="ml-1 text-xs font-semibold bg-error/10 text-error px-2 py-0.5 rounded-full">{lowStockItems.length}</span>
-            </h3>
-            <Link to="/inventory" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-              Ver todo <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            {lowStockItems.map((item) => <LowStockCard key={item.id} item={item} />)}
-          </div>
-        </div>
-      )}
-
-      {/* ── UPCOMING EVENTS ── */}
-      <div className="bg-card shadow-sm border border-border rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="text-sm font-semibold text-text">Próximos Eventos</h3>
-          <Link to="/calendar" className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-            Ver todos <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        {loadingUpcoming ? (
-          <div className="p-4 space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-4 flex items-center gap-4 animate-pulse">
-                <div className="w-12 h-12 rounded-2xl bg-surface-alt shrink-0" />
-                <div className="flex-1 space-y-2"><div className="h-3.5 bg-surface-alt rounded w-1/3" /><div className="h-3 bg-surface rounded w-1/4" /></div>
-                <div className="w-16 h-6 bg-surface-alt rounded-full" />
-              </div>
-            ))}
-          </div>
-        ) : upcomingEvents.length > 0 ? (
-          <div className="p-4 space-y-3">
-            {upcomingEvents.map((event) => (
-              <UpcomingEventCard key={event.id} event={event} />
-            ))}
-          </div>
+      {/* ── MAIN KPI GRID ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {loadingMonth ? (
+          <>
+            <SkeletonKpi />
+            <SkeletonKpi />
+            <SkeletonKpi />
+            <SkeletonKpi />
+          </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-surface-alt flex items-center justify-center">
-              <Clock className="h-7 w-7 text-text-tertiary opacity-50" />
-            </div>
-            <p className="text-sm text-text-secondary">No hay eventos próximos agendados</p>
-            <Link to="/events/new" className="text-sm font-bold text-primary hover:underline">Agendar uno ahora →</Link>
-          </div>
+          <>
+            <KpiCard
+              icon={TrendingUp}
+              iconBg="bg-success/10"
+              iconColor="text-success"
+              label={t('dashboard:kpis.net_sales')}
+              value={fmt(netSalesThisMonth)}
+            />
+            <KpiCard
+              icon={DollarSign}
+              iconBg="bg-primary/10"
+              iconColor="text-primary"
+              label={t('dashboard:kpis.cash_collected')}
+              value={fmt(cashCollectedThisMonth)}
+            />
+            <KpiCard
+              icon={AlertTriangle}
+              iconBg="bg-error/10"
+              iconColor="text-error"
+              label={t('dashboard:kpis.vat_outstanding')}
+              value={fmt(vatOutstandingThisMonth)}
+            />
+            <KpiCard
+              icon={Calendar}
+              iconBg="bg-info/10"
+              iconColor="text-info"
+              label={t('dashboard:kpis.active_events')}
+              value={String(eventsThisMonth)}
+              sub={`${eventsThisMonth} / ${limit === -1 ? "∞" : limit} ${t('common:nav.events').toLowerCase()}`}
+            />
+          </>
         )}
       </div>
 
-      {/* ── RECENT ACTIVITY ── */}
-      <RecentActivityCard />
+      {/* ── CHARTS & LISTS GRID ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Charts */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex flex-col h-[400px]">
+              <h3 className="text-sm font-semibold text-text mb-6">{t('dashboard:status_chart.title')}</h3>
+              <EventStatusBar data={statusChartData} loading={loadingMonth} />
+            </div>
+
+            {revenueChartData && <MonthlyRevenueTrendCard points={revenueChartData} />}
+            {!revenueChartData && !isBasicPlan && (
+               <div className="bg-card shadow-sm border border-border rounded-2xl p-6 flex items-center justify-center h-[400px]">
+                 <RefreshCw className="h-6 w-6 animate-spin text-border" />
+               </div>
+            )}
+            {isBasicPlan && (
+               <div className="bg-card shadow-sm border border-border border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 h-[400px]">
+                 <div className="w-12 h-12 rounded-full bg-surface-alt flex items-center justify-center">
+                   <TrendingUp className="h-6 w-6 text-text-tertiary" />
+                 </div>
+                 <div className="max-w-[200px]">
+                   <p className="text-sm font-bold text-text mb-1">Tendencias Pro</p>
+                   <p className="text-xs text-text-secondary leading-relaxed">
+                     Mejorá tu plan para ver gráficos de ingresos mensuales.
+                   </p>
+                 </div>
+                 <button onClick={() => navigate("/profile/pricing")} className="text-xs font-bold text-primary hover:underline">Ver planes</button>
+               </div>
+            )}
+          </div>
+
+          <RecentActivityCard />
+        </div>
+
+        {/* Right Column: Sideboards */}
+        <div className="space-y-8">
+          {/* Upcoming Events Sidebar */}
+          <section className="bg-card shadow-sm border border-border rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-bold text-text flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                {t('common:upcoming_events')}
+              </h3>
+              <Link to="/calendar" className="text-xs font-bold text-primary hover:underline">
+                {t('common:action.view')}
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {loadingUpcoming ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-20 bg-surface-alt rounded-xl animate-pulse" />
+                ))
+              ) : upcomingEvents.length > 0 ? (
+                upcomingEvents.map((event) => (
+                  <UpcomingEventCard key={event.id} event={event as DashboardEvent} />
+                ))
+              ) : (
+                <div className="py-8 text-center bg-surface-alt rounded-2xl border border-dashed border-border">
+                  <Calendar className="h-8 w-8 text-text-tertiary mx-auto mb-2 opacity-50" />
+                  <p className="text-xs text-text-secondary">{t('dashboard:upcoming.no_events')}</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Low Stock Sidebar */}
+          <section className="bg-card shadow-sm border border-border rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-bold text-text flex items-center gap-2">
+                <Package className="h-4 w-4 text-error" />
+                {t('common:critical_inventory')}
+              </h3>
+              <Link to="/inventory" className="text-xs font-bold text-primary hover:underline">
+                {t('common:action.view')}
+              </Link>
+            </div>
+
+            <div className="space-y-3">
+              {loadingInventory ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-16 bg-surface-alt rounded-xl animate-pulse" />
+                ))
+              ) : lowStockItems.length > 0 ? (
+                lowStockItems.slice(0, 5).map((item) => (
+                  <LowStockCard key={item.id} item={item} />
+                ))
+              ) : (
+                <div className="py-8 text-center bg-surface-alt rounded-2xl border border-dashed border-border">
+                  <FileCheck className="h-8 w-8 text-success mx-auto mb-2 opacity-50" />
+                  <p className="text-xs text-text-secondary">{t('dashboard:inventory.no_items')}</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Business Stats mini-grid */}
+          <div className="grid grid-cols-1 gap-4">
+            <KpiCard
+              icon={Users}
+              iconBg="bg-primary/10"
+              iconColor="text-primary"
+              label={t('dashboard:kpis.new_clients')}
+              value={String(kpis?.total_clients ?? 0)}
+              compact
+            />
+            <KpiCard
+              icon={FileText}
+              iconBg="bg-info/10"
+              iconColor="text-info"
+              label={t('dashboard:kpis.average_ticket')}
+              value={fmt(kpis?.average_event_value ?? 0)}
+              compact
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── REGISTER PAYMENT MODAL ── */}
+      {paymentModal && (
+        <Modal
+          isOpen={true}
+          onClose={() => setPaymentModal(null)}
+          title={t('common:payment.confirm')}
+        >
+          <div className="space-y-6">
+            <div className="bg-surface-alt rounded-xl p-4 border border-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">{t('common:nav.events')}</span>
+                <span className="text-xs font-bold text-primary">{format(parseDashboardEventDate(paymentModal.event.event_date), "d MMM", { locale: i18n.language === 'en' ? enUS : es })}</span>
+              </div>
+              <p className="text-base font-bold text-text">{paymentModal.event.client?.name ?? t('dashboard:event.no_client')}</p>
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                <span className="text-sm text-text-secondary">{t('dashboard:attention.pending_balance').split('{{pending}}')[0]}</span>
+                <span className="text-lg font-black text-error">{fmt(paymentModal.pendingAmount)}</span>
+              </div>
+            </div>
+
+            <PaymentFormFields
+              onSubmit={handlePayAndComplete}
+              onCancel={() => setPaymentModal(null)}
+              initialAmount={paymentModal.pendingAmount}
+              submitLabel={paymentModal.shouldAutoComplete ? t('common:payment.complete') : t('dashboard:attention.register_payment')}
+              isSubmitting={updatingEventId === paymentModal.event.id}
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -1,0 +1,34 @@
+{
+  "title": "Cotización Rápida",
+  "subtitle": "Arma una cotización sin registrar cliente ni fecha",
+  "client_data": "Datos del cliente (opcional, para el PDF)",
+  "num_people": "Número de Personas",
+  "discount_invoice": "Descuento y Facturación",
+  "invoice_required": "Requiere factura (IVA {{rate}}%)",
+  "general_discount": "Descuento General",
+  "convert_to_event": "Convertir a Evento",
+  "export_pdf": "Exportar PDF",
+  "summary": {
+    "title": "Resumen",
+    "subtotal_products": "Subtotal Productos",
+    "subtotal_extras": "Subtotal Extras",
+    "discount": "Descuento",
+    "internal_metrics": "Métricas de Rentabilidad (Interno)",
+    "product_cost": "Costo Productos",
+    "extras_cost": "Costo Extras",
+    "total_cost": "Costo Total",
+    "net_profit": "Utilidad Neta",
+    "margin": "Margen",
+    "empty_state": "Agrega productos o extras para ver el resumen"
+  },
+  "placeholder": {
+    "name": "Nombre del cliente",
+    "phone": "Teléfono",
+    "email": "Email"
+  },
+  "labels": {
+    "name": "Nombre",
+    "phone": "Teléfono",
+    "email": "Email"
+  }
+}

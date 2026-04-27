@@ -659,8 +659,9 @@ export const CalendarView: React.FC = () => {
                           {/* MXN amounts always use es-MX thousand separators
                               (comma) regardless of app language — the business
                               is Mexico-based and users recognize that format
-                              on their bank statements. */}
-                          {event.total_amount?.toLocaleString("es-MX", {
+                              on their bank statements. 
+                              Update: Unifying with dashboard logic for consistency. */}
+                          {event.total_amount?.toLocaleString(i18n.language === 'en' ? 'en-US' : 'es-MX', {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
                           })}

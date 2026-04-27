@@ -23,6 +23,8 @@ interface EventFinancialsProps {
   onDiscountTypeChange?: (type: "percent" | "fixed") => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export const EventFinancials: React.FC<EventFinancialsProps> = ({
   selectedProducts,
   extras,
@@ -31,6 +33,8 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
   discountType = "percent",
   onDiscountTypeChange = () => {},
 }) => {
+  const { t, i18n } = useTranslation(['events', 'common']);
+  const moneyLocale = i18n.language === 'en' ? 'en-US' : 'es-MX';
   const { register, control } = useFormContext();
   const discountValue = useWatch({ control, name: 'discount' }) || 0;
   const requiresInvoiceValue = useWatch({ control, name: 'requires_invoice' });
@@ -41,14 +45,14 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-medium text-text">Detalles Financieros</h3>
+      <h3 className="text-lg font-medium text-text">{t('events:financials.title')}</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <div className="space-y-4">
             <div className="bg-card p-4 rounded-xl shadow-xs border border-border">
               <label htmlFor="requires_invoice" className="block text-sm font-medium text-text-secondary mb-2">
-                Facturación
+                {t('events:financials.invoice')}
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -59,7 +63,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                   aria-describedby="requires_invoice-description"
                 />
                 <span id="requires_invoice-description" className="text-sm text-text-secondary">
-                  Requiere factura (IVA {taxRateValue}%)
+                  {t('events:financials.invoice')} (Tax {taxRateValue}%)
                 </span>
               </div>
             </div>
@@ -67,13 +71,14 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
             <div className="bg-card p-4 rounded-xl shadow-xs border border-border">
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="discount" className="text-sm font-medium text-text-secondary">
-                  Descuento General
+                  {t('events:financials.discount')}
                 </label>
                 <div className="flex rounded-lg border border-border overflow-hidden text-xs">
                   <button
                     type="button"
                     onClick={() => onDiscountTypeChange("percent")}
                     className={`px-2.5 py-1 transition-colors ${discountType === "percent" ? "bg-primary text-white" : "bg-card text-text-secondary hover:bg-surface-alt"}`}
+                    aria-label={t('events:financials.discount_percent')}
                   >
                     %
                   </button>
@@ -81,6 +86,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                     type="button"
                     onClick={() => onDiscountTypeChange("fixed")}
                     className={`px-2.5 py-1 transition-colors ${discountType === "fixed" ? "bg-primary text-white" : "bg-card text-text-secondary hover:bg-surface-alt"}`}
+                    aria-label={t('events:financials.discount_fixed')}
                   >
                     $
                   </button>
@@ -94,14 +100,15 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                 step="0.01"
                 {...register('discount')}
                 className="mt-1 block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 p-2 bg-card text-text border"
+                aria-label={t('events:financials.discount')}
               />
             </div>
 
             <div className="bg-card p-4 rounded-xl shadow-xs border border-border">
-              <h4 className="text-sm font-medium text-text-secondary mb-3">Condiciones de Pago</h4>
+              <h4 className="text-sm font-medium text-text-secondary mb-3">{t('events:financials.title')}</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="deposit_percent" className="block text-xs text-text-secondary">Anticipo (%)</label>
+                  <label htmlFor="deposit_percent" className="block text-xs text-text-secondary">{t('events:financials.deposit_percent')}</label>
                   <input
                     id="deposit_percent"
                     type="number"
@@ -112,7 +119,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                   />
                 </div>
                 <div>
-                  <label htmlFor="cancellation_days" className="block text-xs text-text-secondary">Días Cancelación</label>
+                  <label htmlFor="cancellation_days" className="block text-xs text-text-secondary">{t('events:financials.cancellation_days')}</label>
                   <input
                     id="cancellation_days"
                     type="number"
@@ -122,7 +129,7 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                   />
                 </div>
                 <div>
-                  <label htmlFor="refund_percent" className="block text-xs text-text-secondary">Reembolso (%)</label>
+                  <label htmlFor="refund_percent" className="block text-xs text-text-secondary">{t('events:financials.refund_percent')}</label>
                   <input
                     id="refund_percent"
                     type="number"
@@ -137,11 +144,12 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
 
              <div className="bg-card p-4 rounded-xl shadow-xs border border-border">
               <label htmlFor="event-notes" className="block text-sm font-medium text-text-secondary mb-2">
-                Notas
+                {t('events:financials.notes')}
               </label>
               <textarea
                 id="event-notes"
                 {...register('notes')}
+                placeholder={t('events:financials.notes_placeholder')}
                 rows={3}
                 className="shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 block w-full sm:text-sm border-border rounded-xl p-2 border bg-card text-text"
               />
@@ -150,31 +158,32 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
         </div>
 
         <div className="bg-surface-alt p-6 rounded-2xl shadow-sm border border-border">
-          <h4 className="text-lg font-medium text-text mb-4">Resumen de Costos</h4>
+          <h4 className="text-lg font-medium text-text mb-4">{t('events:financials.title')}</h4>
 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between text-text-secondary">
-              <span>Subtotal Productos:</span>
-              <span>${selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0).toFixed(2)}</span>
+              <span>{t('events:products.subtotal')}:</span>
+              <span>${selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between text-text-secondary">
-              <span>Subtotal Extras:</span>
-              <span>${extras.reduce((sum, item) => sum + item.price, 0).toFixed(2)}</span>
+              <span>{t('events:extras.subtotal')}:</span>
+              <span>${extras.reduce((sum, item) => sum + item.price, 0).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
             </div>
 
             {discountValue > 0 && (
               <div className="flex justify-between text-success font-medium">
                 <span>
-                  Descuento {discountType === "percent" ? `(${discountValue}%)` : ""}:
+                  {t('events:financials.discount')} {discountType === "percent" ? `(${discountValue}%)` : ""}:
                 </span>
                 <span>
                   -${(() => {
                     const productsSubtotal = selectedProducts.reduce((sum, item) => sum + (item.price - (item.discount || 0)) * item.quantity, 0);
                     const normalExtrasTotal = extras.filter((e) => !e.exclude_utility).reduce((sum, item) => sum + item.price, 0);
                     const discountableBase = productsSubtotal + normalExtrasTotal;
-                    return discountType === "percent"
-                      ? (discountableBase * (discountValue / 100)).toFixed(2)
-                      : Math.min(discountValue, discountableBase).toFixed(2);
+                    const amount = discountType === "percent"
+                      ? (discountableBase * (discountValue / 100))
+                      : Math.min(discountValue, discountableBase);
+                    return amount.toLocaleString(moneyLocale, { minimumFractionDigits: 2 });
                   })()}
                 </span>
               </div>
@@ -182,55 +191,50 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
 
             {requiresInvoiceValue && (
               <div className="flex justify-between text-text-secondary">
-                <span>IVA ({taxRateValue}%):</span>
-                <span>${taxAmountValue.toFixed(2)}</span>
+                <span>{t('events:financials.tax')} ({taxRateValue}%):</span>
+                <span>${taxAmountValue.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
               </div>
             )}
 
             <div className="border-t border-border pt-3 flex justify-between text-xl font-bold text-text">
-              <span>Total:</span>
-              <span className="text-primary">${totalAmountValue.toFixed(2)}</span>
+              <span>{t('events:financials.total')}:</span>
+              <span className="text-primary">${totalAmountValue.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
             </div>
 
             {depositPercentValue > 0 && (
               <div className="flex justify-between text-warning font-medium">
-                <span>Anticipo ({depositPercentValue}%):</span>
-                <span>${(totalAmountValue * (depositPercentValue / 100)).toFixed(2)}</span>
+                <span>{t('events:financials.deposit_percent')} ({depositPercentValue}%):</span>
+                <span>${(totalAmountValue * (depositPercentValue / 100)).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}</span>
               </div>
             )}
           </div>
 
           <div className="mt-8 pt-4 border-t border-border">
             <h5 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
-              Métricas de Rentabilidad (Interno)
+              {t('events:financials.profit_metrics')}
             </h5>
 
             <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <div className="text-text-secondary">Costo Productos:</div>
+              <div className="text-text-secondary">{t('events:financials.est_cost')}</div>
               <div className="text-right font-medium text-text">
-                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0)).toFixed(2)}
-              </div>
-
-              <div className="text-text-secondary">Costo Extras:</div>
-              <div className="text-right font-medium text-text">
-                ${extras.reduce((sum, e) => sum + e.cost, 0).toFixed(2)}
+                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0) + extras.reduce((sum, e) => sum + e.cost, 0)).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
               </div>
 
               {supplyCost > 0 && (
                 <>
-                  <div className="text-warning">Costo Insumos Evento:</div>
+                  <div className="text-warning">{t('events:supplies.title')}:</div>
                   <div className="text-right font-medium text-warning">
-                    ${supplyCost.toFixed(2)}
+                    ${supplyCost.toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
                   </div>
                 </>
               )}
 
-              <div className="text-text-secondary font-medium border-t border-border pt-2">Costo Total:</div>
+              <div className="text-text-secondary font-medium border-t border-border pt-2">{t('events:financials.total')} {t('events:financials.est_cost').toLowerCase()}</div>
               <div className="text-right font-medium text-text border-t border-border pt-2">
-                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0) + extras.reduce((sum, e) => sum + e.cost, 0) + supplyCost).toFixed(2)}
+                ${(selectedProducts.reduce((sum, p) => sum + (productUnitCosts[p.product_id] || 0) * p.quantity, 0) + extras.reduce((sum, e) => sum + e.cost, 0) + supplyCost).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
               </div>
 
-              <div className="text-text-secondary">Utilidad Neta:</div>
+              <div className="text-text-secondary">{t('events:financials.est_profit')}</div>
               <div className="text-right font-bold text-success">
                  ${(
                     totalAmountValue -
@@ -242,10 +246,10 @@ export const EventFinancials: React.FC<EventFinancialsProps> = ({
                       0,
                     ) +
                       extras.reduce((sum, e) => sum + e.cost, 0) + supplyCost)
-                  ).toFixed(2)}
+                  ).toLocaleString(moneyLocale, { minimumFractionDigits: 2 })}
               </div>
 
-              <div className="text-text-secondary">Margen:</div>
+              <div className="text-text-secondary">{t('events:financials.est_margin')}</div>
               <div className="text-right font-bold text-info">
                  {(() => {
                     const totalRevenue = totalAmountValue - (requiresInvoiceValue ? taxAmountValue : 0);

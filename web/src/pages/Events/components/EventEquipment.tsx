@@ -20,6 +20,8 @@ interface EventEquipmentProps {
   onQuickAddSuggestion: (inventoryId: string, suggestedQty: number) => void;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export const EventEquipment: React.FC<EventEquipmentProps> = ({
   equipmentInventory,
   selectedEquipment,
@@ -30,6 +32,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
   onEquipmentChange,
   onQuickAddSuggestion,
 }) => {
+  const { t } = useTranslation(['events', 'common']);
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const pendingDeleteName = pendingDeleteIndex !== null
     ? equipmentInventory.find(e => e.id === selectedEquipment[pendingDeleteIndex]?.inventory_id)?.ingredient_name
@@ -52,11 +55,11 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <Wrench className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-medium text-text">Asignación de Equipo</h3>
+        <h3 className="text-lg font-medium text-text">{t('events:equipment.title')}</h3>
       </div>
 
       <p className="text-sm text-text-tertiary">
-        Asigna equipos y activos reutilizables a este evento. El equipo no afecta los costos del evento.
+        {t('events:equipment.description')}
       </p>
 
       {/* Conflict warnings */}
@@ -64,13 +67,13 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
         <div className="bg-warning/10 border border-warning/30 rounded-xl p-4 space-y-2">
           <div className="flex items-center gap-2 text-warning font-medium text-sm">
             <AlertTriangle className="h-4 w-4" />
-            Conflictos de equipo detectados
+            {t('events:equipment.conflicts_detected')}
           </div>
           {conflicts.map((c, i) => (
             <div key={i} className="text-sm text-warning/80 ml-6">
-              <strong>{c.equipment_name}</strong> en uso en otro evento
+              <strong>{c.equipment_name}</strong> {t('events:equipment.in_use')}
               ({c.service_type}
-              {c.start_time && c.end_time ? `, ${c.start_time.slice(0, 5)}-${c.end_time.slice(0, 5)}` : ', todo el día'}
+              {c.start_time && c.end_time ? `, ${c.start_time.slice(0, 5)}-${c.end_time.slice(0, 5)}` : `, ${t('events:general.all_day')}`}
               {c.client_name ? `, ${c.client_name}` : ''})
             </div>
           ))}
@@ -82,7 +85,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
           <div className="flex items-center gap-2 text-primary font-medium text-sm mb-2">
             <Lightbulb className="h-4 w-4" />
-            Equipo sugerido por tus productos
+            {t('events:equipment.suggestions')}
           </div>
           <div className="flex flex-wrap gap-2">
             {availableSuggestions.map(s => (
@@ -120,23 +123,23 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
               type="button"
               onClick={() => setPendingDeleteIndex(index)}
               className="absolute top-2 right-2 text-text-secondary hover:text-error transition-colors"
-              aria-label={`Eliminar equipo ${index + 1}`}
+              aria-label={t('common:actions.delete')}
             >
               <Trash2 className="h-4 w-4" />
             </button>
 
             <div className="mb-2 pr-6">
-              <label htmlFor={`equipment-select-${index}`} className="block text-xs text-text-secondary mb-1">Equipo</label>
+              <label htmlFor={`equipment-select-${index}`} className="block text-xs text-text-secondary mb-1">{t('events:equipment.label')}</label>
               <select
                 id={`equipment-select-${index}`}
                 value={item.inventory_id}
                 onChange={(e) => onEquipmentChange(index, 'inventory_id', e.target.value)}
                 className="block w-full text-sm border-border rounded-xl shadow-xs transition-shadow focus:ring-2 focus:ring-primary/20 bg-card text-text p-2 border"
               >
-                <option value="">Seleccionar equipo</option>
+                <option value="">{t('common:actions.select')}…</option>
                 {equipmentInventory.map((eq) => (
                   <option key={eq.id} value={eq.id}>
-                    {eq.ingredient_name} ({eq.current_stock} {eq.unit} disp.)
+                    {eq.ingredient_name} ({eq.current_stock} {eq.unit} {t('common:available')})
                   </option>
                 ))}
               </select>
@@ -144,7 +147,7 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
 
             <div className="flex gap-2 flex-wrap sm:flex-nowrap">
               <div className="w-full sm:w-1/4">
-                <label htmlFor={`eq-quantity-${index}`} className="text-xs text-text-secondary block mb-1">Cantidad</label>
+                <label htmlFor={`eq-quantity-${index}`} className="text-xs text-text-secondary block mb-1">{t('common:quantity')}</label>
                 <input
                   id={`eq-quantity-${index}`}
                   type="number"
@@ -156,13 +159,13 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
               </div>
 
               <div className="w-full sm:w-3/4">
-                <label htmlFor={`eq-notes-${index}`} className="text-xs text-text-secondary block mb-1">Notas (opcional)</label>
+                <label htmlFor={`eq-notes-${index}`} className="text-xs text-text-secondary block mb-1">{t('common:notes')} ({t('common:optional').toLowerCase()})</label>
                 <input
                   id={`eq-notes-${index}`}
                   type="text"
                   value={item.notes}
                   onChange={(e) => onEquipmentChange(index, 'notes', e.target.value)}
-                  placeholder="Ej: Llevar limpio, reservado para mesa principal..."
+                  placeholder={t('events:equipment.notes_placeholder')}
                   className="block w-full text-sm border-border rounded-xl shadow-xs focus:ring-2 focus:ring-primary/20 p-2 border bg-card text-text transition-shadow"
                 />
               </div>
@@ -171,20 +174,18 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
             {item.inventory_id && (
               <div className="mt-2 flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-surface-alt text-text-secondary border border-border">
-                  Sin costo - Activo reutilizable
+                  {t('events:equipment.no_cost')}
                 </span>
                 {getEquipmentName(item.inventory_id) && itemConflicts.length > 0 && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-warning/10 text-warning">
                     <AlertTriangle className="h-3 w-3" />
-                    Conflicto
+                    {t('events:equipment.conflict')}
                   </span>
                 )}
-                {/* Alerta inline cuando la cantidad supera el stock. Paridad
-                    con Insumos + mobile. Stock NO es date-aware (ver issue #96). */}
                 {overstock && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-error/10 text-error">
                     <AlertTriangle className="h-3 w-3" />
-                    Insuficiente ({inventoryItem.current_stock} {inventoryItem.unit})
+                    {t('common:insufficient')} ({inventoryItem.current_stock} {inventoryItem.unit})
                   </span>
                 )}
               </div>
@@ -198,25 +199,25 @@ export const EventEquipment: React.FC<EventEquipmentProps> = ({
         onClick={onAddEquipment}
         className="w-full flex items-center justify-center px-4 py-2 border border-border shadow-xs text-sm font-medium rounded-xl text-text-secondary bg-card hover:bg-surface-alt transition-colors"
       >
-        <Plus className="h-4 w-4 mr-2" /> Agregar Equipo
+        <Plus className="h-4 w-4 mr-2" /> {t('events:equipment.add')}
       </button>
 
       {selectedEquipment.length > 0 && (
         <div className="mt-4 text-right">
           <span className="text-sm text-text-tertiary">
-            {selectedEquipment.filter(e => e.inventory_id).length} equipo(s) asignado(s) — Sin impacto en costos
+            {selectedEquipment.filter(e => e.inventory_id).length} {t('events:equipment.assigned')} — {t('events:equipment.no_impact')}
           </span>
         </div>
       )}
 
       <ConfirmDialog
         open={pendingDeleteIndex !== null}
-        title="¿Eliminar equipo?"
+        title={t('events:equipment.delete_confirm_title')}
         description={pendingDeleteName
-          ? `¿Quitar "${pendingDeleteName}" de este evento?`
-          : '¿Quitar este equipo del evento?'}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+          ? t('events:equipment.delete_confirm_desc', { name: pendingDeleteName })
+          : t('events:equipment.delete_confirm_desc_generic')}
+        confirmText={t('common:actions.delete')}
+        cancelText={t('common:actions.cancel')}
         onConfirm={() => {
           if (pendingDeleteIndex !== null) onRemoveEquipment(pendingDeleteIndex);
           setPendingDeleteIndex(null);

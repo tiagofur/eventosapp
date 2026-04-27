@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const Terms: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(['static']);
 
   return (
     <div className="min-h-screen bg-bg">
@@ -14,148 +16,129 @@ export const Terms: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver
+          {t('static:terms.back')}
         </button>
 
         <h1 className="text-3xl font-black tracking-tight text-text mb-2">
-          Terminos y Condiciones
+          {t('static:terms.title')}
         </h1>
         <p className="text-sm text-text-secondary mb-10">
-          Ultima actualizacion: 1 de enero de 2025
+          {t('static:terms.last_update')}
         </p>
 
         {/* Section 1 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            1. Uso del servicio
+            {t('static:terms.sections.1.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed mb-3">
-            Al usar Solennix, aceptas estos términos. Solennix es una plataforma
-            SaaS para organizadores de eventos. Te otorgamos una licencia limitada,
-            no exclusiva y no transferible para usar el servicio segun tu plan de
-            suscripcion activo.
+            {t('static:terms.sections.1.content')}
           </p>
           <p className="text-sm text-text-secondary leading-relaxed mb-2">
-            Te comprometes a:
+            {t('static:terms.sections.1.list_header')}
           </p>
           <ul className="text-sm text-text-secondary leading-relaxed space-y-1 list-disc list-inside">
-            <li>Proporcionar informacion veraz al registrarte</li>
-            <li>Mantener la confidencialidad de tu cuenta</li>
-            <li>No usar el servicio para actividades ilegales</li>
-            <li>No intentar acceder a datos de otros usuarios</li>
+            {(t('static:terms.sections.1.items', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
         </div>
 
         {/* Section 2 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            2. Suscripcion y pagos
+            {t('static:terms.sections.2.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed mb-3">
-            Solennix ofrece planes de suscripcion mensual. Los cobros se realizan
-            a traves de procesadores de pago seguros como Stripe.
+            {t('static:terms.sections.2.content')}
           </p>
           <ul className="text-sm text-text-secondary leading-relaxed space-y-1 list-disc list-inside">
-            <li>El plan Basico es gratuito con funcionalidades limitadas</li>
-            <li>El plan Pro incluye todas las funcionalidades sin restricciones</li>
-            <li>Los precios pueden variar segun tu region</li>
-            <li>Las suscripciones se renuevan automaticamente salvo cancelacion</li>
+            {(t('static:terms.sections.2.items', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
         </div>
 
         {/* Section 3 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            3. Cancelacion
+            {t('static:terms.sections.3.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed mb-3">
-            Puedes cancelar tu suscripcion en cualquier momento desde la configuracion
-            de tu cuenta. La cancelacion sera efectiva al final del periodo de facturacion actual.
+            {t('static:terms.sections.3.content')}
           </p>
           <p className="text-sm text-text-secondary leading-relaxed mb-2">
-            Al cancelar:
+            {t('static:terms.sections.3.list_header')}
           </p>
           <ul className="text-sm text-text-secondary leading-relaxed space-y-1 list-disc list-inside">
-            <li>Mantendras acceso hasta el final del periodo pagado</li>
-            <li>No se realizan reembolsos proporcionales</li>
-            <li>Tus datos se conservan por 30 dias adicionales</li>
-            <li>Puedes exportar tus datos antes de eliminar la cuenta</li>
+            {(t('static:terms.sections.3.items', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
         </div>
 
         {/* Section 4 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            4. Propiedad intelectual
+            {t('static:terms.sections.4.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Solennix y su contenido son propiedad de Creapolis.Dev. Los datos que
-            introduces en la aplicacion (clientes, eventos, productos) son de tu
-            propiedad. Nos otorgas una licencia para almacenarlos y procesarlos
-            unicamente con el fin de prestarte el servicio.
+            {t('static:terms.sections.4.content')}
           </p>
         </div>
 
         {/* Section 5 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            5. Disponibilidad del servicio
+            {t('static:terms.sections.5.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Nos esforzamos por mantener Solennix disponible 24/7, pero no garantizamos
-            disponibilidad ininterrumpida. Podemos realizar mantenimientos programados
-            con previo aviso. No somos responsables por interrupciones causadas por
-            factores externos.
+            {t('static:terms.sections.5.content')}
           </p>
         </div>
 
         {/* Section 6 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            6. Limitacion de responsabilidad
+            {t('static:terms.sections.6.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed mb-3">
-            Solennix se proporciona "tal cual". En la maxima medida permitida por
-            la ley aplicable:
+            {t('static:terms.sections.6.content')}
           </p>
           <ul className="text-sm text-text-secondary leading-relaxed space-y-1 list-disc list-inside">
-            <li>No garantizamos que el servicio sea libre de errores</li>
-            <li>No somos responsables de perdidas de datos por causas ajenas a nosotros</li>
-            <li>Nuestra responsabilidad total no superara el monto pagado en los ultimos 3 meses de servicio</li>
-            <li>No somos responsables de danos indirectos o consecuentes</li>
+            {(t('static:terms.sections.6.items', { returnObjects: true }) as string[]).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
           </ul>
         </div>
 
         {/* Section 7 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            7. Modificaciones
+            {t('static:terms.sections.7.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Nos reservamos el derecho de modificar estos términos. Te notificaremos
-            con al menos 15 dias de anticipacion sobre cambios materiales.
-            El uso continuado del servicio tras los cambios implica aceptacion.
+            {t('static:terms.sections.7.content')}
           </p>
         </div>
 
         {/* Section 8 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            8. Ley aplicable
+            {t('static:terms.sections.8.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Estos términos se rigen por las leyes de México. Cualquier disputa
-            se resolverá en los tribunales competentes de la Ciudad de México.
+            {t('static:terms.sections.8.content')}
           </p>
         </div>
 
         {/* Section 9 */}
         <div className="bg-card border border-border rounded-2xl p-6 mb-4 shadow-sm">
           <h2 className="text-lg font-semibold text-text mb-3">
-            9. Contacto
+            {t('static:terms.sections.9.title')}
           </h2>
           <p className="text-sm text-text-secondary leading-relaxed">
-            Para cualquier consulta sobre estos términos:
+            {t('static:terms.sections.9.content')}
           </p>
           <p className="text-sm text-text-secondary leading-relaxed mt-2">
             Creapolis.Dev<br />

@@ -1,0 +1,34 @@
+{
+  "title": "Quick Quote",
+  "subtitle": "Create a quote without registering a client or date",
+  "client_data": "Client details (optional, for PDF)",
+  "num_people": "Number of People",
+  "discount_invoice": "Discount & Billing",
+  "invoice_required": "Invoice required (VAT {{rate}}%)",
+  "general_discount": "General Discount",
+  "convert_to_event": "Convert to Event",
+  "export_pdf": "Export PDF",
+  "summary": {
+    "title": "Summary",
+    "subtotal_products": "Products Subtotal",
+    "subtotal_extras": "Extras Subtotal",
+    "discount": "Discount",
+    "internal_metrics": "Profitability Metrics (Internal)",
+    "product_cost": "Products Cost",
+    "extras_cost": "Extras Cost",
+    "total_cost": "Total Cost",
+    "net_profit": "Net Profit",
+    "margin": "Margin",
+    "empty_state": "Add products or extras to see the summary"
+  },
+  "placeholder": {
+    "name": "Client name",
+    "phone": "Phone",
+    "email": "Email"
+  },
+  "labels": {
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email"
+  }
+}

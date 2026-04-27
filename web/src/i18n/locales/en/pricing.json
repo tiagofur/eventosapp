@@ -1,0 +1,78 @@
+{
+  "title": "Plans and Pricing",
+  "subtitle": "Power up your event business",
+  "description": "Choose the plan that fits the size and growth of your events.",
+  "trial_info": "14-day free trial on Pro and Business. Cancel anytime.",
+  "error": {
+    "checkout_failed": "There was an error starting the checkout process. Please try again."
+  },
+  "plans": {
+    "basic": {
+      "name": "Basic",
+      "description": "Perfect for starting out and organizing small events.",
+      "price": "$0",
+      "interval": "/month",
+      "current": "Current Plan",
+      "downgrade": "Downgrade"
+    },
+    "pro": {
+      "name": "Pro",
+      "description": "All the tools to scale your business without limits.",
+      "badge": "Recommended",
+      "launch_price": "🎉 Launch Price — Limited time only!",
+      "price_year": "$1,499",
+      "old_price_year": "$2,499",
+      "interval_year": "MXN/year",
+      "price_month": "$149",
+      "old_price_month": "$199",
+      "interval_month": "MXN/month",
+      "current": "Your current plan",
+      "try_free": "Try 14 days free",
+      "processing": "Processing..."
+    },
+    "business": {
+      "name": "Business",
+      "description": "For teams needing custom branding, automation, and personalized support.",
+      "price_year": "$4,999",
+      "interval_year": "MXN/year",
+      "price_month": "$499",
+      "interval_month": "MXN/month",
+      "current": "Your current plan",
+      "try_free": "Try 14 days free",
+      "processing": "Processing..."
+    }
+  },
+  "features": {
+    "free": [
+      "Up to 3 events per month",
+      "Up to 50 registered clients",
+      "Up to 20 items in catalog",
+      "Basic client management",
+      "Event calendar",
+      "PDF generation (quotes, contracts, and more)"
+    ],
+    "pro": [
+      "Unlimited events",
+      "Unlimited clients and catalog",
+      "Payment and income control in multiple installments",
+      "Advanced reports and analytics",
+      "Client portal with your brand",
+      "Priority support"
+    ],
+    "business": [
+      "Everything in Pro, without exception",
+      "Up to 3 team users with roles",
+      "WhatsApp Business API for client notifications",
+      "Digital signature of contracts with legal validity",
+      "Own domain + emails with your brand (DKIM)",
+      "Webhook integrations + public API",
+      "1:1 support with personalized onboarding"
+    ],
+    "pro_include": "Everything above, plus:"
+  },
+  "debug": {
+    "upgrade_success": "Plan updated to Pro (Debug Mode)",
+    "upgrade_error": "Error updating plan in debug mode.",
+    "upgrade_button": "[Dev] Upgrade (Mode Debug)"
+  }
+}

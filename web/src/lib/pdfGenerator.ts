@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 import { Event, Client, User, EventProduct, EventExtra, Payment } from '@/types/entities';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { logError } from '@/lib/errorHandler';
 import { renderContractTemplate } from '@/lib/contractTemplate';
 import { parseInlineFormatting, renderFormattedJsPDF } from '@/lib/inlineFormatting';
@@ -30,11 +30,146 @@ const TEXT_COLOR = '#333333';
 const GRAY_COLOR = '#666666';
 
 // Helper para formatear moneda
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-MX', {
+const formatCurrency = (amount: number, lang: string = 'es') => {
+  const locale = lang === 'en' ? 'en-US' : 'es-MX';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'MXN',
   }).format(amount);
+};
+
+const pdfT = (key: string, lang: string = 'es'): string => {
+  const translations: Record<string, Record<string, string>> = {
+    es: {
+      budget: 'Presupuesto',
+      invoice: 'Factura',
+      contract: 'Contrato',
+      shopping_list: 'Lista de Insumos',
+      payment_report: 'Reporte de Pagos',
+      checklist: 'Checklist de Carga',
+      client: 'Cliente:',
+      phone: 'Teléfono:',
+      email: 'Email:',
+      date: 'Fecha:',
+      schedule: 'Horario:',
+      people: 'Personas:',
+      not_defined: 'Por definir',
+      products_services: 'Productos y Servicios',
+      description: 'Descripción',
+      qty: 'Cant.',
+      unit_price: 'Precio Unit.',
+      total: 'Total',
+      no_products: 'No hay productos o servicios registrados.',
+      subtotal: 'Subtotal:',
+      discount: 'Descuento:',
+      tax: 'IVA',
+      validity: 'Este presupuesto tiene una validez de 15 días.',
+      provider_role: 'EL PROVEEDOR',
+      client_role: 'EL CLIENTE',
+      signature: 'Firma',
+      supply: 'Insumo',
+      required: 'Cantidad',
+      unit: 'Unidad',
+      no_supplies: 'No hay insumos calculados.',
+      event: 'Evento:',
+      method: 'Método:',
+      note: 'Nota:',
+      monto: 'Monto:',
+      no_payments: 'No hay pagos registrados.',
+      total_paid: 'Total Pagado:',
+      pending_balance: 'Saldo Pendiente:',
+      excess_balance: 'Saldo Favor / Completado:',
+      received_by: 'Recibido por',
+      invoice_no: 'No. Factura:',
+      emission_date: 'Fecha Emisión:',
+      issuer_data: 'DATOS DEL EMISOR',
+      receiver_data: 'DATOS DEL RECEPTOR',
+      business_name: 'Razón Social:',
+      address: 'Dirección:',
+      event_details: 'DETALLES DEL EVENTO',
+      event_date: 'Fecha del Evento:',
+      service: 'Servicio:',
+      location: 'Ubicación:',
+      concepts: 'CONCEPTOS',
+      payment_method: 'Forma de Pago:',
+      payment_pending: 'Pendiente de liquidar',
+      simplified_invoice_note: 'Este documento es una factura simplificada. Para factura fiscal completa, solicitar con RFC y datos fiscales.',
+      generated_at: 'Generado el',
+      loading_checklist: 'Checklist de Carga',
+      products_section: 'PRODUCTOS',
+      equipment_section: 'EQUIPO',
+      supplies_to_carry: 'INSUMOS PARA LLEVAR',
+      extras_section: 'EXTRAS',
+      notes: 'Notas',
+      location_header: 'Lugar:',
+      time_header: 'Hora:'
+    },
+    en: {
+      budget: 'Quote',
+      invoice: 'Invoice',
+      contract: 'Contract',
+      shopping_list: 'Shopping List',
+      payment_report: 'Payment Report',
+      checklist: 'Loading Checklist',
+      client: 'Client:',
+      phone: 'Phone:',
+      email: 'Email:',
+      date: 'Date:',
+      schedule: 'Schedule:',
+      people: 'People:',
+      not_defined: 'To be defined',
+      products_services: 'Products & Services',
+      description: 'Description',
+      qty: 'Qty',
+      unit_price: 'Unit Price',
+      total: 'Total',
+      no_products: 'No products or services registered.',
+      subtotal: 'Subtotal:',
+      discount: 'Discount:',
+      tax: 'Tax',
+      validity: 'This quote is valid for 15 days.',
+      provider_role: 'THE PROVIDER',
+      client_role: 'THE CLIENT',
+      signature: 'Signature',
+      supply: 'Supply',
+      required: 'Required',
+      unit: 'Unit',
+      no_supplies: 'No supplies calculated.',
+      event: 'Event:',
+      method: 'Method:',
+      note: 'Note:',
+      monto: 'Amount:',
+      no_payments: 'No payments registered.',
+      total_paid: 'Total Paid:',
+      pending_balance: 'Pending Balance:',
+      excess_balance: 'Excess / Completed Balance:',
+      received_by: 'Received by',
+      invoice_no: 'Invoice No:',
+      emission_date: 'Issue Date:',
+      issuer_data: 'ISSUER DATA',
+      receiver_data: 'RECEIVER DATA',
+      business_name: 'Business Name:',
+      address: 'Address:',
+      event_details: 'EVENT DETAILS',
+      event_date: 'Event Date:',
+      service: 'Service:',
+      location: 'Location:',
+      concepts: 'CONCEPTS',
+      payment_method: 'Payment Method:',
+      payment_pending: 'Pending payment',
+      simplified_invoice_note: 'This document is a simplified invoice. For a full tax invoice, request with tax ID details.',
+      generated_at: 'Generated on',
+      loading_checklist: 'Loading Checklist',
+      products_section: 'PRODUCTS',
+      equipment_section: 'EQUIPMENT',
+      supplies_to_carry: 'SUPPLIES TO CARRY',
+      extras_section: 'EXTRAS',
+      notes: 'Notes',
+      location_header: 'Location:',
+      time_header: 'Time:'
+    }
+  };
+  return translations[lang]?.[key] || translations['es'][key] || key;
 };
 
 // Helper para agregar encabezado común
@@ -103,10 +238,11 @@ export const generateBudgetPDF = (
   event: EventWithClient,
   profile: UserProfile | null,
   products: ProductItem[],
-  extras: ExtraItem[]
+  extras: ExtraItem[],
+  lang: string = 'es'
 ) => {
   const doc = new jsPDF();
-  let currentY = addHeader(doc, profile, 'Presupuesto');
+  let currentY = addHeader(doc, profile, pdfT('budget', lang));
 
   const brandColor = profile?.brand_color || DEFAULT_BRAND_COLOR;
 
@@ -117,9 +253,9 @@ export const generateBudgetPDF = (
 
   // Details table simulation
   doc.setFont('helvetica', 'bold');
-  doc.text('Cliente:', 20, currentY);
-  doc.text('Teléfono:', 20, currentY + 7);
-  doc.text('Email:', 20, currentY + 14);
+  doc.text(pdfT('client', lang), 20, currentY);
+  doc.text(pdfT('phone', lang), 20, currentY + 7);
+  doc.text(pdfT('email', lang), 20, currentY + 14);
 
   doc.setFont('helvetica', 'normal');
   doc.text(event.client?.name || 'N/A', 40, currentY);
@@ -127,14 +263,15 @@ export const generateBudgetPDF = (
   doc.text(event.client?.email || 'N/A', 40, currentY + 14);
 
   doc.setFont('helvetica', 'bold');
-  doc.text('Fecha:', pageWidth / 2, currentY);
-  doc.text('Horario:', pageWidth / 2, currentY + 7);
-  doc.text('Personas:', pageWidth / 2, currentY + 14);
+  doc.text(pdfT('date', lang), pageWidth / 2, currentY);
+  doc.text(pdfT('schedule', lang), pageWidth / 2, currentY + 7);
+  doc.text(pdfT('people', lang), pageWidth / 2, currentY + 14);
 
   doc.setFont('helvetica', 'normal');
   const eventDate = new Date(event.event_date + "T12:00:00");
-  doc.text(format(eventDate, "d 'de' MMMM, yyyy", { locale: es }), pageWidth / 2 + 25, currentY);
-  doc.text(`${event.start_time || 'Por definir'} - ${event.end_time || 'Por definir'}`, pageWidth / 2 + 25, currentY + 7);
+  const dateLocale = lang === 'en' ? enUS : es;
+  doc.text(format(eventDate, lang === 'en' ? "MMMM do, yyyy" : "d 'de' MMMM, yyyy", { locale: dateLocale }), pageWidth / 2 + 25, currentY);
+  doc.text(`${event.start_time || pdfT('not_defined', lang)} - ${event.end_time || pdfT('not_defined', lang)}`, pageWidth / 2 + 25, currentY + 7);
   doc.text(event.num_people.toString(), pageWidth / 2 + 25, currentY + 14);
 
   currentY += 25;
@@ -142,22 +279,22 @@ export const generateBudgetPDF = (
   // Products Table
   doc.setFontSize(14);
   doc.setTextColor(brandColor);
-  doc.text('Productos y Servicios', 20, currentY);
+  doc.text(pdfT('products_services', lang), 20, currentY);
   currentY += 7;
 
   const productRows = products.map((p) => [
-    p.product_name || 'Producto',
+    p.product_name || pdfT('product', lang),
     p.quantity.toString(),
-    formatCurrency(p.unit_price),
-    formatCurrency((p.unit_price - (p.discount || 0)) * p.quantity)
+    formatCurrency(p.unit_price, lang),
+    formatCurrency((p.unit_price - (p.discount || 0)) * p.quantity, lang)
   ]);
 
   // Tabla de Extras
   const extraRows = extras.map((e) => [
     e.description,
     "1",
-    formatCurrency(e.price),
-    formatCurrency(e.price)
+    formatCurrency(e.price, lang),
+    formatCurrency(e.price, lang)
   ]);
 
   const body = [...productRows, ...extraRows];
@@ -166,7 +303,7 @@ export const generateBudgetPDF = (
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['Descripción', 'Cant.', 'Precio Unit.', 'Total']],
+      head: [[pdfT('description', lang), pdfT('qty', lang), pdfT('unit_price', lang), pdfT('total', lang)]],
       body: body,
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
       styles: { cellPadding: 2, fontSize: 10 },
@@ -182,7 +319,7 @@ export const generateBudgetPDF = (
     currentY = (doc as any).lastAutoTable.finalY + 10;
   } else {
     currentY += 10;
-    doc.text('No hay productos o servicios registrados.', 20, currentY);
+    doc.text(pdfT('no_products', lang), 20, currentY);
     currentY += 10;
   }
 
@@ -210,24 +347,24 @@ export const generateBudgetPDF = (
   const preDiscountSubtotal = (event.total_amount - taxAmount) + discountAmount;
 
   doc.setFont('helvetica', 'normal');
-  doc.text('Subtotal:', summaryX, currentY);
-  doc.text(formatCurrency(preDiscountSubtotal), pageWidth - 20, currentY, { align: 'right' });
+  doc.text(pdfT('subtotal', lang), summaryX, currentY);
+  doc.text(formatCurrency(preDiscountSubtotal, lang), pageWidth - 20, currentY, { align: 'right' });
 
   if (rawDiscount > 0) {
     currentY += 7;
     doc.setTextColor(brandColor);
     const discountLabel = event.discount_type === 'percent'
-      ? `Descuento (${rawDiscount}%):`
-      : 'Descuento:';
+      ? `${pdfT('discount', lang)} (${rawDiscount}%):`
+      : `${pdfT('discount', lang)}:`;
     doc.text(discountLabel, summaryX, currentY);
-    doc.text(`-${formatCurrency(discountAmount)}`, pageWidth - 20, currentY, { align: 'right' });
+    doc.text(`-${formatCurrency(discountAmount, lang)}`, pageWidth - 20, currentY, { align: 'right' });
     doc.setTextColor(TEXT_COLOR);
   }
 
   if (event.requires_invoice) {
     currentY += 7;
-    doc.text(`IVA (${event.tax_rate || 16}%):`, summaryX, currentY);
-    doc.text(formatCurrency(taxAmount), pageWidth - 20, currentY, { align: 'right' });
+    doc.text(`${pdfT('tax', lang)} (${event.tax_rate || 16}%):`, summaryX, currentY);
+    doc.text(formatCurrency(taxAmount, lang), pageWidth - 20, currentY, { align: 'right' });
   }
 
 
@@ -236,9 +373,9 @@ export const generateBudgetPDF = (
   doc.setTextColor(GRAY_COLOR);
 
   const pageHeight = doc.internal.pageSize.height;
-  doc.text('Este presupuesto tiene una validez de 15 días.', 20, pageHeight - 10);
+  doc.text(pdfT('validity', lang), 20, pageHeight - 10);
 
-  doc.save(`Presupuesto_${event.client?.name || 'Cliente'}.pdf`);
+  doc.save(`${pdfT('budget', lang)}_${event.client?.name || 'Cliente'}.pdf`);
 };
 
 export const generateContractPDF = (
@@ -247,9 +384,10 @@ export const generateContractPDF = (
   contractTemplate?: string,
   products?: ProductItem[],
   payments?: Payment[],
+  lang: string = 'es'
 ) => {
   const doc = new jsPDF();
-  let currentY = addHeader(doc, profile, 'Contrato');
+  let currentY = addHeader(doc, profile, pdfT('contract', lang));
 
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
@@ -311,23 +449,24 @@ export const generateContractPDF = (
     doc.text(clientName, 160, newSignY + 10, { align: 'center', maxWidth: 60 });
   } else {
     doc.line(20, signY, 80, signY);
-    doc.text('EL PROVEEDOR', 50, signY + 5, { align: 'center' });
+    doc.text(pdfT('provider_role', lang), 50, signY + 5, { align: 'center' });
     doc.text(providerName, 50, signY + 10, { align: 'center', maxWidth: 60 });
     doc.line(130, signY, 190, signY);
-    doc.text('EL CLIENTE', 160, signY + 5, { align: 'center' });
+    doc.text(pdfT('client_role', lang), 160, signY + 5, { align: 'center' });
     doc.text(clientName, 160, signY + 10, { align: 'center', maxWidth: 60 });
   }
 
-  doc.save(`Contrato_${event.client?.name || 'Cliente'}.pdf`);
+  doc.save(`${pdfT('contract', lang)}_${event.client?.name || 'Cliente'}.pdf`);
 };
 
 export const generateShoppingListPDF = (
   event: Event,
   profile: UserProfile | null,
-  ingredients: { name: string; quantity: number; unit: string }[]
+  ingredients: { name: string; quantity: number; unit: string }[],
+  lang: string = 'es'
 ) => {
   const doc = new jsPDF();
-  let currentY = addHeader(doc, profile, 'Lista de Insumos');
+  let currentY = addHeader(doc, profile, pdfT('shopping_list', lang));
 
   const brandColor = profile?.brand_color || DEFAULT_BRAND_COLOR;
 
@@ -336,10 +475,10 @@ export const generateShoppingListPDF = (
   doc.setTextColor(GRAY_COLOR);
   doc.setFont('helvetica', 'normal');
   const localDate = parseEventDate(event.event_date);
-
-  doc.text(`Evento: ${event.service_type}`, 20, currentY);
-  doc.text(`Fecha: ${format(localDate, "d 'de' MMMM, yyyy", { locale: es })}`, 20, currentY + 5);
-  doc.text(`Personas: ${event.num_people}`, 20, currentY + 10);
+  const dateLocale = lang === 'en' ? enUS : es;
+  doc.text(`${pdfT('event', lang)} ${event.service_type}`, 20, currentY);
+  doc.text(`${pdfT('date', lang)} ${format(localDate, lang === 'en' ? "MMMM do, yyyy" : "d 'de' MMMM, yyyy", { locale: dateLocale })}`, 20, currentY + 5);
+  doc.text(`${pdfT('people', lang)} ${event.num_people}`, 20, currentY + 10);
 
   currentY += 20;
 
@@ -348,26 +487,27 @@ export const generateShoppingListPDF = (
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['Insumo', 'Cantidad', 'Unidad']],
+      head: [[pdfT('supply', lang), pdfT('required', lang), pdfT('unit', lang)]],
       body: ingredients.map(i => [i.name, i.quantity.toFixed(2), i.unit]),
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
       styles: { fontSize: 10 },
       theme: 'grid',
     });
   } else {
-    doc.text('No hay insumos calculados.', 20, currentY);
+    doc.text(pdfT('no_supplies', lang), 20, currentY);
   }
 
-  doc.save(`Insumos_${event.service_type}_${format(localDate, 'yyyy-MM-dd')}.pdf`);
+  doc.save(`${pdfT('shopping_list', lang)}_${event.service_type}_${format(localDate, 'yyyy-MM-dd')}.pdf`);
 };
 
 export const generatePaymentReportPDF = (
   event: EventWithClient,
   profile: UserProfile | null,
-  payments: Payment[]
+  payments: Payment[],
+  lang: string = 'es'
 ) => {
   const doc = new jsPDF();
-  let currentY = addHeader(doc, profile, 'Reporte de Pagos');
+  let currentY = addHeader(doc, profile, pdfT('payment_report', lang));
 
   const brandColor = profile?.brand_color || DEFAULT_BRAND_COLOR;
 
@@ -378,13 +518,14 @@ export const generatePaymentReportPDF = (
   const localDate = parseEventDate(event.event_date);
 
   // Left Column
-  doc.text(`Cliente: ${event.client?.name || 'N/A'}`, 20, currentY);
-  doc.text(`Evento: ${event.service_type}`, 20, currentY + 5);
+  doc.text(`${pdfT('client', lang)} ${event.client?.name || 'N/A'}`, 20, currentY);
+  doc.text(`${pdfT('event', lang)} ${event.service_type}`, 20, currentY + 5);
 
   // Right Column
   const rightColX = doc.internal.pageSize.width / 2 + 10;
-  doc.text(`Fecha: ${format(localDate, "d 'de' MMMM, yyyy", { locale: es })}`, rightColX, currentY);
-  doc.text(`Total del Evento: ${formatCurrency(event.total_amount)}`, rightColX, currentY + 5);
+  const dateLocale = lang === 'en' ? enUS : es;
+  doc.text(`${pdfT('date', lang)} ${format(localDate, lang === 'en' ? "MMMM do, yyyy" : "d 'de' MMMM, yyyy", { locale: dateLocale })}`, rightColX, currentY);
+  doc.text(`${pdfT('total', lang)}: ${formatCurrency(event.total_amount, lang)}`, rightColX, currentY + 5);
 
   currentY += 20;
 
@@ -393,24 +534,24 @@ export const generatePaymentReportPDF = (
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['Fecha', 'Método', 'Nota', 'Monto']],
+      head: [[pdfT('date', lang), pdfT('method', lang), pdfT('note', lang), pdfT('monto', lang)]],
       body: payments.map(p => {
         // Adjust timezone if needed or just display as YYYY-MM-DD
         const pDateStr = p.payment_date;
 
         const methodMap: Record<string, string> = {
-          cash: 'Efectivo',
-          transfer: 'Transferencia',
-          card: 'Tarjeta',
-          check: 'Cheque',
-          other: 'Otro'
+          cash: lang === 'en' ? 'Cash' : 'Efectivo',
+          transfer: lang === 'en' ? 'Transfer' : 'Transferencia',
+          card: lang === 'en' ? 'Card' : 'Tarjeta',
+          check: lang === 'en' ? 'Check' : 'Cheque',
+          other: lang === 'en' ? 'Other' : 'Otro'
         };
 
         return [
           pDateStr,
           methodMap[p.payment_method] || p.payment_method,
           p.notes || '-',
-          formatCurrency(p.amount)
+          formatCurrency(p.amount, lang)
         ];
       }),
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
@@ -423,7 +564,7 @@ export const generatePaymentReportPDF = (
 
     currentY = (doc as any).lastAutoTable.finalY + 10;
   } else {
-    doc.text('No hay pagos registrados.', 20, currentY);
+    doc.text(pdfT('no_payments', lang), 20, currentY);
     currentY += 20;
   }
 
@@ -435,16 +576,16 @@ export const generatePaymentReportPDF = (
   doc.setFontSize(11);
   doc.setTextColor(TEXT_COLOR);
 
-  doc.text(`Total Pagado: ${formatCurrency(totalPaid)}`, rightMargin, currentY, { align: 'right' });
+  doc.text(`${pdfT('total_paid', lang)} ${formatCurrency(totalPaid, lang)}`, rightMargin, currentY, { align: 'right' });
   currentY += 6;
 
   doc.setFont('helvetica', 'bold');
   if (balance > 0) {
     doc.setTextColor(180, 0, 0); // Windows red-ish
-    doc.text(`Saldo Pendiente: ${formatCurrency(balance)}`, rightMargin, currentY, { align: 'right' });
+    doc.text(`${pdfT('pending_balance', lang)} ${formatCurrency(balance, lang)}`, rightMargin, currentY, { align: 'right' });
   } else {
     doc.setTextColor(0, 150, 0); // Green
-    doc.text(`Saldo Favor / Completado: ${formatCurrency(Math.abs(balance))}`, rightMargin, currentY, { align: 'right' });
+    doc.text(`${pdfT('excess_balance', lang)} ${formatCurrency(Math.abs(balance), lang)}`, rightMargin, currentY, { align: 'right' });
   }
 
   // Footer signature area
@@ -456,19 +597,20 @@ export const generatePaymentReportPDF = (
   doc.setFontSize(9);
   doc.setTextColor(GRAY_COLOR);
   doc.setFont('helvetica', 'normal');
-  doc.text(profile?.business_name || 'Recibido por', 105, signY + 5, { align: 'center' });
+  doc.text(profile?.business_name || pdfT('received_by', lang), 105, signY + 5, { align: 'center' });
 
-  doc.save(`Recibo_Pagos_${format(localDate, 'yyyy-MM-dd')}.pdf`);
+  doc.save(`${pdfT('payment_report', lang)}_${format(localDate, 'yyyy-MM-dd')}.pdf`);
 };
 
 export const generateInvoicePDF = (
   event: EventWithClient,
   profile: UserProfile | null,
   products: ProductItem[],
-  extras: ExtraItem[]
+  extras: ExtraItem[],
+  lang: string = 'es'
 ) => {
   const doc = new jsPDF();
-  let currentY = addHeader(doc, profile, 'Factura');
+  let currentY = addHeader(doc, profile, pdfT('invoice', lang));
 
   const brandColor = profile?.brand_color || DEFAULT_BRAND_COLOR;
   const pageWidth = doc.internal.pageSize.width;
@@ -478,11 +620,12 @@ export const generateInvoicePDF = (
   doc.setTextColor(TEXT_COLOR);
 
   const invoiceNumber = `INV-${event.id?.slice(0, 8).toUpperCase() || Date.now()}`;
-  const invoiceDate = format(new Date(), "d 'de' MMMM, yyyy", { locale: es });
+  const dateLocale = lang === 'en' ? enUS : es;
+  const invoiceDate = format(new Date(), lang === 'en' ? "MMMM do, yyyy" : "d 'de' MMMM, yyyy", { locale: dateLocale });
 
   doc.setFont('helvetica', 'bold');
-  doc.text('No. Factura:', pageWidth - 80, currentY);
-  doc.text('Fecha Emisión:', pageWidth - 80, currentY + 7);
+  doc.text(pdfT('invoice_no', lang), pageWidth - 80, currentY);
+  doc.text(pdfT('emission_date', lang), pageWidth - 80, currentY + 7);
 
   doc.setFont('helvetica', 'normal');
   doc.text(invoiceNumber, pageWidth - 20, currentY, { align: 'right' });
@@ -494,14 +637,14 @@ export const generateInvoicePDF = (
   doc.setFontSize(12);
   doc.setTextColor(brandColor);
   doc.setFont('helvetica', 'bold');
-  doc.text('DATOS DEL EMISOR', 20, currentY);
+  doc.text(pdfT('issuer_data', lang), 20, currentY);
 
   currentY += 7;
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
   doc.setFont('helvetica', 'normal');
 
-  doc.text(`Razón Social: ${profile?.business_name || profile?.name || 'N/A'}`, 20, currentY);
+  doc.text(`${pdfT('business_name', lang)} ${profile?.business_name || profile?.name || 'N/A'}`, 20, currentY);
   currentY += 6;
 
   if (profile?.email) {
@@ -520,18 +663,18 @@ export const generateInvoicePDF = (
   doc.setFontSize(12);
   doc.setTextColor(brandColor);
   doc.setFont('helvetica', 'bold');
-  doc.text('DATOS DEL RECEPTOR', 20, currentY);
+  doc.text(pdfT('receiver_data', lang), 20, currentY);
 
   currentY += 7;
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
   doc.setFont('helvetica', 'normal');
 
-  doc.text(`Cliente: ${event.client?.name || 'N/A'}`, 20, currentY);
+  doc.text(`${pdfT('client', lang)} ${event.client?.name || 'N/A'}`, 20, currentY);
   currentY += 6;
 
   if (event.client?.phone) {
-    doc.text(`Teléfono: ${event.client.phone}`, 20, currentY);
+    doc.text(`${pdfT('phone', lang)} ${event.client.phone}`, 20, currentY);
     currentY += 6;
   }
 
@@ -541,7 +684,7 @@ export const generateInvoicePDF = (
   }
 
   if (event.client?.address) {
-    doc.text(`Dirección: ${event.client.address}`, 20, currentY);
+    doc.text(`${pdfT('address', lang)} ${event.client.address}`, 20, currentY);
     currentY += 6;
   }
 
@@ -551,7 +694,7 @@ export const generateInvoicePDF = (
   doc.setFontSize(12);
   doc.setTextColor(brandColor);
   doc.setFont('helvetica', 'bold');
-  doc.text('DETALLES DEL EVENTO', 20, currentY);
+  doc.text(pdfT('event_details', lang), 20, currentY);
 
   currentY += 7;
   doc.setFontSize(10);
@@ -559,15 +702,15 @@ export const generateInvoicePDF = (
   doc.setFont('helvetica', 'normal');
 
   const eventDate = new Date(event.event_date + "T12:00:00");
-  doc.text(`Fecha del Evento: ${format(eventDate, "d 'de' MMMM, yyyy", { locale: es })}`, 20, currentY);
+  doc.text(`${pdfT('event_date', lang)} ${format(eventDate, lang === 'en' ? "MMMM do, yyyy" : "d 'de' MMMM, yyyy", { locale: dateLocale })}`, 20, currentY);
   currentY += 6;
-  doc.text(`Servicio: ${event.service_type}`, 20, currentY);
+  doc.text(`${pdfT('service', lang)} ${event.service_type}`, 20, currentY);
   currentY += 6;
-  doc.text(`Personas: ${event.num_people}`, 20, currentY);
+  doc.text(`${pdfT('people', lang)} ${event.num_people}`, 20, currentY);
   currentY += 6;
 
   if (event.location) {
-    doc.text(`Ubicación: ${event.location}`, 20, currentY);
+    doc.text(`${pdfT('location', lang)} ${event.location}`, 20, currentY);
     currentY += 6;
   }
 
@@ -577,23 +720,23 @@ export const generateInvoicePDF = (
   doc.setFontSize(14);
   doc.setTextColor(brandColor);
   doc.setFont('helvetica', 'bold');
-  doc.text('CONCEPTOS', 20, currentY);
+  doc.text(pdfT('concepts', lang), 20, currentY);
   currentY += 7;
 
   const productRows = products.map((p) => [
-    p.product_name || 'Producto',
+    p.product_name || pdfT('product', lang),
     p.quantity.toString(),
-    formatCurrency(p.unit_price),
-    p.discount ? formatCurrency(p.discount) : '$0.00',
-    formatCurrency((p.unit_price - (p.discount || 0)) * p.quantity)
+    formatCurrency(p.unit_price, lang),
+    p.discount ? formatCurrency(p.discount, lang) : formatCurrency(0, lang),
+    formatCurrency((p.unit_price - (p.discount || 0)) * p.quantity, lang)
   ]);
 
   const extraRows = extras.map((e) => [
     e.description,
     "1",
-    formatCurrency(e.price),
-    '$0.00',
-    formatCurrency(e.price)
+    formatCurrency(e.price, lang),
+    formatCurrency(0, lang),
+    formatCurrency(e.price, lang)
   ]);
 
   const body = [...productRows, ...extraRows];
@@ -602,7 +745,7 @@ export const generateInvoicePDF = (
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['Descripción', 'Cant.', 'Precio Unit.', 'Desc.', 'Subtotal']],
+      head: [[pdfT('description', lang), pdfT('qty', lang), pdfT('unit_price', lang), pdfT('discount', lang), pdfT('subtotal', lang).replace(':', '')]],
       body: body,
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
       styles: { cellPadding: 2, fontSize: 9 },
@@ -619,7 +762,7 @@ export const generateInvoicePDF = (
     currentY = (doc as any).lastAutoTable.finalY + 10;
   } else {
     currentY += 10;
-    doc.text('No hay conceptos registrados.', 20, currentY);
+    doc.text(pdfT('no_products', lang), 20, currentY);
     currentY += 10;
   }
 
@@ -645,26 +788,26 @@ export const generateInvoicePDF = (
     : rawDiscount;
   const preDiscountSubtotal = (event.total_amount - taxAmount) + discountAmount;
 
-  doc.text('Subtotal:', summaryX, currentY);
-  doc.text(formatCurrency(preDiscountSubtotal), pageWidth - 20, currentY, { align: 'right' });
+  doc.text(pdfT('subtotal', lang), summaryX, currentY);
+  doc.text(formatCurrency(preDiscountSubtotal, lang), pageWidth - 20, currentY, { align: 'right' });
 
   currentY += 7;
 
   if (rawDiscount > 0) {
     doc.setTextColor(brandColor);
     const discountLabel = event.discount_type === 'percent'
-      ? `Descuento (${rawDiscount}%):`
-      : 'Descuento:';
+      ? `${pdfT('discount', lang)} (${rawDiscount}%):`
+      : `${pdfT('discount', lang)}:`;
     doc.text(discountLabel, summaryX, currentY);
-    doc.text(`-${formatCurrency(discountAmount)}`, pageWidth - 20, currentY, { align: 'right' });
+    doc.text(`-${formatCurrency(discountAmount, lang)}`, pageWidth - 20, currentY, { align: 'right' });
     currentY += 7;
     doc.setTextColor(TEXT_COLOR);
   }
 
   // Tax (IVA)
   if (event.requires_invoice || event.tax_amount) {
-    doc.text(`IVA (${event.tax_rate || 16}%):`, summaryX, currentY);
-    doc.text(formatCurrency(taxAmount), pageWidth - 20, currentY, { align: 'right' });
+    doc.text(`${pdfT('tax', lang)} (${event.tax_rate || 16}%):`, summaryX, currentY);
+    doc.text(formatCurrency(taxAmount, lang), pageWidth - 20, currentY, { align: 'right' });
     currentY += 7;
   }
 
@@ -673,8 +816,8 @@ export const generateInvoicePDF = (
   doc.setFontSize(12);
   doc.setTextColor(brandColor);
   currentY += 2;
-  doc.text('TOTAL:', summaryX, currentY);
-  doc.text(formatCurrency(event.total_amount), pageWidth - 20, currentY, { align: 'right' });
+  doc.text(`${pdfT('total', lang).toUpperCase()}:`, summaryX, currentY);
+  doc.text(formatCurrency(event.total_amount, lang), pageWidth - 20, currentY, { align: 'right' });
 
   currentY += 10;
 
@@ -682,17 +825,17 @@ export const generateInvoicePDF = (
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(TEXT_COLOR);
-  doc.text('Forma de Pago: Pendiente de liquidar', summaryX, currentY);
+  doc.text(`${pdfT('payment_method', lang)} ${pdfT('payment_pending', lang)}`, summaryX, currentY);
 
   // Footer
   const pageHeight = doc.internal.pageSize.height;
   doc.setFontSize(8);
   doc.setTextColor(GRAY_COLOR);
   doc.setFont('helvetica', 'italic');
-  doc.text('Este documento es una factura simplificada. Para factura fiscal completa, solicitar con RFC y datos fiscales.', pageWidth / 2, pageHeight - 15, { align: 'center' });
-  doc.text(`Generado el ${invoiceDate}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+  doc.text(pdfT('simplified_invoice_note', lang), pageWidth / 2, pageHeight - 15, { align: 'center' });
+  doc.text(`${pdfT('generated_at', lang)} ${invoiceDate}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-  doc.save(`Factura_${invoiceNumber}_${event.client?.name || 'Cliente'}.pdf`);
+  doc.save(`${pdfT('invoice', lang)}_${invoiceNumber}_${event.client?.name || 'Cliente'}.pdf`);
 };
 
 // ===== CHECKLIST DE CARGA =====
@@ -702,10 +845,11 @@ export const generateChecklistPDF = (
   products: ProductItem[],
   equipment: { equipment_name?: string; quantity: number; notes?: string | null }[],
   checklistIngredients: { name: string; quantity: number; unit: string }[],
-  extras: ExtraItem[]
+  extras: ExtraItem[],
+  lang: string = 'es'
 ) => {
   const doc = new jsPDF();
-  let currentY = addHeader(doc, profile, 'Checklist de Carga');
+  let currentY = addHeader(doc, profile, pdfT('loading_checklist', lang));
 
   const brandColor = profile?.brand_color || DEFAULT_BRAND_COLOR;
 
@@ -714,12 +858,13 @@ export const generateChecklistPDF = (
   doc.setTextColor(GRAY_COLOR);
   doc.setFont('helvetica', 'normal');
   const localDate = parseEventDate(event.event_date);
+  const dateLocale = lang === 'en' ? enUS : es;
 
-  doc.text(`Evento: ${event.service_type}`, 20, currentY);
-  doc.text(`Fecha: ${format(localDate, "d 'de' MMMM, yyyy", { locale: es })}`, 20, currentY + 5);
-  if (event.start_time) doc.text(`Hora: ${event.start_time.slice(0, 5)}${event.end_time ? ' - ' + event.end_time.slice(0, 5) : ''}`, 20, currentY + 10);
-  if (event.client?.name) doc.text(`Cliente: ${event.client.name}`, 20, currentY + 15);
-  if (event.location) doc.text(`Lugar: ${event.location}${event.city ? ', ' + event.city : ''}`, 20, currentY + 20);
+  doc.text(`${pdfT('event', lang)} ${event.service_type}`, 20, currentY);
+  doc.text(`${pdfT('date', lang)} ${format(localDate, lang === 'en' ? "MMMM do, yyyy" : "d 'de' MMMM, yyyy", { locale: dateLocale })}`, 20, currentY + 5);
+  if (event.start_time) doc.text(`${pdfT('time_header', lang)} ${event.start_time.slice(0, 5)}${event.end_time ? ' - ' + event.end_time.slice(0, 5) : ''}`, 20, currentY + 10);
+  if (event.client?.name) doc.text(`${pdfT('client', lang)} ${event.client.name}`, 20, currentY + 15);
+  if (event.location) doc.text(`${pdfT('location_header', lang)} ${event.location}${event.city ? ', ' + event.city : ''}`, 20, currentY + 20);
 
   currentY += 30;
 
@@ -730,14 +875,14 @@ export const generateChecklistPDF = (
     doc.setFontSize(12);
     doc.setTextColor(brandColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRODUCTOS', 20, currentY);
+    doc.text(pdfT('products_section', lang), 20, currentY);
     currentY += 3;
 
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['\u2610', 'Producto', 'Cantidad']],
-      body: products.map(p => [checkboxCol, p.product_name || 'Producto', String(p.quantity)]),
+      head: [['\u2610', pdfT('product', lang), pdfT('required', lang)]],
+      body: products.map(p => [checkboxCol, p.product_name || pdfT('product', lang), String(p.quantity)]),
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
       styles: { fontSize: 10 },
       columnStyles: { 0: { cellWidth: 12, halign: 'center' } },
@@ -751,14 +896,14 @@ export const generateChecklistPDF = (
     doc.setFontSize(12);
     doc.setTextColor(brandColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('EQUIPO', 20, currentY);
+    doc.text(pdfT('equipment_section', lang), 20, currentY);
     currentY += 3;
 
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['\u2610', 'Equipo', 'Cant.', 'Notas']],
-      body: equipment.map(eq => [checkboxCol, eq.equipment_name || 'Equipo', String(eq.quantity), eq.notes || '']),
+      head: [['\u2610', pdfT('equipment_section', lang), pdfT('qty', lang), pdfT('notes', lang)]],
+      body: equipment.map(eq => [checkboxCol, eq.equipment_name || pdfT('equipment_section', lang), String(eq.quantity), eq.notes || '']),
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
       styles: { fontSize: 10 },
       columnStyles: { 0: { cellWidth: 12, halign: 'center' } },
@@ -772,13 +917,13 @@ export const generateChecklistPDF = (
     doc.setFontSize(12);
     doc.setTextColor(brandColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('INSUMOS PARA LLEVAR', 20, currentY);
+    doc.text(pdfT('supplies_to_carry', lang), 20, currentY);
     currentY += 3;
 
     autoTable(doc, {
       startY: currentY,
       margin: { left: 20, right: 20 },
-      head: [['\u2610', 'Insumo', 'Cantidad', 'Unidad']],
+      head: [['\u2610', pdfT('supply', lang), pdfT('required', lang), pdfT('unit', lang)]],
       body: checklistIngredients.map(i => [checkboxCol, i.name, i.quantity.toFixed(2), i.unit]),
       headStyles: { fillColor: [245, 245, 245], textColor: brandColor },
       styles: { fontSize: 10 },
@@ -794,7 +939,7 @@ export const generateChecklistPDF = (
     doc.setFontSize(12);
     doc.setTextColor(brandColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('EXTRAS', 20, currentY);
+    doc.text(pdfT('extras_section', lang), 20, currentY);
     currentY += 3;
 
     autoTable(doc, {

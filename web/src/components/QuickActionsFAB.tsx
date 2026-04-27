@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Plus, CalendarPlus, Zap } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 const HIDDEN_PATHS = ['/settings', '/events/new', '/cotizacion-rapida'];
 
 export const QuickActionsFAB: React.FC = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation('common');
 
   // Close when navigating
   useEffect(() => {
@@ -56,7 +58,7 @@ export const QuickActionsFAB: React.FC = () => {
             onClick={() => setIsOpen(false)}
           >
             <span className="text-sm font-semibold text-text whitespace-nowrap">
-              Cotización Rápida
+              {t('quick_actions.quick_quote')}
             </span>
             <div className="h-9 w-9 rounded-xl bg-surface-alt flex items-center justify-center">
               <Zap className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -69,7 +71,7 @@ export const QuickActionsFAB: React.FC = () => {
             onClick={() => setIsOpen(false)}
           >
             <span className="text-sm font-semibold text-text whitespace-nowrap">
-              Nuevo Evento
+              {t('quick_actions.new_event')}
             </span>
             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
               <CalendarPlus className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -84,7 +86,7 @@ export const QuickActionsFAB: React.FC = () => {
           className={clsx(
             'h-14 w-14 rounded-2xl premium-gradient shadow-lg shadow-primary/30 flex items-center justify-center transition-all duration-200 hover:shadow-xl hover:scale-105 active:scale-95',
           )}
-          aria-label={isOpen ? 'Cerrar acciones rápidas' : 'Acciones rápidas'}
+          aria-label={isOpen ? t('quick_actions.close_quick_actions') : t('quick_actions.open_quick_actions')}
         >
           <Plus
             className={clsx(

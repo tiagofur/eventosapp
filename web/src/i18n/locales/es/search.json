@@ -1,0 +1,28 @@
+{
+  "title": "Resultados",
+  "subtitle_single": "{{count}} resultado para \"{{query}}\"",
+  "subtitle_plural": "{{count}} resultados para \"{{query}}\"",
+  "global_search": "Búsqueda global",
+  "empty": {
+    "title": "Busca en toda tu operación",
+    "description": "Escribe un término en la barra superior para encontrar clientes, eventos, productos e inventario."
+  },
+  "no_results": {
+    "title": "Sin resultados",
+    "description": "No encontramos coincidencias para \"{{query}}\"."
+  },
+  "loading": "Buscando resultados...",
+  "error": "No pudimos completar la búsqueda. Intenta de nuevo.",
+  "sections": {
+    "clients": "Clientes",
+    "events": "Eventos",
+    "products": "Productos",
+    "inventory": "Inventario"
+  },
+  "status": {
+    "quoted": "Cotizado",
+    "confirmed": "Confirmado",
+    "completed": "Completado",
+    "cancelled": "Cancelado"
+  }
+}

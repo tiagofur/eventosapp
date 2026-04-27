@@ -7,6 +7,7 @@ import {
   useUpdateStaff,
 } from "@/hooks/queries/useStaffQueries";
 import { useToast } from "@/hooks/useToast";
+import { useTranslation } from "react-i18next";
 import type { StaffInsert } from "@/types/entities";
 
 const emptyForm: StaffInsert = {
@@ -19,6 +20,7 @@ const emptyForm: StaffInsert = {
 };
 
 export const StaffForm: React.FC = () => {
+  const { t } = useTranslation(["staff"]);
   const { id } = useParams<{ id?: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
@@ -46,9 +48,9 @@ export const StaffForm: React.FC = () => {
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};
-    if (!form.name.trim()) next.name = "El nombre es obligatorio.";
+    if (!form.name.trim()) next.name = t("staff:form.errors.name_required");
     if (form.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) {
-      next.email = "Formato de email inválido.";
+      next.email = t("staff:form.errors.email_invalid");
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -71,10 +73,10 @@ export const StaffForm: React.FC = () => {
     try {
       if (isEdit && id) {
         await updateMut.mutateAsync({ id, data: payload });
-        addToast("Colaborador actualizado.", "success");
+        addToast(t("staff:form.messages.updated"), "success");
       } else {
         await createMut.mutateAsync(payload);
-        addToast("Colaborador creado.", "success");
+        addToast(t("staff:form.messages.created"), "success");
       }
       navigate("/staff");
     } catch {
@@ -83,28 +85,28 @@ export const StaffForm: React.FC = () => {
   };
 
   if (isEdit && isLoading) {
-    return <div className="text-text-secondary">Cargando colaborador…</div>;
+    return <div className="text-text-secondary">{t("staff:form.loading")}</div>;
   }
 
   return (
     <div className="max-w-2xl space-y-6">
       <Link to="/staff" className="inline-flex items-center text-sm text-primary hover:underline">
-        <ArrowLeft className="h-4 w-4 mr-1" /> Volver a Personal
+        <ArrowLeft className="h-4 w-4 mr-1" /> {t("staff:form.back")}
       </Link>
 
       <div>
         <h1 className="text-2xl font-bold text-text tracking-tight">
-          {isEdit ? "Editar colaborador" : "Nuevo colaborador"}
+          {isEdit ? t("staff:form.title_edit") : t("staff:form.title_new")}
         </h1>
         <p className="text-sm text-text-secondary mt-1">
-          Phase 2 activará notificaciones por email al asignarlos a un evento. El toggle ya queda guardado.
+          {t("staff:form.help_text")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl shadow-sm p-6 space-y-5">
         <div>
           <label htmlFor="staff-name" className="block text-sm font-medium text-text">
-            Nombre <span className="text-danger">*</span>
+            {t("staff:form.fields.name")} <span className="text-danger">*</span>
           </label>
           <input
             id="staff-name"
@@ -112,7 +114,7 @@ export const StaffForm: React.FC = () => {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="mt-1 block w-full rounded-xl border border-border bg-surface-alt px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-            placeholder="María López"
+            placeholder={t("staff:form.fields.name_placeholder")}
             required
           />
           {errors.name && <p className="mt-1 text-sm text-danger">{errors.name}</p>}
@@ -120,7 +122,7 @@ export const StaffForm: React.FC = () => {
 
         <div>
           <label htmlFor="staff-role" className="block text-sm font-medium text-text">
-            Rol
+            {t("staff:form.fields.role")}
           </label>
           <input
             id="staff-role"
@@ -128,14 +130,14 @@ export const StaffForm: React.FC = () => {
             value={form.role_label ?? ""}
             onChange={(e) => setForm({ ...form, role_label: e.target.value })}
             className="mt-1 block w-full rounded-xl border border-border bg-surface-alt px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-            placeholder="Fotógrafa · DJ · Coordinador · Mesero"
+            placeholder={t("staff:form.fields.role_placeholder")}
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="staff-phone" className="block text-sm font-medium text-text">
-              Teléfono
+              {t("staff:form.fields.phone")}
             </label>
             <input
               id="staff-phone"
@@ -143,12 +145,12 @@ export const StaffForm: React.FC = () => {
               value={form.phone ?? ""}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
               className="mt-1 block w-full rounded-xl border border-border bg-surface-alt px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-              placeholder="+52 55 1234 5678"
+              placeholder={t("staff:form.fields.phone_placeholder")}
             />
           </div>
           <div>
             <label htmlFor="staff-email" className="block text-sm font-medium text-text">
-              Email
+              {t("staff:form.fields.email")}
             </label>
             <input
               id="staff-email"
@@ -156,7 +158,7 @@ export const StaffForm: React.FC = () => {
               value={form.email ?? ""}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="mt-1 block w-full rounded-xl border border-border bg-surface-alt px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-              placeholder="maria@ejemplo.com"
+              placeholder={t("staff:form.fields.email_placeholder")}
             />
             {errors.email && <p className="mt-1 text-sm text-danger">{errors.email}</p>}
           </div>
@@ -164,7 +166,7 @@ export const StaffForm: React.FC = () => {
 
         <div>
           <label htmlFor="staff-notes" className="block text-sm font-medium text-text">
-            Notas
+            {t("staff:form.fields.notes")}
           </label>
           <textarea
             id="staff-notes"
@@ -172,7 +174,7 @@ export const StaffForm: React.FC = () => {
             value={form.notes ?? ""}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             className="mt-1 block w-full rounded-xl border border-border bg-surface-alt px-3 py-2 text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-            placeholder="Tarifa habitual, especialidad, disponibilidad…"
+            placeholder={t("staff:form.fields.notes_placeholder")}
           />
         </div>
 
@@ -184,8 +186,8 @@ export const StaffForm: React.FC = () => {
             className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
           />
           <span className="text-sm text-text-secondary">
-            <span className="font-medium text-text">Avisarle por email al asignarlo a un evento.</span>{" "}
-            Feature del plan Pro (próximamente) — el toggle se guarda desde ahora.
+            <span className="font-medium text-text">{t("staff:form.fields.notifications")}</span>{" "}
+            {t("staff:form.fields.notifications_help")}
           </span>
         </label>
 
@@ -194,7 +196,7 @@ export const StaffForm: React.FC = () => {
             to="/staff"
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl text-text-secondary bg-surface-alt hover:bg-card border border-border transition-colors"
           >
-            Cancelar
+            {t("staff:form.actions.cancel")}
           </Link>
           <button
             type="submit"
@@ -202,7 +204,7 @@ export const StaffForm: React.FC = () => {
             className="inline-flex items-center justify-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02] disabled:opacity-60"
           >
             <Save className="h-4 w-4 mr-2" aria-hidden="true" />
-            {isEdit ? "Guardar cambios" : "Crear colaborador"}
+            {isEdit ? t("staff:form.actions.save") : t("staff:form.actions.create")}
           </button>
         </div>
       </form>

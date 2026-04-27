@@ -28,7 +28,10 @@ import { parseEventDate } from "../../lib/dateUtils";
 
 type DemandEntry = { date: string; quantity: number };
 
+import { useTranslation } from "react-i18next";
+
 export const InventoryDetails: React.FC = () => {
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: item, isLoading: itemLoading, error: itemError } = useInventoryItem(id);
@@ -41,8 +44,10 @@ export const InventoryDetails: React.FC = () => {
   const [demandLoading, setDemandLoading] = useState(false);
   const { addToast } = useToast();
 
+  const moneyLocale = i18n.language === "en" ? "en-US" : "es-MX";
+
   const loading = itemLoading;
-  const error = itemError ? "Error al cargar los datos del ítem." : null;
+  const error = itemError ? t("common:error.load_failed") : null;
 
   useEffect(() => {
     if (id && item) {
@@ -159,7 +164,7 @@ export const InventoryDetails: React.FC = () => {
       { id, data: { ...item, current_stock: adjustValue } },
       {
         onSuccess: () => {
-          addToast("Stock actualizado correctamente.", "success");
+          addToast(t("common:action.save_success"), "success");
           setAdjustOpen(false);
         },
       },
@@ -199,13 +204,13 @@ export const InventoryDetails: React.FC = () => {
   if (error || !item) {
     return (
       <div className="text-center p-8">
-        <p className="text-error">{error || "Ítem de inventario no encontrado"}</p>
+        <p className="text-error">{error || t("inventory:list.no_results")}</p>
         <button
           type="button"
           onClick={() => navigate("/inventory")}
           className="mt-4 text-primary hover:underline"
         >
-          Volver a inventario
+          {t("common:action.back")}
         </button>
       </div>
     );
@@ -235,19 +240,18 @@ export const InventoryDetails: React.FC = () => {
     <div className="space-y-6">
       <ConfirmDialog
         open={confirmDeleteOpen}
-        title="Eliminar ítem"
-        description="¿Estás seguro de que deseas eliminar este ítem del inventario? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
+        title={t("inventory:details.delete_confirm_title")}
+        description={t("inventory:details.delete_confirm_desc")}
+        confirmText={t("common:action.delete")}
+        cancelText={t("common:action.cancel")}
         onConfirm={handleDeleteItem}
         onCancel={() => setConfirmDeleteOpen(false)}
       />
 
-      {/* Stock Adjustment Modal */}
       <Modal
         isOpen={adjustOpen}
         onClose={() => setAdjustOpen(false)}
-        title="Ajustar Stock"
+        title={t("common:action.edit")}
         maxWidth="sm"
       >
         <div className="space-y-5">
@@ -256,13 +260,13 @@ export const InventoryDetails: React.FC = () => {
               {item.ingredient_name}
             </p>
             <p className="text-xs text-text-secondary">
-              Stock actual: <strong className="text-text">{item.current_stock} {item.unit}</strong>
+              {t("inventory:form.current_stock")}: <strong className="text-text">{item.current_stock} {item.unit}</strong>
             </p>
           </div>
 
           <div>
             <label htmlFor="adjust-stock" className="block text-sm font-medium text-text-secondary mb-1.5">
-              Nuevo stock
+              {t("inventory:form.current_stock")}
             </label>
             <input
               id="adjust-stock"
@@ -296,7 +300,7 @@ export const InventoryDetails: React.FC = () => {
 
           {adjustValue !== item.current_stock && (
             <p className="text-center text-xs text-text-secondary">
-              Cambio:{" "}
+              {t("common:status.pending")}:{" "}
               <span className={clsx("font-semibold", adjustValue > item.current_stock ? "text-success" : "text-error")}>
                 {adjustValue > item.current_stock ? "+" : ""}{adjustValue - item.current_stock} {item.unit}
               </span>
@@ -309,7 +313,7 @@ export const InventoryDetails: React.FC = () => {
               onClick={() => setAdjustOpen(false)}
               className="flex-1 px-4 py-2.5 text-sm font-medium rounded-xl border border-border bg-card text-text-secondary hover:bg-surface-alt transition-colors"
             >
-              Cancelar
+              {t("common:action.cancel")}
             </button>
             <button
               type="button"
@@ -317,15 +321,14 @@ export const InventoryDetails: React.FC = () => {
               disabled={updateItemMutation.isPending || adjustValue === item.current_stock}
               className="flex-1 px-4 py-2.5 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {updateItemMutation.isPending ? "Guardando..." : "Guardar"}
+              {updateItemMutation.isPending ? t("common:action.saving") : t("common:action.save")}
             </button>
           </div>
         </div>
       </Modal>
 
-      <Breadcrumb items={[{ label: 'Inventario', href: '/inventory' }, { label: item.ingredient_name }]} />
+      <Breadcrumb items={[{ label: t("inventory:title"), href: '/inventory' }, { label: item.ingredient_name }]} />
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
@@ -349,7 +352,7 @@ export const InventoryDetails: React.FC = () => {
                   : "bg-success/10 text-success border-success/20",
               )}
             >
-              {item.type === "equipment" ? "Activo / Equipo" : item.type === "supply" ? "Insumo por Evento" : "Insumo Consumible"}
+              {item.type === "equipment" ? t("inventory:list.type_equipment") : item.type === "supply" ? t("inventory:list.type_supply") : t("inventory:list.type_ingredient")}
             </span>
           </div>
         </div>
@@ -360,14 +363,14 @@ export const InventoryDetails: React.FC = () => {
             className="inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl text-white premium-gradient shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all hover:scale-[1.02]"
           >
             <Settings2 className="h-4 w-4 mr-2" />
-            Ajustar Stock
+            {t("common:action.edit")}
           </button>
           <Link
             to={`/inventory/${id}/edit`}
             className="inline-flex items-center px-4 py-2 border border-border rounded-xl bg-card text-sm font-medium text-text-secondary hover:bg-surface-alt transition-colors"
           >
             <Edit className="h-4 w-4 mr-2" />
-            Editar
+            {t("common:action.edit")}
           </Link>
           <button
             type="button"
@@ -375,12 +378,11 @@ export const InventoryDetails: React.FC = () => {
             className="inline-flex items-center px-4 py-2 border border-error/20 rounded-xl bg-error/5 text-sm font-medium text-error hover:bg-error/10 transition-colors"
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar
+            {t("common:action.delete")}
           </button>
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div
           className={clsx(
@@ -390,7 +392,7 @@ export const InventoryDetails: React.FC = () => {
         >
           <div className="flex items-center gap-2 mb-2">
             <Package className={clsx("h-4 w-4", isLowStock ? "text-error" : "text-primary")} />
-            <p className="text-xs text-text-secondary uppercase tracking-wide">Stock Actual</p>
+            <p className="text-xs text-text-secondary uppercase tracking-wide">{t("inventory:list.stock")}</p>
           </div>
           <p className={clsx("text-3xl font-black", isLowStock ? "text-error" : "text-text")}>
             {item.current_stock}
@@ -398,7 +400,7 @@ export const InventoryDetails: React.FC = () => {
           <p className="text-xs text-text-secondary mt-1">{item.unit}</p>
           {isLowStock && (
             <p className="text-xs text-error font-medium mt-1.5 flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3" /> Bajo mínimo
+              <AlertTriangle className="h-3 w-3" /> {t("inventory:details.stats.alert_title")}
             </p>
           )}
         </div>
@@ -406,7 +408,7 @@ export const InventoryDetails: React.FC = () => {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown className="h-4 w-4 text-text-secondary" />
-            <p className="text-xs text-text-secondary uppercase tracking-wide">Stock Mínimo</p>
+            <p className="text-xs text-text-secondary uppercase tracking-wide">{t("inventory:list.min_stock")}</p>
           </div>
           <p className="text-3xl font-black text-text">{item.minimum_stock}</p>
           <p className="text-xs text-text-secondary mt-1">{item.unit}</p>
@@ -415,37 +417,35 @@ export const InventoryDetails: React.FC = () => {
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="h-4 w-4 text-primary" />
-            <p className="text-xs text-text-secondary uppercase tracking-wide">Costo Unitario</p>
+            <p className="text-xs text-text-secondary uppercase tracking-wide">{t("inventory:list.unit_cost")}</p>
           </div>
           <p className="text-3xl font-black text-text">
-            ${item.unit_cost?.toLocaleString("es-MX", { minimumFractionDigits: 2 }) ?? "0.00"}
+            ${item.unit_cost?.toLocaleString(moneyLocale, { minimumFractionDigits: 2 }) ?? "0.00"}
           </p>
-          <p className="text-xs text-text-secondary mt-1">por {item.unit}</p>
+          <p className="text-xs text-text-secondary mt-1">{t("inventory:form.unit")}: {item.unit}</p>
         </div>
 
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <PackageCheck className="h-4 w-4 text-primary" />
-            <p className="text-xs text-text-secondary uppercase tracking-wide">Valor en Stock</p>
+            <p className="text-xs text-text-secondary uppercase tracking-wide">{t("inventory:details.stats.stock_value")}</p>
           </div>
           <p className="text-3xl font-black text-text">
             $
-            {(item.current_stock * (item.unit_cost || 0)).toLocaleString("es-MX", {
+            {(item.current_stock * (item.unit_cost || 0)).toLocaleString(moneyLocale, {
               minimumFractionDigits: 2,
             })}
           </p>
-          <p className="text-xs text-text-secondary mt-1">valor total</p>
+          <p className="text-xs text-text-secondary mt-1">{t("common:status.total")}</p>
         </div>
       </div>
 
-      {/* Main content */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Demand forecast */}
         <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4 pb-4 border-b border-border">
             <Calendar className="h-5 w-5 text-primary" />
-            <h2 className="text-sm font-semibold text-text">Demanda por Fecha</h2>
-            <span className="ml-auto text-xs text-text-secondary">Eventos confirmados</span>
+            <h2 className="text-sm font-semibold text-text">{t("inventory:details.history")}</h2>
+            <span className="ml-auto text-xs text-text-secondary">{t("common:status.confirmed")}</span>
           </div>
 
           {demandLoading ? (
@@ -454,7 +454,7 @@ export const InventoryDetails: React.FC = () => {
             <div className="text-center py-10">
               <Calendar className="h-9 w-9 text-text-secondary opacity-25 mx-auto mb-3" />
               <p className="text-sm text-text-secondary">
-                Sin eventos confirmados que usen este ítem.
+                {t("inventory:list.no_results")}
               </p>
             </div>
           ) : (
@@ -494,23 +494,23 @@ export const InventoryDetails: React.FC = () => {
                         )}
                       />
                       <span className="text-sm font-medium text-text">
-                        {dateObj.toLocaleDateString("es-MX", {
+                        {dateObj.toLocaleDateString(moneyLocale, {
                           day: "numeric",
                           month: "short",
                         })}
                       </span>
                       {diffDays === 0 && (
                         <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
-                          Hoy
+                          {t("common:date.today")}
                         </span>
                       )}
                       {diffDays === 1 && (
                         <span className="text-xs bg-warning/10 text-warning px-1.5 py-0.5 rounded-md">
-                          Mañana
+                          {t("common:date.tomorrow")}
                         </span>
                       )}
                       {diffDays > 1 && diffDays <= 7 && (
-                        <span className="text-xs text-text-secondary">en {diffDays} días</span>
+                        <span className="text-xs text-text-secondary">{t("common:date.in_days", { count: diffDays })}</span>
                       )}
                     </div>
                     <span
@@ -528,7 +528,7 @@ export const InventoryDetails: React.FC = () => {
               {totalDemand > 0 && (
                 <div className="flex items-center justify-between px-4 py-2 mt-2 border-t border-border">
                   <span className="text-xs text-text-secondary uppercase tracking-wide">
-                    Total demanda
+                    {t("common:status.total")}
                   </span>
                   <span className="text-sm font-bold text-text">
                     {fmtQty(totalDemand)} {item.unit}
@@ -539,9 +539,7 @@ export const InventoryDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Right column: alert + stock bars */}
         <div className="space-y-4">
-          {/* 7-day supply alert */}
           {!demandLoading && (
             <div
               className={clsx(
@@ -579,23 +577,23 @@ export const InventoryDetails: React.FC = () => {
                     )}
                   >
                     {demand7Days > 0 && stockAfter7Days < 0
-                      ? "¡Stock insuficiente para los próximos 7 días!"
+                      ? t("inventory:details.stats.alert_title")
                       : demand7Days > 0 && stockAfter7Days < item.minimum_stock
-                        ? "Stock quedará bajo el mínimo tras eventos próximos"
+                        ? t("inventory:details.stats.alert_desc")
                         : isLowStock && demand7Days === 0
-                          ? "Stock por debajo del mínimo recomendado"
+                          ? t("inventory:details.stats.alert_title")
                           : demand7Days > 0
-                            ? "Stock suficiente para los próximos 7 días"
-                            : "Sin demanda en los próximos 7 días"}
+                            ? t("inventory:details.stats.alert_title")
+                            : t("inventory:list.no_alerts")}
                   </p>
                   <p className="text-sm text-text-secondary mt-1">
                     {demand7Days > 0 ? (
                       <>
-                        Necesitas{" "}
+                        {t("inventory:details.stats.forecast_usage")}{" "}
                         <strong className="text-text">
                           {fmtQty(demand7Days)} {item.unit}
                         </strong>{" "}
-                        en los próximos 7 días. Tienes{" "}
+                        {t("common:date.in_days", { count: 7 })}. {t("inventory:list.stock")}{" "}
                         <strong className="text-text">
                           {item.current_stock} {item.unit}
                         </strong>
@@ -603,24 +601,24 @@ export const InventoryDetails: React.FC = () => {
                         {stockAfter7Days < 0 && (
                           <span className="text-error font-medium">
                             {" "}
-                            Faltan {fmtQty(Math.abs(stockAfter7Days))} {item.unit}.
+                            {t("common:status.missing")} {fmtQty(Math.abs(stockAfter7Days))} {item.unit}.
                           </span>
                         )}
                       </>
                     ) : isLowStock ? (
                       <>
-                        Tu stock actual (
+                        {t("inventory:details.stats.alert_desc")} (
                         <strong className="text-text">
                           {item.current_stock} {item.unit}
                         </strong>
-                        ) está por debajo del mínimo recomendado (
+                        ) {t("inventory:list.no_alerts")} (
                         <strong className="text-text">
                           {item.minimum_stock} {item.unit}
                         </strong>
                         ).
                       </>
                     ) : (
-                      "No hay eventos confirmados que requieran este ítem en los próximos 7 días."
+                      t("inventory:list.no_results")
                     )}
                   </p>
                 </div>
@@ -628,10 +626,9 @@ export const InventoryDetails: React.FC = () => {
             </div>
           )}
 
-          {/* Stock health bars */}
           <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
             <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4">
-              Nivel de Stock
+              {t("inventory:list.stock")}
             </h3>
             {(() => {
               const maxBar = Math.max(
@@ -647,7 +644,7 @@ export const InventoryDetails: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-xs text-text-secondary mb-1.5">
-                      <span>Stock actual</span>
+                      <span>{t("inventory:form.current_stock")}</span>
                       <span className="font-medium text-text">
                         {item.current_stock} {item.unit}
                       </span>
@@ -665,7 +662,7 @@ export const InventoryDetails: React.FC = () => {
 
                   <div>
                     <div className="flex justify-between text-xs text-text-secondary mb-1.5">
-                      <span>Mínimo recomendado</span>
+                      <span>{t("inventory:list.min_stock")}</span>
                       <span className="font-medium text-text">
                         {item.minimum_stock} {item.unit}
                       </span>
@@ -681,7 +678,7 @@ export const InventoryDetails: React.FC = () => {
                   {!demandLoading && demand7Days > 0 && (
                     <div>
                       <div className="flex justify-between text-xs text-text-secondary mb-1.5">
-                        <span>Demanda próximos 7 días</span>
+                        <span>{t("inventory:details.stats.forecast_usage")}</span>
                         <span className="font-medium text-text">
                           {fmtQty(demand7Days)} {item.unit}
                         </span>

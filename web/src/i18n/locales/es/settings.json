@@ -1,0 +1,121 @@
+{
+  "title": "Configuración",
+  "subtitle": "Personaliza tu experiencia y gestiona tu negocio.",
+  "tabs": {
+    "profile": "Mi Cuenta",
+    "business": "Mi Negocio",
+    "contracts": "Contratos",
+    "notifications": "Notificaciones",
+    "subscription": "Suscripción"
+  },
+  "profile": {
+    "title": "Perfil de Usuario",
+    "description": "Información básica de tu cuenta personal.",
+    "name": "Nombre",
+    "email": "Email",
+    "change_password": "Cambiar contraseña",
+    "dark_mode": "Modo Oscuro",
+    "dark_mode_desc": "Apariencia de la aplicación",
+    "delete_account": "Eliminar mi cuenta",
+    "delete_account_desc": "Esta acción es irreversible y borrará todos tus datos permanentemente.",
+    "password_form": {
+      "title": "Cambiar contraseña",
+      "current": "Contraseña actual",
+      "new": "Nueva contraseña (mín. 8 caracteres)",
+      "confirm": "Confirmar nueva contraseña",
+      "success": "Contraseña actualizada correctamente",
+      "error_incorrect": "La contraseña actual es incorrecta",
+      "error_generic": "Error al cambiar la contraseña"
+    }
+  },
+  "business": {
+    "title": "Identidad de Negocio",
+    "description": "Personaliza cómo te ven tus clientes en presupuestos y contratos.",
+    "name_label": "Nombre Comercial",
+    "name_placeholder": "Ej. Mi Evento Pro",
+    "not_configured": "No configurado",
+    "logo_label": "Logo de Marca",
+    "logo_title": "Sube tu logo profesional",
+    "logo_desc": "PNG transparente recomendado. Máx 2MB.",
+    "logo_select": "Seleccionar archivo",
+    "logo_error_size": "El archivo es demasiado grande (máximo 2MB).",
+    "pdf_settings": "PDFs",
+    "show_name_pdf": "Mostrar nombre en PDFs",
+    "show_name_pdf_desc": "Incluye el nombre de tu negocio en presupuestos y contratos",
+    "brand_color": "Color de Marca",
+    "brand_color_help": "Este color se aplicará automáticamente a tus presupuestos y contratos en PDF."
+  },
+  "contracts": {
+    "title": "Valores Predeterminados",
+    "description": "Configura los valores que aparecerán por defecto en tus nuevos eventos.",
+    "deposit": "Anticipo Sugerido",
+    "cancellation": "Días para cancelar",
+    "refund": "Reembolso",
+    "days": "Días",
+    "success": "Configuración del contrato guardada correctamente",
+    "error": "Error al guardar la configuración",
+    "validation_error": "La plantilla contiene placeholders no soportados: {{tokens}}"
+  },
+  "notifications": {
+    "title": "Preferencias de Notificación",
+    "description": "Controla qué correos electrónicos y notificaciones push recibes.",
+    "email_group": "Correos Electrónicos",
+    "push_group": "Notificaciones Push",
+    "items": {
+      "email_payment_receipt": { "label": "Recibos de Pago", "desc": "Recibe un correo cuando se registra un pago" },
+      "email_event_reminder": { "label": "Recordatorio de Eventos", "desc": "Recibe un correo 24h antes de tu evento" },
+      "email_subscription_updates": { "label": "Actualizaciones de Suscripción", "desc": "Correos sobre cambios en tu plan" },
+      "email_weekly_summary": { "label": "Resumen Semanal", "desc": "Resumen de actividad de la semana" },
+      "email_marketing": { "label": "Noticias y Tips", "desc": "Novedades y consejos de Solennix" },
+      "push_enabled": { "label": "Notificaciones Push", "desc": "Habilitar o deshabilitar todas las notificaciones push" },
+      "push_event_reminder": { "label": "Recordatorio de Eventos", "desc": "Notificación push antes de tu evento" },
+      "push_payment_received": { "label": "Pago Recibido", "desc": "Notificación push cuando se registra un pago" }
+    }
+  },
+  "subscription": {
+    "title": "Suscripción y Facturación",
+    "description": "Gestiona tu plan actual y métodos de pago.",
+    "current_plan": "Tu plan actual es {{plan}}",
+    "status": {
+      "active": "Activa",
+      "past_due": "Pago pendiente",
+      "canceled": "Cancelada",
+      "trialing": "Periodo de prueba"
+    },
+    "provider": {
+      "stripe": {
+        "badge": "Suscrito vía Web",
+        "cancel": "Podés gestionar o cancelar tu suscripción desde el portal de pagos web."
+      },
+      "apple": {
+        "badge": "Suscrito vía App Store",
+        "cancel": "Tu suscripción fue realizada desde iOS. Para cancelarla, abrí Configuración > tu Apple ID > Suscripciones en tu iPhone o iPad."
+      },
+      "google": {
+        "badge": "Suscrito vía Google Play",
+        "cancel": "Tu suscripción fue realizada desde Android. Para cancelarla, abrí Google Play Store > Pagos y suscripciones."
+      }
+    },
+    "manage": "Gestionar Suscripción",
+    "next_payment": "Siguiente pago: {{date}}",
+    "renewal_price": "Precio de renovación: {{price}}",
+    "usage": "Uso de tu plan",
+    "events": "Eventos este mes",
+    "clients": "Clientes registrados",
+    "unlimited": "Ilimitado",
+    "of": "de",
+    "upgrade_pro": "Mejorar a Pro para límites ilimitados"
+  },
+  "loading": "Cargando configuración...",
+  "validation": {
+    "current_password_required": "Ingresa tu contraseña actual",
+    "new_password_min": "La nueva contraseña debe tener al menos 8 caracteres",
+    "confirm_password_required": "Confirma tu nueva contraseña",
+    "passwords_mismatch": "Las contraseñas no coinciden"
+  },
+  "plans": {
+    "basic": "Básico",
+    "pro": "Pro",
+    "business": "Business"
+  }
+}

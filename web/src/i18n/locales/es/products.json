@@ -1,0 +1,64 @@
+{
+  "title": "Productos",
+  "new_product": "Nuevo Producto",
+  "search_placeholder": "Buscar producto...",
+  "no_products": "No se encontraron productos",
+  "delete_confirm": "Se eliminará el producto y su receta. No se puede usar en nuevas cotizaciones. Esta acción no se puede deshacer.",
+  "table": {
+    "name": "Nombre",
+    "price": "Precio",
+    "category": "Categoría",
+    "actions": "Acciones"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo"
+  },
+  "form": {
+    "basic_info": "Información Básica",
+    "name": "Nombre",
+    "category": "Categoría",
+    "description": "Descripción",
+    "pricing": "Precios y Costos",
+    "base_price": "Precio Base",
+    "cost": "Costo",
+    "unit": "Unidad",
+    "inventory": "Inventario",
+    "is_active": "Producto activo",
+    "active_desc": "Los productos inactivos no aparecen disponibles en cotizaciones",
+    "photo": "Foto (opcional)",
+    "composition": "Composición / Insumos",
+    "composition_desc": "Define qué insumos y qué cantidad se necesitan para 1 unidad de este producto. Solo insumos generan costo.",
+    "equipment": "Maquinaria / Equipo Necesario",
+    "equipment_desc": "Equipo y maquinaria necesaria para preparar este producto. No se incluye en el costo (activos reutilizables).",
+    "event_supplies": "Insumos por Evento",
+    "event_supplies_desc": "Insumos con cantidad fija por evento que no escala con unidades del producto (ej. aceite, gas).",
+    "staff_team": "Equipo de Trabajo Responsable",
+    "staff_team_desc": "Selecciona qué equipo de trabajo es responsable de preparar o servir este producto.",
+    "add_ingredient": "Agregar Insumo",
+    "add_equipment": "Agregar Equipo",
+    "add_supply": "Agregar Insumo Fijo",
+    "total_unit_cost": "Costo Total por Unidad",
+    "total_event_cost": "Costo Total Fijo por Evento",
+    "capacity": "Capacidad (unid./equipo)",
+    "capacity_help": "1 pieza por cada {{count}} unid.",
+    "capacity_fixed": "Fijo: 1 pieza siempre",
+    "bring_to_event": "Llevar al evento",
+    "reusable_no_cost": "Sin costo - Reutilizable",
+    "validation": {
+      "name_required": "El nombre es requerido",
+      "name_min": "El nombre debe tener al menos 2 caracteres",
+      "price_required": "El precio es requerido",
+      "price_negative": "El precio no puede ser negativo",
+      "category_required": "La categoría es requerida"
+    }
+  },
+  "details": {
+    "title": "Detalle del Producto",
+    "edit": "Editar Producto",
+    "recipe": "Receta / Ingredientes",
+    "no_recipe": "Este producto no tiene una receta definida.",
+    "quantity": "Cant.",
+    "example_placeholder": "Ej: 100"
+  }
+}
