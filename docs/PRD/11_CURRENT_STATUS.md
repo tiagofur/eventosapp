@@ -8,7 +8,7 @@ aliases:
   - Estado Actual
   - Current Status
 date: 2026-03-20
-updated: 2026-04-26
+updated: 2026-04-27
 status: active
 ---
 
@@ -16,6 +16,13 @@ status: active
 
 **Fecha:** Abril 2026
 **Version:** 1.4
+
+> [!info] 2026-04-27 — Repo Governance and CI/CD Guardrails
+> Se endurecio la gobernanza del repositorio para reducir merges incompletos y mejorar trazabilidad de cambios:
+> - **Templates y ownership**: `pull_request_template.md`, `ISSUE_TEMPLATE/*`, `CODEOWNERS`.
+> - **Automatizacion de mantenimiento**: `dependabot.yml` (npm web/remotion, gomod, gradle, actions), workflow de sync de labels, workflow de triage (labels por path + size + defaults de issues), workflow de release por tags.
+> - **CI/CD**: `CI Pipeline` ahora con `concurrency` para cancelar corridas obsoletas; nuevo workflow `iOS CI` (xcodegen + resolve SPM + build simulator sin signing); deploy a produccion con `environment: production`, timeout y health check post-deploy.
+> - **Pendiente en Settings** (no versionable por PR): branch protection de `main`, required checks, environment protection rules, secret scanning/push protection, merge policy squash-only, auto-merge y delete branch on merge.
 
 > [!info] 2026-04-26 — Sprint 7.B: Paywalls mobile coherentes (iOS + Android)
 > Parseo del error 403 `plan_limit_exceeded` del backend como error tipado en ambas plataformas móviles, con UI de upgrade coherente en los 3 formularios de creación (Event/Client/Product). Paridad total con Web.
