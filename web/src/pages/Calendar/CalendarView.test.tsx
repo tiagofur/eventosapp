@@ -222,8 +222,8 @@ describe('CalendarView', () => {
     fireEvent.click(screen.getByTestId('mock-clear'));
 
     await waitFor(() => {
-      // Create-event dropdown button — aria-label now localizes to t("new_event")
-      expect(screen.getByLabelText('Nuevo Evento')).toBeInTheDocument();
+      // After clearing the date, the heading reverts to the placeholder
+      expect(screen.getByText('Selecciona una fecha')).toBeInTheDocument();
     });
   });
 

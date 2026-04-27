@@ -26,7 +26,7 @@ vi.mock('../contexts/AuthContext', () => ({
 vi.mock('../hooks/usePlanLimits', () => ({
   usePlanLimits: () => ({
     eventsThisMonth: 3,
-    limit: 5,
+    eventLimit: 5,
     clientsCount: 8,
     clientLimit: 10,
     isBasicPlan: (mockUser as any).plan !== 'pro',
