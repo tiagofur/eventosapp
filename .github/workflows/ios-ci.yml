@@ -19,8 +19,8 @@ concurrency:
 jobs:
   ios-validation:
     name: iOS Validation
-    runs-on: macos-latest
-    timeout-minutes: 35
+    runs-on: macos-14
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: ./ios
@@ -30,6 +30,13 @@ jobs:
 
       - name: Create CI secrets config placeholder
         run: cp Config/Secrets.xcconfig.example Config/Secrets.xcconfig
+
+      - name: Select stable Xcode
+        run: |
+          if [ -d /Applications/Xcode_16.2.app ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          fi
+          xcodebuild -version
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -48,5 +55,7 @@ jobs:
             -destination "generic/platform=iOS Simulator" \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
-            EXCLUDED_ARCHS=x86_64 \
+            ONLY_ACTIVE_ARCH=YES \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            -jobs 1 \
             build
