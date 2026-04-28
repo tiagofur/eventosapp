@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/joho/godotenv v1.5.1
-	github.com/resend/resend-go/v3 v3.1.1
+	github.com/resend/resend-go/v3 v3.6.0
 	github.com/sideshow/apns2 v0.25.0
 	github.com/stretchr/testify v1.11.1
 	github.com/stripe/stripe-go/v81 v81.4.0
