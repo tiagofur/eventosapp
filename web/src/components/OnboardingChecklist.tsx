@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { CheckCircle2, Circle, X, Users, Package, CalendarPlus, ChevronRight } from 'lucide-react';
 import { useClients } from '../hooks/queries/useClientQueries';
 import { useProducts } from '../hooks/queries/useProductQueries';

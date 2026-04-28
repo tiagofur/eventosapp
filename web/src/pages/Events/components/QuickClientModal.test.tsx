@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { QuickClientModal } from './QuickClientModal';
 import { clientService } from '../../../services/clientService';
 import { logError } from '../../../lib/errorHandler';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 vi.mock('../../../services/clientService', () => ({
   clientService: {

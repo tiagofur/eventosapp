@@ -3,10 +3,7 @@ import { api } from '@/lib/api';
 import { logError } from '@/lib/errorHandler';
 import { User } from '@/types/auth';
 import { AuthContext } from './AuthContextInstance';
-import { useAuth } from '@/hooks/useAuth';
 import i18n from '@/i18n/config';
-
-export { AuthContext, useAuth };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);

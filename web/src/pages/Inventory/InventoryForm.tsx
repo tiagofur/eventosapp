@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Save } from "lucide-react";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { usePlanLimits } from "../../hooks/usePlanLimits";

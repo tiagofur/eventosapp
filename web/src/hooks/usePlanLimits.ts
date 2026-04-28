@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { useEventsByDateRange } from './queries/useEventQueries';
 import { useClients } from './queries/useClientQueries';

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Save, Loader2 } from "lucide-react";
 import { clientService } from "../../../services/clientService";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Modal } from "../../../components/Modal";
 
 import { logError } from "../../../lib/errorHandler";

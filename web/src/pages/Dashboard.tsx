@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Event, Payment, InventoryItem } from "../types/entities";
 import { addDays, format, startOfMonth, endOfMonth } from "date-fns";
 import { es, enUS } from "date-fns/locale";

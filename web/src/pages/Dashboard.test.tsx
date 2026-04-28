@@ -5,7 +5,7 @@ import { Dashboard } from './Dashboard';
 import { eventService } from '../services/eventService';
 import { inventoryService } from '../services/inventoryService';
 import { paymentService } from '../services/paymentService';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { productService } from '../services/productService';
 import { clientService } from '../services/clientService';
 

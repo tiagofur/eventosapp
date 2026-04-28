@@ -24,7 +24,6 @@ interface PaymentsProps {
 export const Payments: React.FC<PaymentsProps> = ({
   eventId,
   totalAmount,
-  userId: _userId,
   eventStatus,
   onStatusChange,
   eventData,

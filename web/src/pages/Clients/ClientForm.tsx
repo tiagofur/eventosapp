@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Save, Camera, X } from "lucide-react";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { logError } from "../../lib/errorHandler";

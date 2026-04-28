@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Zap, CheckCircle, ArrowRight, Star, Building2 } from 'lucide-react';
 import { subscriptionService } from '../services/subscriptionService';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { logError } from '../lib/errorHandler';
 import { useTranslation } from 'react-i18next';
 

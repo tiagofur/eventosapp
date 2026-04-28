@@ -71,7 +71,7 @@ import { queryKeys } from "@/hooks/queries/queryKeys";
 import clsx from "clsx";
 import { ContractTemplateError, renderContractTemplate } from "@/lib/contractTemplate";
 import { renderFormattedReact } from "@/lib/inlineFormatting";
-import type { Event, Client, User, EventExtra, EventEquipment, EventSupply, EventStaff as EventStaffType, ProductIngredient } from "@/types/entities";
+import type { Event, Client, User, EventExtra, EventEquipment, EventSupply, EventStaff as EventStaffType, ProductIngredient, Payment } from "@/types/entities";
 import { aggregateIngredients } from "./lib/aggregateIngredients";
 
 // API response types — backend returns `client` (singular)
@@ -105,7 +105,12 @@ type ProductIngredientWithInventory = ProductIngredient & {
   inventory?: { ingredient_name?: string; unit?: string; unit_cost?: number; current_stock?: number } | null;
 };
 
+type EventPhotoItem = { id: string; url: string };
+
 type ViewMode = "summary" | "ingredients" | "contract" | "payments" | "photos" | "checklist";
+
+const EMPTY_ARRAY: never[] = [];
+const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : (EMPTY_ARRAY as T[]));
 
 
 export const EventSummary: React.FC = () => {
@@ -119,22 +124,22 @@ export const EventSummary: React.FC = () => {
   // ── 6 parallel queries via React Query ──
   const { data: eventRaw = null, isLoading: eventLoading } = useEvent(id);
   const event = eventRaw as EventWithClient | null;
-  const { data: productsRaw = [], isLoading: productsLoading } = useEventProducts(id);
-  const products = Array.isArray(productsRaw) ? productsRaw : [];
-  const { data: extrasRaw = [] } = useEventExtras(id);
-  const extras = Array.isArray(extrasRaw) ? extrasRaw : [];
-  const { data: equipmentRaw = [] } = useEventEquipment(id);
-  const equipment = Array.isArray(equipmentRaw) ? equipmentRaw : [];
-  const { data: suppliesRaw = [] } = useEventSupplies(id);
-  const supplies = Array.isArray(suppliesRaw) ? suppliesRaw : [];
-  const { data: eventPhotosRaw = [] } = useEventPhotos(id);
-  const eventPhotos = Array.isArray(eventPhotosRaw) ? eventPhotosRaw : [];
-  const { data: eventStaffRaw = [] } = useEventStaff(id);
-  const eventStaff = Array.isArray(eventStaffRaw) ? eventStaffRaw : [];
+  const { data: productsRaw = EMPTY_ARRAY, isLoading: productsLoading } = useEventProducts(id);
+  const products = asArray<EventProductWithDetails>(productsRaw);
+  const { data: extrasRaw = EMPTY_ARRAY } = useEventExtras(id);
+  const extras = asArray<EventExtra>(extrasRaw);
+  const { data: equipmentRaw = EMPTY_ARRAY } = useEventEquipment(id);
+  const equipment = asArray<EventEquipment>(equipmentRaw);
+  const { data: suppliesRaw = EMPTY_ARRAY } = useEventSupplies(id);
+  const supplies = asArray<EventSupply>(suppliesRaw);
+  const { data: eventPhotosRaw = EMPTY_ARRAY } = useEventPhotos(id);
+  const eventPhotos = asArray<EventPhotoItem>(eventPhotosRaw);
+  const { data: eventStaffRaw = EMPTY_ARRAY } = useEventStaff(id);
+  const eventStaff = asArray<EventStaffType>(eventStaffRaw);
   const addEventPhotoMutation = useAddEventPhoto(id);
   const deleteEventPhotoMutation = useDeleteEventPhoto(id);
-  const { data: paymentsRaw = [] } = usePaymentsByEvent(id);
-  const payments = Array.isArray(paymentsRaw) ? paymentsRaw : [];
+  const { data: paymentsRaw = EMPTY_ARRAY } = usePaymentsByEvent(id);
+  const payments = asArray<Payment>(paymentsRaw);
   const deleteEventMutation = useDeleteEvent();
 
   const loading = eventLoading || productsLoading;
@@ -166,13 +171,13 @@ export const EventSummary: React.FC = () => {
   }, [products]);
 
   // ── Dependent query: fetch all ingredients for event products ──
-  const { data: allProdIngredientsRaw = [], error: allProdIngredientsError } = useQuery({
+  const { data: allProdIngredientsRaw = EMPTY_ARRAY, error: allProdIngredientsError } = useQuery({
     queryKey: queryKeys.products.ingredientsBatch(productIdsSorted),
     queryFn: () => productService.getIngredientsForProducts(productIdsSorted),
     enabled: productIdsSorted.length > 0,
   });
 
-  const allProdIngredients = Array.isArray(allProdIngredientsRaw) ? allProdIngredientsRaw : [];
+  const allProdIngredients = asArray<ProductIngredientWithInventory>(allProdIngredientsRaw);
 
   useEffect(() => {
     if (allProdIngredientsError) {
@@ -182,7 +187,7 @@ export const EventSummary: React.FC = () => {
 
   // ── Derived: aggregated ingredients (pure computation, no fetch) ──
   const ingredients = useMemo(
-    () => aggregateIngredients(allProdIngredients as ProductIngredientWithInventory[], productQuantities),
+    () => aggregateIngredients(allProdIngredients, productQuantities),
     [allProdIngredients, productQuantities],
   );
 
@@ -203,7 +208,7 @@ export const EventSummary: React.FC = () => {
 
     // Product ingredients with bring_to_event (from already-cached allProdIngredients)
     const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
-    (allProdIngredients || [])
+    allProdIngredients
       .filter((ing: ProductIngredientWithInventory) => ing.type === "ingredient" && ing.bring_to_event)
       .forEach((ing: ProductIngredientWithInventory) => {
         const key = ing.inventory_id;
@@ -526,7 +531,7 @@ export const EventSummary: React.FC = () => {
                       const productQuantities = new Map<string, number>();
                       products.forEach((p: EventProductWithDetails) => productQuantities.set(p.product_id, p.quantity || 0));
                       // Use cached ingredients from React Query instead of refetching
-                      const allIngredients = allProdIngredients || [];
+                      const allIngredients = allProdIngredients;
                       const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
                       (allIngredients || [])
                         .filter((ing: ProductIngredientWithInventory) => ing.type === 'ingredient' && ing.bring_to_event)

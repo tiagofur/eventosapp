@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { AppleSignInButton } from "../components/AppleSignInButton";
 import {

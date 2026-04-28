@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
