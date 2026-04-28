@@ -19,7 +19,7 @@ concurrency:
 jobs:
   ios-validation:
     name: iOS Validation
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     defaults:
       run:
@@ -31,18 +31,24 @@ jobs:
       - name: Create CI secrets config placeholder
         run: cp Config/Secrets.xcconfig.example Config/Secrets.xcconfig
 
-      - name: Select stable Xcode
+      - name: Select compatible Xcode
         run: |
-          if [ -d /Applications/Xcode_16.2.app ]; then
-            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
-          elif [ -d /Applications/Xcode_15.4.app ]; then
-            sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
-          else
-            echo "No supported Xcode found"
+          XCODE_APP="$(ls -1d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -n1)"
+          if [ -z "$XCODE_APP" ]; then
+            echo "No Xcode installation found"
             ls -1 /Applications | grep Xcode || true
             exit 1
           fi
+
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           xcodebuild -version
+
+          XCODE_MAJOR="$(xcodebuild -version | awk '/Xcode/ { print $2 }' | cut -d. -f1)"
+          if [ "${XCODE_MAJOR:-0}" -lt 16 ]; then
+            echo "Xcode 16+ is required for this project format (objectVersion 77)."
+            echo "Selected Xcode: $XCODE_APP"
+            exit 1
+          fi
 
       - name: Install XcodeGen
         run: brew install xcodegen

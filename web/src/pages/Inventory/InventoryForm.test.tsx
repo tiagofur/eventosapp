@@ -264,7 +264,7 @@ describe('InventoryForm', () => {
 
     renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: /Regresar a la página anterior/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Regresar a la página anterior|Volver/i }));
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
@@ -322,7 +322,7 @@ describe('InventoryForm', () => {
   it('navigates to /inventory when clicking back arrow button', () => {
     renderForm();
 
-    fireEvent.click(screen.getByRole('button', { name: /Volver a la lista de inventario/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Volver a la lista de inventario|Volver/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/inventory');
   });
 

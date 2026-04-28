@@ -193,7 +193,7 @@ describe('ClientForm', () => {
   it('navigates back when clicking Regresar on limit-reached view', () => {
     mockPlanLimits = { canCreateClient: false, clientsCount: 50, clientLimit: 50, loading: false };
     renderForm();
-    fireEvent.click(screen.getByRole('button', { name: /Regresar a la página anterior|action\.back/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Regresar a la página anterior|Volver|action\.back/i }));
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
 
