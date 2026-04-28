@@ -1,0 +1,25 @@
+name: CI Bootstrap
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-bootstrap-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bootstrap:
+    name: Bootstrap Sanity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate runner execution
+        run: |
+          echo "CI bootstrap workflow is active"
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
