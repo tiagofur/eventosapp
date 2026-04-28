@@ -12,6 +12,13 @@ import { vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { server } from './mocks/server';
 
+// React 19 + Vitest/jsdom: explicitly mark act environment for async updates.
+// Prevents noisy "environment is not configured to support act(...)" warnings.
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+if (typeof window !== 'undefined') {
+  (window as any).IS_REACT_ACT_ENVIRONMENT = true;
+}
+
 const localStorageStore = new Map<string, string>();
 
 const localStorageMock = {

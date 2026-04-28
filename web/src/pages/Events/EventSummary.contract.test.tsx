@@ -109,7 +109,7 @@ vi.mock('../../lib/pdfGenerator', () => ({
   generatePaymentReportPDF: vi.fn(),
 }));
 
-vi.mock('../../contexts/AuthContext', () => ({
+vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'user-1', email: 'ana@example.com', plan: 'pro' }, profile: { name: 'Eventos Ana', business_name: 'Eventos Ana' } }),
 }));
 
@@ -201,24 +201,27 @@ describe('EventSummary — contract view', () => {
   // which isn't in the current default contract template. Pre-existing because
   // hidden by worker crash. Fix: check the current default template text in
   // src/lib/contractTemplate.ts and update the expectation.
-  it.skip('shows contract template text in contract view', async () => {
+  it('shows contract template text in contract view', async () => {
+    (paymentService.getByEventId as any).mockResolvedValue([{ amount: 600 }]);
+
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
     await waitFor(() => {
       expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByText('Contrato')[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Ver contrato del evento/i }));
 
     expect(screen.getByText('Contrato de Servicios')).toBeInTheDocument();
-    expect(screen.getByText(/dedicada a Boda/)).toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/empresa dedicada a Boda/i);
   });
 
   // TODO(contract-freeze-web): pre-existing fail — looks for /30%/ which may
   // be rendered as "30 %" (with space) or a different format in the current
   // template. Same root cause as "shows contract template text".
-  it.skip('shows deposit percent and cancellation days in contract', async () => {
+  it('shows deposit percent and cancellation days in contract', async () => {
     setupMocks({ deposit_percent: 30, cancellation_days: 10 });
+    (paymentService.getByEventId as any).mockResolvedValue([{ amount: 600 }]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
 
@@ -226,9 +229,9 @@ describe('EventSummary — contract view', () => {
       expect(screen.getByText('Ana — Boda')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getAllByText('Contrato')[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Ver contrato del evento/i }));
 
-    expect(screen.getByText(/30%/)).toBeInTheDocument();
-    expect(screen.getByText(/10 días/)).toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/30\s*%/);
+    expect(document.body.textContent).toMatch(/10\s*d[ií]as/i);
   });
 });
