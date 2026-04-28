@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { AuthProvider, useAuth } from './AuthContext';
+import { AuthProvider } from './AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { api } from '../lib/api';
 import { logError } from '../lib/errorHandler';
 
