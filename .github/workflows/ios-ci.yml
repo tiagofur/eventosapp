@@ -33,7 +33,9 @@ jobs:
 
       - name: Select stable Xcode
         run: |
-          if [ -d /Applications/Xcode_16.2.app ]; then
+          if [ -d /Applications/Xcode_15.4.app ]; then
+            sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          elif [ -d /Applications/Xcode_16.2.app ]; then
             sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
           fi
           xcodebuild -version
@@ -67,6 +69,8 @@ jobs:
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=YES \
             EXCLUDED_ARCHS=x86_64 \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
+            CLANG_ENABLE_EXPLICIT_MODULES=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
             -jobs 1 \
             build

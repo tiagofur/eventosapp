@@ -3,6 +3,13 @@
   "new_product": "New Product",
   "search_placeholder": "Search product...",
   "no_products": "No products found",
+  "empty": {
+    "title": "No products registered",
+    "description": "Start by adding your first product.",
+    "action": "Add Product",
+    "no_results_title": "No products registered",
+    "no_results_description": "No products match your search."
+  },
   "delete_confirm": "The product and its recipe will be deleted. It cannot be used in new quotes. This action cannot be undone.",
   "table": {
     "name": "Name",

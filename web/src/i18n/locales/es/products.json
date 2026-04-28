@@ -3,6 +3,13 @@
   "new_product": "Nuevo Producto",
   "search_placeholder": "Buscar producto...",
   "no_products": "No se encontraron productos",
+  "empty": {
+    "title": "Sin productos registrados",
+    "description": "Comienza agregando tu primer producto.",
+    "action": "Agregar Producto",
+    "no_results_title": "Sin productos registrados",
+    "no_results_description": "No hay productos que coincidan con tu búsqueda."
+  },
   "delete_confirm": "Se eliminará el producto y su receta. No se puede usar en nuevas cotizaciones. Esta acción no se puede deshacer.",
   "table": {
     "name": "Nombre",
