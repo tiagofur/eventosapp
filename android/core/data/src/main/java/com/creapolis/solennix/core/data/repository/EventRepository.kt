@@ -1,6 +1,5 @@
 package com.creapolis.solennix.core.data.repository
 
-import com.creapolis.solennix.core.data.paging.RemotePagingSource
 import com.creapolis.solennix.core.database.dao.EventDao
 import com.creapolis.solennix.core.database.dao.EventItemDao
 import com.creapolis.solennix.core.database.entity.asEntity
@@ -8,10 +7,6 @@ import com.creapolis.solennix.core.database.entity.asExternalModel
 import com.creapolis.solennix.core.database.entity.SyncStatus
 import com.creapolis.solennix.core.model.*
 import com.creapolis.solennix.core.network.*
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.map
 import io.ktor.util.reflect.typeInfo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,24 +17,6 @@ import javax.inject.Singleton
 
 interface EventRepository {
     fun getEvents(): Flow<List<Event>>
-    fun getEventsPaging(
-        query: String = "",
-        status: String? = null,
-        startDate: String? = null,
-        endDate: String? = null
-    ): Flow<PagingData<Event>>
-
-    /**
-     * Returns a [PagingData] stream that loads pages directly from the remote API
-     * using server-side pagination. Use this when online for fresh data with
-     * sort/order support.
-     */
-    fun getEventsRemotePaging(
-        sort: String = "event_date",
-        order: String = "desc",
-        status: String? = null,
-        query: String = ""
-    ): Flow<PagingData<Event>>
     fun getUpcomingEvents(limit: Int = 5): Flow<List<Event>>
     fun getEventCountForMonth(monthStart: String, monthEnd: String): Flow<Int>
     suspend fun getEvent(id: String): Event?
@@ -100,51 +77,6 @@ class OfflineFirstEventRepository @Inject constructor(
 
     override fun getEvents(): Flow<List<Event>> =
         eventDao.getEvents().map { it.map { entity -> entity.asExternalModel() } }
-
-    override fun getEventsPaging(
-        query: String, 
-        status: String?,
-        startDate: String?,
-        endDate: String?
-    ): Flow<PagingData<Event>> =
-        Pager(
-            config = PagingConfig(
-                pageSize = 20,
-                enablePlaceholders = true
-            ),
-            pagingSourceFactory = { eventDao.getEventsPaging(query, status, startDate, endDate) }
-        ).flow.map { pagingData ->
-            pagingData.map { it.asExternalModel() }
-        }
-
-    override fun getEventsRemotePaging(
-        sort: String,
-        order: String,
-        status: String?,
-        query: String
-    ): Flow<PagingData<Event>> {
-        val params = buildMap {
-            put("sort", sort)
-            put("order", order)
-            if (!status.isNullOrBlank()) put("status", status)
-            if (query.isNotBlank()) put("q", query)
-        }
-        return Pager(
-            config = PagingConfig(
-                pageSize = 20,
-                enablePlaceholders = true
-            ),
-            pagingSourceFactory = {
-                RemotePagingSource<Event>(
-                    apiService = apiService,
-                    endpoint = Endpoints.EVENTS,
-                    params = params,
-                    typeInfo = typeInfo<PaginatedResponse<Event>>(),
-                    pageSize = 20
-                )
-            }
-        ).flow
-    }
 
     override fun getUpcomingEvents(limit: Int): Flow<List<Event>> =
         eventDao.getUpcomingEvents(limit).map { it.map { entity -> entity.asExternalModel() } }

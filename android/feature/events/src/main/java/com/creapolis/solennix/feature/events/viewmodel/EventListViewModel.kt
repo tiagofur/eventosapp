@@ -16,8 +16,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import androidx.paging.PagingData
-import androidx.paging.cachedIn
 import java.time.LocalDate
 
 private const val TAG = "EventListVM"
@@ -96,17 +94,6 @@ class EventListViewModel @Inject constructor(
             error = params[5] as String?
         )
     }
-
-    val pagedEvents: Flow<PagingData<Event>> = filterState
-        .debounce(300)
-        .flatMapLatest { filters ->
-            eventRepository.getEventsPaging(
-                query = filters.query,
-                status = filters.status?.name,
-                startDate = filters.startDate?.toString(),
-                endDate = filters.endDate?.toString()
-            )
-        }.cachedIn(viewModelScope)
 
     /// Bundle sort axis state with the ongoing updatingStatusEventId into a
     /// single upstream so the main `combine` stays under the 5-arg ceiling.

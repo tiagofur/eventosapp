@@ -1,6 +1,5 @@
 package com.creapolis.solennix.core.database.dao
 
-import androidx.paging.PagingSource
 import androidx.room.*
 import com.creapolis.solennix.core.database.entity.CachedEvent
 import kotlinx.coroutines.flow.Flow
@@ -12,27 +11,6 @@ interface EventDao {
 
     @Query("SELECT * FROM events ORDER BY event_date DESC")
     fun getEvents(): Flow<List<CachedEvent>>
-
-    @Transaction
-    @Query("""
-        SELECT * FROM events 
-        WHERE (:status IS NULL OR status = :status)
-        AND (:startDate IS NULL OR event_date >= :startDate)
-        AND (:endDate IS NULL OR event_date <= :endDate)
-        AND (
-            :query = '' OR 
-            service_type LIKE '%' || :query || '%' OR 
-            location LIKE '%' || :query || '%' OR 
-            city LIKE '%' || :query || '%'
-        )
-        ORDER BY event_date DESC
-    """)
-    fun getEventsPaging(
-        query: String = "", 
-        status: String? = null,
-        startDate: String? = null,
-        endDate: String? = null
-    ): PagingSource<Int, CachedEvent>
 
     @Query("SELECT * FROM events WHERE id = :id")
     suspend fun getEvent(id: String): CachedEvent?
