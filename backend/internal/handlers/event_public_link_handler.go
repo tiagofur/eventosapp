@@ -176,10 +176,11 @@ func (h *EventPublicLinkHandler) Revoke(w http.ResponseWriter, r *http.Request) 
 // "visibleToClient" per-field toggles from PRD/12 will land in a later
 // iteration — for v1 we return the safe default subset.
 type PublicEventView struct {
-	Event     PublicEventDetails   `json:"event"`
-	Organizer PublicOrganizerBrand `json:"organizer"`
-	Client    PublicClientInfo     `json:"client"`
-	Payment   PublicPaymentSummary `json:"payment"`
+	PortalTier string               `json:"portal_tier"` // "free" | "pro"
+	Event      PublicEventDetails   `json:"event"`
+	Organizer  PublicOrganizerBrand `json:"organizer"`
+	Client     PublicClientInfo     `json:"client"`
+	Payment    PublicPaymentSummary `json:"payment"`
 }
 
 type PublicEventDetails struct {
@@ -339,8 +340,8 @@ func (h *EventPublicLinkHandler) isPlanActive(organizer *models.User) bool {
 }
 
 // buildPublicEventView constructs the PublicEventView response based on plan tier.
-// Gratis: returns basic event details and payment summary only.
-// Pro/Business: returns full event details, client info, and payment summary.
+// Free (gratis or expired): basic event teaser only — no branding, no payment data, no payment-submission access.
+// Pro/Business: full branded response with event details, client info, and payment summary.
 func (h *EventPublicLinkHandler) buildPublicEventView(
 	organizer *models.User,
 	planActive bool,
@@ -349,36 +350,25 @@ func (h *EventPublicLinkHandler) buildPublicEventView(
 	paid float64,
 	remaining float64,
 ) PublicEventView {
-	paymentSummary := PublicPaymentSummary{
-		Total:     event.TotalAmount,
-		Paid:      paid,
-		Remaining: remaining,
-		Currency:  "MXN",
-	}
-
-	organizerBrand := PublicOrganizerBrand{
-		BusinessName: organizer.BusinessName,
-		LogoURL:      organizer.LogoURL,
-		BrandColor:   organizer.BrandColor,
-	}
-
-	// Gratis (or expired plan): basic shape
+	// Free (gratis or expired plan): teaser-only shape — no branding, no payment data.
 	if organizer.Plan == "gratis" || !planActive {
 		return PublicEventView{
+			PortalTier: "free",
 			Event: PublicEventDetails{
 				ID:        event.ID,
 				EventDate: firstTenChars(event.EventDate),
 				Status:    event.Status,
 				// Redact: ServiceType, StartTime, EndTime, Location, City, NumPeople
 			},
-			Organizer: organizerBrand,
-			Client:    PublicClientInfo{}, // No client details for free tier
-			Payment:   paymentSummary,
+			Organizer: PublicOrganizerBrand{}, // No branding for free tier
+			Client:    PublicClientInfo{},     // No client details for free tier
+			Payment:   PublicPaymentSummary{}, // No payment data for free tier
 		}
 	}
 
 	// Pro/Business: full shape
 	return PublicEventView{
+		PortalTier: "pro",
 		Event: PublicEventDetails{
 			ID:          event.ID,
 			ServiceType: event.ServiceType,
@@ -390,11 +380,20 @@ func (h *EventPublicLinkHandler) buildPublicEventView(
 			NumPeople:   event.NumPeople,
 			Status:      event.Status,
 		},
-		Organizer: organizerBrand,
+		Organizer: PublicOrganizerBrand{
+			BusinessName: organizer.BusinessName,
+			LogoURL:      organizer.LogoURL,
+			BrandColor:   organizer.BrandColor,
+		},
 		Client: PublicClientInfo{
 			ID:   event.ClientID.String(),
 			Name: clientName,
 		},
-		Payment: paymentSummary,
+		Payment: PublicPaymentSummary{
+			Total:     event.TotalAmount,
+			Paid:      paid,
+			Remaining: remaining,
+			Currency:  "MXN",
+		},
 	}
 }
