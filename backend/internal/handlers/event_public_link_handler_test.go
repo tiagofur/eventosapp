@@ -736,15 +736,18 @@ func TestGetPortalData_GratisPlan_ReturnsBasicShape(t *testing.T) {
 	assert.Nil(t, resp.Event.City)
 	assert.Equal(t, 0, resp.Event.NumPeople) // Gratis gets zero, not the actual count
 
-	// Organizer brand is visible
-	assert.Equal(t, "Eventos Divinos", *resp.Organizer.BusinessName)
+	// Free tier: portal_tier is "free"
+	assert.Equal(t, "free", resp.PortalTier)
+
+	// Free tier: organizer branding is redacted
+	assert.Nil(t, resp.Organizer.BusinessName)
 
 	// Client details hidden for gratis
 	assert.Empty(t, resp.Client.Name)
 
-	// Payment info visible
-	assert.Equal(t, float64(50000), resp.Payment.Total)
-	assert.Equal(t, float64(15000), resp.Payment.Paid)
+	// Free tier: payment summary is empty
+	assert.Equal(t, float64(0), resp.Payment.Total)
+	assert.Equal(t, float64(0), resp.Payment.Paid)
 }
 
 // Pro plan returns full shape with all event details
@@ -873,5 +876,7 @@ func TestGetPortalData_ExpiredPlan_ReturnsBasicShape(t *testing.T) {
 	// Expired plan should return basic shape
 	assert.Empty(t, resp.Event.ServiceType)
 	assert.Equal(t, 0, resp.Event.NumPeople)
-	assert.Equal(t, "Eventos Divinos", *resp.Organizer.BusinessName)
+	assert.Equal(t, "free", resp.PortalTier)
+	// Organizer branding is redacted for expired plan
+	assert.Nil(t, resp.Organizer.BusinessName)
 }

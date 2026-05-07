@@ -227,9 +227,8 @@ export const ClientPortalPage: React.FC = () => {
 
   const { event, organizer, client } = data;
   
-  // Detect if this portal is showing a limited (gratis) view.
-  // Gratis organizers get a redacted response: no service_type, no location, no schedule, no num_people.
-  const isGratisView = !event.service_type;
+  // Use the explicit tier contract from the backend — never infer from missing fields.
+  const isGratisView = data.portal_tier === "free";
 
   const days = daysUntil(event.event_date);
   const countdownLabel =
@@ -365,11 +364,11 @@ export const ClientPortalPage: React.FC = () => {
           </DetailCard>
         </section>
 
-        {/* Payment tabs: resumen + enviar + historial */}
+        {/* Payment tabs: resumen + (pro-only: enviar + historial) */}
         <section className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           {/* Tab strip */}
           <div className="flex border-b border-border">
-            {(["resumen", "enviar", "historial"] as TabId[]).map((tab) => {
+            {(isGratisView ? ["resumen"] as TabId[] : ["resumen", "enviar", "historial"] as TabId[]).map((tab) => {
               const icons: Record<TabId, React.ReactNode> = {
                 resumen: <Wallet className="h-4 w-4" />,
                 enviar: <Send className="h-4 w-4" />,

@@ -28,17 +28,18 @@ var allowedReceiptMIME = map[string]string{
 type PaymentSubmissionHandler struct {
 	repo        *repository.PaymentSubmissionRepo
 	paymentRepo *repository.PaymentRepo
+	userRepo    FullUserRepository
 	pool        *pgxpool.Pool
 	uploadDir   string
 }
 
-func NewPaymentSubmissionHandler(repo *repository.PaymentSubmissionRepo, paymentRepo *repository.PaymentRepo, pool *pgxpool.Pool, uploadDir string) *PaymentSubmissionHandler {
+func NewPaymentSubmissionHandler(repo *repository.PaymentSubmissionRepo, paymentRepo *repository.PaymentRepo, userRepo FullUserRepository, pool *pgxpool.Pool, uploadDir string) *PaymentSubmissionHandler {
 	receiptsDir := filepath.Join(uploadDir, "receipts")
 	if err := os.MkdirAll(receiptsDir, 0755); err != nil {
 		// Non-fatal: log and continue; uploads will fail at runtime if dir missing.
 		_ = err
 	}
-	return &PaymentSubmissionHandler{repo: repo, paymentRepo: paymentRepo, pool: pool, uploadDir: uploadDir}
+	return &PaymentSubmissionHandler{repo: repo, paymentRepo: paymentRepo, userRepo: userRepo, pool: pool, uploadDir: uploadDir}
 }
 
 // CreatePublicRequest for client submitting payment from portal
@@ -179,6 +180,17 @@ func (h *PaymentSubmissionHandler) CreatePublic(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Enforce Pro-only gate for payment submissions.
+	organizer, err := h.userRepo.GetByID(ctx, link.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to load organizer")
+		return
+	}
+	if !FeatureAvailable(organizer.Plan, "payment_submissions") || !IsPlanActive(organizer) {
+		writeError(w, http.StatusForbidden, "Payment submissions require a Pro or Business plan")
+		return
+	}
+
 	ps := &models.PaymentSubmission{
 		EventID:        eventID,
 		ClientID:       clientID,
@@ -244,6 +256,17 @@ func (h *PaymentSubmissionHandler) GetHistoryPublic(w http.ResponseWriter, r *ht
 	// Verify event ID matches
 	if link.EventID != eventID {
 		writeError(w, http.StatusBadRequest, "Event ID mismatch")
+		return
+	}
+
+	// Enforce Pro-only gate for payment submission history.
+	organizer, err := h.userRepo.GetByID(ctx, link.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to load organizer")
+		return
+	}
+	if !FeatureAvailable(organizer.Plan, "payment_submissions") || !IsPlanActive(organizer) {
+		writeError(w, http.StatusForbidden, "Payment submissions require a Pro or Business plan")
 		return
 	}
 
