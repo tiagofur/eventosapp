@@ -356,7 +356,7 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 	// If approved, create Payment row
 	if req.Status == "approved" {
 		eventRepo := repository.NewEventRepo(h.pool)
-		_, err := eventRepo.GetByID(ctx, ps.UserID, ps.EventID)
+		_, err := eventRepo.GetByID(ctx, ps.EventID, ps.UserID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, "Event not found")
 			return
