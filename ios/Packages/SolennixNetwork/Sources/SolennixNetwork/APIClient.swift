@@ -128,6 +128,16 @@ public actor APIClient {
         return try await performRaw(request)
     }
 
+    /// Perform a POST request with a JSON body and return the raw response Data.
+    public func postData(
+        _ endpoint: String,
+        body: some Encodable
+    ) async throws -> Data {
+        var request = try buildRequest(endpoint, method: "POST")
+        request.httpBody = try encoder.encode(body)
+        return try await performRaw(request)
+    }
+
     /// Fetch a paginated response, with fallback to plain array.
     /// Use this for list views that expect PaginatedResponse but the backend may return a plain array.
     public func getPaginated<T: Decodable>(

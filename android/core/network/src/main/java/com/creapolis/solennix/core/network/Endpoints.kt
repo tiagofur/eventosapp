@@ -61,6 +61,10 @@ object Endpoints {
     const val PAYMENTS = "payments"
     fun payment(id: String) = "payments/$id"
 
+    // Quick Quotes
+    const val QUICK_QUOTES = "quick-quotes"
+    const val QUICK_QUOTES_PDF = "quick-quotes/pdf"
+
     // Unavailable Dates
     const val UNAVAILABLE_DATES = "unavailable-dates"
     fun unavailableDate(id: String) = "unavailable-dates/$id"

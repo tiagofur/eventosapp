@@ -97,6 +97,8 @@ public enum Endpoint {
         "/events/\(eventId)/pdf/\(type)"
     }
 
+    public static let quickQuotePDF = "/quick-quotes/pdf"
+
     // MARK: - Products
 
     public static let products = "/products"

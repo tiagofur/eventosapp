@@ -12,9 +12,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { productService } from "@/services/productService";
 import { logError } from "@/lib/errorHandler";
-import { generateBudgetPDF } from "@/lib/pdfGenerator";
 import { EventProducts } from "@/pages/Events/components/EventProducts";
 import { EventExtras } from "@/pages/Events/components/EventExtras";
+import { downloadQuickQuotePDF } from "@/services/pdfService";
 
 interface Product {
   id: string;
@@ -41,7 +41,7 @@ interface SelectedExtra {
 export const QuickQuotePage: React.FC = () => {
   const { t, i18n } = useTranslation(["quotes", "common", "events"]);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  useAuth();
 
   const moneyLocale = i18n.language === "en" ? "en-US" : "es-MX";
 
@@ -263,73 +263,52 @@ export const QuickQuotePage: React.FC = () => {
     });
   };
 
-  const handleExportPDF = () => {
-    const today = new Date().toISOString().split("T")[0];
-    const mockEvent = {
-      id: "quick-quote",
-      user_id: user?.id || "",
-      client_id: "",
-      event_date: today,
-      start_time: null,
-      end_time: null,
-      service_type: t("quotes:title"),
-      num_people: methods.getValues("num_people") || 1,
-      status: "quoted" as const,
-      discount: discountValue,
-      discount_type: discountType,
-      requires_invoice: requiresInvoice,
-      tax_rate: taxRate,
-      tax_amount: financials.taxAmount,
-      total_amount: financials.total,
-      location: null,
-      city: null,
-      deposit_percent: null,
-      cancellation_days: null,
-      refund_percent: null,
-      notes: null,
-      photos: null,
-      created_at: today,
-      updated_at: today,
-      client: clientName
-        ? {
-            id: "",
-            user_id: "",
-            name: clientName,
-            phone: clientPhone,
-            email: clientEmail || null,
-            address: null,
-            city: null,
-            notes: null,
-            total_events: 0,
-            total_spent: 0,
-            created_at: today,
-            updated_at: today,
-          }
-        : null,
-    };
+  const handleExportPDF = async () => {
+    const validProducts = selectedProducts
+      .filter((item) => item.product_id && item.quantity > 0)
+      .map((item) => ({
+        product_id: item.product_id,
+        name:
+          products.find((product) => product.id === item.product_id)?.name ||
+          t("common:entities.product"),
+        quantity: item.quantity,
+        unit_price: item.price,
+        discount: item.discount || 0,
+      }));
 
-    const productItems = selectedProducts.map((sp) => ({
-      ...sp,
-      id: "",
-      event_id: "",
-      products: {
-        name: products.find((p) => p.id === sp.product_id)?.name || t("common:entities.product"),
-      },
-    }));
+    const validExtras = extras
+      .filter((extra) => extra.description.trim().length > 0)
+      .map((extra) => ({
+        description: extra.description,
+        cost: extra.cost,
+        price: extra.price,
+        exclude_utility: extra.exclude_utility,
+      }));
 
-    const extraItems = extras.map((e) => ({
-      ...e,
-      id: "",
-      event_id: "",
-    }));
+    if (validProducts.length === 0 && validExtras.length === 0) {
+      return;
+    }
 
-    generateBudgetPDF(
-      mockEvent as any,
-      user as any,
-      productItems as any,
-      extraItems as any,
-      i18n.language.startsWith("en") ? "en" : "es",
-    );
+    try {
+      await downloadQuickQuotePDF({
+        client: clientName
+          ? {
+              name: clientName,
+              phone: clientPhone,
+              email: clientEmail || null,
+            }
+          : undefined,
+        products: validProducts,
+        extras: validExtras,
+        num_people: methods.getValues("num_people") || 1,
+        discount: discountValue,
+        discount_type: discountType,
+        requires_invoice: requiresInvoice,
+        tax_rate: taxRate,
+      });
+    } catch (error) {
+      logError("Error exporting quick quote PDF", error);
+    }
   };
 
   const handleConvertToEvent = () => {

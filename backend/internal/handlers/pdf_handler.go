@@ -375,6 +375,187 @@ func (h *PDFHandler) GetEquipmentListPDF(w http.ResponseWriter, r *http.Request)
 	servePDF(w, safeFilename(ctx.event.ServiceType, "lista_equipo"), data)
 }
 
+// GetQuickQuotePDF handles POST /quick-quotes/pdf
+// The payload carries an ad-hoc quote assembled by the client; the backend
+// recalculates totals and renders it through the shared budget generator.
+func (h *PDFHandler) GetQuickQuotePDF(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	var req quickQuotePDFRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if len(req.Products) == 0 && len(req.Extras) == 0 {
+		writeError(w, http.StatusBadRequest, "At least one product or extra is required")
+		return
+	}
+
+	profile, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		slog.Error("pdf: quick quote profile not found", "user_id", userID, "error", err)
+		writeError(w, http.StatusInternalServerError, "Failed to load profile")
+		return
+	}
+
+	event, products, extras, client := req.toPDFData(userID)
+	data, err := pdf.GenerateBudget(pdf.BudgetData{
+		Event:     event,
+		Client:    client,
+		Profile:   profile,
+		Products:  products,
+		Extras:    extras,
+		LogoBytes: h.logoURLToBytes(profile),
+	})
+	if err != nil {
+		slog.Error("pdf: generate quick quote", "user_id", userID, "error", err)
+		writeError(w, http.StatusInternalServerError, "Failed to generate PDF")
+		return
+	}
+
+	servePDF(w, safeFilename("cotizacion_rapida", "presupuesto"), data)
+}
+
+type quickQuotePDFRequest struct {
+	Client          *quickQuotePDFClient   `json:"client"`
+	Products        []quickQuotePDFProduct `json:"products"`
+	Extras          []quickQuotePDFExtra   `json:"extras"`
+	NumPeople       int                    `json:"num_people"`
+	Discount        float64                `json:"discount"`
+	DiscountType    string                 `json:"discount_type"`
+	RequiresInvoice bool                   `json:"requires_invoice"`
+	TaxRate         float64                `json:"tax_rate"`
+}
+
+type quickQuotePDFClient struct {
+	Name  string  `json:"name"`
+	Phone string  `json:"phone"`
+	Email *string `json:"email,omitempty"`
+}
+
+type quickQuotePDFProduct struct {
+	ProductID string  `json:"product_id,omitempty"`
+	Name      string  `json:"name"`
+	Quantity  float64 `json:"quantity"`
+	UnitPrice float64 `json:"unit_price"`
+	Discount  float64 `json:"discount"`
+}
+
+type quickQuotePDFExtra struct {
+	Description    string  `json:"description"`
+	Cost           float64 `json:"cost"`
+	Price          float64 `json:"price"`
+	ExcludeUtility bool    `json:"exclude_utility"`
+}
+
+func (req quickQuotePDFRequest) toPDFData(userID uuid.UUID) (models.Event, []models.EventProduct, []models.EventExtra, *models.Client) {
+	now := time.Now()
+	normalizedDiscountType := req.DiscountType
+	if normalizedDiscountType != "percent" && normalizedDiscountType != "fixed" {
+		normalizedDiscountType = "percent"
+	}
+
+	products := make([]models.EventProduct, 0, len(req.Products))
+	productsSubtotal := 0.0
+	for _, product := range req.Products {
+		if product.Quantity <= 0 {
+			continue
+		}
+		lineTotal := (product.UnitPrice - product.Discount) * product.Quantity
+		name := product.Name
+		products = append(products, models.EventProduct{
+			ID:         uuid.Nil,
+			EventID:    uuid.Nil,
+			ProductID:  uuid.Nil,
+			Quantity:   product.Quantity,
+			UnitPrice:  product.UnitPrice,
+			Discount:   product.Discount,
+			TotalPrice: lineTotal,
+			CreatedAt:  now,
+			ProductName: func() *string {
+				if name == "" {
+					return nil
+				}
+				return &name
+			}(),
+		})
+		productsSubtotal += lineTotal
+	}
+
+	extras := make([]models.EventExtra, 0, len(req.Extras))
+	normalExtrasTotal := 0.0
+	passThroughExtrasTotal := 0.0
+	for _, extra := range req.Extras {
+		if strings.TrimSpace(extra.Description) == "" {
+			continue
+		}
+		extras = append(extras, models.EventExtra{
+			ID:                 uuid.Nil,
+			EventID:            uuid.Nil,
+			Description:        extra.Description,
+			Cost:               extra.Cost,
+			Price:              extra.Price,
+			ExcludeUtility:     extra.ExcludeUtility,
+			IncludeInChecklist: false,
+			CreatedAt:          now,
+		})
+		if extra.ExcludeUtility {
+			passThroughExtrasTotal += extra.Price
+		} else {
+			normalExtrasTotal += extra.Price
+		}
+	}
+
+	discountableBase := productsSubtotal + normalExtrasTotal
+	discountAmount := req.Discount
+	if normalizedDiscountType == "percent" {
+		discountAmount = discountableBase * req.Discount / 100
+	} else if discountAmount > discountableBase {
+		discountAmount = discountableBase
+	}
+
+	baseTotal := (discountableBase - discountAmount) + passThroughExtrasTotal
+	taxAmount := 0.0
+	if req.RequiresInvoice {
+		taxAmount = baseTotal * req.TaxRate / 100
+	}
+
+	var client *models.Client
+	if req.Client != nil && strings.TrimSpace(req.Client.Name) != "" {
+		client = &models.Client{
+			ID:        uuid.Nil,
+			UserID:    userID,
+			Name:      req.Client.Name,
+			Phone:     req.Client.Phone,
+			Email:     req.Client.Email,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+	}
+
+	event := models.Event{
+		ID:              uuid.Nil,
+		UserID:          userID,
+		ClientID:        uuid.Nil,
+		EventDate:       now.Format("2006-01-02"),
+		ServiceType:     "Cotizacion Rapida",
+		NumPeople:       req.NumPeople,
+		Status:          "quoted",
+		Discount:        req.Discount,
+		DiscountType:    normalizedDiscountType,
+		RequiresInvoice: req.RequiresInvoice,
+		TaxRate:         req.TaxRate,
+		TaxAmount:       taxAmount,
+		TotalAmount:     baseTotal + taxAmount,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		Client:          client,
+	}
+
+	return event, products, extras, client
+}
+
 // logoURLToBytes resolves logo bytes from the profile's LogoURL.
 // Handles both relative local paths (/api/uploads/... or /api/v1/uploads/...)
 // and absolute URLs (S3/CDN). Returns nil when no logo is configured.

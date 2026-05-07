@@ -29,7 +29,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import com.creapolis.solennix.core.designsystem.R as DesignSystemR
@@ -346,7 +345,7 @@ fun EventDetailScreen(
                                 uiState = uiState,
                                 context = context,
                                 viewModel = viewModel,
-                                onSharePdf = { file -> sharePdfFile(context, file) }
+                                onSharePdf = { file -> openPdfFile(context, file) }
                             )
                         }
                     )
@@ -1540,14 +1539,7 @@ fun DocumentActionsGrid(
         isGenerating = true
         scope.launch {
             try {
-                val bytes = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    viewModel.downloadEventPdf(type)
-                }
-                val file = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val f = File(context.cacheDir, filename)
-                    f.writeBytes(bytes)
-                    f
-                }
+                val file = downloadEventPdfToCache(context, viewModel, type, filename)
                 onSharePdf(file)
             } catch (e: Exception) {
                 Toast.makeText(context, "Error descargando PDF: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -1634,23 +1626,6 @@ fun DocumentActionsGrid(
         ) {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         }
-    }
-}
-
-private fun sharePdfFile(context: android.content.Context, file: File) {
-    try {
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/pdf")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(intent, "Abrir PDF con..."))
-    } catch (e: Exception) {
-        Toast.makeText(context, "No hay aplicaci\u00f3n para abrir PDFs", Toast.LENGTH_SHORT).show()
     }
 }
 

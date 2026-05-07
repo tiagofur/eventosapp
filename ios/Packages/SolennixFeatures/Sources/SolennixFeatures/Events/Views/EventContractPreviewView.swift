@@ -317,52 +317,19 @@ public struct EventContractPreviewView: View {
         let sanitized = clientName.replacingOccurrences(of: " ", with: "_")
         let filename = "Contrato_\(sanitized).pdf"
 
-        let pdfData: Data
         do {
-            pdfData = try await apiClient.getData(Endpoint.eventPDF(eventId, type: "contract"))
+            let tempURL = try await EventPDFFileService.download(
+                apiClient: apiClient,
+                eventId: eventId,
+                type: "contract",
+                filename: filename
+            )
+            try await MainActor.run {
+                try EventPDFFileService.presentShareSheet(fileURL: tempURL)
+            }
         } catch {
             toastManager.show(message: "No se pudo generar el PDF", type: .error)
-            return
         }
-
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        do {
-            try pdfData.write(to: tempURL)
-        } catch {
-            toastManager.show(message: "No se pudo guardar el PDF", type: .error)
-            return
-        }
-
-        await MainActor.run {
-            guard let presenter = topMostViewController() else {
-                toastManager.show(message: "No se pudo presentar el compartir", type: .error)
-                return
-            }
-            let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-            if let popover = activityVC.popoverPresentationController {
-                popover.sourceView = presenter.view
-                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
-                popover.permittedArrowDirections = []
-            }
-            presenter.present(activityVC, animated: true)
-        }
-    }
-
-    /// Walks the presentation chain to find the topmost VC that can present.
-    /// Using the root VC fails silently when a sheet/modal is already on top.
-    private func topMostViewController() -> UIViewController? {
-        guard let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState == .foregroundActive })
-              ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
-              let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
-        else { return nil }
-
-        var top = window.rootViewController
-        while let presented = top?.presentedViewController {
-            top = presented
-        }
-        return top
     }
 
     // MARK: - Helpers

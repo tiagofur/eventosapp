@@ -282,6 +282,11 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 			r.Delete("/{id}", crudHandler.DeletePayment)
 		})
 
+		// Quick Quotes
+		r.Route("/quick-quotes", func(r chi.Router) {
+			r.Post("/pdf", pdfHandler.GetQuickQuotePDF)
+		})
+
 		// Payment Submissions (organizer review inbox)
 		r.Route("/payment-submissions", func(r chi.Router) {
 			r.Get("/", paymentSubmissionHandler.GetPendingOrganizerInbox)

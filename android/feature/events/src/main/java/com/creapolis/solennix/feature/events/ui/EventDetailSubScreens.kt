@@ -912,18 +912,13 @@ fun EventContractPreviewScreen(
                         IconButton(onClick = {
                             scope.launch {
                                 try {
-                                    val bytes = viewModel.downloadEventPdf("contract")
-                                    val file = java.io.File(context.cacheDir, "contrato_${event.id.take(8)}.pdf")
-                                    file.writeBytes(bytes)
-                                    val uri = androidx.core.content.FileProvider.getUriForFile(
-                                        context, "${context.packageName}.fileprovider", file
+                                    val file = downloadEventPdfToCache(
+                                        context = context,
+                                        viewModel = viewModel,
+                                        type = "contract",
+                                        filename = "contrato_${event.id.take(8)}.pdf"
                                     )
-                                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                        type = "application/pdf"
-                                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Compartir Contrato"))
+                                    sharePdfFile(context, file, "Compartir Contrato")
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "Error al generar contrato", Toast.LENGTH_SHORT).show()
                                 }

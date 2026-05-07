@@ -1106,47 +1106,19 @@ public struct EventDetailView: View {
             return
         }
 
-        let pdfData: Data
         do {
-            pdfData = try await apiClient.getData(Endpoint.eventPDF(eventId, type: pdfType))
+            let tempURL = try await EventPDFFileService.download(
+                apiClient: apiClient,
+                eventId: eventId,
+                type: pdfType,
+                filename: filename
+            )
+            try await MainActor.run {
+                try EventPDFFileService.presentShareSheet(fileURL: tempURL)
+            }
         } catch {
             toastManager.show(message: tr("events.detail.error.save_pdf", "No se pudo generar el PDF"), type: .error)
-            return
         }
-
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        do {
-            try pdfData.write(to: tempURL)
-        } catch {
-            toastManager.show(message: tr("events.detail.error.save_pdf", "No se pudo guardar el PDF"), type: .error)
-            return
-        }
-
-        await MainActor.run {
-            guard let presenter = topMostViewController() else {
-                toastManager.show(message: tr("events.detail.error.share_sheet", "No se pudo presentar el compartir"), type: .error)
-                return
-            }
-            let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-            if let popover = activityVC.popoverPresentationController {
-                popover.sourceView = presenter.view
-                popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
-                popover.permittedArrowDirections = []
-            }
-            presenter.present(activityVC, animated: true)
-        }
-    }
-
-    private func topMostViewController() -> UIViewController? {
-        guard let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState == .foregroundActive })
-              ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
-              let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
-        else { return nil }
-        var top = window.rootViewController
-        while let presented = top?.presentedViewController { top = presented }
-        return top
     }
 
     // MARK: - Duplicate Event
