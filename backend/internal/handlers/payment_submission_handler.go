@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -355,13 +356,6 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 
 	// If approved, create Payment row
 	if req.Status == "approved" {
-		eventRepo := repository.NewEventRepo(h.pool)
-		_, err := eventRepo.GetByID(ctx, ps.EventID, ps.UserID)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Event not found")
-			return
-		}
-
 		payment := &models.Payment{
 			EventID:       ps.EventID,
 			UserID:        ps.UserID,
@@ -377,6 +371,11 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 		}
 
 		ps.LinkedPaymentID = &payment.ID
+
+		eventRepo := repository.NewEventRepo(h.pool)
+		if _, err := autoConfirmQuotedEventIfDepositCovered(ctx, eventRepo, h.paymentRepo, ps.EventID, ps.UserID); err != nil {
+			slog.Warn("Failed to auto-confirm event after payment submission review", "event_id", ps.EventID, "submission_id", ps.ID, "error", err)
+		}
 
 		// TODO: Emit notifications (client/organizer)
 		// TODO: Update AuditLog

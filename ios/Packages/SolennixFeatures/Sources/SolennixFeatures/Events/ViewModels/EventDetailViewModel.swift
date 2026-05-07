@@ -246,10 +246,9 @@ public final class EventDetailViewModel {
                     ]
                 )
 
-            // Auto-confirm if quoted and payment received
-            if event?.status == .quoted {
-                await changeStatus(.confirmed, eventId: eventId)
-            }
+            // Reload event from backend — the server auto-confirms quoted -> confirmed
+            // when accumulated payments cover the required deposit (autoConfirmQuotedEventIfDepositCovered).
+            await loadData(eventId: eventId)
 
             // Reset form
             paymentAmount = ""

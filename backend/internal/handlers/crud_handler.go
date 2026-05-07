@@ -2001,6 +2001,12 @@ func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.eventRepo != nil {
+		if _, err := autoConfirmQuotedEventIfDepositCovered(r.Context(), h.eventRepo, h.paymentRepo, payment.EventID, userID); err != nil {
+			slog.Warn("Failed to auto-confirm event after payment", "event_id", payment.EventID, "error", err)
+		}
+	}
+
 	// Send push notification (fire-and-forget)
 	if h.notifier != nil {
 		go func() {
