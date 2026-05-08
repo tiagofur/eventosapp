@@ -29,13 +29,15 @@ public struct PaymentInboxView: View {
             if viewModel.isLoading && viewModel.submissions.isEmpty {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isPlanLocked {
+                planLockedState
             } else if viewModel.submissions.isEmpty {
                 emptyState
             } else {
                 submissionList
             }
         }
-        .navigationTitle("Comprobantes")
+        .navigationTitle(String(localized: "payment_inbox.title", defaultValue: "Comprobantes"))
         .navigationBarTitleDisplayMode(.large)
         .task { await viewModel.fetchSubmissions() }
         .refreshable { await viewModel.fetchSubmissions() }
@@ -226,6 +228,28 @@ public struct PaymentInboxView: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Plan Locked State
+
+    private var planLockedState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "lock.fill")
+                .font(.largeTitle)
+                .foregroundStyle(SolennixColors.textTertiary)
+            Text(String(localized: "payment_inbox.pro_only_title",
+                        defaultValue: "Función exclusiva para usuarios Pro."))
+                .font(.headline)
+                .foregroundStyle(SolennixColors.textSecondary)
+                .multilineTextAlignment(.center)
+            Text(String(localized: "payment_inbox.pro_only_hint",
+                        defaultValue: "Actualiza tu plan para revisar y aprobar comprobantes enviados por clientes."))
+                .font(.subheadline)
+                .foregroundStyle(SolennixColors.textTertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Empty State

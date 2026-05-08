@@ -122,6 +122,7 @@ export const ClientPortalPage: React.FC = () => {
   };
 
   const handleTabChange = (tab: TabId) => {
+    if (isGratisView && tab !== "resumen") return;
     setActiveTab(tab);
     if (tab === "historial" && data && token) {
       fetchHistory(token, data.event.id, data.client.id);
@@ -133,7 +134,7 @@ export const ClientPortalPage: React.FC = () => {
     if (!data || !token) return;
     const amount = parseFloat(submitAmount);
     if (isNaN(amount) || amount <= 0) {
-      setSubmitError("El monto debe ser un número positivo");
+      setSubmitError(t("portal.payments.amount_required"));
       return;
     }
     setSubmitLoading(true);
@@ -153,7 +154,7 @@ export const ClientPortalPage: React.FC = () => {
       setSubmitFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch {
-      setSubmitError("No se pudo enviar el comprobante. Intentá de nuevo.");
+      setSubmitError(t("portal.payments.submit_error"));
     } finally {
       setSubmitLoading(false);
     }
@@ -229,6 +230,12 @@ export const ClientPortalPage: React.FC = () => {
   
   // Use the explicit tier contract from the backend — never infer from missing fields.
   const isGratisView = data.portal_tier === "free";
+
+  useEffect(() => {
+    if (isGratisView && activeTab !== "resumen") {
+      setActiveTab("resumen");
+    }
+  }, [isGratisView, activeTab]);
 
   const days = daysUntil(event.event_date);
   const countdownLabel =
@@ -375,9 +382,9 @@ export const ClientPortalPage: React.FC = () => {
                 historial: <History className="h-4 w-4" />,
               };
               const labels: Record<TabId, string> = {
-                resumen: "Resumen",
-                enviar: "Enviar pago",
-                historial: "Mis envíos",
+                resumen: t("portal.payments.tab_resumen"),
+                enviar: t("portal.payments.tab_enviar"),
+                historial: t("portal.payments.tab_historial"),
               };
               return (
                 <button
@@ -400,30 +407,43 @@ export const ClientPortalPage: React.FC = () => {
             {/* Tab: Resumen */}
             {activeTab === "resumen" && (
               <div className="space-y-4">
-                <p className="text-sm text-text-secondary">
-                  Aquí podés ver el estado de tu evento y registrar el pago de tu señal o cuotas.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-surface-alt rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">Pagado</p>
-                    <p className="text-xl font-bold text-text">
-                      {formatCurrency(data.payment.paid, data.payment.currency, i18n.language)}
+                {isGratisView ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <p className="text-sm font-medium text-text">
+                      {t("portal.payments.pro_only")}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-1">
+                      {t("portal.payments.pro_only_hint")}
                     </p>
                   </div>
-                  <div className="bg-surface-alt rounded-xl p-4">
-                    <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">Pendiente</p>
-                    <p className="text-xl font-bold text-warning">
-                      {formatCurrency(data.payment.remaining, data.payment.currency, i18n.language)}
+                ) : (
+                  <>
+                    <p className="text-sm text-text-secondary">
+                      {t("portal.payments.summary_intro")}
                     </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleTabChange("enviar")}
-                  className="w-full py-3 px-4 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  Registrar comprobante de pago
-                </button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-surface-alt rounded-xl p-4">
+                        <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">{t("portal.payments.paid")}</p>
+                        <p className="text-xl font-bold text-text">
+                          {formatCurrency(data.payment.paid, data.payment.currency, i18n.language)}
+                        </p>
+                      </div>
+                      <div className="bg-surface-alt rounded-xl p-4">
+                        <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">{t("portal.payments.pending_label")}</p>
+                        <p className="text-xl font-bold text-warning">
+                          {formatCurrency(data.payment.remaining, data.payment.currency, i18n.language)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleTabChange("enviar")}
+                      className="w-full py-3 px-4 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      {t("portal.payments.submit_receipt")}
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
@@ -431,13 +451,13 @@ export const ClientPortalPage: React.FC = () => {
             {activeTab === "enviar" && (
               <form onSubmit={handleSubmit} className="space-y-5">
                 <p className="text-sm text-text-secondary">
-                  Completá los datos de tu transferencia. El organizador la revisará y confirmará.
+                  {t("portal.payments.submit_intro")}
                 </p>
 
                 {submitSuccess && (
                   <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/20 rounded-xl text-success text-sm">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    ¡Comprobante enviado! El organizador lo revisará pronto.
+                    {t("portal.payments.submit_success")}
                   </div>
                 )}
 
@@ -450,7 +470,7 @@ export const ClientPortalPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-text mb-1">
-                    Monto transferido <span className="text-error">*</span>
+                    {t("portal.payments.transferred_amount")} <span className="text-error">*</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">
@@ -471,20 +491,20 @@ export const ClientPortalPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-text mb-1">
-                    Referencia / número de operación
+                    {t("portal.payments.transfer_reference")}
                   </label>
                   <input
                     type="text"
                     value={submitRef}
                     onChange={(e) => setSubmitRef(e.target.value)}
-                    placeholder="Ej: 123456789"
+                    placeholder={t("portal.payments.transfer_reference_placeholder")}
                     className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-sm text-text placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-text mb-1">
-                    Comprobante / captura (opcional)
+                    {t("portal.payments.receipt_upload_label")}
                   </label>
                   <div
                     className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
@@ -495,7 +515,7 @@ export const ClientPortalPage: React.FC = () => {
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-text-tertiary">
                         <Upload className="h-5 w-5" />
-                        <p className="text-xs">JPG, PNG, PDF · máx 10 MB</p>
+                        <p className="text-xs">{t("portal.payments.receipt_upload_hint")}</p>
                       </div>
                     )}
                   </div>
@@ -530,9 +550,9 @@ export const ClientPortalPage: React.FC = () => {
                   className="w-full py-3 px-4 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {submitLoading ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("portal.payments.sending")}</>
                   ) : (
-                    <><Send className="h-4 w-4" /> Enviar comprobante</>
+                    <><Send className="h-4 w-4" /> {t("portal.payments.send_receipt")}</>
                   )}
                 </button>
               </form>
@@ -544,12 +564,12 @@ export const ClientPortalPage: React.FC = () => {
                 {historyLoading ? (
                   <div className="flex items-center justify-center py-10 text-text-secondary gap-2">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm">Cargando...</span>
+                    <span className="text-sm">{t("portal.payments.loading")}</span>
                   </div>
                 ) : submissions.length === 0 ? (
                   <div className="text-center py-10">
                     <History className="h-8 w-8 text-text-tertiary mx-auto mb-2" />
-                    <p className="text-sm text-text-secondary">Todavía no enviaste ningún comprobante.</p>
+                    <p className="text-sm text-text-secondary">{t("portal.payments.history_empty")}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -561,13 +581,13 @@ export const ClientPortalPage: React.FC = () => {
                               {formatCurrency(sub.amount, data.payment.currency, i18n.language)}
                             </p>
                             {sub.transfer_ref && (
-                              <p className="text-xs text-text-secondary mt-0.5">Ref: {sub.transfer_ref}</p>
+                              <p className="text-xs text-text-secondary mt-0.5">{t("portal.payments.reference_short")}: {sub.transfer_ref}</p>
                             )}
                             <p className="text-xs text-text-tertiary mt-0.5">
                               {new Date(sub.submitted_at).toLocaleDateString(i18n.language.startsWith("en") ? "en-US" : "es-MX", { day: "numeric", month: "short", year: "numeric" })}
                             </p>
                             {sub.rejection_reason && (
-                              <p className="text-xs text-error mt-1">Motivo: {sub.rejection_reason}</p>
+                              <p className="text-xs text-error mt-1">{t("portal.payments.rejection_reason")}: {sub.rejection_reason}</p>
                             )}
                             {sub.receipt_file_url && sub.status === "approved" && (
                               <a
@@ -576,7 +596,7 @@ export const ClientPortalPage: React.FC = () => {
                                 rel="noopener noreferrer"
                                 className="text-xs text-primary hover:underline mt-1 inline-block"
                               >
-                                Ver comprobante
+                                {t("portal.payments.view_receipt")}
                               </a>
                             )}
                           </div>
