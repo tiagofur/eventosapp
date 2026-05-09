@@ -138,7 +138,7 @@ public enum SolennixColors {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(hex: "#0A0F1A")
+                ? UIColor(hex: "#070D17")
                 : UIColor(hex: "#F5F4F1")
         })
         #else
@@ -150,7 +150,7 @@ public enum SolennixColors {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(hex: "#1A2030")
+                ? UIColor(hex: "#121C2A")
                 : UIColor(hex: "#FAF9F7")
         })
         #else
@@ -162,7 +162,7 @@ public enum SolennixColors {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(hex: "#252A35")
+                ? UIColor(hex: "#1B2738")
                 : UIColor(hex: "#F0EFEC")
         })
         #else
@@ -174,7 +174,7 @@ public enum SolennixColors {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(hex: "#111722")
+                ? UIColor(hex: "#1A2740")
                 : UIColor(hex: "#FFFFFF")
         })
         #else
@@ -238,7 +238,7 @@ public enum SolennixColors {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(hex: "#252A35")
+                ? UIColor(hex: "#2A384D")
                 : UIColor(hex: "#E6E3DD")
         })
         #else
@@ -250,7 +250,7 @@ public enum SolennixColors {
         #if canImport(UIKit)
         Color(uiColor: UIColor { traits in
             traits.userInterfaceStyle == .dark
-                ? UIColor(hex: "#3A3F4A")
+                ? UIColor(hex: "#465D7B")
                 : UIColor(hex: "#D4D0C8")
         })
         #else
