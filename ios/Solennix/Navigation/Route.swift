@@ -77,7 +77,7 @@ public enum SidebarSection: String, Hashable, CaseIterable {
         case .personnel:       return "Personal"
         case .products:        return "Productos"
         case .inventory:       return "Inventario"
-        case .paymentInbox:    return "Comprobantes"
+        case .paymentInbox:    return "Pagos"
         case .eventFormLinks:  return "Formularios"
         case .settings:        return "Ajustes"
         }

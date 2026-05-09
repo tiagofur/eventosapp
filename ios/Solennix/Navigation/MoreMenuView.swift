@@ -46,7 +46,7 @@ struct MoreMenuView: View {
                 NavigationLink(value: Route.paymentInbox) {
                     menuRow(
                         icon: "wallet.pass.fill",
-                        title: "Comprobantes",
+                        title: "Pagos",
                         subtitle: "Revisión de pagos de clientes",
                         color: SolennixColors.primary
                     )

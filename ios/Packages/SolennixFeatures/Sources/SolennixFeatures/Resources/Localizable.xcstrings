@@ -233,6 +233,9 @@
     "Abre los terminos de uso en Safari" : {
 
     },
+    "Abrir comprobante" : {
+
+    },
     "Abrir detalle del evento" : {
 
     },
@@ -2587,6 +2590,9 @@
     "CANTIDAD" : {
 
     },
+    "Cargando checklist de compras..." : {
+
+    },
     "Cargando checklist..." : {
 
     },
@@ -2621,6 +2627,12 @@
 
     },
     "Checklist de Carga" : {
+
+    },
+    "Checklist de compras" : {
+
+    },
+    "Checklist de Compras" : {
 
     },
     "Cliente" : {
@@ -3760,6 +3772,9 @@
     "Comprar" : {
 
     },
+    "Comprobante" : {
+
+    },
     "Confirmado" : {
 
     },
@@ -3829,7 +3844,7 @@
     "Crear un Evento" : {
 
     },
-    "Cuando un cliente envíe un comprobante de transferencia, aparecerá aquí para tu revisión." : {
+    "Cuando un cliente envíe un pago de transferencia, aparecerá aquí para tu revisión." : {
 
     },
     "Cuenta" : {
@@ -3872,6 +3887,9 @@
 
     },
     "Desliza los elementos de la lista hacia la izquierda o derecha para ver más opciones como editar, eliminar o llamar." : {
+
+    },
+    "Detalle de pago" : {
 
     },
     "Dias de vigencia" : {
@@ -8940,6 +8958,9 @@
     "Insumos" : {
 
     },
+    "INSUMOS A COMPRAR" : {
+
+    },
     "Insumos del Evento" : {
 
     },
@@ -9055,6 +9076,9 @@
     "No se ha definido un costo por unidad" : {
 
     },
+    "No se pudo previsualizar el archivo" : {
+
+    },
     "Nombre" : {
 
     },
@@ -9133,6 +9157,9 @@
     "Pagos" : {
 
     },
+    "Pagos recibidos" : {
+
+    },
     "Para visualizar y generar el contrato, es necesario cubrir el anticipo mínimo del **%lld%%**" : {
 
     },
@@ -9145,7 +9172,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Actualiza tu plan para revisar y aprobar comprobantes enviados por clientes."
+            "value" : "Actualiza tu plan para revisar y aprobar pagos recibidos de clientes."
           }
         }
       }
@@ -9157,17 +9184,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Función exclusiva para usuarios Pro."
-          }
-        }
-      }
-    },
-    "payment_inbox.title" : {
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Comprobantes"
           }
         }
       }
@@ -9244,7 +9260,7 @@
     "Rechazar" : {
 
     },
-    "Rechazar comprobante" : {
+    "Rechazar pago" : {
 
     },
     "Recomendado" : {
@@ -11720,9 +11736,6 @@
     "Siguiente" : {
 
     },
-    "Sin comprobantes pendientes" : {
-
-    },
     "Sin costo (reaprovechado)" : {
 
     },
@@ -11739,6 +11752,9 @@
 
     },
     "Sin fotos" : {
+
+    },
+    "Sin pagos pendientes" : {
 
     },
     "Sin productos" : {
@@ -11849,6 +11865,9 @@
     "Toca aquí para iniciar la creación de un nuevo evento, cotización o contrato." : {
 
     },
+    "Toca para revisar" : {
+
+    },
     "Todavía no generaste un enlace para este evento." : {
 
     },
@@ -11916,13 +11935,13 @@
     "Vence el %@" : {
 
     },
-    "Ver comprobante" : {
-
-    },
     "Ver Detalle" : {
 
     },
     "Ver Evento" : {
+
+    },
+    "Ver pago" : {
 
     },
     "Ver todos los planes" : {
