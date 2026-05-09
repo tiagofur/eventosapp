@@ -246,7 +246,7 @@ public final class EventFormViewModel {
         pendingPrefill = PrefillData(event: event, products: products, extras: extras, equipment: equipment, supplies: supplies)
     }
 
-    private func applyPrefillData(_ data: PrefillData) {
+    func applyPrefillData(_ data: PrefillData) {
         let event = data.event
         clientId = event.clientId
         clientName = clients.first(where: { $0.id == event.clientId })?.name ?? ""
