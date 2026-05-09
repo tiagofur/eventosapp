@@ -3,7 +3,7 @@
 # Testing
 
 > [!abstract] Resumen
-> Estado actual: **sin cobertura de tests**. No hay unit tests, UI tests, ni snapshot tests.
+> Estado actual: cobertura parcial. Hay base de tests unitarios, pero falta cobertura por pantalla y no hay UI tests sistemáticos.
 
 ---
 
@@ -11,13 +11,19 @@
 
 | Tipo de test | Cobertura | Herramienta |
 |-------------|-----------|-------------|
-| Unit tests | ❌ 0% | — |
-| UI tests | ❌ 0% | — |
+| Unit tests | ⚠️ Parcial (4 suites detectadas) | XCTest |
+| UI tests | ❌ 0% sistemático | — |
 | Snapshot tests | ❌ 0% | — |
 | Performance tests | ❌ 0% | — |
 
 > [!warning] Riesgo
-> Sin tests, refactors y features nuevas pueden romper funcionalidad existente silenciosamente.
+> Con cobertura parcial, refactors por pantalla pueden romper flujos clave sin detección temprana.
+
+Suits detectadas actualmente:
+- `ios/SolennixTests/EventDetailViewModelTests.swift`
+- `ios/SolennixTests/NotificationManagerTests.swift`
+- `ios/Packages/SolennixNetwork/Tests/SolennixNetworkTests/APIClientPolicyTests.swift`
+- `ios/Packages/SolennixNetwork/Tests/SolennixNetworkTests/OfflineMutationQueueTests.swift`
 
 ---
 
@@ -37,13 +43,32 @@
 
 | Prioridad | Qué testear | Por qué |
 |-----------|-------------|---------|
-| P0 | `AuthManager` | Seguridad, tokens, biometric state |
-| P0 | `APIClient` | Retry logic, token injection |
-| P0 | `KeychainHelper` | Storage seguro |
-| P1 | ViewModels clave | Lógica de presentación |
-| P1 | PDF generators | Output correcto |
-| P2 | UI flujos críticos | Login → dashboard → crear evento |
-| P3 | Widgets | Datos correctos |
+| P0 | Event Detail / Dashboard / Pricing | Máximo uso y mayor complejidad |
+| P0 | Event Form steps | Riesgo alto de regresión funcional |
+| P1 | Clients/Products/Inventory | Core operativo diario |
+| P1 | Auth + Settings auxiliares | Acceso y configuración |
+| P2 | Search/Staff/Onboarding/Payments | Cobertura de bordes y satélites |
+
+---
+
+## Estrategia paralela por pantalla
+
+Cada pantalla se trabaja con 3 tracks simultáneos:
+
+- Track A: i18n (extracción de strings + validación ES/EN)
+- Track B: QA funcional (happy path + errores + vacíos)
+- Track C: refactor + tests (componentización + unit/UI)
+
+Una pantalla solo se marca cerrada cuando los 3 tracks están completos.
+
+---
+
+## Definition of Done de testing por pantalla
+
+- 1 test unitario mínimo de lógica/formato por pantalla
+- 1 UI test mínimo del flujo principal
+- 1 estado de error/empty cubierto por test
+- Sin regresión en suites existentes del módulo
 
 ---
 
@@ -53,3 +78,4 @@
 - [[Manejo de Estado]] — @Observable ViewModels como target principal
 - [[Capa de Red]] — APIClient actor testeable
 - [[Roadmap iOS]] — testing como prioridad
+- [[Plan iOS i18n + QA + Refactor por Pantalla]] — ejecución operativa pantalla por pantalla
