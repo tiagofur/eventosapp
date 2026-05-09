@@ -1,5 +1,6 @@
 import SwiftUI
 import SolennixCore
+import SolennixDesign
 
 struct TopClientsWidgetView: View {
     let clients: [TopClient]
@@ -10,11 +11,12 @@ struct TopClientsWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Label(tr("dashboard.widgets.top_clients.title", "Top clientes"), systemImage: "person.2")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.text)
                 Spacer()
             }
 
@@ -24,21 +26,22 @@ struct TopClientsWidgetView: View {
                         Skeleton()
                             .frame(height: 10)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, Spacing.sm)
                 }
             } else if clients.isEmpty {
                 Text(tr("dashboard.widgets.top_clients.empty", "Sin clientes destacados"))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(SolennixColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
+                    .padding(.vertical, Spacing.xl)
             } else {
-                VStack(spacing: 12) {
+                VStack(spacing: Spacing.sm) {
                     ForEach(clients.prefix(5), id: \.id) { client in
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
                             Text(client.name)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
+                                .foregroundStyle(SolennixColors.text)
                                 .lineLimit(1)
                             HStack {
                                 Text(String.localizedStringWithFormat(
@@ -51,29 +54,26 @@ struct TopClientsWidgetView: View {
                                     client.eventCount
                                 ))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(SolennixColors.textSecondary)
                                 Spacer()
                                 Text(DashboardFormatting.currencyMXN(client.totalSpent))
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(SolennixColors.text)
                             }
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.horizontal, Spacing.md)
+                        .background(SolennixColors.surfaceAlt)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                     }
                 }
             }
         }
-        .padding(16)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.systemGray5), lineWidth: 1)
-        )
+        .padding(Spacing.lg)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
     }
 }
 
@@ -81,9 +81,9 @@ struct Skeleton: View {
     @State private var isShimmering = false
 
     var body: some View {
-        Color(.systemGray3)
+        SolennixColors.surfaceAlt
             .opacity(isShimmering ? 0.5 : 0.3)
-            .cornerRadius(4)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
             .animation(
                 Animation.easeInOut(duration: 1).repeatForever(autoreverses: true),
                 value: isShimmering

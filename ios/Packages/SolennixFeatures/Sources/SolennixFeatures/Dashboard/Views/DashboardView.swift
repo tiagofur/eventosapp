@@ -18,6 +18,7 @@ public struct DashboardView: View {
     @State private var showQuickQuote = false
 
     private var isIPad: Bool { sizeClass == .regular }
+    private var sectionHorizontalPadding: CGFloat { isIPad ? Spacing.xl : Spacing.md }
 
     private func tr(_ key: String, _ value: String) -> String {
         FeatureL10n.text(key, value)
@@ -92,16 +93,19 @@ public struct DashboardView: View {
                         clients: vm.topClients,
                         isLoading: vm.isLoading
                     )
+                    .padding(.horizontal, sectionHorizontalPadding)
 
                     ProductDemandWidgetView(
                         products: vm.productDemand,
                         isLoading: vm.isLoading
                     )
+                    .padding(.horizontal, sectionHorizontalPadding)
 
                     ForecastWidgetView(
                         forecast: vm.forecast,
                         isLoading: vm.isLoading
                     )
+                    .padding(.horizontal, sectionHorizontalPadding)
                 }
 
                 Spacer(minLength: Spacing.xxl)
@@ -506,11 +510,10 @@ public struct DashboardView: View {
     // MARK: - Upcoming Events Section
 
     private var upcomingEventsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Text(tr("dashboard.upcoming_events", "Próximos eventos"))
                 .font(.headline)
                 .foregroundStyle(SolennixColors.text)
-                .padding(.horizontal, isIPad ? 0 : Spacing.md)
 
             if let vm = viewModel, !vm.upcomingEvents.isEmpty {
                 VStack(spacing: Spacing.sm) {
@@ -518,15 +521,18 @@ public struct DashboardView: View {
                         upcomingEventCard(event: event)
                     }
                 }
-                .padding(.horizontal, isIPad ? 0 : Spacing.md)
             } else if viewModel?.isLoading == false {
                 emptyEventsState
-                    .padding(.horizontal, isIPad ? 0 : Spacing.md)
             }
         }
+        .padding(Spacing.lg)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
+        .padding(.horizontal, sectionHorizontalPadding)
     }
 
-    private func upcomingEventCard(event: Event) -> some View {
+    private func upcomingEventRow(event: Event) -> some View {
         HStack(spacing: Spacing.md) {
             NavigationLink(value: Route.eventDetail(id: event.id)) {
                 HStack(spacing: Spacing.md) {
@@ -565,10 +571,13 @@ public struct DashboardView: View {
 
             upcomingEventStatusMenu(event: event)
         }
+    }
+
+    private func upcomingEventCard(event: Event) -> some View {
+        upcomingEventRow(event: event)
         .padding(Spacing.md)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
-        .shadowSm()
+        .background(SolennixColors.surfaceAlt)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
     }
 
     private func upcomingEventStatusMenu(event: Event) -> some View {

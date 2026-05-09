@@ -137,8 +137,7 @@ public struct EventPaymentsDetailView: View {
                                 viewModel.payDeposit()
                             }
                         }
-            .padding(.horizontal, sizeClass == .regular ? Spacing.xl : Spacing.md)
-            .padding(.vertical, sizeClass == .regular ? Spacing.xl : Spacing.lg)
+                    }
                 }
 
                 // Payment history
@@ -169,8 +168,8 @@ public struct EventPaymentsDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
                 .shadowSm()
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.lg)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.xl : Spacing.md)
+            .padding(.vertical, sizeClass == .regular ? Spacing.xl : Spacing.lg)
         }
     }
 

@@ -41,8 +41,6 @@ public struct SettingsView: View {
 
     public var body: some View {
         settingsList
-            .frame(maxWidth: sizeClass == .regular ? 640 : .infinity)
-            .frame(maxWidth: .infinity)
             .listStyle(.insetGrouped)
             .tint(SolennixColors.primary)
             .scrollContentBackground(.hidden)
@@ -90,25 +88,30 @@ public struct SettingsView: View {
                 userHeaderSection(user)
             }
 
-            Section(tr("settings.section.appearance", "Apariencia")) {
+            Section(header: Text(tr("settings.section.appearance", "Apariencia")).foregroundStyle(SolennixColors.text)) {
                 appearanceContent
             }
+            .listRowBackground(SolennixColors.card)
 
-            Section(tr("settings.section.account", "Cuenta")) {
+            Section(header: Text(tr("settings.section.account", "Cuenta")).foregroundStyle(SolennixColors.text)) {
                 accountContent
             }
+            .listRowBackground(SolennixColors.card)
 
-            Section(tr("settings.section.subscription", "Suscripción")) {
+            Section(header: Text(tr("settings.section.subscription", "Suscripción")).foregroundStyle(SolennixColors.text)) {
                 subscriptionContent
             }
+            .listRowBackground(SolennixColors.card)
 
-            Section(tr("settings.section.business", "Negocio")) {
+            Section(header: Text(tr("settings.section.business", "Negocio")).foregroundStyle(SolennixColors.text)) {
                 businessContent
             }
+            .listRowBackground(SolennixColors.card)
 
-            Section(tr("settings.section.legal", "Legal")) {
+            Section(header: Text(tr("settings.section.legal", "Legal")).foregroundStyle(SolennixColors.text)) {
                 legalContent
             }
+            .listRowBackground(SolennixColors.card)
 
             // Logout
             Section {
@@ -121,6 +124,7 @@ public struct SettingsView: View {
                     }
                 }
             }
+            .listRowBackground(SolennixColors.card)
 
             // App version
             Section {
@@ -131,6 +135,7 @@ public struct SettingsView: View {
                         .foregroundStyle(SolennixColors.textSecondary)
                 }
             }
+            .listRowBackground(SolennixColors.card)
         }
     }
 
@@ -155,14 +160,17 @@ public struct SettingsView: View {
         NavigationLink(value: Route.editProfile) {
             Label(tr("settings.action.edit_profile", "Editar perfil"), systemImage: "person.circle")
         }
+        .listRowSeparator(.hidden)
 
         NavigationLink(value: Route.changePassword) {
             Label(tr("settings.action.change_password", "Cambiar contraseña"), systemImage: "lock.rotation")
         }
+        .listRowSeparator(.hidden)
 
         NavigationLink(value: Route.notificationPreferences) {
             Label(tr("settings.tab.notifications", "Notificaciones"), systemImage: "bell.badge")
         }
+        .listRowSeparator(.hidden)
     }
 
     @ViewBuilder
@@ -170,6 +178,7 @@ public struct SettingsView: View {
         NavigationLink(value: Route.subscription) {
             planRow
         }
+        .listRowSeparator(.hidden)
     }
 
     @ViewBuilder
@@ -177,10 +186,12 @@ public struct SettingsView: View {
         NavigationLink(value: Route.businessSettings) {
             Label(tr("settings.action.business_settings", "Ajustes del negocio"), systemImage: "building.2")
         }
+        .listRowSeparator(.hidden)
 
         NavigationLink(value: Route.contractDefaults) {
             Label(tr("settings.action.contract_defaults", "Valores del contrato"), systemImage: "doc.text")
         }
+        .listRowSeparator(.hidden)
     }
 
     @ViewBuilder
@@ -201,11 +212,13 @@ public struct SettingsView: View {
             }
             .contentShape(Rectangle())
         }
+        .listRowSeparator(.hidden)
         .accessibilityHint(tr("settings.legal.help_hint", "Abre el centro de ayuda en Safari"))
 
         NavigationLink(value: Route.about) {
             Label(tr("settings.action.about", "Acerca de"), systemImage: "info.circle")
         }
+        .listRowSeparator(.hidden)
 
         Button {
             HapticsHelper.play(.selection)
@@ -223,6 +236,7 @@ public struct SettingsView: View {
             }
             .contentShape(Rectangle())
         }
+        .listRowSeparator(.hidden)
         .accessibilityHint(tr("settings.legal.privacy_hint", "Abre la política de privacidad en Safari"))
 
         Button {
@@ -239,6 +253,7 @@ public struct SettingsView: View {
             }
             .contentShape(Rectangle())
         }
+        .listRowSeparator(.hidden)
         .accessibilityHint(tr("settings.legal.terms_hint", "Abre los términos de servicio en Safari"))
 
         Button {
@@ -257,6 +272,7 @@ public struct SettingsView: View {
             }
             .contentShape(Rectangle())
         }
+        .listRowSeparator(.hidden)
         .accessibilityHint(tr("settings.legal.delete_hint", "Abre la página de solicitud de eliminación de cuenta en Safari"))
     }
 
@@ -299,8 +315,10 @@ public struct SettingsView: View {
 
                 Spacer()
             }
-            .padding(.vertical, Spacing.xs)
+            .padding(.vertical, Spacing.sm)
         }
+        .listRowBackground(SolennixColors.card)
+        .listRowSeparator(.hidden)
     }
 
     // MARK: - Plan Row

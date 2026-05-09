@@ -1,5 +1,6 @@
 import SwiftUI
 import SolennixCore
+import SolennixDesign
 
 struct ProductDemandWidgetView: View {
     let products: [ProductDemandItem]
@@ -10,11 +11,12 @@ struct ProductDemandWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Label(tr("dashboard.widgets.product_demand.title", "Demanda de productos"), systemImage: "chart.bar")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.text)
                 Spacer()
             }
 
@@ -24,21 +26,22 @@ struct ProductDemandWidgetView: View {
                         Skeleton()
                             .frame(height: 10)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, Spacing.sm)
                 }
             } else if products.isEmpty {
                 Text(tr("dashboard.widgets.product_demand.empty", "Sin demanda registrada"))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(SolennixColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
+                    .padding(.vertical, Spacing.xl)
             } else {
-                VStack(spacing: 12) {
+                VStack(spacing: Spacing.sm) {
                     ForEach(products.prefix(5), id: \.id) { product in
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
                             Text(product.name)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
+                                .foregroundStyle(SolennixColors.text)
                                 .lineLimit(1)
                             HStack {
                                 Text(String.localizedStringWithFormat(
@@ -51,29 +54,26 @@ struct ProductDemandWidgetView: View {
                                     product.timesUsed
                                 ))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(SolennixColors.textSecondary)
                                 Spacer()
                                 Text(DashboardFormatting.currencyMXN(product.totalRevenue))
                                     .font(.caption)
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(SolennixColors.text)
                             }
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.horizontal, Spacing.md)
+                        .background(SolennixColors.surfaceAlt)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                     }
                 }
             }
         }
-        .padding(16)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.systemGray5), lineWidth: 1)
-        )
+        .padding(Spacing.lg)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
     }
 }
 
