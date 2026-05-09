@@ -117,7 +117,9 @@ public struct EventDetailView: View {
     // MARK: - Scroll Content (Hub Layout)
 
     private func scrollContent(_ event: Event) -> some View {
-        ScrollView {
+        let isRegularWidth = sizeClass == .regular
+
+        return ScrollView {
             VStack(spacing: Spacing.lg) {
                 AdaptiveDetailLayout {
                     // Left column: Header + Event Info + Content Cards
@@ -144,9 +146,11 @@ public struct EventDetailView: View {
 
                 liveActivityButton
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.lg)
+            .padding(.horizontal, isRegularWidth ? Spacing.xxl : Spacing.md)
+            .padding(.vertical, isRegularWidth ? Spacing.xxl : Spacing.lg)
         }
+        .scrollContentBackground(.hidden)
+        .background(SolennixColors.surfaceGrouped)
         .refreshable { await viewModel.loadData(eventId: eventId) }
     }
 
@@ -187,7 +191,11 @@ public struct EventDetailView: View {
                     quickInfoItem(icon: "clock", label: tr("events.detail.info.schedule", "Horario"), value: timeText)
                 }
 
-                quickInfoItem(icon: "person.2", label: tr("events.detail.info.people", "Personas"), value: "\(event.numPeople) PAX")
+                quickInfoItem(
+                    icon: "person.2",
+                    label: tr("events.detail.info.people", "Personas"),
+                    value: trf("events.detail.info.people_value", "%@ PAX", String(event.numPeople))
+                )
 
                 if let location = event.location, !location.isEmpty {
                     let fullLocation = [location, event.city].compactMap { $0?.isEmpty == true ? nil : $0 }.joined(separator: ", ")
@@ -505,7 +513,7 @@ public struct EventDetailView: View {
                     HStack {
                         Image(systemName: "camera.fill")
                             .font(.body)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(SolennixColors.info)
 
                         Spacer()
 
@@ -513,10 +521,10 @@ public struct EventDetailView: View {
                             Text("\(viewModel.eventPhotos.count)")
                                 .font(.caption)
                                 .fontWeight(.bold)
-                                .foregroundStyle(.purple)
+                                .foregroundStyle(SolennixColors.info)
                                 .padding(.horizontal, Spacing.sm)
                                 .padding(.vertical, 2)
-                                .background(Color.purple.opacity(0.1))
+                                .background(SolennixColors.infoBg)
                                 .clipShape(Capsule())
                         }
                     }
@@ -610,7 +618,7 @@ public struct EventDetailView: View {
                         Text("\(viewModel.eventPhotos.count)")
                             .font(.caption)
                             .fontWeight(.bold)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(SolennixColors.info)
                         Image(systemName: "chevron.right")
                             .font(.caption)
                             .foregroundStyle(SolennixColors.textTertiary)
@@ -1064,45 +1072,21 @@ public struct EventDetailView: View {
     }
 
     private var pdfOptions: [(key: String, label: String, icon: String)] {
-        [
-            ("cotizacion", tr("events.detail.documents.quote", "Cotización"), "doc.text"),
-            ("contrato", tr("events.detail.documents.contract", "Contrato"), "doc.richtext"),
-            ("insumos", tr("events.detail.documents.supplies", "Lista de insumos"), "list.clipboard"),
-            ("equipo", tr("events.detail.documents.equipment", "Lista de equipo"), "wrench.and.screwdriver"),
-            ("checklist", tr("events.detail.documents.checklist", "Checklist"), "checklist"),
-            ("pagos", tr("events.detail.documents.payments", "Pagos"), "dollarsign.circle"),
-        ]
+        EventDetailDocumentExport.options.map { option in
+            (option.key, tr(option.labelKey, option.defaultLabel), option.icon)
+        }
     }
 
     // MARK: - PDF Download & Share
 
     private func generateAndSharePDF(key: String, event: Event) async {
-        let pdfType: String
-        let filename: String
-        let sanitized = sanitizedFileComponent(event.serviceType)
-
-        switch key {
-        case "cotizacion":
-            pdfType = "budget"
-            filename = trf("events.detail.documents.filename.quote", "Quote_%@.pdf", sanitized)
-        case "contrato":
-            pdfType = "contract"
-            let clientName = viewModel.client?.name ?? event.serviceType
-            filename = trf("events.detail.documents.filename.contract", "Contract_%@.pdf", sanitizedFileComponent(clientName))
-        case "insumos":
-            pdfType = "shopping-list"
-            filename = trf("events.detail.documents.filename.supplies", "Supplies_%@.pdf", sanitized)
-        case "equipo":
-            pdfType = "equipment-list"
-            filename = trf("events.detail.documents.filename.equipment", "Equipment_%@.pdf", sanitized)
-        case "checklist":
-            pdfType = "checklist"
-            filename = trf("events.detail.documents.filename.checklist", "Checklist_%@.pdf", sanitized)
-        case "pagos":
-            pdfType = "payment-report"
-            let clientName = viewModel.client?.name ?? event.serviceType
-            filename = trf("events.detail.documents.filename.payments", "Payments_%@.pdf", sanitizedFileComponent(clientName))
-        default:
+        guard let resolved = EventDetailDocumentExport.resolve(
+            for: key,
+            eventServiceType: event.serviceType,
+            clientName: viewModel.client?.name,
+            localize: tr,
+            locale: FeatureL10n.locale
+        ) else {
             return
         }
 
@@ -1110,8 +1094,8 @@ public struct EventDetailView: View {
             let tempURL = try await EventPDFFileService.download(
                 apiClient: apiClient,
                 eventId: eventId,
-                type: pdfType,
-                filename: filename
+                type: resolved.pdfType,
+                filename: resolved.filename
             )
             try await MainActor.run {
                 try EventPDFFileService.presentShareSheet(fileURL: tempURL)
@@ -1138,13 +1122,6 @@ public struct EventDetailView: View {
         showDuplicateSheet = true
     }
 
-    private func sanitizedFileComponent(_ value: String) -> String {
-        value
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: ":", with: "-")
-            .replacingOccurrences(of: " ", with: "_")
-    }
 }
 
 // MARK: - Preview
