@@ -17,6 +17,9 @@ public struct PaymentInboxView: View {
     @State private var showRejectSheet = false
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
+    private var isRegularWidth: Bool { horizontalSizeClass == .regular }
+    private var contentMaxWidth: CGFloat { 1200 }
+
     // MARK: - Init
 
     public init(apiClient: APIClient) {
@@ -35,10 +38,10 @@ public struct PaymentInboxView: View {
             } else if viewModel.submissions.isEmpty {
                 emptyState
             } else {
-                submissionList
+                submissionContent
             }
         }
-        .navigationTitle(String(localized: "payment_inbox.title", defaultValue: "Comprobantes"))
+        .navigationTitle("Pagos recibidos")
         .navigationBarTitleDisplayMode(.large)
         .task { await viewModel.fetchSubmissions() }
         .refreshable { await viewModel.fetchSubmissions() }
@@ -52,17 +55,27 @@ public struct PaymentInboxView: View {
         }
     }
 
-    // MARK: - Submission List
+    // MARK: - Submission Content
 
-    private var submissionList: some View {
+    private var submissionContent: some View {
         ScrollView {
-            LazyVStack(spacing: Spacing.sm) {
-                ForEach(viewModel.submissions) { submission in
-                    submissionRow(submission)
+            if isRegularWidth {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: Spacing.sm) {
+                    ForEach(viewModel.submissions) { submission in
+                        submissionRow(submission)
+                    }
                 }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.lg)
+            } else {
+                LazyVStack(spacing: Spacing.sm) {
+                    ForEach(viewModel.submissions) { submission in
+                        submissionRow(submission)
+                    }
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.bottom, Spacing.xxl)
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.md)
         }
         .background(SolennixColors.surfaceGrouped)
     }
@@ -106,7 +119,7 @@ public struct PaymentInboxView: View {
             if let urlString = submission.receiptFileUrl,
                let url = APIClient.resolveURL(urlString) {
                 Link(destination: url) {
-                    Label("Ver comprobante", systemImage: "paperclip")
+                    Label("Ver pago", systemImage: "paperclip")
                         .font(.caption)
                         .foregroundStyle(SolennixColors.info)
                 }
@@ -214,7 +227,7 @@ public struct PaymentInboxView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Rechazar comprobante")
+            .navigationTitle("Rechazar pago")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -251,7 +264,7 @@ public struct PaymentInboxView: View {
                     .foregroundStyle(SolennixColors.textSecondary)
                     .multilineTextAlignment(.center)
                 Text(String(localized: "payment_inbox.pro_only_hint",
-                            defaultValue: "Actualiza tu plan para revisar y aprobar comprobantes enviados por clientes."))
+                        defaultValue: "Actualiza tu plan para revisar y aprobar pagos recibidos de clientes."))
                     .font(.subheadline)
                     .foregroundStyle(SolennixColors.textTertiary)
                     .multilineTextAlignment(.center)
@@ -272,10 +285,10 @@ public struct PaymentInboxView: View {
                 Image(systemName: "tray.fill")
                     .font(.largeTitle)
                     .foregroundStyle(SolennixColors.textTertiary)
-                Text("Sin comprobantes pendientes")
+                Text("Sin pagos pendientes")
                     .font(.headline)
                     .foregroundStyle(SolennixColors.textSecondary)
-                Text("Cuando un cliente envíe un comprobante de transferencia, aparecerá aquí para tu revisión.")
+                Text("Cuando un cliente envíe un pago de transferencia, aparecerá aquí para tu revisión.")
                     .font(.subheadline)
                     .foregroundStyle(SolennixColors.textTertiary)
                     .multilineTextAlignment(.center)
