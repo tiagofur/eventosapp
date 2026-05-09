@@ -89,6 +89,22 @@ struct EventDetailSummaryNavCard: View {
     let color: Color
     let route: Route
 
+    init(
+        icon: String,
+        title: String,
+        count: Int? = nil,
+        subtitle: String? = nil,
+        color: Color,
+        route: Route
+    ) {
+        self.icon = icon
+        self.title = title
+        self.count = count
+        self.subtitle = subtitle
+        self.color = color
+        self.route = route
+    }
+
     var body: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
