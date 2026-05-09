@@ -98,16 +98,18 @@ extension SidebarSection {
     ]
 
     /// Canonical route destination used by menu navigation.
-    var route: Route {
+    /// Sections that are root tabs (dashboard/calendar/events/clients)
+    /// are handled by layout selection and do not have a Route case.
+    var route: Route? {
         switch self {
         case .dashboard:
-            return .home
+            return nil
         case .calendar:
-            return .calendar
+            return nil
         case .events:
-            return .eventList
+            return nil
         case .clients:
-            return .clientList
+            return nil
         case .personnel:
             return .staffList
         case .products:

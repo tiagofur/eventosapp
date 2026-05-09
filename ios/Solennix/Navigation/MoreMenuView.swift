@@ -17,13 +17,15 @@ struct MoreMenuView: View {
             // Catalog section
             Section {
                 ForEach(SidebarSection.moreMenuCatalogSections, id: \.self) { section in
-                    NavigationLink(value: section.route) {
-                        menuRow(
-                            icon: section.iconName,
-                            title: section.title,
-                            subtitle: section.moreMenuSubtitle,
-                            color: rowColor(for: section)
-                        )
+                    if let route = section.route {
+                        NavigationLink(value: route) {
+                            menuRow(
+                                icon: section.iconName,
+                                title: section.title,
+                                subtitle: section.moreMenuSubtitle,
+                                color: rowColor(for: section)
+                            )
+                        }
                     }
                 }
             } header: {
@@ -35,13 +37,15 @@ struct MoreMenuView: View {
 
             // Settings section
             Section {
-                NavigationLink(value: SidebarSection.settings.route) {
-                    menuRow(
-                        icon: SidebarSection.settings.iconName,
-                        title: SidebarSection.settings.title,
-                        subtitle: SidebarSection.settings.moreMenuSubtitle,
-                        color: SolennixColors.textSecondary
-                    )
+                if let settingsRoute = SidebarSection.settings.route {
+                    NavigationLink(value: settingsRoute) {
+                        menuRow(
+                            icon: SidebarSection.settings.iconName,
+                            title: SidebarSection.settings.title,
+                            subtitle: SidebarSection.settings.moreMenuSubtitle,
+                            color: SolennixColors.textSecondary
+                        )
+                    }
                 }
             } header: {
                 Text("Configuración")
