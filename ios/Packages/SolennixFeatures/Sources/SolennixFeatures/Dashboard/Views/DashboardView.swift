@@ -297,21 +297,7 @@ public struct DashboardView: View {
     }
 
     private func quickActionButton(icon: String, label: String, color: Color) -> some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(SolennixColors.text)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.md)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
-        .shadowSm()
+        DashboardQuickActionButton(icon: icon, label: label, color: color)
     }
 
     // MARK: - KPI Cards
@@ -488,28 +474,10 @@ public struct DashboardView: View {
     }
 
     private func lowStockCard(item: InventoryItem) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text(item.ingredientName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(SolennixColors.text)
-
-                Text("\(Int(item.currentStock))/\(Int(item.minimumStock)) \(item.unit)")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
-            }
-
-            Spacer()
-
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(SolennixColors.warning)
-                .font(.body)
-        }
-        .padding(Spacing.md)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
-        .shadowSm()
+        DashboardLowStockCard(
+            itemName: item.ingredientName,
+            stockText: "\(Int(item.currentStock))/\(Int(item.minimumStock)) \(item.unit)"
+        )
     }
 
     // MARK: - Upcoming Events Section
@@ -641,21 +609,7 @@ public struct DashboardView: View {
 
     private func dateBox(for dateString: String) -> some View {
         let (month, day) = parseDateComponents(dateString)
-        return VStack(spacing: Spacing.xxs) {
-            Text(month)
-                .font(.caption2)
-                .fontWeight(.bold)
-                .foregroundStyle(SolennixColors.primary)
-                .textCase(.uppercase)
-
-            Text(day)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(SolennixColors.text)
-        }
-        .frame(width: 48, height: 48)
-        .background(SolennixColors.primaryLight)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+        return DashboardDateBox(month: month, day: day)
     }
 
     private func parseDateComponents(_ dateString: String) -> (month: String, day: String) {
@@ -663,20 +617,10 @@ public struct DashboardView: View {
     }
 
     private var emptyEventsState: some View {
-        VStack(spacing: Spacing.md) {
-            Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 40))
-                .foregroundStyle(SolennixColors.textTertiary)
-
-            Text(tr("dashboard.upcoming.empty", "Sin eventos próximos"))
-                .font(.subheadline)
-                .foregroundStyle(SolennixColors.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.xxl)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
-        .shadowSm()
+        DashboardEmptyCardState(
+            icon: "calendar.badge.plus",
+            title: tr("dashboard.upcoming.empty", "Sin eventos próximos")
+        )
     }
 
     // MARK: - Premium Reports Card
