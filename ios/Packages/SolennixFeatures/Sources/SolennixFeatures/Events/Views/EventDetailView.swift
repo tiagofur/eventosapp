@@ -792,139 +792,39 @@ public struct EventDetailView: View {
     // MARK: - Payment Sheet
 
     private var paymentSheet: some View {
-        NavigationStack {
-            VStack(spacing: Spacing.lg) {
-                Text(tr("events.detail.payments.sheet.title", "Registrar pago"))
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundStyle(SolennixColors.text)
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(tr("events.detail.payments.sheet.amount", "Monto"))
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
-
-                    TextField("0.00", text: $viewModel.paymentAmount)
-                        .keyboardType(.decimalPad)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(SolennixColors.text)
-                        .padding(Spacing.md)
-                        .background(SolennixColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-                }
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(tr("events.detail.payments.sheet.method", "Método de pago"))
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
-
-                    HStack(spacing: Spacing.sm) {
-                        ForEach(paymentMethods, id: \.key) { method in
-                            Button {
-                                viewModel.paymentMethod = method.key
-                            } label: {
-                                Text(method.label)
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(
-                                        viewModel.paymentMethod == method.key
-                                            ? .white
-                                            : SolennixColors.text
-                                    )
-                                    .padding(.horizontal, Spacing.md)
-                                    .padding(.vertical, Spacing.sm)
-                                    .background(
-                                        viewModel.paymentMethod == method.key
-                                            ? SolennixColors.primary
-                                            : SolennixColors.surface
-                                    )
-                                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-                            }
-                        }
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(tr("events.detail.payments.sheet.notes_optional", "Notas (opcional)"))
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
-
-                    TextField(tr("events.detail.payments.sheet.notes_placeholder", "Notas del pago"), text: $viewModel.paymentNotes)
-                        .font(.body)
-                        .foregroundStyle(SolennixColors.text)
-                        .padding(Spacing.md)
-                        .background(SolennixColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-                }
-
-                Spacer()
-
-                PremiumButton(
-                    title: tr("events.detail.payments.sheet.save", "Guardar pago"),
-                    isLoading: viewModel.isSavingPayment,
-                    isDisabled: viewModel.paymentAmount.isEmpty
-                ) {
-                    Task { await viewModel.addPayment(eventId: eventId) }
-                }
+        EventDetailPaymentSheetContent(
+            amount: $viewModel.paymentAmount,
+            method: $viewModel.paymentMethod,
+            notes: $viewModel.paymentNotes,
+            title: tr("events.detail.payments.sheet.title", "Registrar pago"),
+            amountLabel: tr("events.detail.payments.sheet.amount", "Monto"),
+            methodLabel: tr("events.detail.payments.sheet.method", "Metodo de pago"),
+            notesLabel: tr("events.detail.payments.sheet.notes_optional", "Notas (opcional)"),
+            notesPlaceholder: tr("events.detail.payments.sheet.notes_placeholder", "Notas del pago"),
+            saveLabel: tr("events.detail.payments.sheet.save", "Guardar pago"),
+            cancelLabel: tr("events.form.cancel", "Cancelar"),
+            methods: paymentMethods,
+            isSaving: viewModel.isSavingPayment,
+            isSaveDisabled: viewModel.paymentAmount.isEmpty,
+            onSave: {
+                Task { await viewModel.addPayment(eventId: eventId) }
+            },
+            onCancel: {
+                viewModel.showPaymentSheet = false
             }
-            .padding(Spacing.lg)
-            .background(SolennixColors.background)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(tr("events.form.cancel", "Cancelar")) {
-                        viewModel.showPaymentSheet = false
-                    }
-                    .foregroundStyle(SolennixColors.primary)
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
+        )
     }
 
     // MARK: - Documents Grid Card
 
     private func documentsCard(_ event: Event) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "doc.text.fill")
-                    .font(.body)
-                    .foregroundStyle(SolennixColors.primary)
-                Text(tr("events.detail.documents.title", "Generar documentos"))
-                    .font(.headline)
-                    .foregroundStyle(SolennixColors.text)
+        EventDetailDocumentsCard(
+            title: tr("events.detail.documents.title", "Generar documentos"),
+            options: pdfOptions,
+            onTap: { key in
+                Task { await generateAndSharePDF(key: key, event: event) }
             }
-
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: Spacing.sm),
-                                GridItem(.flexible(), spacing: Spacing.sm)],
-                      spacing: Spacing.sm) {
-                ForEach(pdfOptions, id: \.key) { option in
-                    Button {
-                        Task { await generateAndSharePDF(key: option.key, event: event) }
-                    } label: {
-                        VStack(spacing: Spacing.xs) {
-                            Image(systemName: option.icon)
-                                .font(.title3)
-                                .foregroundStyle(SolennixColors.primary)
-                            Text(option.label)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundStyle(SolennixColors.text)
-                                .lineLimit(1)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Spacing.md)
-                        .background(SolennixColors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .padding(Spacing.lg)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadowSm()
+        )
     }
 
     // MARK: - Helpers
