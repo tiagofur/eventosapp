@@ -218,7 +218,7 @@ public final class EventFormViewModel {
 
     public let apiClient: APIClient
 
-    private func tr(_ key: String, _ defaultValue: String) -> String {
+    func tr(_ key: String, _ defaultValue: String) -> String {
         FeatureL10n.text(key, defaultValue)
     }
 
