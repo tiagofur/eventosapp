@@ -144,13 +144,9 @@ struct SidebarSplitLayout: View {
                 .fontWeight(.bold)
                 .foregroundStyle(SolennixColors.text)
         }
-<<<<<<< HEAD
-        .padding(.vertical, 6)
-=======
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .solennixGlassSurface(cornerRadius: CornerRadius.lg, tintOpacity: 0.2)
->>>>>>> 0c9ebaa6 (refactor(ios): refine sidebar hierarchy and dark mode depth)
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: 4, leading: SidebarMetrics.rowInsetLeading, bottom: 6, trailing: SidebarMetrics.rowInsetTrailing))
