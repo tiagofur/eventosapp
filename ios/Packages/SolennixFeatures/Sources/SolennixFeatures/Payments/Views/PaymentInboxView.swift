@@ -158,7 +158,7 @@ public struct PaymentInboxView: View {
             }
         }
         .padding(Spacing.md)
-        .solennixGlassSurface(cornerRadius: CornerRadius.card, tintOpacity: 0.12)
+        .glassSurface(opacity: 0.12, blur: 10)
         .shadowSm()
     }
 
@@ -257,7 +257,7 @@ public struct PaymentInboxView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(Spacing.lg)
-            .solennixGlassSurface(cornerRadius: CornerRadius.card, tintOpacity: 0.14)
+            .glassSurface(opacity: 0.14, blur: 10)
             .shadowSm()
             .padding(.horizontal, Spacing.lg)
         }
@@ -281,7 +281,7 @@ public struct PaymentInboxView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(Spacing.lg)
-            .solennixGlassSurface(cornerRadius: CornerRadius.card, tintOpacity: 0.14)
+            .glassSurface(opacity: 0.14, blur: 10)
             .shadowSm()
             .padding(.horizontal, Spacing.lg)
         }
