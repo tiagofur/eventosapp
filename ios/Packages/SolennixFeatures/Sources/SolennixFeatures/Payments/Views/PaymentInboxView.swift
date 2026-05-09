@@ -15,6 +15,7 @@ public struct PaymentInboxView: View {
     @State private var rejectTarget: PaymentSubmission? = nil
     @State private var rejectionReason: String = ""
     @State private var showRejectSheet = false
+    @State private var selectedSubmission: PaymentSubmission? = nil
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     private var isRegularWidth: Bool { horizontalSizeClass == .regular }
@@ -45,6 +46,9 @@ public struct PaymentInboxView: View {
         .navigationBarTitleDisplayMode(.large)
         .task { await viewModel.fetchSubmissions() }
         .refreshable { await viewModel.fetchSubmissions() }
+        .sheet(item: $selectedSubmission) { submission in
+            submissionDetailSheet(submission)
+        }
         .sheet(isPresented: $showRejectSheet) {
             rejectSheet
         }
@@ -62,7 +66,12 @@ public struct PaymentInboxView: View {
             if isRegularWidth {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: Spacing.sm) {
                     ForEach(viewModel.submissions) { submission in
-                        submissionRow(submission)
+                        Button {
+                            selectedSubmission = submission
+                        } label: {
+                            submissionRow(submission)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -70,7 +79,12 @@ public struct PaymentInboxView: View {
             } else {
                 LazyVStack(spacing: Spacing.sm) {
                     ForEach(viewModel.submissions) { submission in
-                        submissionRow(submission)
+                        Button {
+                            selectedSubmission = submission
+                        } label: {
+                            submissionRow(submission)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Spacing.md)
@@ -133,47 +147,177 @@ public struct PaymentInboxView: View {
                     .padding(.top, 2)
             }
 
-            // Action buttons (only for pending)
-            if submission.status == .pending {
-                HStack(spacing: 12) {
-                    // Approve
-                    Button {
-                        Task { await viewModel.approve(id: submission.id) }
-                    } label: {
-                        if viewModel.approvingId == submission.id {
-                            ProgressView()
-                                .frame(maxWidth: horizontalSizeClass == .regular ? 140 : .infinity)
-                        } else {
-                            Label("Aprobar", systemImage: "checkmark.circle.fill")
-                                .frame(maxWidth: horizontalSizeClass == .regular ? 140 : .infinity)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(SolennixColors.success)
-                    .clipShape(Capsule())
-                    .disabled(viewModel.approvingId != nil || viewModel.rejectingId != nil)
+            Divider()
+                .padding(.vertical, 2)
 
-                    // Reject
-                    Button {
-                        rejectTarget = submission
-                        rejectionReason = ""
-                        showRejectSheet = true
-                    } label: {
-                        Label("Rechazar", systemImage: "xmark.circle.fill")
-                            .frame(maxWidth: horizontalSizeClass == .regular ? 140 : .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(SolennixColors.error)
-                    .clipShape(Capsule())
-                    .disabled(viewModel.approvingId != nil || viewModel.rejectingId != nil)
-                }
-                .padding(.top, 4)
+            HStack(spacing: Spacing.xs) {
+                Text("Toca para revisar")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textTertiary)
             }
         }
         .padding(Spacing.md)
         .background(SolennixColors.card)
         .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .shadowSm()
+    }
+
+    // MARK: - Submission Detail Sheet
+
+    private func submissionDetailSheet(_ submission: PaymentSubmission) -> some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.md) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(submission.clientName ?? "Cliente")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundStyle(SolennixColors.text)
+
+                        Text(submission.eventLabel ?? "Evento")
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.textSecondary)
+
+                        statusBadge(for: submission.status)
+                    }
+
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Label(formatAmount(submission.amount), systemImage: "dollarsign.circle.fill")
+                            .font(.headline)
+                            .foregroundStyle(SolennixColors.primary)
+
+                        if let ref = submission.transferRef, !ref.isEmpty {
+                            Label(ref, systemImage: "number")
+                                .font(.subheadline)
+                                .foregroundStyle(SolennixColors.textSecondary)
+                        }
+
+                        Label(formatDate(submission.submittedAt), systemImage: "calendar")
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    }
+
+                    if let urlString = submission.receiptFileUrl,
+                       let url = APIClient.resolveURL(urlString) {
+                        VStack(alignment: .leading, spacing: Spacing.sm) {
+                            Text("Comprobante")
+                                .font(.headline)
+                                .foregroundStyle(SolennixColors.text)
+
+                            if isImageURL(url) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(maxWidth: .infinity)
+                                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                                    case .failure:
+                                        receiptFallback
+                                    default:
+                                        ProgressView()
+                                            .frame(maxWidth: .infinity, minHeight: 180)
+                                    }
+                                }
+                            } else {
+                                receiptFallback
+                            }
+
+                            Link(destination: url) {
+                                Label("Abrir comprobante", systemImage: "paperclip")
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+
+                    if submission.status == .rejected,
+                       let reason = submission.rejectionReason,
+                       !reason.isEmpty {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            Text("Motivo del rechazo")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(SolennixColors.text)
+                            Text(reason)
+                                .font(.subheadline)
+                                .foregroundStyle(SolennixColors.error)
+                        }
+                    }
+
+                    if submission.status == .pending {
+                        HStack(spacing: Spacing.sm) {
+                            Button {
+                                Task {
+                                    await viewModel.approve(id: submission.id)
+                                    selectedSubmission = nil
+                                }
+                            } label: {
+                                if viewModel.approvingId == submission.id {
+                                    ProgressView()
+                                        .frame(maxWidth: .infinity)
+                                } else {
+                                    Label("Aprobar", systemImage: "checkmark.circle.fill")
+                                        .frame(maxWidth: .infinity)
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(SolennixColors.success)
+                            .disabled(viewModel.approvingId != nil || viewModel.rejectingId != nil)
+
+                            Button {
+                                selectedSubmission = nil
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    rejectTarget = submission
+                                    rejectionReason = ""
+                                    showRejectSheet = true
+                                }
+                            } label: {
+                                Label("Rechazar", systemImage: "xmark.circle.fill")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(SolennixColors.error)
+                            .disabled(viewModel.approvingId != nil || viewModel.rejectingId != nil)
+                        }
+                    }
+                }
+                .padding(Spacing.lg)
+            }
+            .background(SolennixColors.surfaceGrouped)
+            .navigationTitle("Detalle de pago")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") { selectedSubmission = nil }
+                }
+            }
+        }
+    }
+
+    private var receiptFallback: some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "doc.text.image")
+                .font(.largeTitle)
+                .foregroundStyle(SolennixColors.textTertiary)
+            Text("No se pudo previsualizar el archivo")
+                .font(.caption)
+                .foregroundStyle(SolennixColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 180)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+    }
+
+    private func isImageURL(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        return ["jpg", "jpeg", "png", "heic", "heif", "webp", "gif"].contains(ext)
     }
 
     // MARK: - Status Badge
