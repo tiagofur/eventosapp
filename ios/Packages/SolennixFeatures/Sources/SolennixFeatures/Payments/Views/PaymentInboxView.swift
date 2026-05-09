@@ -171,7 +171,8 @@ public struct PaymentInboxView: View {
             }
         }
         .padding(Spacing.md)
-        .glassSurface(opacity: 0.12, blur: 10)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
         .shadowSm()
     }
 

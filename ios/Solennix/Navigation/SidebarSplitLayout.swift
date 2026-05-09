@@ -102,7 +102,6 @@ struct SidebarSplitLayout: View {
                 }
 
                 Section {
-                    sidebarRow(for: .paymentInbox)
                     sidebarRow(for: .settings)
                 } header: {
                     sidebarSectionHeader("Configuracion")
