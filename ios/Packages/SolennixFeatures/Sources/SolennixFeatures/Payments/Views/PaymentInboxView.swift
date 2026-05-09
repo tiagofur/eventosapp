@@ -65,12 +65,9 @@ public struct PaymentInboxView: View {
             if isRegularWidth {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: Spacing.sm) {
                     ForEach(viewModel.submissions) { submission in
-                        Button {
+                        PaymentSubmissionCardView(submission: submission) {
                             selectedSubmission = submission
-                        } label: {
-                            submissionRow(submission)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -78,12 +75,9 @@ public struct PaymentInboxView: View {
             } else {
                 LazyVStack(spacing: Spacing.sm) {
                     ForEach(viewModel.submissions) { submission in
-                        Button {
+                        PaymentSubmissionCardView(submission: submission) {
                             selectedSubmission = submission
-                        } label: {
-                            submissionRow(submission)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Spacing.md)
@@ -91,76 +85,6 @@ public struct PaymentInboxView: View {
             }
         }
         .background(SolennixColors.surfaceGrouped)
-    }
-
-    @ViewBuilder
-    private func submissionRow(_ submission: PaymentSubmission) -> some View {
-        ReviewCardContainer {
-            VStack(alignment: .leading, spacing: 8) {
-                // Header row
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(submission.clientName ?? "Cliente")
-                            .font(.headline)
-                            .foregroundStyle(SolennixColors.text)
-                        Text(submission.eventLabel ?? "Evento")
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.textSecondary)
-                    }
-                    Spacer()
-                    statusBadge(for: submission.status)
-                }
-
-                // Amount + reference
-                HStack(spacing: 16) {
-                    Label(CommonFormatting.currencyMXN(submission.amount), systemImage: "dollarsign.circle.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(SolennixColors.primary)
-                    if let ref = submission.transferRef {
-                        Label(ref, systemImage: "number")
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.textSecondary)
-                            .lineLimit(1)
-                    }
-                }
-
-                // Submitted date
-                Text(CommonFormatting.dateTimeFromISO(submission.submittedAt))
-                    .font(.caption2)
-                    .foregroundStyle(SolennixColors.textTertiary)
-
-                // Receipt link
-                if let urlString = submission.receiptFileUrl,
-                   let url = APIClient.resolveURL(urlString) {
-                    Link(destination: url) {
-                        Label("Ver pago", systemImage: "paperclip")
-                            .font(.caption)
-                            .foregroundStyle(SolennixColors.info)
-                    }
-                }
-
-                // Rejection reason
-                if submission.status == .rejected, let reason = submission.rejectionReason {
-                    Text("Motivo: \(reason)")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.error)
-                        .padding(.top, 2)
-                }
-
-                Divider()
-                    .padding(.vertical, 2)
-
-                HStack(spacing: Spacing.xs) {
-                    Text("Toca para revisar")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textTertiary)
-                }
-            }
-        }
     }
 
     // MARK: - Submission Detail Sheet
@@ -179,7 +103,7 @@ public struct PaymentInboxView: View {
                             .font(.subheadline)
                             .foregroundStyle(SolennixColors.textSecondary)
 
-                        statusBadge(for: submission.status)
+                        PaymentSubmissionStatusBadge(status: submission.status)
                     }
 
                     VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -249,40 +173,25 @@ public struct PaymentInboxView: View {
                     }
 
                     if submission.status == .pending {
-                        HStack(spacing: Spacing.sm) {
-                            Button {
+                        PaymentSubmissionActionBar(
+                            submissionId: submission.id,
+                            approvingId: viewModel.approvingId,
+                            rejectingId: viewModel.rejectingId,
+                            onApprove: {
                                 Task {
                                     await viewModel.approve(id: submission.id)
                                     selectedSubmission = nil
                                 }
-                            } label: {
-                                if viewModel.approvingId == submission.id {
-                                    ProgressView()
-                                        .frame(maxWidth: .infinity)
-                                } else {
-                                    Label("Aprobar", systemImage: "checkmark.circle.fill")
-                                        .frame(maxWidth: .infinity)
-                                }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(SolennixColors.success)
-                            .disabled(viewModel.approvingId != nil || viewModel.rejectingId != nil)
-
-                            Button {
+                            },
+                            onReject: {
                                 selectedSubmission = nil
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                     rejectTarget = submission
                                     rejectionReason = ""
                                     showRejectSheet = true
                                 }
-                            } label: {
-                                Label("Rechazar", systemImage: "xmark.circle.fill")
-                                    .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.bordered)
-                            .tint(SolennixColors.error)
-                            .disabled(viewModel.approvingId != nil || viewModel.rejectingId != nil)
-                        }
+                        )
                     }
                 }
                 .padding(Spacing.lg)
@@ -315,27 +224,6 @@ public struct PaymentInboxView: View {
     private func isImageURL(_ url: URL) -> Bool {
         let ext = url.pathExtension.lowercased()
         return ["jpg", "jpeg", "png", "heic", "heif", "webp", "gif"].contains(ext)
-    }
-
-    // MARK: - Status Badge
-
-    @ViewBuilder
-    private func statusBadge(for status: PaymentSubmissionStatus) -> some View {
-        let (label, color): (String, Color) = {
-            switch status {
-            case .pending:  return ("Pendiente", SolennixColors.warning)
-            case .approved: return ("Aprobado",  SolennixColors.success)
-            case .rejected: return ("Rechazado", SolennixColors.error)
-            }
-        }()
-        Text(label)
-            .font(.caption2)
-            .fontWeight(.semibold)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.15))
-            .foregroundStyle(color)
-            .clipShape(Capsule())
     }
 
     // MARK: - Reject Sheet
