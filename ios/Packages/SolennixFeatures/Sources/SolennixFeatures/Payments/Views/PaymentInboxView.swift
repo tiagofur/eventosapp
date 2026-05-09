@@ -19,7 +19,6 @@ public struct PaymentInboxView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     private var isRegularWidth: Bool { horizontalSizeClass == .regular }
-    private var contentMaxWidth: CGFloat { 1200 }
 
     // MARK: - Init
 
@@ -96,74 +95,72 @@ public struct PaymentInboxView: View {
 
     @ViewBuilder
     private func submissionRow(_ submission: PaymentSubmission) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header row
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(submission.clientName ?? "Cliente")
-                        .font(.headline)
-                        .foregroundStyle(SolennixColors.text)
-                    Text(submission.eventLabel ?? "Evento")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
+        ReviewCardContainer {
+            VStack(alignment: .leading, spacing: 8) {
+                // Header row
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(submission.clientName ?? "Cliente")
+                            .font(.headline)
+                            .foregroundStyle(SolennixColors.text)
+                        Text(submission.eventLabel ?? "Evento")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    }
+                    Spacer()
+                    statusBadge(for: submission.status)
                 }
-                Spacer()
-                statusBadge(for: submission.status)
-            }
 
-            // Amount + reference
-            HStack(spacing: 16) {
-                Label(formatAmount(submission.amount), systemImage: "dollarsign.circle.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(SolennixColors.primary)
-                if let ref = submission.transferRef {
-                    Label(ref, systemImage: "number")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.textSecondary)
-                        .lineLimit(1)
+                // Amount + reference
+                HStack(spacing: 16) {
+                    Label(CommonFormatting.currencyMXN(submission.amount), systemImage: "dollarsign.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(SolennixColors.primary)
+                    if let ref = submission.transferRef {
+                        Label(ref, systemImage: "number")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
-            }
 
-            // Submitted date
-            Text(formatDate(submission.submittedAt))
-                .font(.caption2)
-                .foregroundStyle(SolennixColors.textTertiary)
-
-            // Receipt link
-            if let urlString = submission.receiptFileUrl,
-               let url = APIClient.resolveURL(urlString) {
-                Link(destination: url) {
-                    Label("Ver pago", systemImage: "paperclip")
-                        .font(.caption)
-                        .foregroundStyle(SolennixColors.info)
-                }
-            }
-
-            // Rejection reason
-            if submission.status == .rejected, let reason = submission.rejectionReason {
-                Text("Motivo: \(reason)")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.error)
-                    .padding(.top, 2)
-            }
-
-            Divider()
-                .padding(.vertical, 2)
-
-            HStack(spacing: Spacing.xs) {
-                Text("Toca para revisar")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.textSecondary)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
+                // Submitted date
+                Text(CommonFormatting.dateTimeFromISO(submission.submittedAt))
+                    .font(.caption2)
                     .foregroundStyle(SolennixColors.textTertiary)
+
+                // Receipt link
+                if let urlString = submission.receiptFileUrl,
+                   let url = APIClient.resolveURL(urlString) {
+                    Link(destination: url) {
+                        Label("Ver pago", systemImage: "paperclip")
+                            .font(.caption)
+                            .foregroundStyle(SolennixColors.info)
+                    }
+                }
+
+                // Rejection reason
+                if submission.status == .rejected, let reason = submission.rejectionReason {
+                    Text("Motivo: \(reason)")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.error)
+                        .padding(.top, 2)
+                }
+
+                Divider()
+                    .padding(.vertical, 2)
+
+                HStack(spacing: Spacing.xs) {
+                    Text("Toca para revisar")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textSecondary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(SolennixColors.textTertiary)
+                }
             }
         }
-        .padding(Spacing.md)
-        .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
-        .shadowSm()
     }
 
     // MARK: - Submission Detail Sheet
@@ -186,7 +183,7 @@ public struct PaymentInboxView: View {
                     }
 
                     VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Label(formatAmount(submission.amount), systemImage: "dollarsign.circle.fill")
+                        Label(CommonFormatting.currencyMXN(submission.amount), systemImage: "dollarsign.circle.fill")
                             .font(.headline)
                             .foregroundStyle(SolennixColors.primary)
 
@@ -196,7 +193,7 @@ public struct PaymentInboxView: View {
                                 .foregroundStyle(SolennixColors.textSecondary)
                         }
 
-                        Label(formatDate(submission.submittedAt), systemImage: "calendar")
+                        Label(CommonFormatting.dateTimeFromISO(submission.submittedAt), systemImage: "calendar")
                             .font(.subheadline)
                             .foregroundStyle(SolennixColors.textSecondary)
                     }
@@ -350,7 +347,7 @@ public struct PaymentInboxView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(target.clientName ?? "Cliente")
                             .font(.headline)
-                        Text(formatAmount(target.amount))
+                        Text(CommonFormatting.currencyMXN(target.amount))
                             .font(.subheadline)
                             .foregroundStyle(SolennixColors.textSecondary)
                     }
@@ -446,29 +443,4 @@ public struct PaymentInboxView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Formatting
-
-    private func formatAmount(_ amount: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "MXN"
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: NSNumber(value: amount)) ?? "$\(amount)"
-    }
-
-    private func formatDate(_ isoString: String) -> String {
-        let isoFormatterFull = ISO8601DateFormatter()
-        isoFormatterFull.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let isoFormatterBasic = ISO8601DateFormatter()
-        isoFormatterBasic.formatOptions = [.withInternetDateTime]
-        let date = isoFormatterFull.date(from: isoString) ?? isoFormatterBasic.date(from: isoString)
-        if let date {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .short
-            formatter.locale = Locale(identifier: "es_MX")
-            return formatter.string(from: date)
-        }
-        return isoString
-    }
 }

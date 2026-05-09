@@ -83,3 +83,63 @@ public enum SidebarSection: String, Hashable, CaseIterable {
         }
     }
 }
+
+// MARK: - SidebarSection Navigation Metadata
+
+extension SidebarSection {
+    /// Main sidebar order for iPad/macOS.
+    static let mainSections: [SidebarSection] = [
+        .dashboard, .calendar, .events, .clients, .personnel, .products, .inventory, .paymentInbox, .eventFormLinks
+    ]
+
+    /// Catalog section order for the iPhone "Mas" menu.
+    static let moreMenuCatalogSections: [SidebarSection] = [
+        .products, .inventory, .paymentInbox, .eventFormLinks, .personnel
+    ]
+
+    /// Canonical route destination used by menu navigation.
+    var route: Route {
+        switch self {
+        case .dashboard:
+            return .home
+        case .calendar:
+            return .calendar
+        case .events:
+            return .eventList
+        case .clients:
+            return .clientList
+        case .personnel:
+            return .staffList
+        case .products:
+            return .productList
+        case .inventory:
+            return .inventoryList
+        case .paymentInbox:
+            return .paymentInbox
+        case .eventFormLinks:
+            return .eventFormLinks
+        case .settings:
+            return .settings
+        }
+    }
+
+    /// Secondary text used by the iPhone "Mas" list rows.
+    var moreMenuSubtitle: String {
+        switch self {
+        case .products:
+            return "Catalogo y recetas"
+        case .inventory:
+            return "Stock de ingredientes"
+        case .paymentInbox:
+            return "Revision de pagos de clientes"
+        case .eventFormLinks:
+            return "Formularios para clientes nuevos"
+        case .personnel:
+            return "Colaboradores y equipo"
+        case .settings:
+            return "Perfil, negocio, cuenta"
+        case .dashboard, .calendar, .events, .clients:
+            return ""
+        }
+    }
+}

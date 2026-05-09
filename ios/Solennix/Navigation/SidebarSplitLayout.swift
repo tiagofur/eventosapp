@@ -279,17 +279,6 @@ struct SidebarSplitLayout: View {
     }
 
 }
-
-// MARK: - SidebarSection Grouping
-
-extension SidebarSection {
-
-    /// Main navigation sections (displayed first in the sidebar).
-    static let mainSections: [SidebarSection] = [
-        .dashboard, .calendar, .events, .clients, .personnel, .products, .inventory, .paymentInbox, .eventFormLinks
-    ]
-}
-
 // MARK: - Preview
 
 #Preview {
