@@ -69,7 +69,8 @@ public struct ClientDetailView: View {
     // MARK: - Scroll Content
 
     private func scrollContent(_ client: Client) -> some View {
-        ScrollView {
+        let isRegularWidth = sizeClass == .regular
+        return ScrollView {
             VStack(spacing: Spacing.lg) {
                 headerCard(client)
 
@@ -85,8 +86,8 @@ public struct ClientDetailView: View {
 
                 actionButtons
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.lg)
+            .padding(.horizontal, isRegularWidth ? Spacing.xl : Spacing.md)
+            .padding(.vertical, isRegularWidth ? Spacing.xl : Spacing.lg)
         }
         .refreshable { await loadData() }
     }

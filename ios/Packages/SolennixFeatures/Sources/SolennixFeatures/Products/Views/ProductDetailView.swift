@@ -220,7 +220,8 @@ public struct ProductDetailView: View {
     // MARK: - Detail Content
 
     private func detailContent(_ product: Product) -> some View {
-        ScrollView {
+        let isRegularWidth = sizeClass == .regular
+        return ScrollView {
             VStack(spacing: Spacing.md) {
                 AdaptiveDetailLayout {
                     // Left: Product info, image, KPI cards
@@ -277,7 +278,8 @@ public struct ProductDetailView: View {
                     basePrice: product.basePrice
                 )
             }
-            .padding(Spacing.lg)
+            .padding(.horizontal, isRegularWidth ? Spacing.xl : Spacing.md)
+            .padding(.vertical, isRegularWidth ? Spacing.xl : Spacing.lg)
         }
     }
 

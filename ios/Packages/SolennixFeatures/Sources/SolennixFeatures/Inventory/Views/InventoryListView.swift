@@ -148,6 +148,9 @@ public struct InventoryListView: View {
             LazyVStack(alignment: .leading, spacing: Spacing.lg) {
                 if !viewModel.ingredientItems.isEmpty {
                     inventoryGridSection(title: InventoryStrings.ingredients, items: viewModel.ingredientItems)
+            }
+            .padding(.horizontal, sizeClass == .regular ? Spacing.lg : Spacing.md)
+            .padding(.vertical, Spacing.lg)
                 }
                 if !viewModel.equipmentItems.isEmpty {
                     inventoryGridSection(title: InventoryStrings.equipment, items: viewModel.equipmentItems)

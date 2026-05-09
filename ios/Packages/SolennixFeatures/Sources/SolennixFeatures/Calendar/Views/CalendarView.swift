@@ -286,7 +286,7 @@ public struct CalendarView: View {
 
                     eventsPane
                         .frame(maxWidth: .infinity)
-                        .background(SolennixColors.card)
+                        .background(SolennixColors.surface)
                 }
             } else {
                 // Portrait iPad: same single-column layout as iPhone.
@@ -319,12 +319,28 @@ public struct CalendarView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 if viewModel.selectedDate != nil {
-                    Text(viewModel.formattedSelectedDate())
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(SolennixColors.text)
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.top, Spacing.md)
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "calendar")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(SolennixColors.primary)
+                            .frame(width: 24, height: 24)
+                            .background(SolennixColors.primaryLight.opacity(0.5), in: Circle())
+
+                        Text(viewModel.formattedSelectedDate())
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(SolennixColors.text)
+                    }
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.sm)
+                        .background(SolennixColors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous)
+                            .stroke(SolennixColors.borderStrong.opacity(0.55), lineWidth: 1)
+                    )
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.top, Spacing.md)
 
                     let dayEvents = viewModel.eventsForSelectedDate
 
@@ -506,6 +522,9 @@ public struct CalendarView: View {
 
             VStack(alignment: .trailing, spacing: Spacing.xs) {
                 StatusBadge(status: event.status.rawValue)
+                    .scaleEffect(0.92, anchor: .trailing)
+                    .opacity(0.85)
+                    .padding(.top, 1)
 
                 // Zero-decimal MXN for list cards — same convention as the
                 // dashboard. Cents live on the event detail screen.
@@ -514,12 +533,17 @@ public struct CalendarView: View {
                 ) ?? "$0")
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.primary)
+                    .foregroundStyle(SolennixColors.text)
+                    .monospacedDigit()
             }
         }
         .padding(Spacing.md)
         .background(SolennixColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.lg, style: .continuous)
+            .stroke(SolennixColors.borderStrong.opacity(0.45), lineWidth: 1)
+        )
         .shadowSm()
         // Match the calendar grid's horizontal inset (`Spacing.sm`) — previously
         // the card lived at `Spacing.md`, making the event list visibly narrower

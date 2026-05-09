@@ -180,9 +180,8 @@ public struct ProductListView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.top, Spacing.sm)
-            .padding(.bottom, Spacing.xxl)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.lg : Spacing.md)
+            .padding(.vertical, Spacing.lg)
         }
         .background(SolennixColors.surfaceGrouped)
     }

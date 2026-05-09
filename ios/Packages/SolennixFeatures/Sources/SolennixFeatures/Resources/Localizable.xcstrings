@@ -3745,9 +3745,6 @@
     "Compartir" : {
 
     },
-    "Compartir por WhatsApp" : {
-
-    },
     "Completa estos campos en el evento o cliente:" : {
 
     },
@@ -3761,9 +3758,6 @@
 
     },
     "Comprar" : {
-
-    },
-    "Comprobantes" : {
 
     },
     "Confirmado" : {
@@ -4609,6 +4603,7 @@
       }
     },
     "events.detail.error.client_unavailable" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4721,6 +4716,7 @@
       }
     },
     "events.detail.error.share_sheet" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -5909,6 +5905,7 @@
       }
     },
     "events.detail.supplies.fallback" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -9091,9 +9088,6 @@
     "Nuevo Equipo" : {
 
     },
-    "Nuevo Evento" : {
-
-    },
     "Nuevo Item" : {
 
     },
@@ -9144,6 +9138,39 @@
     },
     "Passthrough (Sin Utilidad)" : {
 
+    },
+    "payment_inbox.pro_only_hint" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Actualiza tu plan para revisar y aprobar comprobantes enviados por clientes."
+          }
+        }
+      }
+    },
+    "payment_inbox.pro_only_title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Función exclusiva para usuarios Pro."
+          }
+        }
+      }
+    },
+    "payment_inbox.title" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Comprobantes"
+          }
+        }
+      }
     },
     "Pendiente" : {
 

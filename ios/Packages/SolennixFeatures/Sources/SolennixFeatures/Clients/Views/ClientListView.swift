@@ -145,7 +145,7 @@ public struct ClientListView: View {
 
     private var clientGrid: some View {
         ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: Spacing.sm) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: Spacing.lg) {
                 ForEach(viewModel.paginatedClients) { client in
                     NavigationLink(value: Route.clientDetail(id: client.id)) {
                         clientRow(client)

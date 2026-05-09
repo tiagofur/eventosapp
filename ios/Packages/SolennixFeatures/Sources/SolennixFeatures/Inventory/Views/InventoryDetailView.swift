@@ -236,7 +236,8 @@ public struct InventoryDetailView: View {
     // MARK: - Detail Content
 
     private func detailContent(_ item: InventoryItem) -> some View {
-        ScrollView {
+        let isRegularWidth = sizeClass == .regular
+        return ScrollView {
             VStack(spacing: Spacing.md) {
                 AdaptiveDetailLayout {
                     // Left: Item info, KPI cards
@@ -267,7 +268,8 @@ public struct InventoryDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                 .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
             }
-            .padding(Spacing.lg)
+            .padding(.horizontal, isRegularWidth ? Spacing.xl : Spacing.md)
+            .padding(.vertical, isRegularWidth ? Spacing.xl : Spacing.lg)
         }
     }
 

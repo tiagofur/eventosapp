@@ -416,8 +416,8 @@ public struct EventListView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.xxl)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.lg : Spacing.md)
+            .padding(.vertical, Spacing.lg)
         } else {
             LazyVStack(spacing: Spacing.sm) {
                 ForEach(filtered) { event in

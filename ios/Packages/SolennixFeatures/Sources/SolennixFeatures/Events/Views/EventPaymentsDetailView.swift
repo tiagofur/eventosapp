@@ -137,7 +137,8 @@ public struct EventPaymentsDetailView: View {
                                 viewModel.payDeposit()
                             }
                         }
-                    }
+            .padding(.horizontal, sizeClass == .regular ? Spacing.xl : Spacing.md)
+            .padding(.vertical, sizeClass == .regular ? Spacing.xl : Spacing.lg)
                 }
 
                 // Payment history
