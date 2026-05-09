@@ -442,6 +442,7 @@ public struct EventDetailView: View {
                 icon: "bag.fill",
                 title: tr("events.detail.card.products", "Productos"),
                 count: viewModel.products.count,
+                subtitle: nil,
                 color: SolennixColors.primary,
                 route: Route.eventProducts(id: eventId)
             )
@@ -450,6 +451,7 @@ public struct EventDetailView: View {
                 icon: "sparkles",
                 title: tr("events.detail.card.extras", "Extras"),
                 count: viewModel.extras.count,
+                subtitle: nil,
                 color: SolennixColors.info,
                 route: Route.eventExtras(id: eventId)
             )
@@ -458,6 +460,7 @@ public struct EventDetailView: View {
                 icon: "drop.fill",
                 title: tr("events.detail.card.supplies", "Insumos"),
                 count: viewModel.supplies.count,
+                subtitle: nil,
                 color: SolennixColors.warning,
                 route: Route.eventSupplies(id: eventId)
             )
@@ -466,6 +469,7 @@ public struct EventDetailView: View {
                 icon: "wrench.and.screwdriver.fill",
                 title: tr("events.detail.card.equipment", "Equipo"),
                 count: viewModel.equipment.count,
+                subtitle: nil,
                 color: SolennixColors.success,
                 route: Route.eventEquipment(id: eventId)
             )
@@ -482,6 +486,7 @@ public struct EventDetailView: View {
                 icon: "person.3.fill",
                 title: tr("events.detail.card.staff", "Personal"),
                 count: viewModel.eventStaff.count,
+                subtitle: nil,
                 color: SolennixColors.info,
                 route: Route.eventStaff(id: eventId)
             )
