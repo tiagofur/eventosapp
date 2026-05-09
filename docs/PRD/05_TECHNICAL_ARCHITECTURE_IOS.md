@@ -9,7 +9,7 @@ aliases:
   - Arquitectura iOS
   - iOS Architecture
 date: 2026-03-20
-updated: 2026-05-06
+updated: 2026-05-08
 status: active
 platform: iOS
 ---
@@ -41,6 +41,13 @@ platform: iOS
 > - **Detalle de evento:** se removió la acción legacy de WhatsApp; la compartición oficial queda en `ClientPortalShareSheet`
 > - **Settings:** el centro de ayuda vive como acción secundaria en Ajustes y la apariencia se mantiene concentrada en esa pantalla
 
+> [!success] UI Refresh Lab 2026-05-08 (iOS/iPadOS/macOS)
+>
+> - Se incorporó `SolennixGlassSurface` en `SolennixDesign` para material/glass reutilizable y controlado (uso recomendado en chrome y overlays, no en todas las cards de datos).
+> - Se estandarizó la migración a `SolennixColors` en vistas SwiftUI para evitar drift de colores de sistema hardcodeados.
+> - `SidebarSplitLayout` refuerza consistencia de fondo/superficies y aplica glass sutil en header/footer del sidebar para iPad/macOS.
+> - `SearchView` y `EventDetailView` mejoran comportamiento de regular width con límites de ancho y espaciado desktop-class.
+
 > [!info] Dependencias externas SPM (2026-04-16)
 >
 > | Paquete                          | Versión mínima | Usado en                              |
@@ -55,6 +62,7 @@ platform: iOS
 > - [[01_PRODUCT_VISION]] — Vision del producto
 > - [[02_FEATURES]] — Features y tabla de paridad
 > - [[19_I18N_STRATEGY]] — Estrategia de i18n, copy matrix y reglas de paridad semántica
+> - `docs/iOS/Plan iOS i18n + QA + Refactor por Pantalla.md` — ejecución iOS pantalla por pantalla (traducciones + tests + refactor)
 > - [[06_TECHNICAL_ARCHITECTURE_ANDROID]] — Arquitectura Android
 > - [[07_TECHNICAL_ARCHITECTURE_BACKEND]] — Arquitectura Backend
 > - [[08_TECHNICAL_ARCHITECTURE_WEB]] — Arquitectura Web
@@ -221,6 +229,7 @@ ios/
 │   │           ├── Avatar.swift
 │   │           ├── ConfirmDialog.swift
 │   │           ├── EmptyStateView.swift
+│   │           ├── GlassSurface.swift
 │   │           ├── PremiumButton.swift
 │   │           ├── SkeletonView.swift
 │   │           ├── SolennixTextField.swift

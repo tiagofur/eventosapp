@@ -8,7 +8,7 @@ aliases:
   - Estado Actual
   - Current Status
 date: 2026-03-20
-updated: 2026-05-06
+updated: 2026-05-08
 status: active
 ---
 
@@ -24,6 +24,22 @@ status: active
 
 **Fecha:** Mayo 2026
 **Version:** 1.6
+
+> [!success] 2026-05-08 — Apple UI refresh lab (iOS/iPadOS/macOS) en branch experimental
+> Se inició la branch `feat/apple-ui-refresh-lab` para unificar UI/UX visual en Apple platforms antes de aplicar glass más agresivo.
+> - **Baseline definido**: colores y jerarquía de superficies basados en Web; shell y navegación basados en iPad/macOS.
+> - **Semantic cleanup**: reemplazo de colores hardcodeados (`.blue/.green/.orange/.purple/.red`) por `SolennixColors` en vistas clave de Clients, Events, Products, Inventory y Staff.
+> - **Design system**: nuevo modifier reusable `SolennixGlassSurface` para materiales controlados en chrome/overlays.
+> - **Shell iPad/macOS**: `SidebarSplitLayout` con fondo unificado `surfaceGrouped`, header/footer con glass sutil y mejor consistencia visual.
+> - **Search y detalle desktop**: mejoras de ancho/densidad para regular width en `SearchView` y `EventDetailView`.
+> - **Objetivo del laboratorio**: cerrar coherencia de base primero y luego ejecutar pasada de Liquid Glass premium sin comprometer legibilidad.
+
+> [!info] 2026-05-08 — Plan iOS pantalla por pantalla (i18n + QA + refactor)
+> Se definió el plan operativo para cerrar calidad de iOS por pantalla en paralelo (traducciones, diseño, funciones y testing) con foco explícito en mantenibilidad.
+> - **Documento guía**: `docs/iOS/Plan iOS i18n + QA + Refactor por Pantalla.md`
+> - **DoD por pantalla**: i18n ES/EN + estados UI + validación funcional + tests + límite de tamaño de archivos.
+> - **Orden de ejecución**: olas P0/P1/P2, comenzando por `EventDetailView`, `DashboardView`, `EventListView`, `EventForm` y `Settings/Pricing`.
+> - **Meta técnica**: eliminar hardcodes visibles y bajar vistas grandes a tamaño mantenible vía componentización controlada.
 
 > [!success] 2026-05-06 — Release audit de mayo + próximos números
 > Se revisaron **42 PRs mergeados en mayo** (11 features, 6 bugs, 22 chores/deps) para separar el material realmente release-facing del ruido de mantenimiento.
