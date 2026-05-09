@@ -135,7 +135,7 @@ private struct PaymentInboxL10n {
 }
 
 private func paymentInboxL10n() -> PaymentInboxL10n {
-    let lang = Locale.current.language.languageCode.identifier
+    let lang = Locale.current.language.languageCode?.identifier ?? "es"
     if lang.hasPrefix("es") {
         return PaymentInboxL10n(
             decodingError: "Error procesando respuesta",
