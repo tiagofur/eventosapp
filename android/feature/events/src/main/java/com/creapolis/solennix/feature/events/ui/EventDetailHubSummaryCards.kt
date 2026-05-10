@@ -2,21 +2,39 @@ package com.creapolis.solennix.feature.events.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.DiscountType
 import com.creapolis.solennix.core.model.extensions.asMXN
-
-// ==================== Hub Summary Cards ====================
 
 @Composable
 fun FinanceSummaryCard(
@@ -169,7 +187,6 @@ fun PaymentSummaryCard(
             HorizontalDivider(color = SolennixTheme.colors.secondaryText.copy(alpha = 0.2f))
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Mini KPIs
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MiniKpi(
                     label = "Pagado",
@@ -185,14 +202,13 @@ fun PaymentSummaryCard(
                 )
             }
 
-            // Progress bar
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
                 progress = { progress.toFloat() },
                 modifier = Modifier.fillMaxWidth().height(6.dp),
                 color = SolennixTheme.colors.primary,
                 trackColor = SolennixTheme.colors.secondaryText.copy(alpha = 0.15f),
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                strokeCap = StrokeCap.Round
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -202,7 +218,6 @@ fun PaymentSummaryCard(
                 modifier = Modifier.align(Alignment.End)
             )
 
-            // Deposit status
             val depositPct = event.depositPercent
             if (depositPct != null && depositPct > 0) {
                 val depositAmount = event.totalAmount * depositPct / 100
@@ -258,4 +273,3 @@ fun MiniKpi(
         }
     }
 }
-
