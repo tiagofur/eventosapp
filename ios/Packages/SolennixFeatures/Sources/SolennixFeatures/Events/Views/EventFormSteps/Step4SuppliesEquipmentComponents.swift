@@ -10,6 +10,117 @@ private func trf(_ key: String, _ value: String, _ arg: String) -> String {
     String(format: tr(key, value), locale: FeatureL10n.locale, arg)
 }
 
+struct Step4SuggestionChip: Identifiable {
+    let id: String
+    let label: String
+    let alreadyAdded: Bool
+    let action: () -> Void
+}
+
+struct Step4AddButton: View {
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "plus.circle.fill")
+                    .foregroundStyle(SolennixColors.primary)
+
+                Text(label)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(SolennixColors.primary)
+
+                Spacer()
+            }
+            .padding(Spacing.md)
+            .background(SolennixColors.primaryLight)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.md)
+                    .stroke(SolennixColors.primary.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct Step4EmptyState: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.largeTitle)
+                .foregroundStyle(SolennixColors.textTertiary)
+
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(SolennixColors.textSecondary)
+
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(SolennixColors.textTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxl)
+    }
+}
+
+struct Step4SuggestionsBanner: View {
+    let title: String
+    let chips: [Step4SuggestionChip]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.xs) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.warning)
+
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.warning)
+            }
+
+            FlowLayout(spacing: Spacing.xs) {
+                ForEach(chips) { chip in
+                    Button {
+                        if !chip.alreadyAdded { chip.action() }
+                    } label: {
+                        HStack(spacing: Spacing.xs) {
+                            if chip.alreadyAdded {
+                                Image(systemName: "checkmark")
+                                    .font(.caption2)
+                            } else {
+                                Image(systemName: "plus")
+                                    .font(.caption2)
+                            }
+                            Text(chip.label)
+                                .font(.caption)
+                        }
+                        .foregroundStyle(chip.alreadyAdded ? SolennixColors.textTertiary : SolennixColors.warning)
+                        .padding(.horizontal, Spacing.sm)
+                        .padding(.vertical, Spacing.xs)
+                        .background(SolennixColors.warningBg.opacity(chip.alreadyAdded ? 0.5 : 1))
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(chip.alreadyAdded)
+                }
+            }
+        }
+        .padding(Spacing.md)
+        .background(SolennixColors.warningBg)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+    }
+}
+
 // MARK: - Supply Row
 //
 // Subview con `item` por valor + callbacks. No indexa el array del VM en

@@ -77,11 +77,11 @@ struct Step4SuppliesEquipmentView: View {
                 .foregroundStyle(SolennixColors.text)
 
             if !viewModel.supplySuggestions.isEmpty {
-                suggestionsBanner(
+                Step4SuggestionsBanner(
                     title: tr("events.form.inventory.suggestions", "Sugerencias por productos"),
                     chips: viewModel.supplySuggestions.map { suggestion in
                         let alreadyAdded = viewModel.selectedSupplies.contains { $0.inventoryId == suggestion.id }
-                        return SuggestionChip(
+                        return Step4SuggestionChip(
                             id: suggestion.id,
                             label: "\(suggestion.ingredientName) (\(formatQty(suggestion.suggestedQuantity)))",
                             alreadyAdded: alreadyAdded,
@@ -91,10 +91,10 @@ struct Step4SuppliesEquipmentView: View {
                 )
             }
 
-            addButton(label: tr("events.form.inventory.add_supply", "Agregar insumo")) { showSupplyPicker = true }
+            Step4AddButton(label: tr("events.form.inventory.add_supply", "Agregar insumo")) { showSupplyPicker = true }
 
             if viewModel.selectedSupplies.isEmpty {
-                emptyState(
+                Step4EmptyState(
                     icon: "shippingbox",
                     title: tr("events.form.inventory.empty_supplies_title", "Sin insumos (opcional)"),
                     subtitle: tr("events.form.inventory.empty_supplies_desc", "Agrega consumibles del inventario")
@@ -178,11 +178,11 @@ struct Step4SuppliesEquipmentView: View {
             }
 
             if !viewModel.equipmentSuggestions.isEmpty {
-                suggestionsBanner(
+                Step4SuggestionsBanner(
                     title: tr("events.form.inventory.suggestions", "Sugerencias por productos"),
                     chips: viewModel.equipmentSuggestions.map { suggestion in
                         let alreadyAdded = viewModel.selectedEquipment.contains { $0.inventoryId == suggestion.id }
-                        return SuggestionChip(
+                        return Step4SuggestionChip(
                             id: suggestion.id,
                             label: "\(suggestion.ingredientName) (\(formatQty(suggestion.suggestedQuantity)))",
                             alreadyAdded: alreadyAdded,
@@ -192,10 +192,10 @@ struct Step4SuppliesEquipmentView: View {
                 )
             }
 
-            addButton(label: tr("events.form.inventory.add_equipment", "Agregar equipamiento")) { showEquipmentPicker = true }
+            Step4AddButton(label: tr("events.form.inventory.add_equipment", "Agregar equipamiento")) { showEquipmentPicker = true }
 
             if viewModel.selectedEquipment.isEmpty {
-                emptyState(
+                Step4EmptyState(
                     icon: "wrench.and.screwdriver",
                     title: tr("events.form.inventory.empty_equipment_title", "Sin equipamiento (opcional)"),
                     subtitle: tr("events.form.inventory.empty_equipment_desc", "Agrega equipo reutilizable para el evento")
@@ -230,107 +230,6 @@ struct Step4SuppliesEquipmentView: View {
 
             Step4PersonnelPanel(viewModel: viewModel)
         }
-    }
-
-    // MARK: - Shared Components
-
-    /// Card prominente con estilo `primaryLight` — mismo patrón que StepProducts.
-    private func addButton(label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(SolennixColors.primary)
-
-                Text(label)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(SolennixColors.primary)
-
-                Spacer()
-            }
-            .padding(Spacing.md)
-            .background(SolennixColors.primaryLight)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.md)
-                    .stroke(SolennixColors.primary.opacity(0.3), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func emptyState(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: Spacing.sm) {
-            Image(systemName: icon)
-                .font(.largeTitle)
-                .foregroundStyle(SolennixColors.textTertiary)
-
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(SolennixColors.textSecondary)
-
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(SolennixColors.textTertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, Spacing.xxl)
-    }
-
-    private struct SuggestionChip: Identifiable {
-        let id: String
-        let label: String
-        let alreadyAdded: Bool
-        let action: () -> Void
-    }
-
-    /// Banner tipo "Sugerencias por productos" con chips tipo FilterChip.
-    /// Warning-tinted en ambos insumos y equipamiento — parity visual con
-    /// Android y señaliza al usuario "esto viene del backend, no escribiste".
-    private func suggestionsBanner(title: String, chips: [SuggestionChip]) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "lightbulb.fill")
-                    .font(.caption)
-                    .foregroundStyle(SolennixColors.warning)
-
-                Text(title)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(SolennixColors.warning)
-            }
-
-            FlowLayout(spacing: Spacing.xs) {
-                ForEach(chips) { chip in
-                    Button {
-                        if !chip.alreadyAdded { chip.action() }
-                    } label: {
-                        HStack(spacing: Spacing.xs) {
-                            if chip.alreadyAdded {
-                                Image(systemName: "checkmark")
-                                    .font(.caption2)
-                            } else {
-                                Image(systemName: "plus")
-                                    .font(.caption2)
-                            }
-                            Text(chip.label)
-                                .font(.caption)
-                        }
-                        .foregroundStyle(chip.alreadyAdded ? SolennixColors.textTertiary : SolennixColors.warning)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, Spacing.xs)
-                        .background(SolennixColors.warningBg.opacity(chip.alreadyAdded ? 0.5 : 1))
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(chip.alreadyAdded)
-                }
-            }
-        }
-        .padding(Spacing.md)
-        .background(SolennixColors.warningBg)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
     }
 
     /// Unidades contables que se ordenan siempre enteras (no hace sentido
