@@ -78,9 +78,9 @@ public struct EventFormLinksView: View {
         } else if viewModel.links.isEmpty && !viewModel.isLoading {
             EmptyStateView(
                 icon: "link.badge.plus",
-                title: "Sin links",
-                message: "Genera un link para que tus clientes llenen su informacion de evento",
-                actionTitle: "Generar Link"
+                title: "Sin formularios",
+                message: "Genera un formulario para que tus clientes compartan la información del evento.",
+                actionTitle: "Generar formulario"
             ) {
                 showGenerateSheet = true
             }

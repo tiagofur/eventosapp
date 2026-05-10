@@ -41,6 +41,8 @@ public struct PaymentInboxView: View {
                 submissionContent
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(SolennixColors.surfaceGrouped)
         .navigationTitle("Pagos recibidos")
         .navigationBarTitleDisplayMode(.large)
         .task { await viewModel.fetchSubmissions() }
@@ -310,25 +312,14 @@ public struct PaymentInboxView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack {
-            VStack(spacing: 16) {
-                Image(systemName: "tray.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(SolennixColors.textTertiary)
-                Text("Sin pagos pendientes")
-                    .font(.headline)
-                    .foregroundStyle(SolennixColors.textSecondary)
-                Text("Cuando un cliente envíe un pago de transferencia, aparecerá aquí para tu revisión.")
-                    .font(.subheadline)
-                    .foregroundStyle(SolennixColors.textTertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(Spacing.lg)
-            .glassSurface(opacity: 0.14, blur: 10)
-            .shadowSm()
-            .padding(.horizontal, Spacing.lg)
+        EmptyStateView(
+            icon: "checkmark.seal",
+            title: "Sin pagos pendientes",
+            message: "Cuando tus clientes suban comprobantes de transferencia, los verás aquí para aprobar o rechazar.",
+            actionTitle: "Actualizar"
+        ) {
+            Task { await viewModel.fetchSubmissions() }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
 }
