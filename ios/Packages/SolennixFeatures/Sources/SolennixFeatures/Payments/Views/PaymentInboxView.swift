@@ -285,28 +285,13 @@ public struct PaymentInboxView: View {
     // MARK: - Plan Locked State
 
     private var planLockedState: some View {
-        VStack {
-            VStack(spacing: 16) {
-                Image(systemName: "lock.fill")
-                    .font(.largeTitle)
-                    .foregroundStyle(SolennixColors.textTertiary)
-                Text(String(localized: "payment_inbox.pro_only_title",
-                            defaultValue: "Función exclusiva para usuarios Pro."))
-                    .font(.headline)
-                    .foregroundStyle(SolennixColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                Text(String(localized: "payment_inbox.pro_only_hint",
-                        defaultValue: "Actualiza tu plan para revisar y aprobar pagos recibidos de clientes."))
-                    .font(.subheadline)
-                    .foregroundStyle(SolennixColors.textTertiary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(Spacing.lg)
-            .glassSurface(opacity: 0.14, blur: 10)
-            .shadowSm()
-            .padding(.horizontal, Spacing.lg)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        EmptyStateView(
+            icon: "lock.fill",
+            title: String(localized: "payment_inbox.pro_only_title",
+                          defaultValue: "Función exclusiva para usuarios Pro."),
+            message: String(localized: "payment_inbox.pro_only_hint",
+                            defaultValue: "Actualiza tu plan para revisar y aprobar pagos recibidos de clientes.")
+        )
     }
 
     // MARK: - Empty State
