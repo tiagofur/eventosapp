@@ -25,6 +25,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/tiagofur/solennix-backend/internal/config"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
 	"github.com/tiagofur/solennix-backend/internal/repository"
@@ -73,10 +74,10 @@ func blacklistResetToken(token string, expiry time.Time) {
 // at least 8 characters, one uppercase letter, one lowercase letter, and one digit.
 func validatePasswordStrength(password string) error {
 	if len(password) < 8 {
-		return fmt.Errorf("Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, and one digit")
+		return fmt.Errorf("auth.password_strength")
 	}
 	if len(password) > 128 {
-		return fmt.Errorf("Password must not exceed 128 characters")
+		return fmt.Errorf("auth.password_max_length")
 	}
 	var hasUpper, hasLower, hasDigit bool
 	for _, ch := range password {
@@ -90,9 +91,13 @@ func validatePasswordStrength(password string) error {
 		}
 	}
 	if !hasUpper || !hasLower || !hasDigit {
-		return fmt.Errorf("Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, and one digit")
+		return fmt.Errorf("auth.password_strength")
 	}
 	return nil
+}
+
+func writeAuthI18nError(w http.ResponseWriter, r *http.Request, status int, key string) {
+	writeError(w, status, i18n.Message(r.Context(), key))
 }
 
 // isUniqueViolation checks if a database error is a PostgreSQL unique constraint violation (23505).
@@ -173,7 +178,7 @@ type acceptTeamInviteRequest struct {
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
@@ -181,22 +186,22 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	req.Name = strings.TrimSpace(req.Name)
 
 	if req.Email == "" || req.Password == "" || req.Name == "" {
-		writeError(w, http.StatusBadRequest, "Email, password, and name are required")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.email_password_name_required")
 		return
 	}
 
 	if !emailRegex.MatchString(req.Email) || len(req.Email) > 255 {
-		writeError(w, http.StatusBadRequest, "Invalid email format")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_email_format")
 		return
 	}
 
 	if len(req.Name) > 255 {
-		writeError(w, http.StatusBadRequest, "Name must not exceed 255 characters")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.name_too_long")
 		return
 	}
 
 	if err := validatePasswordStrength(req.Password); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeAuthI18nError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -207,7 +212,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	existing, _ := h.userRepo.GetByEmail(r.Context(), req.Email)
 	if existing != nil {
 		slog.Warn("auth.event", "action", "register_duplicate", "email", req.Email, "ip", clientIP(r))
-		writeError(w, http.StatusConflict, "Email already registered")
+		writeAuthI18nError(w, r, http.StatusConflict, "auth.email_registered")
 		return
 	}
 
@@ -215,7 +220,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	hash, err := h.authService.HashPassword(req.Password)
 	if err != nil {
 		slog.Error("Failed to hash password", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
@@ -229,14 +234,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.userRepo.Create(r.Context(), user); err != nil {
 		slog.Error("Failed to create user", "error", err)
-		writeError(w, http.StatusInternalServerError, "Failed to create account")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.create_account_failed")
 		return
 	}
 
 	// Send welcome email (fire-and-forget)
 	if h.emailService != nil {
+		locale := i18n.NormalizeLocale(user.PreferredLanguage)
 		go func() {
-			if err := h.emailService.SendWelcome(user.Email, user.Name); err != nil {
+			if err := h.emailService.SendWelcomeLocalized(user.Email, user.Name, locale); err != nil {
 				slog.Warn("Failed to send welcome email", "email", user.Email, "error", err)
 			}
 		}()
@@ -246,7 +252,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
 	if err != nil {
 		slog.Error("Failed to generate tokens", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
@@ -268,14 +274,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
 	req.Email = strings.TrimSpace(req.Email)
 
 	if req.Email == "" || req.Password == "" {
-		writeError(w, http.StatusBadRequest, "Email and password are required")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.email_password_required")
 		return
 	}
 
@@ -286,14 +292,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		// preventing user enumeration via timing side-channels.
 		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password))
 		slog.Warn("auth.event", "action", "login_failed", "email", req.Email, "reason", "user_not_found", "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Invalid email or password")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.invalid_credentials")
 		return
 	}
 
 	// Check password
 	if !h.authService.CheckPassword(req.Password, user.PasswordHash) {
 		slog.Warn("auth.event", "action", "login_failed", "email", req.Email, "reason", "invalid_password", "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Invalid email or password")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.invalid_credentials")
 		return
 	}
 
@@ -301,7 +307,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
 	if err != nil {
 		slog.Error("Failed to generate tokens", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
@@ -325,7 +331,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userRepo.GetByID(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "User not found")
+		writeAuthI18nError(w, r, http.StatusNotFound, "auth.user_not_found")
 		return
 	}
 
@@ -338,14 +344,14 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
 	claims, err := h.authService.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		slog.Warn("auth.event", "action", "token_refresh_failed", "reason", "invalid_refresh_token", "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Invalid or expired token")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.token_invalid_or_expired")
 		return
 	}
 
@@ -353,7 +359,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userRepo.GetByID(r.Context(), claims.UserID)
 	if err != nil || user == nil {
 		slog.Warn("auth.event", "action", "token_refresh_failed", "reason", "user_not_found", "user_id", claims.UserID, "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Invalid or expired token")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.token_invalid_or_expired")
 		return
 	}
 
@@ -367,7 +373,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 				slog.Warn("auth.event", "action", "refresh_token_reuse_detected", "family_id", familyID, "user_id", userID, "ip", clientIP(r))
 				h.refreshTokenRepo.RevokeFamily(r.Context(), familyID)
 			}
-			writeError(w, http.StatusUnauthorized, "Invalid or expired token")
+			writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.token_invalid_or_expired")
 			return
 		}
 
@@ -375,7 +381,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		tokens, err := h.authService.GenerateTokenPairWithFamily(claims.UserID, claims.Email, familyID)
 		if err != nil {
 			slog.Error("Failed to generate tokens", "error", err)
-			writeError(w, http.StatusInternalServerError, "Internal server error")
+			writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 			return
 		}
 
@@ -394,7 +400,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	tokens, err := h.authService.GenerateTokenPair(claims.UserID, claims.Email)
 	if err != nil {
 		slog.Error("Failed to generate tokens", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
@@ -457,7 +463,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"message": "Logged out successfully",
+		"message": i18n.Message(r.Context(), "auth.logged_out_success"),
 	})
 }
 
@@ -465,7 +471,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	var req forgotPasswordRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
@@ -479,7 +485,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			slog.Error("Failed to generate reset token", "error", err)
 			writeJSON(w, http.StatusOK, map[string]string{
-				"message": "If the email exists, a password reset link has been sent",
+				"message": i18n.Message(r.Context(), "auth.forgot_password_if_exists"),
 			})
 			return
 		}
@@ -488,7 +494,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		const maxRetries = 3
 		var sendErr error
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			sendErr = h.emailService.SendPasswordReset(user.Email, token, user.Name)
+			sendErr = h.emailService.SendPasswordResetLocalized(user.Email, token, user.Name, i18n.NormalizeLocale(user.PreferredLanguage))
 			if sendErr == nil {
 				slog.Info("Password reset email sent", "email", user.Email, "attempt", attempt)
 				break
@@ -504,7 +510,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"message": "If the email exists, a password reset link has been sent",
+		"message": i18n.Message(r.Context(), "auth.forgot_password_if_exists"),
 	})
 }
 
@@ -513,24 +519,24 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) AcceptTeamInvite(w http.ResponseWriter, r *http.Request) {
 	var req acceptTeamInviteRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
 	if strings.TrimSpace(req.Token) == "" || strings.TrimSpace(req.Password) == "" {
-		writeError(w, http.StatusBadRequest, "Token and password are required")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.token_password_required")
 		return
 	}
 
 	if err := validatePasswordStrength(req.Password); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeAuthI18nError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	passwordHash, err := h.authService.HashPassword(req.Password)
 	if err != nil {
 		slog.Error("failed to hash invite password", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
@@ -541,20 +547,20 @@ func (h *AuthHandler) AcceptTeamInvite(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrStaffInviteNotFound):
-			writeError(w, http.StatusUnauthorized, "Invalid invite token")
+			writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.invite_token_invalid")
 			return
 		case errors.Is(err, repository.ErrStaffInviteNotPending):
-			writeError(w, http.StatusConflict, "Invite has already been used or revoked")
+			writeAuthI18nError(w, r, http.StatusConflict, "auth.invite_already_used")
 			return
 		case errors.Is(err, repository.ErrStaffInviteExpired):
-			writeError(w, http.StatusGone, "Invite has expired")
+			writeAuthI18nError(w, r, http.StatusGone, "auth.invite_expired")
 			return
 		case errors.Is(err, repository.ErrStaffInviteEmailTaken):
-			writeError(w, http.StatusConflict, "Invite email already has an account")
+			writeAuthI18nError(w, r, http.StatusConflict, "auth.invite_email_taken")
 			return
 		default:
 			slog.Error("failed to accept team invite", "error", err)
-			writeError(w, http.StatusInternalServerError, "Failed to accept invite")
+			writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.invite_accept_failed")
 			return
 		}
 	}
@@ -562,7 +568,7 @@ func (h *AuthHandler) AcceptTeamInvite(w http.ResponseWriter, r *http.Request) {
 	tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
 	if err != nil {
 		slog.Error("failed to generate auth tokens for invited user", "error", err, "user_id", user.ID)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
@@ -586,31 +592,31 @@ type resetPasswordRequest struct {
 func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	var req resetPasswordRequest
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
 	// Validate token and password
 	if req.Token == "" || req.NewPassword == "" {
-		writeError(w, http.StatusBadRequest, "Token and new password are required")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.token_new_password_required")
 		return
 	}
 
 	if err := validatePasswordStrength(req.NewPassword); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeAuthI18nError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// Check if token has already been used
 	if isResetTokenBlacklisted(req.Token) {
-		writeError(w, http.StatusUnauthorized, "Reset token has already been used")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.reset_token_already_used")
 		return
 	}
 
 	// Validate reset token (must be valid and have subject="password-reset")
 	claims, err := h.authService.ValidateResetToken(req.Token)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "Invalid or expired reset token")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.reset_token_invalid_or_expired")
 		return
 	}
 
@@ -618,7 +624,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userRepo.GetByID(r.Context(), claims.UserID)
 	if err != nil || user == nil {
 		slog.Warn("auth.event", "action", "password_reset_failed", "reason", "user_not_found", "user_id", claims.UserID, "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Invalid or expired reset token")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.reset_token_invalid_or_expired")
 		return
 	}
 
@@ -626,14 +632,14 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	hash, err := h.authService.HashPassword(req.NewPassword)
 	if err != nil {
 		slog.Error("Failed to hash password", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
 	// Update password in database
 	if err := h.userRepo.UpdatePassword(r.Context(), user.ID, hash); err != nil {
 		slog.Error("Failed to update user password", "error", err)
-		writeError(w, http.StatusInternalServerError, "Failed to update password")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.update_password_failed")
 		return
 	}
 
@@ -648,7 +654,7 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	slog.Info("auth.event", "action", "password_reset", "user_id", user.ID, "ip", clientIP(r))
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"message": "Password reset successfully",
+		"message": i18n.Message(r.Context(), "auth.password_reset_success"),
 	})
 }
 
@@ -661,17 +667,17 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		NewPassword     string `json:"new_password"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
 	if req.CurrentPassword == "" || req.NewPassword == "" {
-		writeError(w, http.StatusBadRequest, "Current password and new password are required")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.current_new_password_required")
 		return
 	}
 
 	if err := validatePasswordStrength(req.NewPassword); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeAuthI18nError(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -679,14 +685,14 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userRepo.GetByID(r.Context(), userID)
 	if err != nil || user == nil {
 		slog.Warn("auth.event", "action", "change_password_failed", "reason", "user_not_found", "user_id", userID, "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Invalid credentials")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.invalid_credentials_generic")
 		return
 	}
 
 	// Verify current password
 	if !h.authService.CheckPassword(req.CurrentPassword, user.PasswordHash) {
 		slog.Warn("auth.event", "action", "change_password_failed", "reason", "invalid_current_password", "user_id", userID, "ip", clientIP(r))
-		writeError(w, http.StatusUnauthorized, "Current password is incorrect")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.current_password_incorrect")
 		return
 	}
 
@@ -694,14 +700,14 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	hash, err := h.authService.HashPassword(req.NewPassword)
 	if err != nil {
 		slog.Error("Failed to hash password", "error", err)
-		writeError(w, http.StatusInternalServerError, "Internal server error")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 		return
 	}
 
 	// Update password
 	if err := h.userRepo.UpdatePassword(r.Context(), userID, hash); err != nil {
 		slog.Error("Failed to update password", "error", err)
-		writeError(w, http.StatusInternalServerError, "Failed to update password")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.update_password_failed")
 		return
 	}
 
@@ -712,7 +718,7 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("auth.event", "action", "password_changed", "user_id", userID, "ip", clientIP(r))
 	writeJSON(w, http.StatusOK, map[string]string{
-		"message": "Password changed successfully",
+		"message": i18n.Message(r.Context(), "auth.password_changed_success"),
 	})
 }
 
@@ -743,7 +749,7 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
@@ -753,7 +759,7 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 				writeError(w, http.StatusBadRequest, validationErr.Error())
 				return
 			}
-			writeError(w, http.StatusBadRequest, "Invalid contract template")
+			writeAuthI18nError(w, r, http.StatusBadRequest, "auth.contract_template_invalid")
 			return
 		}
 	}
@@ -767,7 +773,7 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		slog.Error("Failed to update profile", "error", err)
-		writeError(w, http.StatusInternalServerError, "Failed to update profile")
+		writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.profile_update_failed")
 		return
 	}
 
@@ -782,12 +788,12 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 		FullName *string `json:"full_name,omitempty"`
 	}
 	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.invalid_request_body")
 		return
 	}
 
 	if req.IDToken == "" {
-		writeError(w, http.StatusBadRequest, "id_token is required")
+		writeAuthI18nError(w, r, http.StatusBadRequest, "auth.id_token_required")
 		return
 	}
 
@@ -795,7 +801,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 	claims, err := validateGoogleIDToken(r.Context(), req.IDToken, h.cfg.GoogleClientIDs)
 	if err != nil {
 		slog.Warn("Invalid Google ID token", "error", err)
-		writeError(w, http.StatusUnauthorized, "Invalid Google ID token")
+		writeAuthI18nError(w, r, http.StatusUnauthorized, "auth.google_token_invalid")
 		return
 	}
 
@@ -816,7 +822,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 		tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
 		if err != nil {
 			slog.Error("Failed to generate tokens", "error", err)
-			writeError(w, http.StatusInternalServerError, "Internal server error")
+			writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 			return
 		}
 		h.storeRefreshToken(r.Context(), tokens.RefreshToken, user.ID)
@@ -838,7 +844,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 			tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
 			if err != nil {
 				slog.Error("Failed to generate tokens", "error", err)
-				writeError(w, http.StatusInternalServerError, "Internal server error")
+				writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
 				return
 			}
 			h.storeRefreshToken(r.Context(), tokens.RefreshToken, user.ID)
@@ -853,7 +859,7 @@ func (h *AuthHandler) GoogleSignIn(w http.ResponseWriter, r *http.Request) {
 		// Account exists but Google is NOT linked — auto-link since Google verified the email
 		if err := h.userRepo.LinkGoogleAccount(r.Context(), user.ID, googleUserID); err != nil {
 			slog.Error("Failed to link Google account", "error", err, "user_id", user.ID)
-			writeError(w, http.StatusInternalServerError, "Failed to link Google account")
+			writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.google_link_failed")
 			return
 		}
 		tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)

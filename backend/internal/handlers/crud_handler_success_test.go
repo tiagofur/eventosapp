@@ -1636,10 +1636,12 @@ func TestCreatePayment_Success(t *testing.T) {
 	userID := uuid.New()
 	eventID := uuid.New()
 	paymentRepo := new(MockFullPaymentRepo)
+	eventRepo := new(MockFullEventRepo)
 
 	paymentRepo.On("Create", mock.Anything, mock.AnythingOfType("*models.Payment")).Return(nil)
+	eventRepo.On("GetByID", mock.Anything, eventID, userID).Return(&models.Event{ID: eventID, UserID: userID, Status: "confirmed"}, nil)
 
-	h := newTestHandler(new(MockClientRepo), new(MockFullEventRepo), new(MockProductRepo), new(MockInventoryRepo), paymentRepo, new(MockFullUserRepo))
+	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), paymentRepo, new(MockFullUserRepo))
 
 	body := `{"event_id":"` + eventID.String() + `","amount":500,"payment_date":"2026-06-15","payment_method":"cash"}`
 	req := makeReqWithUserID(http.MethodPost, "/api/payments", body, userID)

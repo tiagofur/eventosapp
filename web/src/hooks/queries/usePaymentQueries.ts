@@ -4,6 +4,7 @@ import { queryKeys } from './queryKeys';
 import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
 import type { PaymentInsert } from '@/types/entities';
+import { useTranslation } from 'react-i18next';
 
 // ── Queries ──
 
@@ -36,6 +37,7 @@ export function usePaymentsByDateRange(start: string, end: string) {
 export function useCreatePayment() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('events');
 
   return useMutation({
     mutationKey: ['payments', 'create'],
@@ -49,11 +51,11 @@ export function useCreatePayment() {
       // Required because the dashboard's saldo pendiente reads from this
       // aggregated cache and per-event invalidation alone leaves it stale.
       queryClient.invalidateQueries({ queryKey: queryKeys.payments.byEventIdsPrefix });
-      addToast('Pago registrado correctamente.', 'success');
+      addToast(t('payments.success_create'), 'success');
     },
     onError: (error) => {
       logError('Error creating payment', error);
-      addToast(getErrorMessage(error, 'Error al registrar el pago.'), 'error');
+      addToast(getErrorMessage(error, t('payments.error_create')), 'error');
     },
   });
 }
@@ -61,6 +63,7 @@ export function useCreatePayment() {
 export function useDeletePayment() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('events');
 
   return useMutation({
     mutationKey: ['payments', 'delete'],
@@ -72,11 +75,11 @@ export function useDeletePayment() {
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.payments.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.payments.byEventIdsPrefix });
-      addToast('Pago eliminado correctamente.', 'success');
+      addToast(t('payments.success_delete'), 'success');
     },
     onError: (error) => {
       logError('Error deleting payment', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el pago.'), 'error');
+      addToast(getErrorMessage(error, t('payments.error_delete')), 'error');
     },
   });
 }

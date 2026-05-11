@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, Sparkles, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface UpgradeBannerProps {
   type: 'limit-reached' | 'upsell';
@@ -17,12 +18,13 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
   resource = 'events',
   className = ''
 }) => {
-  const resourceNames = {
-    events: { title: 'Eventos', plural: 'eventos mensuales', metric: 'Eventos este mes' },
-    clients: { title: 'Clientes', plural: 'clientes', metric: 'Clientes registrados' },
-    catalog: { title: 'Catálogo', plural: 'productos e ítems de inventario', metric: 'Ítems en catálogo' }
+  const { t } = useTranslation('common');
+  
+  const resourceData = t(`upgrade_banner.resources.${resource}`, { returnObjects: true }) as {
+    title: string;
+    plural: string;
+    metric: string;
   };
-  const texts = resourceNames[resource];
 
   if (type === 'limit-reached') {
     return (
@@ -32,14 +34,16 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
             <div className="h-16 w-16 bg-error/10 rounded-full flex items-center justify-center mb-6" aria-hidden="true">
                 <Lock className="h-8 w-8 text-error" aria-hidden="true" />
             </div>
-            <h3 className="text-2xl font-bold text-text mb-2">Límite de {texts.title} Alcanzado</h3>
+            <h3 className="text-2xl font-bold text-text mb-2">
+              {t('upgrade_banner.limit_reached', { resource: resourceData.title })}
+            </h3>
             <p className="text-text-secondary mb-6 max-w-md">
-                Has alcanzado el límite de {limit} {texts.plural} de tu plan Básico. Para seguir creciendo tu negocio, mejora a nuestro plan Pro.
+              {t('upgrade_banner.limit_desc', { limit, plural: resourceData.plural })}
             </p>
 
             <div className="bg-surface-alt rounded-xl p-4 w-full max-w-sm mb-8 border border-border">
                 <div className="flex justify-between text-sm mb-2">
-                    <span className="font-medium text-text-secondary">{texts.metric}</span>
+                    <span className="font-medium text-text-secondary">{resourceData.metric}</span>
                     <span className="font-bold text-error">{currentUsage} / {limit}</span>
                 </div>
                 <div className="w-full bg-border rounded-full h-2">
@@ -50,7 +54,7 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
                       aria-valuenow={100}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={`Uso de ${texts.plural}: ${currentUsage} de ${limit} (límite alcanzado)`}
+                      aria-label={`${resourceData.metric}: ${currentUsage} de ${limit}`}
                     ></div>
                 </div>
             </div>
@@ -58,17 +62,15 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
             <Link
                 to="/pricing"
                 className="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-xl text-white bg-primary hover:bg-primary-dark shadow-md transition-all hover:scale-105"
-                aria-label="Mejorar al plan Pro para eventos ilimitados"
             >
                 <Sparkles className="h-5 w-5 mr-2" aria-hidden="true" />
-                Mejorar a Pro
+                {t('upgrade_banner.upgrade_cta')}
             </Link>
         </div>
       </div>
     );
   }
 
-  // Upsell style (e.g., to put in dashboard softly)
   return (
     <div className={`bg-primary/5 rounded-2xl p-6 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-6 ${className}`}>
         <div className="flex items-start gap-4 flex-1">
@@ -77,24 +79,23 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({
             </div>
             <div>
                 <h4 className="text-lg font-bold text-text flex items-center gap-2">
-                    Desbloquea el poder de Solennix
+                    {t('upgrade_banner.upsell_title')}
                     <span className="bg-primary text-white text-xs uppercase font-bold px-2 py-0.5 rounded-full">Pro</span>
                 </h4>
                 <p className="text-sm text-text-secondary mt-1">
-                    Lleva tu control de eventos al siguiente nivel con eventos ilimitados, personalización avanzada de PDFs y soporte prioritario.
+                    {t('upgrade_banner.upsell_desc')}
                 </p>
                 <div className="mt-3 flex items-center text-xs font-medium text-text-tertiary">
                     <AlertCircle className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-                    En Plan Gratis: {currentUsage} de {limit} eventos mensuales usados.
+                    {t('upgrade_banner.plan_limit_info', { current: currentUsage, limit, plural: resourceData.plural })}
                 </div>
             </div>
         </div>
         <Link
             to="/pricing"
             className="shrink-0 inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold rounded-xl text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors"
-            aria-label="Ver Planes Pro - Ver planes de suscripción disponibles"
         >
-            Ver Planes Pro
+            {t('action.view_plans')}
         </Link>
     </div>
   );

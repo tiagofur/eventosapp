@@ -32,7 +32,9 @@
     "view_alerts": "Ver alertas",
     "loading_activity": "Cargando actividad reciente...",
     "activity_error": "No se pudo cargar la actividad reciente.",
-    "no_activity": "Sin actividad registrada todavía."
+    "no_activity": "Sin actividad registrada todavía.",
+    "view_plans": "Ver Planes Pro",
+    "view_plans_description": "Ver planes de suscripción disponibles"
   },
   "actions": {
     "save": "Guardar",
@@ -94,6 +96,7 @@
     "search_placeholder": "Buscar o ir a...",
     "forms": "Formularios",
     "admin": "Admin",
+    "payments_inbox": "Cobros",
     "skip_to_content": "Saltar al contenido",
     "open_search": "Abrir búsqueda",
     "collapse": "Colapsar",
@@ -109,7 +112,10 @@
     "apple_token_error": "No se recibió el token de Apple. Intenta de nuevo.",
     "apple_unavailable": "Apple Sign-In no está disponible. Intenta de nuevo.",
     "signed_in": "Inició sesión",
-    "signed_out": "Cerró sesión"
+    "signed_out": "Cerró sesión",
+    "private_relay_notice": "Tu email de Apple es privado. Algunas notificaciones podrían no llegarte directamente.",
+    "verifying": "Verificando autenticación...",
+    "verifying_permissions": "Verificando permisos..."
   },
   "status": {
     "quoted": "Cotizado",
@@ -129,7 +135,11 @@
     "try_again": "Intenta de nuevo",
     "not_found": "No encontrado",
     "unauthorized": "No autorizado",
-    "network": "Error de conexión"
+    "network": "Error de conexión",
+    "loading": "Error al cargar los datos.",
+    "background_update": "Error al actualizar los datos. Intenta recargar la página.",
+    "too_many_requests": "Demasiadas solicitudes.{{waitHint}} Esperá un momento e intentá de nuevo.",
+    "plan_limit_reached": "Alcanzaste el límite de tu plan."
   },
   "pagination": {
     "page_previous": "Página anterior",
@@ -156,6 +166,11 @@
     "toggle_help": "Mostrar/ocultar esta ayuda",
     "quick_actions_group": "Acciones Rápidas",
     "navigation_group": "Navegación",
+    "actions_group": "Acciones",
+    "system_group": "Sistema",
+    "current_section": "Sección actual",
+    "open_command_palette": "Abrir Command Palette",
+    "close_modal_cancel": "Cerrar modal / cancelar",
     "new_inventory_item": "Nuevo Ítem de Inventario",
     "search_all": "Buscar \"{{query}}\" en toda la app",
     "no_results": "No se encontraron resultados",
@@ -165,29 +180,75 @@
   },
   "activity": {
     "recent": "Actividad reciente",
-    "created": "Creó",
-    "updated": "Actualizó",
-    "deleted": "Eliminó",
-    "registered": "Se registró",
-    "event_list_label": "Lista de eventos de actividad reciente"
+    "created": "Creado",
+    "updated": "Actualizado",
+    "deleted": "Eliminado",
+    "registered": "Registrado",
+    "event_list_label": "Lista de eventos de actividad reciente",
+    "actions": {
+      "create": "Creó",
+      "update": "Actualizó",
+      "delete": "Eliminó",
+      "login": "Inició sesión",
+      "logout": "Cerró sesión",
+      "register": "Se registró"
+    },
+    "resources": {
+      "event": "un evento",
+      "client": "un cliente",
+      "product": "un producto",
+      "inventory": "un ítem de inventario",
+      "payment": "un pago",
+      "user": "su perfil",
+      "auth": ""
+    }
   },
   "onboarding": {
     "hide_forever": "Ocultar lista de verificación para siempre",
-    "hide_confirm": "Ocultar para siempre"
+    "hide_confirm": "Ocultar para siempre",
+    "title": "Comienza a usar el sistema 🚀",
+    "subtitle": "Completa estos {{count}} pasos sencillos para configurar tu cuenta.",
+    "progress": "Progreso",
+    "completed": "{{count}}% Completado",
+    "progress_aria": "Progreso de configuración inicial: {{count}}% completado",
+    "start_step": "Comenzar",
+    "steps": {
+      "client": {
+        "title": "Añade tu primer cliente",
+        "description": "Registra los datos básicos para poder cotizarle."
+      },
+      "product": {
+        "title": "Crea tu primer producto",
+        "description": "Añade servicios o productos a tu catálogo de cotización."
+      },
+      "event": {
+        "title": "Agenda un evento",
+        "description": "Usa a tu cliente y tus productos para crear tu primera reserva."
+      }
+    }
   },
   "plan": {
-    "upgrade_banner": "Mejorar al plan Pro para eventos ilimitados",
-    "view_plans": "Ver Planes Pro",
-    "view_plans_description": "Ver planes de suscripción disponibles"
+    "upgrade_banner": "Mejorar al plan Pro para eventos ilimitados"
   },
   "payment": {
     "confirm": "Confirmar Pago",
     "complete": "Pagar y completar",
+    "amount": "Monto",
+    "date": "Fecha",
+    "method": "Método",
+    "note": "Nota",
+    "balance": "Saldo",
     "amount_required": "Monto requerido",
-    "reference_placeholder": "Ref. de pago..."
+    "reference_placeholder": "Ref. de pago...",
+    "methods": {
+      "cash": "Efectivo 💵",
+      "transfer": "Transferencia 🏦",
+      "card": "Tarjeta 💳",
+      "check": "Cheque 📝",
+      "other": "Otro 🏷️"
+    }
   },
   "not_defined": "No definido",
-  "products": "Productos",
   "product": "Producto",
   "price": "Precio",
   "total": "Total",
@@ -196,7 +257,6 @@
   "unit_short": "und",
   "required": "Requerido",
   "in_stock": "En stock",
-  "action": "Acción",
   "subtotal": "Subtotal",
   "equipment": "Equipo",
   "staff": "Personal",
@@ -252,5 +312,34 @@
     "event": "Evento",
     "staff": "Personal",
     "inventory": "Insumo"
+  },
+  "empty": {
+    "title": "Sin resultados",
+    "description": "No hay información para mostrar en este momento."
+  },
+  "upgrade_banner": {
+    "limit_reached": "Límite de {{resource}} Alcanzado",
+    "limit_desc": "Has alcanzado el límite de {{limit}} {{plural}} de tu plan Básico. Para seguir creciendo tu negocio, mejora a nuestro plan Pro.",
+    "upgrade_cta": "Mejorar a Pro",
+    "upsell_title": "Desbloquea el poder de Solennix",
+    "upsell_desc": "Lleva tu control de eventos al siguiente nivel con eventos ilimitados, personalización avanzada de PDFs y soporte prioritario.",
+    "plan_limit_info": "En Plan Gratis: {{current}} de {{limit}} {{plural}} usados.",
+    "resources": {
+      "events": {
+        "title": "Eventos",
+        "plural": "eventos mensuales",
+        "metric": "Eventos este mes"
+      },
+      "clients": {
+        "title": "Clientes",
+        "plural": "clientes",
+        "metric": "Clientes registrados"
+      },
+      "catalog": {
+        "title": "Catálogo",
+        "plural": "productos e ítems de inventario",
+        "metric": "Ítems en catálogo"
+      }
+    }
   }
 }

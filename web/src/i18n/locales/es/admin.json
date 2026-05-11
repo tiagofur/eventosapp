@@ -68,6 +68,8 @@
     "title": "Gestión de Usuarios",
     "summary_one": "{{count}} usuario registrado",
     "summary_other": "{{count}} usuarios registrados",
+    "plan_updated": "Plan del usuario actualizado correctamente.",
+    "error_update_plan": "Error al actualizar el plan del usuario.",
     "actions": {
       "back": "Volver al panel de admin",
       "export_csv": "Exportar CSV",
@@ -177,8 +179,8 @@
   "audit": {
     "title": "Audit log de la plataforma",
     "description": "Registro completo de acciones en todas las cuentas.",
-    "events_count": "{{count}} evento",
-    "events_count_plural": "{{count}} eventos",
+    "events_count_one": "{{count}} evento",
+    "events_count_other": "{{count}} eventos",
     "loading": "Cargando audit log...",
     "error": "Error al cargar el audit log de la plataforma.",
     "empty": "No hay eventos registrados en el audit log.",

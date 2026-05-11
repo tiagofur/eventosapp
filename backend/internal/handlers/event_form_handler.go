@@ -89,7 +89,7 @@ func (h *EventFormHandler) GenerateLink(w http.ResponseWriter, r *http.Request) 
 	label := sanitizeOptionalString(req.Label)
 	if label != nil {
 		if err := validateStringLength("label", *label, MaxNameLength); err != nil {
-			writeError(w, http.StatusBadRequest, err.Error())
+			writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 			return
 		}
 	}
@@ -323,7 +323,7 @@ func (h *EventFormHandler) SubmitForm(w http.ResponseWriter, r *http.Request) {
 
 	// Validate required fields
 	if err := h.validateSubmission(&req); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 

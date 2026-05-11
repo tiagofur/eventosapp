@@ -149,7 +149,7 @@ func (h *StaffHandler) CreateStaff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := ValidateStaff(&s); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 	s.UserID = userID
@@ -176,7 +176,7 @@ func (h *StaffHandler) UpdateStaff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := ValidateStaff(&s); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 	s.ID = id

@@ -54,7 +54,7 @@ export const AdminAuditLogSection: React.FC = () => {
         </div>
         {total > 0 && (
           <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-            {total.toLocaleString(i18n.language === "es" ? "es-MX" : "en-US")} {total === 1 ? t("admin:audit.events_count") : t("admin:audit.events_count_plural")}
+            {t("admin:audit.events_count", { count: total })}
           </span>
         )}
       </div>

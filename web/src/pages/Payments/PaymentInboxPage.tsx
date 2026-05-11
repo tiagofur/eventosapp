@@ -57,7 +57,7 @@ export const PaymentInboxPage: React.FC = () => {
   const handleRejectSubmit = useCallback(() => {
     if (!rejectId) return;
     if (rejectReason.trim().length < 10) {
-      setRejectError(t('payments:reject.reason_min', { defaultValue: 'El motivo debe tener al menos 10 caracteres.' }));
+      setRejectError(t('payments:reject.reason_min'));
       return;
     }
     rejectMutation.mutate({ id: rejectId, reason: rejectReason.trim() });
@@ -97,7 +97,7 @@ export const PaymentInboxPage: React.FC = () => {
   if (error && !shouldShowPlanLocked) {
     return (
       <div className="p-6 text-center text-text-secondary">
-        {errorMessage || t('common:error.loading', { defaultValue: 'Error al cargar los datos.' })}
+        {errorMessage || t('common:error.loading')}
       </div>
     );
   }
@@ -109,7 +109,7 @@ export const PaymentInboxPage: React.FC = () => {
       <div className="flex items-center gap-3">
         <Inbox className="h-6 w-6 text-primary" />
         <h1 className="text-2xl font-bold text-text">
-          {t('payments:inbox.title', { defaultValue: 'Pagos pendientes' })}
+          {t('payments:inbox.title')}
         </h1>
         {submissions.length > 0 && (
           <span className="inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1.5 rounded-full bg-primary text-white text-xs font-bold">
@@ -126,17 +126,17 @@ export const PaymentInboxPage: React.FC = () => {
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-text-secondary">
           <Inbox className="h-12 w-12 opacity-60" />
           <p className="text-base font-medium text-center">
-            {t('payments:inbox.pro_only', { defaultValue: 'Función exclusiva para usuarios Pro.' })}
+            {t('payments:inbox.pro_only')}
           </p>
           <p className="text-sm text-center max-w-xl">
-            {t('payments:inbox.pro_only_hint', { defaultValue: 'Actualizá tu plan para revisar y aprobar comprobantes enviados por clientes.' })}
+            {t('payments:inbox.pro_only_hint')}
           </p>
         </div>
       ) : submissions.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-text-secondary">
           <CheckCircle className="h-12 w-12 text-green-500 opacity-60" />
           <p className="text-base font-medium">
-            {t('payments:inbox.empty', { defaultValue: 'Sin pagos pendientes de revisión.' })}
+            {t('payments:inbox.empty')}
           </p>
         </div>
       ) : (
@@ -146,12 +146,12 @@ export const PaymentInboxPage: React.FC = () => {
               <thead className="bg-surface-alt">
                 <tr>
                   {[
-                    t('payments:table.client', { defaultValue: 'Cliente' }),
-                    t('payments:table.event', { defaultValue: 'Evento' }),
-                    t('payments:table.amount', { defaultValue: 'Monto' }),
-                    t('payments:table.reference', { defaultValue: 'Referencia' }),
-                    t('payments:table.date', { defaultValue: 'Fecha' }),
-                    t('payments:table.status', { defaultValue: 'Estado' }),
+                    t('payments:table.client'),
+                    t('payments:table.event'),
+                    t('payments:table.amount'),
+                    t('payments:table.reference'),
+                    t('payments:table.date'),
+                    t('payments:table.status'),
                     '',
                   ].map((col) => (
                     <th
@@ -194,7 +194,7 @@ export const PaymentInboxPage: React.FC = () => {
                             className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
-                            {t('payments:table.receipt', { defaultValue: 'Comprobante' })}
+                            {t('payments:table.receipt')}
                           </a>
                         )}
                         {sub.status === 'pending' && (
@@ -205,14 +205,14 @@ export const PaymentInboxPage: React.FC = () => {
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-500 text-white text-xs font-semibold hover:bg-green-600 transition-colors disabled:opacity-50"
                             >
                               <CheckCircle className="h-3.5 w-3.5" />
-                              {t('payments:actions.approve', { defaultValue: 'Aprobar' })}
+                              {t('payments:actions.approve')}
                             </button>
                             <button
                               onClick={() => handleOpenReject(sub.id)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-error text-white text-xs font-semibold hover:opacity-90 transition-opacity"
                             >
                               <XCircle className="h-3.5 w-3.5" />
-                              {t('payments:actions.reject', { defaultValue: 'Rechazar' })}
+                              {t('payments:actions.reject')}
                             </button>
                           </>
                         )}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const GoogleSignInButton: React.FC<Props> = ({ onError }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -30,11 +32,11 @@ export const GoogleSignInButton: React.FC<Props> = ({ onError }) => {
       await checkAuth();
       navigate("/dashboard");
     } catch (err: any) {
-      onErrorRef.current?.(err.message || "Error al iniciar sesión con Google");
+      onErrorRef.current?.(err.message || t("common:auth.sign_in_error_google"));
     } finally {
       setIsLoading(false);
     }
-  }, [checkAuth, navigate]);
+  }, [checkAuth, navigate, t]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;

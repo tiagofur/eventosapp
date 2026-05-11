@@ -30,6 +30,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	r.Use(mw.Recovery)  // Panic recovery — outermost so it catches the repanic from Sentry
 	r.Use(mw.Sentry)    // Per-request Sentry hub; captures panics then repanics (no-op if Sentry DSN unset)
 	r.Use(mw.RequestID) // X-Request-ID for tracing
+	r.Use(mw.Localization())
 	r.Use(mw.CORS(corsOrigins))
 	r.Use(mw.SecurityHeaders) // Security headers (X-Frame-Options, CSP, HSTS, etc.)
 	r.Use(mw.Logger)

@@ -68,6 +68,8 @@
     "title": "User Management",
     "summary_one": "{{count}} registered user",
     "summary_other": "{{count}} registered users",
+    "plan_updated": "User plan updated successfully.",
+    "error_update_plan": "Error updating user plan.",
     "actions": {
       "back": "Back to admin dashboard",
       "export_csv": "Export CSV",
@@ -177,8 +179,8 @@
   "audit": {
     "title": "Platform Audit Log",
     "description": "Complete record of actions across all accounts.",
-    "events_count": "{{count}} event",
-    "events_count_plural": "{{count}} events",
+    "events_count_one": "{{count}} event",
+    "events_count_other": "{{count}} events",
     "loading": "Loading audit log...",
     "error": "Error loading platform audit log.",
     "empty": "No events registered in the audit log.",

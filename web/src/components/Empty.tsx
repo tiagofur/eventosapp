@@ -1,6 +1,7 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { Inbox, type LucideIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 type EmptyProps = {
   title?: string
@@ -12,13 +13,18 @@ type EmptyProps = {
 }
 
 export default function Empty({
-  title = 'Sin resultados',
-  description = 'No hay información para mostrar en este momento.',
+  title,
+  description,
   action,
   className,
   icon: Icon = Inbox,
   showImage = true,
 }: EmptyProps) {
+  const { t } = useTranslation('common')
+  
+  const displayTitle = title || t('empty.title')
+  const displayDescription = description || t('empty.description')
+
   return (
     <div className={cn('flex flex-col items-center justify-center px-4 py-20 text-center animate-fade-in', className)} role="status">
       {showImage && (
@@ -41,10 +47,10 @@ export default function Empty({
 
       <div className="max-w-md relative z-10">
         <h3 className="text-xl font-semibold text-text mb-2">
-          {title}
+          {displayTitle}
         </h3>
         <p className="text-text-secondary text-sm mb-8 leading-relaxed">
-          {description}
+          {displayDescription}
         </p>
 
         {action && (

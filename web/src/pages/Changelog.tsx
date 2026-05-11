@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CalendarDays, Smartphone, Monitor, Server, AppWindow } from "lucide-react";
 import { changelogData } from "@/content/changelog.generated";
+import { useTranslation } from "react-i18next";
 
 function platformIcon(platform: "web" | "ios" | "android" | "backend") {
   if (platform === "web") return <Monitor className="h-4 w-4" aria-hidden="true" />;
@@ -10,16 +11,14 @@ function platformIcon(platform: "web" | "ios" | "android" | "backend") {
   return <Server className="h-4 w-4" aria-hidden="true" />;
 }
 
-function platformTitle(platform: "web" | "ios" | "android" | "backend") {
-  if (platform === "web") return "Web";
-  if (platform === "ios") return "iOS";
-  if (platform === "android") return "Android";
-  return "Backend";
-}
-
 export const Changelog: React.FC = () => {
+  const { t } = useTranslation("static");
   const navigate = useNavigate();
   const current = changelogData.currentVersions;
+
+  const platformTitle = (platform: "web" | "ios" | "android" | "backend") => {
+    return t(`changelog.platforms.${platform}`);
+  };
 
   return (
     <div className="min-h-screen bg-bg">
@@ -29,36 +28,36 @@ export const Changelog: React.FC = () => {
           className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
-          Volver
+          {t("about.back")}
         </button>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-black tracking-tight text-text">Changelog</h1>
+          <h1 className="text-3xl font-black tracking-tight text-text">{t("changelog.title")}</h1>
           <p className="text-sm text-text-secondary mt-2">
-            Historial oficial de cambios para web, iOS, Android y backend.
+            {t("changelog.subtitle")}
           </p>
           <p className="text-xs text-text-secondary mt-1">
-            Ultima actualizacion: {changelogData.updatedAt}
+            {t("changelog.last_update", { date: changelogData.updatedAt })}
           </p>
         </div>
 
         <section className="bg-card border border-border rounded-2xl p-6 mb-8 shadow-sm">
-          <h2 className="text-lg font-semibold text-text mb-4">Versiones actuales</h2>
+          <h2 className="text-lg font-semibold text-text mb-4">{t("changelog.current_versions")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="rounded-xl border border-border px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-text-secondary">Web</p>
+              <p className="text-xs uppercase tracking-wide text-text-secondary">{t("changelog.platforms.web")}</p>
               <p className="text-xl font-bold text-text">{current.web.version}</p>
             </div>
             <div className="rounded-xl border border-border px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-text-secondary">iOS</p>
+              <p className="text-xs uppercase tracking-wide text-text-secondary">{t("changelog.platforms.ios")}</p>
               <p className="text-xl font-bold text-text">{current.ios.version} ({current.ios.build})</p>
             </div>
             <div className="rounded-xl border border-border px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-text-secondary">Android</p>
+              <p className="text-xs uppercase tracking-wide text-text-secondary">{t("changelog.platforms.android")}</p>
               <p className="text-xl font-bold text-text">{current.android.version} ({current.android.build})</p>
             </div>
             <div className="rounded-xl border border-border px-4 py-3">
-              <p className="text-xs uppercase tracking-wide text-text-secondary">Backend</p>
+              <p className="text-xs uppercase tracking-wide text-text-secondary">{t("changelog.platforms.backend")}</p>
               <p className="text-xl font-bold text-text">{current.backend.version}</p>
             </div>
           </div>

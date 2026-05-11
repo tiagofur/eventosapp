@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
 import type { EventInsert, EventUpdate, PaginationParams } from '@/types/entities';
 import type { EventStatus } from '@/components/StatusDropdown';
+import { useTranslation } from 'react-i18next';
 
 // ── Queries ──
 
@@ -117,6 +118,7 @@ export function useEventPhotos(eventId: string | undefined) {
 export function useCreateEvent() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('events');
 
   return useMutation({
     mutationKey: ['events', 'create'],
@@ -127,7 +129,7 @@ export function useCreateEvent() {
     },
     onError: (error) => {
       logError('Error creating event', error);
-      addToast(getErrorMessage(error, 'Error al crear el evento.'), 'error');
+      addToast(getErrorMessage(error, t('form.error_create')), 'error');
     },
   });
 }
@@ -152,6 +154,7 @@ export function useUpdateEvent() {
 export function useUpdateEventStatus() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('events');
 
   return useMutation({
     mutationKey: ['events', 'updateStatus'],
@@ -164,7 +167,7 @@ export function useUpdateEventStatus() {
     },
     onError: (error) => {
       logError('Error updating event status', error);
-      addToast('Error al actualizar el estado del evento.', 'error');
+      addToast(t('form.error_status_update'), 'error');
     },
   });
 }
@@ -172,6 +175,7 @@ export function useUpdateEventStatus() {
 export function useDeleteEvent() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('events');
 
   return useMutation({
     mutationKey: ['events', 'delete'],
@@ -179,11 +183,11 @@ export function useDeleteEvent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.planLimits });
-      addToast('Evento eliminado correctamente.', 'success');
+      addToast(t('form.success_delete'), 'success');
     },
     onError: (error) => {
       logError('Error deleting event', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el evento.'), 'error');
+      addToast(getErrorMessage(error, t('form.error_delete')), 'error');
     },
   });
 }

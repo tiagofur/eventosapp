@@ -32,7 +32,9 @@
     "view_alerts": "View alerts",
     "loading_activity": "Loading recent activity...",
     "activity_error": "Could not load recent activity.",
-    "no_activity": "No activity recorded yet."
+    "no_activity": "No activity recorded yet.",
+    "view_plans": "View Pro Plans",
+    "view_plans_description": "View available subscription plans"
   },
   "actions": {
     "save": "Save",
@@ -94,6 +96,7 @@
     "search_placeholder": "Search or go to...",
     "forms": "Forms",
     "admin": "Admin",
+    "payments_inbox": "Payments",
     "skip_to_content": "Skip to content",
     "open_search": "Open search",
     "collapse": "Collapse",
@@ -109,7 +112,10 @@
     "apple_token_error": "Apple token not received. Please try again.",
     "apple_unavailable": "Apple Sign-In is not available. Please try again.",
     "signed_in": "Signed in",
-    "signed_out": "Signed out"
+    "signed_out": "Signed out",
+    "private_relay_notice": "Your Apple email is private. Some notifications might not reach you directly.",
+    "verifying": "Verifying authentication...",
+    "verifying_permissions": "Verifying permissions..."
   },
   "status": {
     "quoted": "Quoted",
@@ -129,7 +135,11 @@
     "try_again": "Please try again",
     "not_found": "Not found",
     "unauthorized": "Unauthorized",
-    "network": "Connection error"
+    "network": "Connection error",
+    "loading": "Error loading data.",
+    "background_update": "Error updating data. Try refreshing the page.",
+    "too_many_requests": "Too many requests.{{waitHint}} Please wait a moment and try again.",
+    "plan_limit_reached": "You have reached your plan limit."
   },
   "pagination": {
     "page_previous": "Previous page",
@@ -156,6 +166,11 @@
     "toggle_help": "Show/hide this help",
     "quick_actions_group": "Quick Actions",
     "navigation_group": "Navigation",
+    "actions_group": "Actions",
+    "system_group": "System",
+    "current_section": "Current section",
+    "open_command_palette": "Open Command Palette",
+    "close_modal_cancel": "Close modal / cancel",
     "new_inventory_item": "New Inventory Item",
     "search_all": "Search \"{{query}}\" in the app",
     "no_results": "No results found",
@@ -169,23 +184,85 @@
     "updated": "Updated",
     "deleted": "Deleted",
     "registered": "Registered",
-    "event_list_label": "Recent activity events list"
+    "event_list_label": "Recent activity events list",
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted",
+      "login": "Signed in",
+      "logout": "Signed out",
+      "register": "Registered"
+    },
+    "resources": {
+      "event": "an event",
+      "client": "a client",
+      "product": "a product",
+      "inventory": "an inventory item",
+      "payment": "a payment",
+      "user": "their profile",
+      "auth": ""
+    }
   },
   "onboarding": {
     "hide_forever": "Hide checklist forever",
-    "hide_confirm": "Hide forever"
+    "hide_confirm": "Hide forever",
+    "title": "Get started with the system 🚀",
+    "subtitle": "Complete these {{count}} simple steps to set up your account.",
+    "progress": "Progress",
+    "completed": "{{count}}% Completed",
+    "progress_aria": "Initial setup progress: {{count}}% completed",
+    "start_step": "Start",
+    "steps": {
+      "client": {
+        "title": "Add your first client",
+        "description": "Register basic details to be able to quote them."
+      },
+      "product": {
+        "title": "Create your first product",
+        "description": "Add services or products to your quote catalog."
+      },
+      "event": {
+        "title": "Schedule an event",
+        "description": "Use your client and products to create your first booking."
+      }
+    }
   },
   "plan": {
-    "upgrade_banner": "Upgrade to Pro for unlimited events",
-    "view_plans": "View Pro Plans",
-    "view_plans_description": "View available subscription plans"
+    "upgrade_banner": "Upgrade to Pro for unlimited events"
   },
   "payment": {
     "confirm": "Confirm Payment",
     "complete": "Pay and complete",
+    "amount": "Amount",
+    "date": "Date",
+    "method": "Method",
+    "note": "Note",
+    "balance": "Balance",
     "amount_required": "Amount required",
-    "reference_placeholder": "Payment ref..."
+    "reference_placeholder": "Payment ref...",
+    "methods": {
+      "cash": "Cash 💵",
+      "transfer": "Transfer 🏦",
+      "card": "Card 💳",
+      "check": "Check 📝",
+      "other": "Other 🏷️"
+    }
   },
+  "not_defined": "Not defined",
+  "product": "Product",
+  "price": "Price",
+  "total": "Total",
+  "description": "Description",
+  "supply": "Supply",
+  "unit_short": "und",
+  "required": "Required",
+  "in_stock": "In stock",
+  "subtotal": "Subtotal",
+  "equipment": "Equipment",
+  "staff": "Staff",
+  "buy": "Buy",
+  "event": "Event",
+  "uploading": "Uploading",
   "format": {
     "bold": "Bold (**text**)",
     "italic": "Italic (*text*)",
@@ -235,5 +312,34 @@
     "event": "Event",
     "staff": "Staff",
     "inventory": "Supply"
+  },
+  "empty": {
+    "title": "No results",
+    "description": "There is no information to display at this moment."
+  },
+  "upgrade_banner": {
+    "limit_reached": "{{resource}} Limit Reached",
+    "limit_desc": "You have reached the limit of {{limit}} {{plural}} in your Basic plan. To continue growing your business, upgrade to our Pro plan.",
+    "upgrade_cta": "Upgrade to Pro",
+    "upsell_title": "Unlock the power of Solennix",
+    "upsell_desc": "Take your event management to the next level with unlimited events, advanced PDF customization, and priority support.",
+    "plan_limit_info": "In Free Plan: {{current}} of {{limit}} monthly events used.",
+    "resources": {
+      "events": {
+        "title": "Events",
+        "plural": "monthly events",
+        "metric": "Events this month"
+      },
+      "clients": {
+        "title": "Clients",
+        "plural": "clients",
+        "metric": "Registered clients"
+      },
+      "catalog": {
+        "title": "Catalog",
+        "plural": "products and inventory items",
+        "metric": "Catalog items"
+      }
+    }
   }
 }

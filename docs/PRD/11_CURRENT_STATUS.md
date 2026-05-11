@@ -36,6 +36,17 @@ status: active
 > - Semántica transaccional: si el cupo del `offer_group_id` se completa, los demás `pending` del grupo se marcan `declined` automáticamente (first-accept-wins).
 > - Paridad de contrato agregada en Web / iOS / Android (types/endpoints/repos) para habilitar UI en siguiente iteración.
 
+> [!success] 2026-05-11 — Backend i18n server-side activado (errores API + emails)
+> Se implementó localización en backend para mensajes visibles al usuario y plantillas de emails transaccionales.
+> - **Nuevo módulo**: `backend/internal/i18n/messages.go` con catálogo ES/EN y helpers (`Message`, `T`, `NormalizeLocale`).
+> - **Nuevo middleware**: `backend/internal/middleware/localization.go` para resolver `Accept-Language` y propagar locale al contexto.
+> - **Router**: se integró `mw.Localization()` en la cadena global.
+> - **Auth/CRUD/Middleware**: handlers y middlewares críticos migrados a keys i18n en lugar de strings hardcodeados.
+> - **Validaciones**: `ValidationError` ahora soporta localización consistente en respuestas HTTP.
+> - **Emails**: `EmailService` agrega variantes localizadas para welcome, reset password, payment receipt, collaborator assignment y subscription confirmation.
+> - **Compatibilidad de contrato**: sin `Accept-Language`, la API mantiene fallback en inglés para no romper consumidores existentes.
+> - **Validación**: `go test ./...` en `backend` pasando completo.
+
 > [!success] 2026-05-10 — iOS UX refinements: filtro de fechas Apple HIG + KPI responsivo
 > Se aplicaron dos mejoras de calidad UX en iOS siguiendo las guías oficiales de Apple (HIG).
 > - **Events list**: se reemplazó el panel expandible inline ("Filtros" en texto) por un ícono `calendar` en la toolbar que abre un sheet nativo con `DatePicker(.compact)` — el patrón oficial de Apple para date-range en espacio restringido.

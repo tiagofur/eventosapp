@@ -51,8 +51,8 @@ function ErrorFallback({ error, onRetry }: { error: Error | null; onRetry: () =>
 
   // Fallback to Spanish when i18n not initialized in tests
   const errorGeneric = t('error.generic') === 'error.generic' ? 'Algo salió mal' : t('error.generic');
-  const retryLabel = t('retry') === 'retry' ? 'Reintentar' : t('retry');
-  const goHomeLabel = t('go_home') === 'go_home' ? 'Ir al inicio' : t('go_home');
+  const retryLabel = t('action.retry') === 'action.retry' ? 'Reintentar' : t('action.retry');
+  const goHomeLabel = t('not_found.go_home') === 'not_found.go_home' ? 'Ir al inicio' : t('not_found.go_home');
   const unexpected = t('error.unexpected');
   const techDetails = t('error.technical_details');
 

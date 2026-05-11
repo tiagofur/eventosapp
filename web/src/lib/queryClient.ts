@@ -1,6 +1,7 @@
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import { logError } from '@/lib/errorHandler';
 import { useToast } from '@/hooks/useToast';
+import i18n from '@/i18n/config';
 
 const STALE_TIME = 2 * 60 * 1000; // 2 minutes
 const GC_TIME = 10 * 60 * 1000; // 10 minutes
@@ -19,7 +20,7 @@ export const queryClient = new QueryClient({
         const now = Date.now();
         if (now - lastBgRefetchToastAt >= BG_REFETCH_TOAST_COOLDOWN_MS) {
           lastBgRefetchToastAt = now;
-          useToast.getState().addToast('Error al actualizar los datos. Intenta recargar la página.', 'error');
+          useToast.getState().addToast(i18n.t('common:error.background_update'), 'error');
         }
       }
     },

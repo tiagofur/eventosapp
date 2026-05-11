@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"html"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/models"
 )
 
@@ -57,6 +60,49 @@ type ValidationError struct {
 
 func (e ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
+}
+
+func (e ValidationError) Localize(ctx context.Context) string {
+	return fmt.Sprintf("%s: %s", e.Field, localizeValidationMessage(ctx, e.Message))
+}
+
+func localizeValidationMessage(ctx context.Context, message string) string {
+	if strings.HasPrefix(message, "must not exceed ") {
+		n := strings.TrimSuffix(strings.TrimPrefix(message, "must not exceed "), " characters")
+		if max, err := strconv.Atoi(strings.TrimSpace(n)); err == nil {
+			return i18n.Message(ctx, "validation.max_length", max)
+		}
+	}
+
+	switch message {
+	case "must be at least 1":
+		return i18n.Message(ctx, "validation.min_one")
+	case "must be greater than or equal to 0":
+		return i18n.Message(ctx, "validation.min_zero")
+	case "must be between 0 and 100":
+		return i18n.Message(ctx, "validation.range_percent")
+	case "must be between 0 and 100 for percentage discounts":
+		return i18n.Message(ctx, "validation.discount_percent_range")
+	case "must be greater than 0":
+		return i18n.Message(ctx, "validation.greater_than_zero")
+	case "is required":
+		return i18n.Message(ctx, "validation.required")
+	case "invalid email format":
+		return i18n.Message(ctx, "validation.invalid_email")
+	case "must be one of: quoted, confirmed, completed, cancelled":
+		return i18n.Message(ctx, "validation.event_status_enum")
+	case "must be one of: cash, transfer, card, check, other":
+		return i18n.Message(ctx, "validation.payment_method_enum")
+	default:
+		return message
+	}
+}
+
+func validationErrorMessage(ctx context.Context, err error) string {
+	if ve, ok := err.(ValidationError); ok {
+		return ve.Localize(ctx)
+	}
+	return err.Error()
 }
 
 // ValidateEvent validates all business rules for an event

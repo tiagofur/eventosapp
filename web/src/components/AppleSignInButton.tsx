@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -17,14 +19,13 @@ export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
 
   const handleAppleSignIn = useCallback(async () => {
     if (isLoading) return;
-
     setIsLoading(true);
     setPrivateRelayNotice(false);
 
     try {
       // Ensure Apple JS SDK is loaded
       if (typeof AppleID === "undefined" || !AppleID.auth) {
-        onError?.("Apple Sign-In no está disponible. Intenta de nuevo.");
+        onError?.(t("common:auth.apple_unavailable"));
         return;
       }
 
@@ -41,7 +42,7 @@ export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
 
       const idToken = response.authorization.id_token;
       if (!idToken) {
-        onError?.("No se recibió el token de Apple. Intenta de nuevo.");
+        onError?.(t("common:auth.apple_token_error"));
         return;
       }
 
@@ -76,11 +77,11 @@ export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
       ) {
         return;
       }
-      onError?.(err.message || "Error al iniciar sesión con Apple");
+      onError?.(err.message || t("common:auth.sign_in_error_apple"));
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, checkAuth, navigate, onError]);
+  }, [isLoading, checkAuth, navigate, onError, t]);
 
   if (!APPLE_CLIENT_ID) {
     return null; // Don't render if not configured
@@ -94,7 +95,7 @@ export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
         disabled={isLoading}
         className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl border border-border bg-black text-white text-sm font-medium transition-all hover:bg-gray-900 disabled:opacity-60 disabled:cursor-not-allowed"
         aria-label={
-          isLoading ? "Iniciando sesión con Apple..." : "Continuar con Apple"
+          isLoading ? t("common:auth.signing_in_apple") : t("common:auth.sign_in_apple")
         }
       >
         {isLoading ? (
@@ -128,7 +129,7 @@ export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
             >
               <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.52-3.23 0-1.44.64-2.2.46-3.06-.4C3.79 16.17 4.36 9.53 8.77 9.28c1.25.07 2.12.72 2.88.77.98-.2 1.92-.75 2.96-.69 1.26.1 2.2.6 2.82 1.5-2.5 1.52-1.9 4.88.32 5.82-.52 1.36-1.19 2.71-2.7 3.6ZM12.03 9.2c-.15-2.34 1.84-4.28 4.05-4.48.3 2.64-2.37 4.64-4.05 4.48Z" />
             </svg>
-            Continuar con Apple
+            {t("common:auth.sign_in_apple")}
           </>
         )}
       </button>
@@ -136,8 +137,7 @@ export const AppleSignInButton: React.FC<Props> = ({ onError }) => {
       {/* Private relay email notice */}
       {privateRelayNotice && (
         <p className="mt-2 text-xs text-text-tertiary text-center">
-          Tu email de Apple es privado. Algunas notificaciones podrían no
-          llegarte directamente.
+          {t("common:auth.private_relay_notice")}
         </p>
       )}
     </div>

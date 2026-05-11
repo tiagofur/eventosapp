@@ -147,8 +147,6 @@ describe('ClientDetails', () => {
     });
   });
 
-  // ---------- NEW TESTS FOR COVERAGE ----------
-
   it('shows error state and navigates back on fetch failure', async () => {
     (clientService.getById as any).mockRejectedValue(new Error('load fail'));
     (eventService.getByClientId as any).mockResolvedValue([]);
@@ -159,8 +157,8 @@ describe('ClientDetails', () => {
       expect(screen.getByText('No encontrado')).toBeInTheDocument();
     });
 
-    // Click "Volver a clientes" button in error state
-    fireEvent.click(screen.getByText('action.back'));
+    // Click "Volver" button in error state
+    fireEvent.click(screen.getByText('Volver'));
     expect(mockNavigate).toHaveBeenCalledWith('/clients');
   });
 
@@ -232,13 +230,13 @@ describe('ClientDetails', () => {
     await waitForClientLoaded();
 
     // Click delete button
-    fireEvent.click(screen.getByRole('button', { name: /action\.delete/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Eliminar/i }));
 
     // Confirm dialog should appear
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
     // Confirm deletion
-    const deleteButtons = screen.getAllByRole('button', { name: /action\.delete/i });
+    const deleteButtons = screen.getAllByRole('button', { name: /Eliminar/i });
     fireEvent.click(deleteButtons[deleteButtons.length - 1]!);
 
     await waitFor(() => {
@@ -256,8 +254,8 @@ describe('ClientDetails', () => {
 
     await waitForClientLoaded();
 
-    fireEvent.click(screen.getByRole('button', { name: /action\.delete/i }));
-    const deleteButtons = screen.getAllByRole('button', { name: /action\.delete/i });
+    fireEvent.click(screen.getByRole('button', { name: /Eliminar/i }));
+    const deleteButtons = screen.getAllByRole('button', { name: /Eliminar/i });
     fireEvent.click(deleteButtons[deleteButtons.length - 1]!);
 
     await waitFor(() => {
@@ -273,10 +271,10 @@ describe('ClientDetails', () => {
 
     await waitForClientLoaded();
 
-    fireEvent.click(screen.getByRole('button', { name: /action\.delete/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Eliminar/i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('action.cancel'));
+    fireEvent.click(screen.getByText('Cancelar'));
 
     await waitFor(() => {
       expect(screen.queryByText('Eliminar Cliente')).not.toBeInTheDocument();
@@ -343,7 +341,7 @@ describe('ClientDetails', () => {
 
     await waitForClientLoaded();
 
-    const editLink = screen.getByRole('link', { name: /action\.edit/i });
+    const editLink = screen.getByRole('link', { name: /Editar/i });
     expect(editLink).toHaveAttribute('href', '/clients/client-1/edit');
   });
 

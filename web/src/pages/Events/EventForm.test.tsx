@@ -845,8 +845,8 @@ describe('EventForm', () => {
       expect(screen.getByText(/Límite de Eventos Alcanzado/i)).toBeInTheDocument();
     });
 
-    // Regresar button should navigate back
-    const backBtn = screen.getByText('Regresar');
+    // Volver button should navigate back
+    const backBtn = screen.getByText('Volver');
     act(() => {
       fireEvent.click(backBtn);
     });
@@ -864,7 +864,7 @@ describe('EventForm', () => {
     render(<EventForm />);
 
     expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getByText('Cargando formulario de evento...')).toBeInTheDocument();
+    expect(screen.getByText('Cargando...')).toBeInTheDocument();
 
     // Settle background state updates
     await waitFor(() => {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/models"
 )
 
@@ -23,7 +24,7 @@ func AdminOnly(userRepo AdminUserRepo) func(http.Handler) http.Handler {
 			if userID == uuid.Nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Authentication required"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": i18n.Message(r.Context(), "auth.required")})
 				return
 			}
 
@@ -31,14 +32,14 @@ func AdminOnly(userRepo AdminUserRepo) func(http.Handler) http.Handler {
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": i18n.Message(r.Context(), "auth.user_not_found")})
 				return
 			}
 
 			if user.Role != "admin" {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Admin access required"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": i18n.Message(r.Context(), "auth.admin_required")})
 				return
 			}
 

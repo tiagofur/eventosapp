@@ -1053,7 +1053,7 @@ export const EventForm: React.FC = () => {
         aria-live="polite"
       >
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="sr-only">Cargando formulario de evento...</span>
+        <span className="sr-only">{t("events:form.loading")}</span>
       </div>
     );
   }
@@ -1068,7 +1068,7 @@ export const EventForm: React.FC = () => {
           className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
-          Regresar
+          {t("common:action.back")}
         </button>
         <div className="flex justify-center mt-12">
           <UpgradeBanner
@@ -1083,7 +1083,7 @@ export const EventForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: id ? t('events:form.title_edit') : t('events:form.title_new') }]} />
+      <Breadcrumb items={[{ label: t('common:nav.dashboard'), href: '/dashboard' }, { label: id ? t('events:form.title_edit') : t('events:form.title_new') }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button

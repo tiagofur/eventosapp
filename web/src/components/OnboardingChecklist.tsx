@@ -5,8 +5,10 @@ import { CheckCircle2, Circle, X, Users, Package, CalendarPlus, ChevronRight } f
 import { useClients } from '../hooks/queries/useClientQueries';
 import { useProducts } from '../hooks/queries/useProductQueries';
 import { useEvents } from '../hooks/queries/useEventQueries';
+import { useTranslation } from 'react-i18next';
 
 export const OnboardingChecklist: React.FC = () => {
+  const { t } = useTranslation('common');
   const { user } = useAuth();
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const { data: products = [], isLoading: productsLoading } = useProducts();
@@ -48,24 +50,24 @@ export const OnboardingChecklist: React.FC = () => {
   const steps = [
     {
       id: 'client',
-      title: 'Añade tu primer cliente',
-      description: 'Registra los datos básicos para poder cotizarle.',
+      title: t('onboarding.steps.client.title'),
+      description: t('onboarding.steps.client.description'),
       icon: <Users className="h-5 w-5" aria-hidden="true" />,
       href: '/clients/new',
       isCompleted: hasClient,
     },
     {
       id: 'product',
-      title: 'Crea tu primer producto',
-      description: 'Añade servicios o productos a tu catálogo de cotización.',
+      title: t('onboarding.steps.product.title'),
+      description: t('onboarding.steps.product.description'),
       icon: <Package className="h-5 w-5" aria-hidden="true" />,
       href: '/products/new',
       isCompleted: hasProduct,
     },
     {
       id: 'event',
-      title: 'Agenda un evento',
-      description: 'Usa a tu cliente y tus productos para crear tu primera reserva.',
+      title: t('onboarding.steps.event.title'),
+      description: t('onboarding.steps.event.description'),
       icon: <CalendarPlus className="h-5 w-5" aria-hidden="true" />,
       href: '/events/new',
       isCompleted: hasEvent,
@@ -81,18 +83,18 @@ export const OnboardingChecklist: React.FC = () => {
         <div className="flex justify-between items-start mb-6">
           <div>
             <h2 className="text-xl font-bold text-text flex items-center">
-              Comienza a usar el sistema 🚀
+              {t('onboarding.title')}
             </h2>
             <p className="text-sm text-text-secondary mt-1">
-              Completa estos {steps.length} pasos sencillos para configurar tu cuenta.
+              {t('onboarding.subtitle', { count: steps.length })}
             </p>
           </div>
           <button
             type="button"
             onClick={handleDismiss}
             className="text-text-tertiary hover:text-text-secondary transition-colors p-1 rounded-md hover:bg-surface-alt"
-            title="Ocultar para siempre"
-            aria-label="Ocultar lista de verificación para siempre"
+            title={t('onboarding.hide_confirm')}
+            aria-label={t('onboarding.hide_forever')}
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -100,8 +102,8 @@ export const OnboardingChecklist: React.FC = () => {
 
         <div className="mb-6">
           <div className="flex justify-between text-xs font-medium text-text-secondary mb-2">
-            <span>Progreso</span>
-            <span>{progress}% Completado</span>
+            <span>{t('onboarding.progress')}</span>
+            <span>{t('onboarding.completed', { count: progress })}</span>
           </div>
           <div className="w-full bg-surface-alt rounded-full h-2.5 overflow-hidden">
             <div
@@ -111,7 +113,7 @@ export const OnboardingChecklist: React.FC = () => {
               aria-valuenow={progress}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label={`Progreso de configuración inicial: ${progress}% completado`}
+              aria-label={t('onboarding.progress_aria', { count: progress })}
             ></div>
           </div>
         </div>
@@ -149,7 +151,7 @@ export const OnboardingChecklist: React.FC = () => {
 
               {!step.isCompleted && (
                  <div className="mt-auto text-xs font-semibold text-primary flex items-center opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-                    Comenzar <ChevronRight className="h-3 w-3 ml-0.5" aria-hidden="true" />
+                    {t('onboarding.start_step')} <ChevronRight className="h-3 w-3 ml-0.5" aria-hidden="true" />
                  </div>
               )}
             </Link>
