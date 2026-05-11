@@ -223,6 +223,10 @@ public struct EventListView: View {
         var onClear: () -> Void
         @Environment(\.dismiss) private var dismiss
 
+        private func tr(_ key: String, _ value: String) -> String {
+            FeatureL10n.text(key, value)
+        }
+
         // DatePicker requires non-optional Binding — use sentinel Date()
         private var startBinding: Binding<Date> {
             Binding(get: { startDate ?? Date() }, set: { startDate = $0 })
