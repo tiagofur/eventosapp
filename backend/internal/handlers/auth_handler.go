@@ -27,6 +27,7 @@ import (
 	"github.com/tiagofur/solennix-backend/internal/config"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
+	"github.com/tiagofur/solennix-backend/internal/repository"
 	"github.com/tiagofur/solennix-backend/internal/services"
 )
 
@@ -161,6 +162,11 @@ type loginRequest struct {
 
 type forgotPasswordRequest struct {
 	Email string `json:"email"`
+}
+
+type acceptTeamInviteRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
 }
 
 // Register handles POST /api/auth/register
@@ -502,6 +508,75 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// AcceptTeamInvite handles POST /api/auth/team-invite/accept.
+// It creates a `team_member` user account from a pending staff invite token.
+func (h *AuthHandler) AcceptTeamInvite(w http.ResponseWriter, r *http.Request) {
+	var req acceptTeamInviteRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if strings.TrimSpace(req.Token) == "" || strings.TrimSpace(req.Password) == "" {
+		writeError(w, http.StatusBadRequest, "Token and password are required")
+		return
+	}
+
+	if err := validatePasswordStrength(req.Password); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	passwordHash, err := h.authService.HashPassword(req.Password)
+	if err != nil {
+		slog.Error("failed to hash invite password", "error", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	tokenSHA := sha256.Sum256([]byte(strings.TrimSpace(req.Token)))
+	tokenHash := hex.EncodeToString(tokenSHA[:])
+
+	user, err := h.userRepo.AcceptStaffInvite(r.Context(), tokenHash, passwordHash)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrStaffInviteNotFound):
+			writeError(w, http.StatusUnauthorized, "Invalid invite token")
+			return
+		case errors.Is(err, repository.ErrStaffInviteNotPending):
+			writeError(w, http.StatusConflict, "Invite has already been used or revoked")
+			return
+		case errors.Is(err, repository.ErrStaffInviteExpired):
+			writeError(w, http.StatusGone, "Invite has expired")
+			return
+		case errors.Is(err, repository.ErrStaffInviteEmailTaken):
+			writeError(w, http.StatusConflict, "Invite email already has an account")
+			return
+		default:
+			slog.Error("failed to accept team invite", "error", err)
+			writeError(w, http.StatusInternalServerError, "Failed to accept invite")
+			return
+		}
+	}
+
+	tokens, err := h.authService.GenerateTokenPair(user.ID, user.Email)
+	if err != nil {
+		slog.Error("failed to generate auth tokens for invited user", "error", err, "user_id", user.ID)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
+		return
+	}
+
+	h.storeRefreshToken(r.Context(), tokens.RefreshToken, user.ID)
+	setAuthCookie(w, r, tokens.AccessToken)
+
+	slog.Info("auth.event", "action", "team_invite_accepted", "user_id", user.ID, "email", user.Email, "ip", clientIP(r))
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"user":   user,
+		"tokens": tokens,
+	})
+}
+
 type resetPasswordRequest struct {
 	Token       string `json:"token"`
 	NewPassword string `json:"new_password"`
@@ -656,13 +731,13 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		DefaultRefundPercent    *float64 `json:"default_refund_percent"`
 		ContractTemplate        *string  `json:"contract_template"`
 		// Notification preferences
-		EmailPaymentReceipt      *bool `json:"email_payment_receipt"`
-		EmailEventReminder       *bool `json:"email_event_reminder"`
-		EmailSubscriptionUpdates *bool `json:"email_subscription_updates"`
-		EmailWeeklySummary       *bool `json:"email_weekly_summary"`
-		EmailMarketing           *bool `json:"email_marketing"`
-		PushEnabled              *bool `json:"push_enabled"`
-		PushEventReminder        *bool `json:"push_event_reminder"`
+		EmailPaymentReceipt      *bool   `json:"email_payment_receipt"`
+		EmailEventReminder       *bool   `json:"email_event_reminder"`
+		EmailSubscriptionUpdates *bool   `json:"email_subscription_updates"`
+		EmailWeeklySummary       *bool   `json:"email_weekly_summary"`
+		EmailMarketing           *bool   `json:"email_marketing"`
+		PushEnabled              *bool   `json:"push_enabled"`
+		PushEventReminder        *bool   `json:"push_event_reminder"`
 		PushPaymentReceived      *bool   `json:"push_payment_received"`
 		PreferredLanguage        *string `json:"preferred_language"`
 	}
@@ -1319,8 +1394,8 @@ func (h *AuthHandler) AppleCallback(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	var tokenResp struct {
-		IDToken      string `json:"id_token"`
-		Error        string `json:"error"`
+		IDToken string `json:"id_token"`
+		Error   string `json:"error"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to decode Apple token response")

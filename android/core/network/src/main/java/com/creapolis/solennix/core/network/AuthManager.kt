@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +31,18 @@ class AuthManager @Inject constructor(
     private val encryptedPrefs: SharedPreferences,
     @ApplicationContext private val context: Context
 ) {
+
+    @Serializable
+    private data class TeamInviteAcceptRequest(
+        val token: String,
+        val password: String
+    )
+
+    @Serializable
+    private data class AuthEnvelope(
+        val user: User,
+        val tokens: TokenPair
+    )
     private val _authState = MutableStateFlow<AuthState>(AuthState.Unknown)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
@@ -152,6 +165,17 @@ class AuthManager @Inject constructor(
                 null
             }
         }
+    }
+
+    suspend fun acceptTeamInvite(token: String, password: String): User {
+        val response: AuthEnvelope = refreshHttpClient.post(BuildConfig.API_BASE_URL + Endpoints.TEAM_INVITE_ACCEPT) {
+            contentType(ContentType.Application.Json)
+            setBody(TeamInviteAcceptRequest(token = token, password = password))
+        }.body()
+
+        storeTokens(response.tokens.accessToken, response.tokens.refreshToken)
+        storeUser(response.user)
+        return response.user
     }
 
     suspend fun logout() {

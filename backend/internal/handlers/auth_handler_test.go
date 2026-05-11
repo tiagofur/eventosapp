@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -142,6 +144,38 @@ func TestAuthHandlerValidationPaths(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAcceptTeamInvite_GivenInvalidBody_WhenAccept_ThenBadRequest(t *testing.T) {
+	h := &AuthHandler{authService: services.NewAuthService("test-secret", 1)}
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/team-invite/accept", strings.NewReader(`{"token":}`))
+	rr := httptest.NewRecorder()
+
+	h.AcceptTeamInvite(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "Invalid request body")
+}
+
+func TestAcceptTeamInvite_GivenValidToken_WhenAccepted_ThenReturnsTokens(t *testing.T) {
+	authService := services.NewAuthService("test-secret", 1)
+	userRepo := new(MockFullUserRepo)
+	h := &AuthHandler{authService: authService, userRepo: userRepo}
+
+	token := "invite-token-123"
+	hash := sha256.Sum256([]byte(token))
+	tokenHash := hex.EncodeToString(hash[:])
+	user := &models.User{ID: uuid.New(), Email: "team@example.com", Name: "Team User", Role: "team_member", Plan: "business"}
+	userRepo.On("AcceptStaffInvite", mock.Anything, tokenHash, mock.AnythingOfType("string")).Return(user, nil)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/team-invite/accept", strings.NewReader(`{"token":"`+token+`","password":"StrongPass123"}`))
+	rr := httptest.NewRecorder()
+
+	h.AcceptTeamInvite(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Body.String(), "access_token")
+	assert.Contains(t, rr.Body.String(), "team_member")
 }
 
 func TestAuthHandlerRefreshTokenSuccess(t *testing.T) {
@@ -1101,15 +1135,15 @@ func TestAuthHandler_UpdateProfile_Paths(t *testing.T) {
 		}
 
 		mockRepo.On("Update", mock.Anything, userID,
-			mock.AnythingOfType("*string"),  // name
-			mock.AnythingOfType("*string"),  // businessName
-			mock.AnythingOfType("*string"),  // logoURL
-			mock.AnythingOfType("*string"),  // brandColor
-			(*bool)(nil),                    // showBusinessNameInPdf
-			(*float64)(nil),                 // depositPercent
-			(*float64)(nil),                 // cancellationDays
-			(*float64)(nil),                 // refundPercent
-			(*string)(nil),                  // contractTemplate
+			mock.AnythingOfType("*string"), // name
+			mock.AnythingOfType("*string"), // businessName
+			mock.AnythingOfType("*string"), // logoURL
+			mock.AnythingOfType("*string"), // brandColor
+			(*bool)(nil),                   // showBusinessNameInPdf
+			(*float64)(nil),                // depositPercent
+			(*float64)(nil),                // cancellationDays
+			(*float64)(nil),                // refundPercent
+			(*string)(nil),                 // contractTemplate
 			(*bool)(nil), (*bool)(nil), (*bool)(nil), (*bool)(nil), (*bool)(nil), (*bool)(nil), (*bool)(nil), (*bool)(nil),
 		).Return(updatedUser, nil)
 

@@ -11,6 +11,7 @@ public enum Endpoint {
     public static let refresh = "/auth/refresh"
     public static let forgotPassword = "/auth/forgot-password"
     public static let resetPassword = "/auth/reset-password"
+    public static let teamInviteAccept = "/auth/team-invite/accept"
     public static let me = "/auth/me"
     public static let changePassword = "/auth/change-password"
     public static let appleAuth = "/auth/apple"

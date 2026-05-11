@@ -8,6 +8,7 @@ object Endpoints {
     const val REFRESH = "auth/refresh"
     const val FORGOT_PASSWORD = "auth/forgot-password"
     const val RESET_PASSWORD = "auth/reset-password"
+    const val TEAM_INVITE_ACCEPT = "auth/team-invite/accept"
     const val ME = "auth/me"
     const val CHANGE_PASSWORD = "auth/change-password"
     const val GOOGLE_AUTH = "auth/google"

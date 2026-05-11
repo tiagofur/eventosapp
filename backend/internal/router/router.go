@@ -65,6 +65,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Group(func(r chi.Router) {
 			r.Use(mw.RateLimit(5, 1*time.Minute))
 			r.Post("/login", authHandler.Login)
+			r.Post("/team-invite/accept", authHandler.AcceptTeamInvite)
 			r.Post("/forgot-password", authHandler.ForgotPassword)
 			r.Post("/reset-password", authHandler.ResetPassword)
 			r.Post("/google", authHandler.GoogleSignIn)
