@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ var (
 	ErrStaffInviteNotPending = errors.New("staff invite is not pending")
 	ErrStaffInviteExpired    = errors.New("staff invite expired")
 	ErrStaffInviteEmailTaken = errors.New("invite email already registered")
+	ErrStaffInviteRoleDenied = errors.New("invite role is not allowed for owner plan")
 )
 
 type UserRepo struct {
@@ -25,6 +27,17 @@ type UserRepo struct {
 
 func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	return &UserRepo{pool: pool}
+}
+
+func normalizePlan(plan string) string {
+	switch strings.ToLower(strings.TrimSpace(plan)) {
+	case "premium":
+		return "pro"
+	case "enterprise":
+		return "business"
+	default:
+		return strings.ToLower(strings.TrimSpace(plan))
+	}
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *models.User) error {
@@ -237,6 +250,7 @@ func (r *UserRepo) AcceptStaffInvite(ctx context.Context, tokenHash, passwordHas
 		staffID     uuid.UUID
 		ownerUserID uuid.UUID
 		email       string
+		targetRole  string
 		status      string
 		expiresAt   time.Time
 		staffName   string
@@ -244,13 +258,13 @@ func (r *UserRepo) AcceptStaffInvite(ctx context.Context, tokenHash, passwordHas
 	)
 
 	err = tx.QueryRow(ctx, `
-		SELECT si.id, si.staff_id, si.owner_user_id, si.email, si.status, si.expires_at, s.name, u.plan
+		SELECT si.id, si.staff_id, si.owner_user_id, si.email, si.target_role, si.status, si.expires_at, s.name, u.plan
 		FROM staff_invites si
 		JOIN staff s ON s.id = si.staff_id
 		JOIN users u ON u.id = si.owner_user_id
 		WHERE si.token_hash = $1
 		FOR UPDATE
-	`, tokenHash).Scan(&inviteID, &staffID, &ownerUserID, &email, &status, &expiresAt, &staffName, &ownerPlan)
+	`, tokenHash).Scan(&inviteID, &staffID, &ownerUserID, &email, &targetRole, &status, &expiresAt, &staffName, &ownerPlan)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrStaffInviteNotFound
@@ -260,6 +274,13 @@ func (r *UserRepo) AcceptStaffInvite(ctx context.Context, tokenHash, passwordHas
 
 	if status != "pending" {
 		return nil, ErrStaffInviteNotPending
+	}
+
+	if targetRole == "assistant" && normalizePlan(ownerPlan) != "business" {
+		return nil, ErrStaffInviteRoleDenied
+	}
+	if targetRole == "" {
+		targetRole = "team_member"
 	}
 
 	if time.Now().UTC().After(expiresAt) {
@@ -284,9 +305,9 @@ func (r *UserRepo) AcceptStaffInvite(ctx context.Context, tokenHash, passwordHas
 	createdUser := &models.User{}
 	err = tx.QueryRow(ctx, `
 		INSERT INTO users (email, password_hash, name, plan, role)
-		VALUES ($1, $2, $3, $4, 'team_member')
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, email, password_hash, name, plan, role, created_at, updated_at
-	`, email, passwordHash, staffName, ownerPlan).Scan(
+	`, email, passwordHash, staffName, ownerPlan, targetRole).Scan(
 		&createdUser.ID,
 		&createdUser.Email,
 		&createdUser.PasswordHash,

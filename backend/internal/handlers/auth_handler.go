@@ -515,7 +515,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // AcceptTeamInvite handles POST /api/auth/team-invite/accept.
-// It creates a `team_member` user account from a pending staff invite token.
+// It creates a collaborator user account from a pending staff invite token.
 func (h *AuthHandler) AcceptTeamInvite(w http.ResponseWriter, r *http.Request) {
 	var req acceptTeamInviteRequest
 	if err := decodeJSON(r, &req); err != nil {
@@ -557,6 +557,9 @@ func (h *AuthHandler) AcceptTeamInvite(w http.ResponseWriter, r *http.Request) {
 			return
 		case errors.Is(err, repository.ErrStaffInviteEmailTaken):
 			writeAuthI18nError(w, r, http.StatusConflict, "auth.invite_email_taken")
+			return
+		case errors.Is(err, repository.ErrStaffInviteRoleDenied):
+			writeAuthI18nError(w, r, http.StatusForbidden, "auth.invite_accept_failed")
 			return
 		default:
 			slog.Error("failed to accept team invite", "error", err)

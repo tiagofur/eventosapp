@@ -528,15 +528,16 @@ func (r *StaffRepo) CreateInvite(ctx context.Context, invite *models.StaffInvite
 	}
 
 	err = tx.QueryRow(ctx,
-		`INSERT INTO staff_invites (staff_id, owner_user_id, email, token_hash, status, expires_at)
-			VALUES ($1, $2, $3, $4, 'pending', $5)
-			RETURNING id, status, created_at, updated_at`,
+		`INSERT INTO staff_invites (staff_id, owner_user_id, email, token_hash, target_role, status, expires_at)
+			VALUES ($1, $2, $3, $4, $5, 'pending', $6)
+			RETURNING id, target_role, status, created_at, updated_at`,
 		invite.StaffID,
 		invite.OwnerUserID,
 		invite.Email,
 		invite.TokenHash,
+		invite.TargetRole,
 		invite.ExpiresAt,
-	).Scan(&invite.ID, &invite.Status, &invite.CreatedAt, &invite.UpdatedAt)
+	).Scan(&invite.ID, &invite.TargetRole, &invite.Status, &invite.CreatedAt, &invite.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("insert staff invite: %w", err)
 	}

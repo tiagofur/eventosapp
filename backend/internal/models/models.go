@@ -350,6 +350,7 @@ type StaffInvite struct {
 	StaffID     uuid.UUID  `json:"staff_id"`
 	OwnerUserID uuid.UUID  `json:"owner_user_id"`
 	Email       string     `json:"email"`
+	TargetRole  string     `json:"target_role"` // "team_member" | "assistant"
 	TokenHash   string     `json:"-"`
 	Status      string     `json:"status"` // "pending" | "accepted" | "revoked" | "expired"
 	ExpiresAt   time.Time  `json:"expires_at"`

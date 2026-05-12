@@ -115,7 +115,7 @@ var PlanTiers = map[string]map[string]bool{
 		"contracts":                 true,
 		"rsvp":                      true,
 		"reviews":                   true,
-		"unlimited_staff_seats":     true,
+		"unlimited_staff_seats":     false,
 		"custom_branding":           true,
 		"api_access":                true,
 	},

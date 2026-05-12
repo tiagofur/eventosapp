@@ -30,6 +30,14 @@ type assignmentResponseRequest struct {
 	Response string `json:"response"`
 }
 
+type staffInviteRequest struct {
+	TargetRole string `json:"target_role"`
+}
+
+func isTeamPortalRole(role string) bool {
+	return role == "team_member" || role == "assistant"
+}
+
 func NewStaffHandler(staffRepo StaffRepository, userRepo UserRepository) *StaffHandler {
 	return &StaffHandler{staffRepo: staffRepo, userRepo: userRepo}
 }
@@ -107,9 +115,9 @@ func (h *StaffHandler) GetStaff(w http.ResponseWriter, r *http.Request) {
 // CreateStaff creates a new staff member.
 // POST /api/staff
 //
-// Staff seats are gated by plan: Gratis=1, Pro=3, Business=∞.
+// Staff seats are gated by plan: Gratis=1, Pro=2, Business=∞.
 // Phase 2 gates `notification_email_opt_in` to Pro+; Phase 3 gates the
-// invitation flow to Business+.
+// invitation flow to Pro+.
 func (h *StaffHandler) CreateStaff(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 
@@ -136,8 +144,8 @@ func (h *StaffHandler) CreateStaff(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "Failed to verify staff limits")
 			return
 		}
-		if count >= 3 {
-			writePlanLimitError(w, "staff_seats", count, 3)
+		if count >= 2 {
+			writePlanLimitError(w, "staff_seats", count, 2)
 			return
 		}
 	}
@@ -246,7 +254,7 @@ func (h *StaffHandler) GetStaffAvailability(w http.ResponseWriter, r *http.Reque
 }
 
 // InviteStaffUser creates (or rotates) an invitation for a staff collaborator
-// to activate a team-member account. Business plan only.
+// to activate a team-member account. Pro and Business plans only.
 //
 // POST /api/staff/{id}/invite
 func (h *StaffHandler) InviteStaffUser(w http.ResponseWriter, r *http.Request) {
@@ -267,8 +275,27 @@ func (h *StaffHandler) InviteStaffUser(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch user")
 		return
 	}
-	if normalizePlan(user.Plan) != "business" {
-		writeError(w, http.StatusForbidden, "Team member login is available on Business plan")
+	plan := normalizePlan(user.Plan)
+	if plan != "pro" && plan != "business" {
+		writeError(w, http.StatusForbidden, "Team member login is available on Pro and Business plans")
+		return
+	}
+
+	req := staffInviteRequest{TargetRole: "team_member"}
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+	targetRole := strings.ToLower(strings.TrimSpace(req.TargetRole))
+	if targetRole == "" {
+		targetRole = "team_member"
+	}
+	if targetRole != "team_member" && targetRole != "assistant" {
+		writeError(w, http.StatusBadRequest, "target_role must be one of: team_member, assistant")
+		return
+	}
+	if targetRole == "assistant" && plan != "business" {
+		writeError(w, http.StatusForbidden, "Assistant access is available on Business plan")
 		return
 	}
 
@@ -295,6 +322,7 @@ func (h *StaffHandler) InviteStaffUser(w http.ResponseWriter, r *http.Request) {
 		StaffID:     staff.ID,
 		OwnerUserID: userID,
 		Email:       strings.TrimSpace(*staff.Email),
+		TargetRole:  targetRole,
 		TokenHash:   hex.EncodeToString(hash[:]),
 		ExpiresAt:   expiresAt,
 	}
@@ -316,13 +344,14 @@ func (h *StaffHandler) InviteStaffUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]any{
-		"invite_id":  invite.ID,
-		"staff_id":   invite.StaffID,
-		"email":      invite.Email,
-		"status":     invite.Status,
-		"accept_url": acceptURL,
-		"expires_at": invite.ExpiresAt,
-		"created_at": invite.CreatedAt,
+		"invite_id":   invite.ID,
+		"staff_id":    invite.StaffID,
+		"email":       invite.Email,
+		"target_role": invite.TargetRole,
+		"status":      invite.Status,
+		"accept_url":  acceptURL,
+		"expires_at":  invite.ExpiresAt,
+		"created_at":  invite.CreatedAt,
 	})
 }
 
@@ -331,6 +360,16 @@ func (h *StaffHandler) InviteStaffUser(w http.ResponseWriter, r *http.Request) {
 // GET /api/staff/my-assignments
 func (h *StaffHandler) GetMyAssignments(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
+
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user")
+		return
+	}
+	if !isTeamPortalRole(strings.ToLower(strings.TrimSpace(user.Role))) {
+		writeError(w, http.StatusForbidden, "Team member access required")
+		return
+	}
 
 	items, err := h.staffRepo.ListMyAssignments(r.Context(), userID)
 	if err != nil {
@@ -348,6 +387,17 @@ func (h *StaffHandler) GetMyAssignments(w http.ResponseWriter, r *http.Request) 
 // POST /api/staff/assignments/{id}/respond
 func (h *StaffHandler) RespondAssignment(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
+
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to fetch user")
+		return
+	}
+	if !isTeamPortalRole(strings.ToLower(strings.TrimSpace(user.Role))) {
+		writeError(w, http.StatusForbidden, "Team member access required")
+		return
+	}
+
 	eventStaffID, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid assignment ID")
