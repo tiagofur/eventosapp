@@ -35,9 +35,9 @@ import androidx.compose.ui.unit.dp
 import com.creapolis.solennix.core.designsystem.component.SolennixTextField
 import com.creapolis.solennix.core.designsystem.component.adaptive.AdaptiveCenteredContent
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
+import com.creapolis.solennix.core.model.DiscountType
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.R
-import com.creapolis.solennix.feature.events.viewmodel.DiscountType
 import com.creapolis.solennix.feature.events.viewmodel.EventFormViewModel
 
 @Composable

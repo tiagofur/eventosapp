@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.RemoveCircle
@@ -57,6 +58,7 @@ import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.R
 import com.creapolis.solennix.feature.events.viewmodel.EventFormViewModel
 
+@Composable
 fun StepExtras(viewModel: EventFormViewModel) {
     AdaptiveCenteredContent(maxWidth = 800.dp) {
         Column(

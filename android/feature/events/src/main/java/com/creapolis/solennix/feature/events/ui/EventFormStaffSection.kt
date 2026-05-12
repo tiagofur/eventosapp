@@ -62,12 +62,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
-import com.creapolis.solennix.core.model.AssignmentStatus
-import com.creapolis.solennix.core.model.SelectedStaffAssignment
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.R
 import com.creapolis.solennix.feature.events.viewmodel.EventFormViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun StaffSection(viewModel: EventFormViewModel) {
@@ -82,8 +79,6 @@ fun StaffSection(viewModel: EventFormViewModel) {
         StaffAssignmentPanel(viewModel = viewModel)
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StaffAssignmentPanel(viewModel: EventFormViewModel) {
     var showStaffPicker by remember { mutableStateOf(false) }
@@ -223,6 +218,3 @@ private fun StaffAssignmentPanel(viewModel: EventFormViewModel) {
         )
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable

@@ -63,13 +63,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.core.model.AssignmentStatus
-import com.creapolis.solennix.core.model.SelectedStaffAssignment
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.R
 import com.creapolis.solennix.feature.events.viewmodel.EventFormViewModel
+import com.creapolis.solennix.feature.events.viewmodel.SelectedStaffAssignment
 import kotlinx.coroutines.launch
 
-private fun StaffAssignmentCard(
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun StaffAssignmentCard(
     assignment: SelectedStaffAssignment,
     defaultStart: String,
     defaultEnd: String,
@@ -170,33 +172,29 @@ private fun StaffAssignmentCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            AdaptiveFormRow(
-                left = {
-                    OutlinedTextField(
-                        value = feeText,
-                        onValueChange = { newValue ->
-                            feeText = newValue
-                            onFeeChange(newValue.replace(",", ".").toDoubleOrNull())
-                        },
-                        label = { Text(stringResource(R.string.events_form_staff_fee_optional)) },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
-                        ),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        prefix = { Text("$") }
-                    )
-                },
-                right = {
-                    OutlinedTextField(
-                        value = assignment.roleOverride,
-                        onValueChange = onRoleChange,
-                        label = { Text(stringResource(R.string.events_form_staff_role_optional)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = feeText,
+                    onValueChange = { newValue ->
+                        feeText = newValue
+                        onFeeChange(newValue.replace(",", ".").toDoubleOrNull())
+                    },
+                    label = { Text(stringResource(R.string.events_form_staff_fee_optional)) },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal
+                    ),
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    prefix = { Text("$") }
+                )
+                OutlinedTextField(
+                    value = assignment.roleOverride,
+                    onValueChange = onRoleChange,
+                    label = { Text(stringResource(R.string.events_form_staff_role_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = assignment.notes,
@@ -330,6 +328,3 @@ private fun AssignmentStatus.uiColor(): Color = when (this) {
     AssignmentStatus.DECLINED -> Color(0xFFC53030)
     AssignmentStatus.CANCELLED -> Color(0xFF718096)
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable

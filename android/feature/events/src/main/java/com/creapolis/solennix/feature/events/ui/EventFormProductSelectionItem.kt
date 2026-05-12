@@ -57,6 +57,7 @@ import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.feature.events.R
 import com.creapolis.solennix.feature.events.viewmodel.EventFormViewModel
 
+@Composable
 fun ProductSelectionItem(
     index: Int,
     item: EventProduct,
@@ -234,5 +235,3 @@ fun ProductSelectionItem(
         }
     }
 }
-
-@Composable

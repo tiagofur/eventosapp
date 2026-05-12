@@ -166,8 +166,3 @@ fun EventShoppingListScreen(
         }
     }
 }
-
-// ==================== Contract Preview Screen ====================
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable

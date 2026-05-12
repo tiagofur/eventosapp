@@ -89,13 +89,33 @@ fun ProductPickerSheet(
                     color = SolennixTheme.colors.secondaryText
                 )
             } else if (filteredProducts.isEmpty()) {
-                EmptyState(
-                    icon = Icons.Default.RestaurantMenu,
-                    title = stringResource(R.string.events_form_products_no_results),
-                    message = stringResource(R.string.events_form_products_no_results_message),
-                    actionText = stringResource(R.string.events_form_retry),
-                    onAction = { viewModel.retryLoadProducts() }
-                )
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.RestaurantMenu,
+                        contentDescription = null,
+                        tint = SolennixTheme.colors.secondaryText,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        stringResource(R.string.events_form_products_no_results),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                    Text(
+                        stringResource(R.string.events_form_products_no_results_message),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = SolennixTheme.colors.secondaryText
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        stringResource(R.string.events_form_retry),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SolennixTheme.colors.primary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.clickable { viewModel.retryLoadProducts() }
+                    )
+                }
             } else {
                 LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
                     items(filteredProducts.size) { index ->

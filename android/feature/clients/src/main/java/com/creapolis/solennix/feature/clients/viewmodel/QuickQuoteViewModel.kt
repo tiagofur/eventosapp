@@ -439,7 +439,7 @@ class QuickQuoteViewModel @Inject constructor(
                     products = validItems.map { item ->
                         QuickQuotePDFProductPayload(
                             productId = item.productId,
-                            name = item.productName.ifBlank { appContext.getString(R.string.common_product) },
+                            name = item.productName.ifBlank { "Producto" },
                             quantity = item.quantity.toDouble(),
                             unitPrice = item.unitPrice,
                             discount = 0.0

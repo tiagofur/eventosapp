@@ -15,12 +15,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -41,7 +43,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +65,7 @@ fun StaffDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
+    val clipboard = LocalClipboardManager.current
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel.deleteSuccess) {
@@ -277,6 +282,62 @@ fun StaffDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
+
+                    if (!uiState.inviteUrl.isNullOrBlank()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Link de invitación",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = SolennixTheme.colors.primaryText
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = uiState.inviteUrl.orEmpty(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SolennixTheme.colors.secondaryText
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(
+                                    onClick = {
+                                        clipboard.setText(AnnotatedString(uiState.inviteUrl.orEmpty()))
+                                    }
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Copiar link")
+                                }
+                            }
+                        }
+                    }
+
+                    if (!uiState.inviteFeedback.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = uiState.inviteFeedback.orEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (uiState.inviteFeedbackIsError) SolennixTheme.colors.error else SolennixTheme.colors.success
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    if (!staff.email.isNullOrBlank() && staff.invitedUserId.isNullOrBlank()) {
+                        TextButton(
+                            onClick = { viewModel.inviteAccess() },
+                            enabled = !uiState.isInviting,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Send, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(if (uiState.isInviting) "Invitando..." else "Invitar acceso")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
 
                 if (showDeleteDialog) {

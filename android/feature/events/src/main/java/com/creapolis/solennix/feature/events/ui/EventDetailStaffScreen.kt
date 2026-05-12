@@ -56,6 +56,8 @@ import com.creapolis.solennix.feature.events.R
 import com.creapolis.solennix.feature.events.viewmodel.EventDetailViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun EventStaffScreen(
     viewModel: EventDetailViewModel,
     onNavigateBack: () -> Unit,

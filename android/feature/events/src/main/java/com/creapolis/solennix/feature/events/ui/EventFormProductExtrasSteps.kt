@@ -241,5 +241,3 @@ fun StepProducts(viewModel: EventFormViewModel) {
         )
     }
 }
-
-@Composable

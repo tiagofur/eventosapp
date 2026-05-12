@@ -59,7 +59,7 @@ fun EventListFiltersSection(
     onDateRangeChange: (LocalDate?, LocalDate?) -> Unit,
     selectedStatus: EventStatus?,
     statusFilters: List<EventStatusFilter>,
-    onStatusFilterChange: (EventStatus) -> Unit,
+    onStatusFilterChange: (EventStatus?) -> Unit,
     onClearFilters: () -> Unit,
 ) {
     Row(

@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.dashboard.viewmodel
 
+import android.content.Context
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.DashboardRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
@@ -49,12 +50,15 @@ class DashboardViewModelTest {
     private val productRepository = mockk<ProductRepository>(relaxed = true)
     private val dashboardRepository = mockk<DashboardRepository>(relaxed = true)
     private val authManager = mockk<AuthManager>(relaxed = true)
+    private val appContext = mockk<Context>(relaxed = true)
 
     private val dispatcher = StandardTestDispatcher()
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        every { appContext.getString(any()) } returns ""
+        every { appContext.getString(any(), *anyVararg()) } returns ""
     }
 
     @AfterEach
@@ -157,6 +161,7 @@ class DashboardViewModelTest {
         coEvery { dashboardRepository.getRevenueChart(any()) } returns emptyList()
 
         val viewModel = DashboardViewModel(
+            appContext,
             eventRepository,
             inventoryRepository,
             clientRepository,
@@ -225,6 +230,7 @@ class DashboardViewModelTest {
         }
 
         val viewModel = DashboardViewModel(
+            appContext,
             eventRepository,
             inventoryRepository,
             clientRepository,
@@ -292,6 +298,7 @@ class DashboardViewModelTest {
         }
 
         val viewModel = DashboardViewModel(
+            appContext,
             eventRepository,
             inventoryRepository,
             clientRepository,
@@ -351,6 +358,7 @@ class DashboardViewModelTest {
         coEvery { eventRepository.updateEvent(any()) } returns event.copy(status = EventStatus.COMPLETED)
 
         val viewModel = DashboardViewModel(
+            appContext,
             eventRepository,
             inventoryRepository,
             clientRepository,
@@ -390,6 +398,7 @@ class DashboardViewModelTest {
         coEvery { productRepository.syncProducts() } returns Unit
 
         val viewModel = DashboardViewModel(
+            appContext,
             eventRepository,
             inventoryRepository,
             clientRepository,

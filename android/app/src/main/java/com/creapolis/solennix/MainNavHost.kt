@@ -83,13 +83,24 @@ private fun parseAppDeepLinkRoute(intent: Intent?): String? {
 private fun parseAuthDeepLinkRoute(intent: Intent?): String? {
     val uri = intent?.data ?: return null
     if (uri.scheme != "solennix") return null
-    if (uri.host != "reset-password") return null
-
     val token = uri.getQueryParameter("token")
-    return if (token.isNullOrBlank()) {
-        "reset-password?token="
-    } else {
-        "reset-password?token=${Uri.encode(token)}"
+
+    return when (uri.host) {
+        "reset-password" -> {
+            if (token.isNullOrBlank()) {
+                "reset-password?token="
+            } else {
+                "reset-password?token=${Uri.encode(token)}"
+            }
+        }
+        "team-invite" -> {
+            if (token.isNullOrBlank()) {
+                "team-invite?token="
+            } else {
+                "team-invite?token=${Uri.encode(token)}"
+            }
+        }
+        else -> null
     }
 }
 

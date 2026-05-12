@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.LocalTextStyle
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 

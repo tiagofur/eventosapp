@@ -40,7 +40,7 @@ internal fun renderContractTemplate(
     val today = java.text.SimpleDateFormat("d 'de' MMMM, yyyy", java.util.Locale("es", "MX")).format(java.util.Date())
 
     val servicesList = if (products.isNotEmpty()) {
-        products.joinToString(", ") { "${it.quantity.formatQuantity()} ${it.productName ?: \"Producto\"}" }
+        products.joinToString(", ") { "${it.quantity.formatQuantity()} ${it.productName ?: "Producto"}" }
     } else {
         null
     }

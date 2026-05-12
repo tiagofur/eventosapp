@@ -237,6 +237,3 @@ private fun FinancialMetricRow(
         )
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
