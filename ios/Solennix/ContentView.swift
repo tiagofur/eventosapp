@@ -18,6 +18,7 @@ struct ContentView: View {
 
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var deepLinkResetToken: String?
+    @State private var deepLinkTeamInviteToken: String?
     @State private var pendingSpotlightRoute: Route?
 
     var body: some View {
@@ -33,7 +34,10 @@ struct ContentView: View {
                     SplashView()
 
                 case .unauthenticated:
-                    AuthFlowView(deepLinkResetToken: $deepLinkResetToken)
+                    AuthFlowView(
+                        deepLinkResetToken: $deepLinkResetToken,
+                        deepLinkTeamInviteToken: $deepLinkTeamInviteToken
+                    )
 
                 case .biometricLocked:
                     BiometricGateView()
@@ -111,6 +115,8 @@ struct ContentView: View {
         switch action {
         case .resetPassword(let token):
             deepLinkResetToken = token
+        case .teamInvite(let token):
+            deepLinkTeamInviteToken = token
         }
     }
 }

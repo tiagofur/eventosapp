@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import SolennixCore
 import SolennixDesign
 import SolennixNetwork
@@ -13,6 +14,10 @@ public struct StaffDetailView: View {
     @State private var isLoading: Bool = true
     @State private var errorMessage: String?
     @State private var showDeleteConfirm: Bool = false
+    @State private var isInviting: Bool = false
+    @State private var inviteURL: String?
+    @State private var inviteFeedback: String?
+    @State private var inviteFeedbackIsError: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -77,6 +82,17 @@ public struct StaffDetailView: View {
 
                 if let notes = item.notes, !notes.isEmpty {
                     notesCard(notes)
+                }
+
+                if let inviteURL, !inviteURL.isEmpty {
+                    inviteLinkCard(inviteURL)
+                }
+
+                if let inviteFeedback, !inviteFeedback.isEmpty {
+                    Text(inviteFeedback)
+                        .font(.footnote)
+                        .foregroundStyle(inviteFeedbackIsError ? SolennixColors.error : SolennixColors.success)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 actionButtons
@@ -242,6 +258,22 @@ public struct StaffDetailView: View {
 
     private var actionButtons: some View {
         HStack(spacing: Spacing.sm) {
+            if let item = staff,
+               let email = item.email,
+               !email.isEmpty,
+               item.invitedUserId == nil {
+                Button {
+                    inviteAccess()
+                } label: {
+                    actionButton(
+                        icon: "paperplane",
+                        label: isInviting ? StaffStrings.inviting : StaffStrings.inviteAccess,
+                        fg: SolennixColors.primary
+                    )
+                }
+                .disabled(isInviting)
+            }
+
             NavigationLink(value: Route.staffForm(id: staffId)) {
                 actionButton(
                     icon: "pencil",
@@ -279,6 +311,35 @@ public struct StaffDetailView: View {
         .shadowSm()
     }
 
+    private func inviteLinkCard(_ url: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(StaffStrings.inviteLinkTitle)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(SolennixColors.textSecondary)
+
+            Text(url)
+                .font(.footnote)
+                .foregroundStyle(SolennixColors.text)
+                .textSelection(.enabled)
+
+            Button {
+                UIPasteboard.general.string = url
+                inviteFeedback = StaffStrings.inviteLinkCopied
+                inviteFeedbackIsError = false
+            } label: {
+                Label(StaffStrings.copyInviteLink, systemImage: "doc.on.doc")
+                    .font(.footnote)
+                    .foregroundStyle(SolennixColors.primary)
+            }
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .shadowSm()
+    }
+
     // MARK: - Data Loading
 
     @MainActor
@@ -298,6 +359,41 @@ public struct StaffDetailView: View {
         }
 
         isLoading = false
+    }
+
+    @MainActor
+    private func inviteAccess() {
+        guard let item = staff else { return }
+        guard let email = item.email, !email.isEmpty else {
+            inviteFeedback = StaffStrings.inviteEmailRequired
+            inviteFeedbackIsError = true
+            return
+        }
+        guard item.invitedUserId == nil else {
+            inviteFeedback = StaffStrings.inviteAlreadyActivated
+            inviteFeedbackIsError = false
+            return
+        }
+
+        Task {
+            isInviting = true
+            inviteFeedback = nil
+            inviteFeedbackIsError = false
+            do {
+                let response = try await apiClient.inviteStaffUser(staffId: staffId)
+                inviteURL = response.acceptUrl
+                inviteFeedback = StaffStrings.inviteCreated
+                inviteFeedbackIsError = false
+            } catch {
+                if let apiError = error as? APIError {
+                    inviteFeedback = apiError.errorDescription ?? StaffStrings.inviteCreateError
+                } else {
+                    inviteFeedback = StaffStrings.inviteCreateError
+                }
+                inviteFeedbackIsError = true
+            }
+            isInviting = false
+        }
     }
 }
 

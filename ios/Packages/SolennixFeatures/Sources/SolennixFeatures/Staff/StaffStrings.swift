@@ -67,6 +67,15 @@ enum StaffStrings {
     static let deleteError = isEnglish ? "Failed to delete staff member" : "Error al eliminar el personal"
     static let emailNotifTitle = isEnglish ? "Email notifications enabled" : "Avisos por email activados"
     static let emailNotifSubtitle = isEnglish ? "Will be activated in Phase 2 (Pro+). Preference is saved." : "Se activará en Phase 2 (Pro+). Por ahora queda registrada la preferencia."
+    static let inviteAccess = isEnglish ? "Invite access" : "Invitar acceso"
+    static let inviting = isEnglish ? "Inviting..." : "Invitando..."
+    static let inviteLinkTitle = isEnglish ? "Invite link" : "Link de invitación"
+    static let copyInviteLink = isEnglish ? "Copy link" : "Copiar link"
+    static let inviteLinkCopied = isEnglish ? "Invite link copied" : "Link copiado"
+    static let inviteCreated = isEnglish ? "Invite created successfully" : "Invitación creada correctamente"
+    static let inviteCreateError = isEnglish ? "Could not create invite" : "No se pudo crear la invitación"
+    static let inviteEmailRequired = isEnglish ? "This staff member needs an email to activate access" : "Este colaborador necesita email para activar acceso"
+    static let inviteAlreadyActivated = isEnglish ? "This staff member already has activated access" : "Este colaborador ya tiene acceso activado"
 
     static func deleteConfirmMessage(_ name: String) -> String {
         isEnglish

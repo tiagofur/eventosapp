@@ -7,6 +7,7 @@ import SolennixCore
 /// Actions that can be triggered by opening a deep link URL.
 enum DeepLinkAction: Equatable {
     case resetPassword(token: String)
+    case teamInvite(token: String)
 }
 
 // MARK: - Spotlight Action
@@ -24,6 +25,7 @@ enum SpotlightAction: Equatable {
 ///
 /// Supported deep links:
 /// - `solennix://reset-password?token=<TOKEN>` — Navigate to the password reset flow.
+/// - `solennix://team-invite?token=<TOKEN>` — Navigate to team invite accept flow.
 enum DeepLinkHandler {
 
     /// Parse a URL into a deep link action.
@@ -38,6 +40,12 @@ enum DeepLinkHandler {
                 return nil
             }
             return .resetPassword(token: token)
+
+        case "team-invite":
+            guard let token = url.queryParameters["token"], !token.isEmpty else {
+                return nil
+            }
+            return .teamInvite(token: token)
 
         default:
             return nil
