@@ -22,8 +22,6 @@ import com.creapolis.solennix.core.database.SolennixDatabase
 import com.creapolis.solennix.core.model.EventStatus
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class QuickActionsWidget : GlanceAppWidget() {
 
@@ -47,7 +45,7 @@ class QuickActionsWidget : GlanceAppWidget() {
                 eventCount = todayEvents.size,
                 events = todayEvents.take(2).map { event ->
                     TodayEvent(
-                        time = formatTime(event.eventDate),
+                        time = WidgetFormatters.formatTime(event.eventDate),
                         serviceType = event.serviceType
                     )
                 }
@@ -86,7 +84,7 @@ class QuickActionsWidget : GlanceAppWidget() {
             ) {
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     Text(
-                        text = formatTodayDate(),
+                        text = WidgetFormatters.formatTodayDate(),
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
@@ -231,25 +229,6 @@ class QuickActionsWidget : GlanceAppWidget() {
         return Intent(Intent.ACTION_VIEW, Uri.parse(deepLink)).apply {
             setPackage(context.packageName)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-    }
-
-    private fun formatTodayDate(): String {
-        val today = LocalDate.now()
-        val formatter = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale("es", "MX"))
-        return today.format(formatter).replaceFirstChar { it.uppercase() }
-    }
-
-    private fun formatTime(dateString: String): String {
-        return try {
-            // Expected format: 2026-03-20T15:30:00 or similar
-            if (dateString.contains("T") && dateString.length >= 16) {
-                dateString.substring(11, 16)
-            } else {
-                ""
-            }
-        } catch (e: Exception) {
-            ""
         }
     }
 

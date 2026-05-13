@@ -53,6 +53,7 @@ dependencies {
     implementation(composeBom)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
+    androidTestImplementation(composeBom)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -73,4 +74,10 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    androidTestImplementation(libs.test.ext.junit)
+    androidTestImplementation(libs.test.espresso.core)
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

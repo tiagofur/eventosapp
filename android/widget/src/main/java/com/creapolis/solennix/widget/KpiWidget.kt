@@ -20,7 +20,6 @@ import androidx.glance.unit.ColorProvider
 import com.creapolis.solennix.core.database.SolennixDatabase
 import com.creapolis.solennix.core.model.EventStatus
 import kotlinx.coroutines.flow.first
-import java.text.NumberFormat
 import java.time.LocalDate
 import java.util.Locale
 
@@ -116,7 +115,7 @@ class KpiWidget : GlanceAppWidget() {
                 // Monthly Revenue
                 KpiCard(
                     modifier = GlanceModifier.defaultWeight(),
-                    value = formatCurrency(kpiData.monthlyRevenue),
+                    value = WidgetFormatters.formatCurrency(kpiData.monthlyRevenue),
                     label = "Este mes",
                     accentColor = successColor,
                     textPrimary = textPrimary,
@@ -195,17 +194,6 @@ class KpiWidget : GlanceAppWidget() {
     private fun getLaunchIntent(context: Context): Intent {
         return context.packageManager.getLaunchIntentForPackage(context.packageName)
             ?: Intent()
-    }
-
-    private fun formatCurrency(amount: Double): String {
-        return if (amount >= 1000) {
-            val thousands = amount / 1000
-            String.format(Locale("es", "MX"), "$%.1fk", thousands)
-        } else {
-            NumberFormat.getCurrencyInstance(Locale("es", "MX"))
-                .format(amount)
-                .replace(".00", "")
-        }
     }
 
     private data class KpiData(

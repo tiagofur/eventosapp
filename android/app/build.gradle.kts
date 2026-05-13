@@ -1,5 +1,7 @@
 import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,6 +11,8 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.baselineprofile)
+    alias(libs.plugins.android.junit5)
+    jacoco
 }
 
 // Release signing config — see obsidian/Solennix/Android/Firma y Secretos de Release.md
@@ -125,6 +129,91 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            all {
+                it.failOnNoDiscoveredTests = false
+            }
+        }
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+val coverageExclusions = listOf(
+    "**/R.class",
+    "**/R$*.class",
+    "**/BuildConfig.*",
+    "**/Manifest*.*",
+    "**/*_Factory*.*",
+    "**/*_HiltModules*.*",
+    "**/*Hilt*.*",
+    "**/*ComposableSingletons*.*"
+)
+
+val coverageIncludes = listOf(
+    "**/com/creapolis/solennix/DeepLinkRoutes*",
+    "**/com/creapolis/solennix/ui/navigation/TopLevelDestination*"
+)
+
+val debugKotlinClassesDir = layout.buildDirectory.dir("tmp/kotlin-classes/debug").get().asFile
+val debugJavacClassesDir = layout.buildDirectory.dir("intermediates/javac/debug/classes").get().asFile
+val debugJacocoExecFile = layout.buildDirectory.file("jacoco/testDebugUnitTest.exec").get().asFile
+val debugCoverageExecFile = layout.buildDirectory.file("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec").get().asFile
+
+tasks.register<JacocoReport>("jacocoDebugCoverageReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    classDirectories.setFrom(
+        files(
+            fileTree(debugKotlinClassesDir) {
+                include(coverageIncludes)
+                exclude(coverageExclusions)
+            },
+            fileTree(debugJavacClassesDir) {
+                include(coverageIncludes)
+                exclude(coverageExclusions)
+            }
+        )
+    )
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(files(debugJacocoExecFile, debugCoverageExecFile))
+}
+
+tasks.register<JacocoCoverageVerification>("jacocoDebugCoverageVerification") {
+    dependsOn("testDebugUnitTest")
+
+    classDirectories.setFrom(
+        files(
+            fileTree(debugKotlinClassesDir) {
+                include(coverageIncludes)
+                exclude(coverageExclusions)
+            },
+            fileTree(debugJavacClassesDir) {
+                include(coverageIncludes)
+                exclude(coverageExclusions)
+            }
+        )
+    )
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(files(debugJacocoExecFile, debugCoverageExecFile))
+
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "0.20".toBigDecimal()
+            }
+        }
+    }
 }
 
 dependencies {
@@ -178,6 +267,9 @@ dependencies {
 
     implementation(libs.profileinstaller)
     baselineProfile(project(":baselineprofile"))
+
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 // Fail fast on release builds if required secrets are missing.

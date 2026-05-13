@@ -1122,35 +1122,68 @@ Primera pantalla de paridad post-Dashboard:
 | **E**  | `EventFormViewModel` sin validación de tiempo client-side | ✅ Agregado `isValidTime24h` + `normalizeTime` helpers; validación en `validateStep(0)` y defensivo en `saveEvent`. Formato `HH:mm` requerido. Rechaza horas iguales pero permite overnight events (20:00→02:00 común en bodas LATAM) | `feature/events/.../EventFormViewModel.kt:validateStep, saveEvent` |
 | **F**  | Sync final de docs con realidad       | ✅ Completado — `Roadmap Android.md` corregido (Fase 0.3 y 2.2 dejaron de mentir) | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`, `Android/Firma y Secretos de Release.md` |
 
-### Baseline de Testing Android (2026-05-12)
+### Baseline de Testing Android (2026-05-13)
 
 > [!info] Estado medido por ejecución real
 >
-> - Total tests unitarios: **56** (debug+release)
+> - Total tests unitarios: **63** (debug)
 > - Resultado: **0 failures**, **0 errors**, **0 skipped**
-> - Cobertura estructural: **4/19 módulos** con tests
-> - `androidTest`: **no detectado** aún
+> - Cobertura estructural: **14/19 módulos** con tests
+> - `androidTest`: **2 smoke tests activos y en verde** (auth + dashboard)
 
-| Módulo | Tests debug | Tests release | Total |
-| ------ | ----------: | ------------: | ----: |
-| `core/data` | 7 | 7 | 14 |
-| `core/network` | 6 | 6 | 12 |
-| `feature/dashboard` | 8 | 8 | 16 |
-| `feature/events` | 7 | 7 | 14 |
-| **Total** | **28** | **28** | **56** |
+| Módulo | Tests debug |
+| ------ | ----------: |
+| `core/data` | 7 |
+| `core/database` | 5 |
+| `core/model` | 6 |
+| `core/network` | 6 |
+| `feature/auth` | 6 |
+| `feature/calendar` | 4 |
+| `feature/clients` | 3 |
+| `feature/dashboard` | 8 |
+| `feature/events` | 7 |
+| `feature/inventory` | 2 |
+| `feature/payments` | 3 |
+| `feature/products` | 2 |
+| `feature/search` | 3 |
+| `feature/settings` | 4 |
+| `feature/staff` | 11 |
+| `widget` | 7 |
+| **Total** | **88** |
 
 | Indicador | Valor |
 | --------- | ----: |
 | Módulos Android totales | 19 |
-| Módulos con tests | 4 |
-| Módulos sin tests | 15 |
+| Módulos con suites JVM (`src/test`/`src/androidTest`) | 18 |
+| Módulo sin suite JVM | 1 (`baselineprofile`, instrumentado) |
 
 #### Hardening incremental acordado
 
-1. Fase 1: `core/model`, `core/database`, `feature/auth`
-2. Fase 2: `feature/clients`, `feature/products`, `feature/inventory`
-3. Fase 3: smoke tests instrumentados (`androidTest`) para login + dashboard
+1. Fase 1: `core/model`, `core/database`, `feature/auth` ✅
+2. Fase 2: `feature/clients`, `feature/products`, `feature/inventory` ✅
+3. Fase 2.5: `feature/search`, `feature/payments`, `feature/settings`, `feature/calendar` ✅
+4. Fase 3: smoke tests instrumentados (`androidTest`) para login + dashboard ✅
 4. Fase 4: gate de cobertura gradual por módulo en CI
+   - Fase 4.1 ✅ (activo):
+     - `:core:model:jacocoDebugCoverageVerification` (`extensions/**`, line ratio >= 30%)
+     - `:core:database:jacocoDebugCoverageVerification` (`converter/**`, line ratio >= 50%)
+     - `:feature:auth:jacocoDebugCoverageVerification` (`viewmodel/**`, line ratio >= 17%)
+   - Fase 4.2 ✅ (activo):
+     - `:feature:clients:jacocoDebugCoverageVerification` (`QuickQuoteViewModel*`, line ratio >= 25%)
+     - `:feature:products:jacocoDebugCoverageVerification` (`ProductListViewModel*`, line ratio >= 50%)
+     - `:feature:inventory:jacocoDebugCoverageVerification` (`InventoryListViewModel*`, line ratio >= 40%)
+   - Fase 4.3 ✅ (activo): thresholds calibrados y validados en comando unificado local
+   - Fase 4.4 ✅ (activo):
+     - `:feature:search:jacocoDebugCoverageVerification` (`SearchViewModel*`, line ratio >= 15%)
+     - `:feature:payments:jacocoDebugCoverageVerification` (`PaymentInboxViewModel*`, line ratio >= 15%)
+     - `:feature:settings:jacocoDebugCoverageVerification` (`SettingsViewModel*`, line ratio >= 15%)
+     - `:feature:calendar:jacocoDebugCoverageVerification` (`CalendarViewModel*`, line ratio >= 15%)
+   - Fase 4.5 ✅ (activo):
+     - `:app:jacocoDebugCoverageVerification` (`DeepLinkRoutes*`, `TopLevelDestination*`, line ratio >= 20%)
+     - `:core:designsystem:jacocoDebugCoverageVerification` (`SolennixColorScheme*`, line ratio >= 20%)
+     - `:widget:jacocoDebugCoverageVerification` (`WidgetFormatters*`, `WidgetAuthProvider*`, line ratio >= 20%)
+   - Fase 4.6 ✅ (activo):
+     - `:baselineprofile:compileNonMinifiedReleaseKotlin` agregado al Android Quality Gate de CI
 
 ### Pendiente Android (no blocker)
 

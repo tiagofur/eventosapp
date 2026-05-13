@@ -18,6 +18,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      android: ${{ steps.filter.outputs.android }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +32,9 @@ jobs:
               - '.github/workflows/ci-pipeline.yml'
             frontend:
               - 'web/**'
+              - '.github/workflows/ci-pipeline.yml'
+            android:
+              - 'android/**'
               - '.github/workflows/ci-pipeline.yml'
 
   backend:
@@ -70,4 +74,28 @@ jobs:
       - run: npm run lint
       - run: npm run test:run
       - run: npm run build
+
+  android-quality:
+    name: Android Quality Gate
+    needs: detect-changes
+    if: needs.detect-changes.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Unit tests (debug)
+        run: ./gradlew testDebugUnitTest --no-daemon
+      - name: Coverage gate (phase 4.1 + 4.4 + app/widget/designsystem)
+        run: ./gradlew :core:model:jacocoDebugCoverageVerification :core:database:jacocoDebugCoverageVerification :feature:auth:jacocoDebugCoverageVerification :feature:clients:jacocoDebugCoverageVerification :feature:products:jacocoDebugCoverageVerification :feature:inventory:jacocoDebugCoverageVerification :feature:search:jacocoDebugCoverageVerification :feature:payments:jacocoDebugCoverageVerification :feature:settings:jacocoDebugCoverageVerification :feature:calendar:jacocoDebugCoverageVerification :app:jacocoDebugCoverageVerification :core:designsystem:jacocoDebugCoverageVerification :widget:jacocoDebugCoverageVerification --no-daemon
+      - name: Smoke androidTest compile gate
+        run: ./gradlew :feature:auth:compileDebugAndroidTestKotlin :feature:dashboard:compileDebugAndroidTestKotlin --no-daemon
+      - name: Baselineprofile compile gate
+        run: ./gradlew :baselineprofile:compileNonMinifiedReleaseKotlin --no-daemon
 

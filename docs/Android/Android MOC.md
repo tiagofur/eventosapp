@@ -7,8 +7,8 @@
 > **Min SDK**: 26 (Android 8.0) · **Target SDK**: 35
 > **Build**: Gradle 8.13 · Kotlin 2.0 · Java 17
 > **Estado**: Producción (MVP + Google/Apple SSO ✅ + SSL Pinning) · Play Store ready
-> **Calidad (2026-05-12)**: baseline de testing documentado (56 tests en verde, 4/19 módulos con tests)
-> **Última actualización**: 2026-05-12
+> **Calidad (2026-05-13)**: baseline debug validado (88 tests en verde, 18/19 módulos con tests)
+> **Última actualización**: 2026-05-13
 
 ---
 

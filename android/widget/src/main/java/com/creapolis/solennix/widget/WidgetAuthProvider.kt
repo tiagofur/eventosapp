@@ -24,7 +24,15 @@ object WidgetAuthProvider {
     fun getUserId(context: Context): String? {
         return try {
             val prefs = getEncryptedPrefs(context)
-            val userJson = prefs.getString(KEY_USER_JSON, null) ?: return null
+            parseUserIdFromUserJson(prefs.getString(KEY_USER_JSON, null))
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    internal fun parseUserIdFromUserJson(userJson: String?): String? {
+        if (userJson.isNullOrBlank()) return null
+        return try {
             val jsonObj = json.parseToJsonElement(userJson).jsonObject
             jsonObj["id"]?.jsonPrimitive?.content
         } catch (_: Exception) {

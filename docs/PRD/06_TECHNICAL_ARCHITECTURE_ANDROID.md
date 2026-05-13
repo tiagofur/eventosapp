@@ -9,7 +9,7 @@ aliases:
   - Arquitectura Android
   - Android Architecture
 date: 2026-03-20
-updated: 2026-05-12
+updated: 2026-05-13
 status: active
 platform: Android
 ---
@@ -17,7 +17,7 @@ platform: Android
 # Arquitectura Técnica — Android
 
 **Versión:** 1.2.0
-**Fecha:** 2026-03-20 · **Última actualización:** 2026-05-12
+**Fecha:** 2026-03-20 · **Última actualización:** 2026-05-13
 **Plataforma:** Android (teléfono/tablet)
 
 > [!success] Versionado actual (2026-05-06)
@@ -38,12 +38,12 @@ platform: Android
 > - **Detalle de evento:** se removió la acción legacy de WhatsApp; la compartición oficial queda en `ClientPortalShareBottomSheet`
 > - **Settings:** `Centro de ayuda` queda como acción secundaria dentro de Ajustes; el control de tema sigue concentrado ahí
 
-> [!info] Baseline de testing Android (2026-05-12)
+> [!info] Baseline de testing Android (2026-05-13)
 >
-> - **56 tests unitarios** en verde (debug+release)
+> - **88 tests unitarios** en verde (debug)
 > - **0 failures**, **0 errors**, **0 skipped**
-> - **4/19 módulos** con tests (`core/data`, `core/network`, `feature/dashboard`, `feature/events`)
-> - **15/19 módulos** sin tests aún (plan incremental activo)
+> - **18/19 módulos** con suites JVM (`app`, `core/data`, `core/database`, `core:designsystem`, `core:model`, `core:network`, `feature:auth`, `feature:calendar`, `feature:clients`, `feature:dashboard`, `feature:events`, `feature:inventory`, `feature:payments`, `feature:products`, `feature:search`, `feature:settings`, `feature:staff`, `widget`)
+> - `baselineprofile` cubierto por macrobenchmark/instrumentado (sin suite JVM aún)
 > - Ver detalle en [[../Android/Testing]]
 
 > [!tip] Documentos relacionados
