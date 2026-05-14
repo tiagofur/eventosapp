@@ -888,9 +888,13 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras, req.Equipment, req.Supplies, req.Staff); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
+			slog.Error("update event items failed", "code", pgErr.Code, "detail", pgErr.Detail, "message", pgErr.Message)
 			switch pgErr.Code {
 			case "22P02", "23503", "23514":
 				writeError(w, http.StatusBadRequest, "Invalid event items payload")
+				return
+			case "42703", "42P10", "42P01":
+				writeError(w, http.StatusBadRequest, "Event staff schema is outdated. Run latest database migrations")
 				return
 			}
 		}
