@@ -69,6 +69,22 @@ extension EventFormViewModel {
             throw error
         }
 
+        // Defensive validation: avoid sending malformed staff rows that can fail
+        // server-side in legacy environments.
+        let normalizedStaff = selectedStaff.filter {
+            UUID(uuidString: $0.staffId.trimmingCharacters(in: .whitespacesAndNewlines)) != nil
+        }
+        if normalizedStaff.count != selectedStaff.count {
+            HapticsHelper.play(.error)
+            throw APIError.serverError(
+                statusCode: 400,
+                message: tr("events.form.error.staff_required", "Hay personal sin seleccionar. Eliminá las filas vacías antes de guardar.")
+            )
+        }
+
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+
         let itemsBody: [String: Any] = [
             "products": selectedProducts.map { [
                 "product_id": $0.productId,
@@ -95,9 +111,10 @@ extension EventFormViewModel {
                 "source": $0.source.rawValue,
                 "exclude_cost": $0.excludeCost
             ] },
-            "staff": selectedStaff.map { assignment -> [String: Any] in
+            "staff": normalizedStaff.map { assignment -> [String: Any] in
+                let staffID = assignment.staffId.trimmingCharacters(in: .whitespacesAndNewlines)
                 var dict: [String: Any] = [
-                    "staff_id": assignment.staffId,
+                    "staff_id": staffID,
                     "fee_amount": assignment.feeAmount,
                     "status": assignment.status.rawValue,
                 ]
@@ -109,8 +126,6 @@ extension EventFormViewModel {
                 if !trimmedNotes.isEmpty {
                     dict["notes"] = trimmedNotes
                 }
-                let iso = ISO8601DateFormatter()
-                iso.formatOptions = [.withInternetDateTime]
                 if let start = assignment.shiftStart {
                     dict["shift_start"] = iso.string(from: start)
                     if let rawEnd = assignment.shiftEnd {

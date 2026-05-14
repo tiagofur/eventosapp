@@ -897,6 +897,10 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 				writeError(w, http.StatusBadRequest, "Event staff schema is outdated. Run latest database migrations")
 				return
 			}
+			if strings.HasPrefix(pgErr.Code, "22") || strings.HasPrefix(pgErr.Code, "23") || strings.HasPrefix(pgErr.Code, "42") {
+				writeError(w, http.StatusBadRequest, "Invalid event items payload")
+				return
+			}
 		}
 		writeError(w, http.StatusInternalServerError, "Failed to update event items")
 		return

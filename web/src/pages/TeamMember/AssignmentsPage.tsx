@@ -41,17 +41,31 @@ export const AssignmentsPage: React.FC = () => {
   if (isError) {
     return (
       <div className="min-h-screen bg-bg px-4 py-8">
-        <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-6">
-          <p className="text-sm text-text-secondary">
-            {t('team.load_error', { defaultValue: 'No pudimos cargar tus asignaciones.' })}
-          </p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="mt-4 inline-flex items-center rounded-xl border border-border bg-surface-alt px-4 py-2 text-sm font-medium text-text hover:bg-card"
-          >
-            {t('common:actions.retry')}
-          </button>
+        <div className="mx-auto max-w-4xl space-y-6">
+          <header>
+            <h1 className="text-2xl font-bold text-text tracking-tight">
+              {t('team.title', { defaultValue: 'Mis asignaciones' })}
+            </h1>
+            <p className="mt-1 text-sm text-text-secondary">
+              {t('team.subtitle', { defaultValue: 'Aceptá o rechazá invitaciones para participar en eventos.' })}
+            </p>
+            <div className="mt-3">
+              <TeamMemberPortalNav />
+            </div>
+          </header>
+
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <p className="text-sm text-text-secondary">
+              {t('team.load_error', { defaultValue: 'No pudimos cargar tus asignaciones.' })}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="mt-4 inline-flex items-center rounded-xl border border-border bg-surface-alt px-4 py-2 text-sm font-medium text-text hover:bg-card"
+            >
+              {t('common:actions.retry')}
+            </button>
+          </div>
         </div>
       </div>
     );
