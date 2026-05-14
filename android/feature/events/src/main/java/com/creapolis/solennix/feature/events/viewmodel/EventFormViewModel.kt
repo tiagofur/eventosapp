@@ -1311,6 +1311,42 @@ class EventFormViewModel @Inject constructor(
         null
     }
 
+    private fun normalizeStaffForSave(): Result<List<EventStaffAssignmentPayload>> {
+        val normalized = mutableListOf<EventStaffAssignmentPayload>()
+        selectedStaff.forEachIndexed { index, assignment ->
+            val trimmedId = assignment.staffId.trim()
+            if (trimmedId.isBlank()) {
+                return Result.failure(IllegalArgumentException("Personal #${index + 1}: ID inválido"))
+            }
+            try {
+                UUID.fromString(trimmedId)
+            } catch (_: IllegalArgumentException) {
+                return Result.failure(IllegalArgumentException("Personal #${index + 1}: ID inválido"))
+            }
+            val fee = assignment.feeAmount
+            if (fee != null && fee < 0.0) {
+                return Result.failure(IllegalArgumentException("Personal #${index + 1}: El pago no puede ser negativo"))
+            }
+
+            val normalizedStatus = assignment.status?.let { raw ->
+                AssignmentStatus.fromString(raw).raw
+            }
+
+            normalized.add(
+                EventStaffAssignmentPayload(
+                    staffId = trimmedId,
+                    feeAmount = fee,
+                    roleOverride = assignment.roleOverride.takeIf { s -> s.isNotBlank() },
+                    notes = assignment.notes.takeIf { s -> s.isNotBlank() },
+                    shiftStart = assignment.shiftStart,
+                    shiftEnd = assignment.shiftEnd,
+                    status = normalizedStatus,
+                )
+            )
+        }
+        return Result.success(normalized)
+    }
+
     fun saveEvent() {
         val client = selectedClient ?: run {
             saveError = tr(R.string.events_form_validation_client_required_short)
@@ -1374,6 +1410,10 @@ class EventFormViewModel @Inject constructor(
                     eventRepository.createEvent(eventData)
                 }
 
+                val normalizedStaff = normalizeStaffForSave().getOrElse { err ->
+                    throw err
+                }
+
                 // Save all items (products, extras, equipment, supplies, staff) in one request
                 // Filtramos extras sin descripción — son cards que el usuario
                 // creó pero no llenó (edición inline estilo iOS).
@@ -1383,20 +1423,7 @@ class EventFormViewModel @Inject constructor(
                     extras = eventExtras.filter { it.description.isNotBlank() }.toList(),
                     equipment = selectedEquipment.toList(),
                     supplies = selectedSupplies.toList(),
-                    staff = selectedStaff.map {
-                        val normalizedStatus = it.status?.let { raw ->
-                            AssignmentStatus.fromString(raw).raw
-                        }
-                        EventStaffAssignmentPayload(
-                            staffId = it.staffId,
-                            feeAmount = it.feeAmount,
-                            roleOverride = it.roleOverride.takeIf { s -> s.isNotBlank() },
-                            notes = it.notes.takeIf { s -> s.isNotBlank() },
-                            shiftStart = it.shiftStart,
-                            shiftEnd = it.shiftEnd,
-                            status = normalizedStatus
-                        )
-                    }
+                    staff = normalizedStaff
                 )
 
                 saveSuccess = true
