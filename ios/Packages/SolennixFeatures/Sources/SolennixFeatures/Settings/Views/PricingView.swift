@@ -527,6 +527,20 @@ public struct PricingView: View {
 
             faqItem(
                 question: "Puedo cancelar en cualquier momento?",
+                answer: "Si, puedes cancelar tu suscripcion en cualquier momento. Tu plan premium seguira activo hasta el final del periodo de facturacion."
+            )
+
+            faqItem(
+                question: "Que pasa con mis datos si bajo de plan?",
+                answer: "Tus datos se mantienen, pero no podras crear mas productos o clientes si excedes los limites del plan basico."
+            )
+
+            faqItem(
+                question: "Hay periodo de prueba?",
+                answer: "Si. Ofrecemos 14 dias de prueba gratuita del plan Pro. Al finalizar el periodo de prueba, la suscripcion se renovara automaticamente al precio del plan seleccionado, a menos que la canceles al menos 24 horas antes de que termine el trial. Podes cancelar en cualquier momento desde los Ajustes de tu Apple ID."
+            )
+        }
+    }
 
     // MARK: - Plan Helpers
 
@@ -552,20 +566,6 @@ public struct PricingView: View {
             return subscriptionManager.isPremium
                 ? FeatureL10n.text("Suscripción Pro activa", "Suscripción Pro activa")
                 : FeatureL10n.text("Suscripción activa", "Suscripción activa")
-        }
-    }
-                answer: "Si, puedes cancelar tu suscripcion en cualquier momento. Tu plan premium seguira activo hasta el final del periodo de facturacion."
-            )
-
-            faqItem(
-                question: "Que pasa con mis datos si bajo de plan?",
-                answer: "Tus datos se mantienen, pero no podras crear mas productos o clientes si excedes los limites del plan basico."
-            )
-
-            faqItem(
-                question: "Hay periodo de prueba?",
-                answer: "Si. Ofrecemos 14 dias de prueba gratuita del plan Pro. Al finalizar el periodo de prueba, la suscripcion se renovara automaticamente al precio del plan seleccionado, a menos que la canceles al menos 24 horas antes de que termine el trial. Podes cancelar en cualquier momento desde los Ajustes de tu Apple ID."
-            )
         }
     }
 
