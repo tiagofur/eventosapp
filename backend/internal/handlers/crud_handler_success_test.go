@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/tiagofur/solennix-backend/internal/models"
@@ -859,6 +860,36 @@ func TestUpdateEventItems_RepoError_Returns500(t *testing.T) {
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Fatalf("status = %d, want %d, body=%s", rr.Code, http.StatusInternalServerError, rr.Body.String())
+	}
+}
+
+func TestUpdateEventItems_PgConstraintError_Returns400(t *testing.T) {
+	userID := uuid.New()
+	eventID := uuid.New()
+	eventRepo := new(MockFullEventRepo)
+
+	existing := &models.Event{ID: eventID, UserID: userID, ClientID: uuid.New()}
+	eventRepo.On("GetByID", mock.Anything, eventID, userID).Return(existing, nil)
+	eventRepo.On("UpdateEventItems", mock.Anything, eventID,
+		mock.AnythingOfType("[]models.EventProduct"),
+		mock.AnythingOfType("[]models.EventExtra"),
+		mock.Anything,
+		mock.Anything,
+		mock.Anything,
+	).Return(&pgconn.PgError{Code: "23514", Message: "check violation"})
+
+	h := newTestHandler(new(MockClientRepo), eventRepo, new(MockProductRepo), new(MockInventoryRepo), new(MockFullPaymentRepo), new(MockFullUserRepo))
+
+	body := `{"products":[],"extras":[]}`
+	req := makeReqWithIDParam(http.MethodPut, "/api/events/"+eventID.String()+"/items", body, eventID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.UpdateEventItems(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d, body=%s", rr.Code, http.StatusBadRequest, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "Invalid event items payload") {
+		t.Fatalf("body = %q, expected to contain invalid payload message", rr.Body.String())
 	}
 }
 

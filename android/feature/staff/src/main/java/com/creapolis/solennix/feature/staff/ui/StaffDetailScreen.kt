@@ -55,6 +55,13 @@ import com.creapolis.solennix.core.designsystem.theme.LocalIsWideScreen
 import com.creapolis.solennix.core.designsystem.theme.SolennixTheme
 import com.creapolis.solennix.feature.staff.viewmodel.StaffDetailViewModel
 
+private fun isPendingInviteStatus(status: String?): Boolean {
+    return when (status?.trim()?.lowercase()) {
+        "pending", "active", "invited", "sent" -> true
+        else -> false
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaffDetailScreen(
@@ -68,7 +75,7 @@ fun StaffDetailScreen(
     val clipboard = LocalClipboardManager.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
-    val hasPendingInvite = uiState.inviteUrl != null || uiState.staff?.inviteStatus == "pending"
+    val hasPendingInvite = uiState.inviteUrl != null || isPendingInviteStatus(uiState.staff?.inviteStatus)
 
     LaunchedEffect(viewModel.deleteSuccess) {
         if (viewModel.deleteSuccess) {
@@ -326,7 +333,7 @@ fun StaffDetailScreen(
                         ) {
                             Text(if (uiState.isRevoking) "Revocando..." else "Revocar invitación")
                         }
-                    } else if (uiState.staff?.inviteStatus == "pending") {
+                    } else if (isPendingInviteStatus(uiState.staff?.inviteStatus)) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = SolennixTheme.colors.card),
@@ -356,6 +363,31 @@ fun StaffDetailScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(if (uiState.isRevoking) "Revocando..." else "Revocar invitación")
+                        }
+                    }
+
+                    if (!staff.invitedUserId.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = SolennixTheme.colors.success.copy(alpha = 0.12f)
+                            ),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Acceso activado",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = SolennixTheme.colors.primaryText
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Este colaborador ya aceptó la invitación y tiene acceso al portal.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SolennixTheme.colors.secondaryText
+                                )
+                            }
                         }
                     }
 

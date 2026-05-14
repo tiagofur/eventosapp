@@ -56,6 +56,11 @@ const STATUS_CLASSES: Record<AssignmentStatus, string> = {
   cancelled: "bg-slate-200 text-slate-700 dark:bg-slate-700/40 dark:text-slate-200",
 };
 
+const isPendingInviteStatus = (status?: string | null): boolean => {
+  const normalized = (status ?? "").trim().toLowerCase();
+  return normalized === "pending" || normalized === "active" || normalized === "invited" || normalized === "sent";
+};
+
 export const StaffDetails: React.FC = () => {
   const { t, i18n } = useTranslation(["staff"]);
   const { id } = useParams<{ id: string }>();
@@ -67,7 +72,7 @@ export const StaffDetails: React.FC = () => {
   const [revokeOpen, setRevokeOpen] = React.useState(false);
   const [inviteURL, setInviteURL] = React.useState<string | null>(null);
   const [inviting, setInviting] = React.useState(false);
-  const hasPendingInvite = Boolean(inviteURL || staff?.invite_status === "pending");
+  const hasPendingInvite = Boolean(inviteURL || isPendingInviteStatus(staff?.invite_status));
 
   // Próximas asignaciones — ventana rolling de 90 días desde hoy. Usamos la
   // fecha en zona local (no UTC) para que la ventana coincida con lo que el

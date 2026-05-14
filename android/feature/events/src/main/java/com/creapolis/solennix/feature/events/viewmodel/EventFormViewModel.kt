@@ -638,6 +638,7 @@ class EventFormViewModel @Inject constructor(
                     val eventStaff = staffRepository.syncEventStaff(id)
                     selectedStaff.clear()
                     eventStaff.forEach { assignment ->
+                        val normalizedStatus = AssignmentStatus.fromString(assignment.status).raw
                         selectedStaff.add(
                             SelectedStaffAssignment(
                                 staffId = assignment.staffId,
@@ -648,7 +649,7 @@ class EventFormViewModel @Inject constructor(
                                 staffRoleLabel = assignment.staffRoleLabel,
                                 shiftStart = assignment.shiftStart,
                                 shiftEnd = assignment.shiftEnd,
-                                status = assignment.status
+                                status = normalizedStatus
                             )
                         )
                     }
@@ -1383,6 +1384,9 @@ class EventFormViewModel @Inject constructor(
                     equipment = selectedEquipment.toList(),
                     supplies = selectedSupplies.toList(),
                     staff = selectedStaff.map {
+                        val normalizedStatus = it.status?.let { raw ->
+                            AssignmentStatus.fromString(raw).raw
+                        }
                         EventStaffAssignmentPayload(
                             staffId = it.staffId,
                             feeAmount = it.feeAmount,
@@ -1390,7 +1394,7 @@ class EventFormViewModel @Inject constructor(
                             notes = it.notes.takeIf { s -> s.isNotBlank() },
                             shiftStart = it.shiftStart,
                             shiftEnd = it.shiftEnd,
-                            status = it.status
+                            status = normalizedStatus
                         )
                     }
                 )

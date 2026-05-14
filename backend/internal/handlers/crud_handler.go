@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
@@ -885,6 +886,14 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras, req.Equipment, req.Supplies, req.Staff); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "22P02", "23503", "23514":
+				writeError(w, http.StatusBadRequest, "Invalid event items payload")
+				return
+			}
+		}
 		writeError(w, http.StatusInternalServerError, "Failed to update event items")
 		return
 	}

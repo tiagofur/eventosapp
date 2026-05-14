@@ -16,6 +16,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private fun isPendingInviteStatus(status: String?): Boolean {
+    return when (status?.trim()?.lowercase()) {
+        "pending", "active", "invited", "sent" -> true
+        else -> false
+    }
+}
+
 data class StaffDetailUiState(
     val staff: Staff? = null,
     val isLoading: Boolean = false,
@@ -118,7 +125,7 @@ class StaffDetailViewModel @Inject constructor(
 
     fun revokeInviteAccess() {
         val current = _uiState.value.staff ?: return
-        if (current.inviteStatus != "pending" && _uiState.value.inviteUrl.isNullOrBlank()) {
+        if (!isPendingInviteStatus(current.inviteStatus) && _uiState.value.inviteUrl.isNullOrBlank()) {
             return
         }
 

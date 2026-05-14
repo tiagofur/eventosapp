@@ -7,6 +7,12 @@ import SolennixNetwork
 // MARK: - Staff Detail View
 
 public struct StaffDetailView: View {
+    private func isPendingInviteStatus(_ status: String?) -> Bool {
+        guard let raw = status?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() else {
+            return false
+        }
+        return raw == "pending" || raw == "active" || raw == "invited" || raw == "sent"
+    }
 
     let staffId: String
 
@@ -389,7 +395,7 @@ public struct StaffDetailView: View {
 
     private var hasPendingInvite: Bool {
         !inviteURL.orEmpty.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || staff?.inviteStatus == "pending"
+            || isPendingInviteStatus(staff?.inviteStatus)
     }
 
     // MARK: - Data Loading
