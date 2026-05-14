@@ -2,7 +2,7 @@ import React from 'react';
 import { CalendarDays, CheckCircle2, Clock3, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMyAssignments, useRespondAssignment } from '@/hooks/queries/useStaffQueries';
-import type { AssignmentStatus, TeamMemberAssignment } from '@/types/entities';
+import type { AssignmentStatus } from '@/types/entities';
 import { TeamMemberPortalNav } from './components/TeamMemberPortalNav';
 import { formatEventDate, formatShiftLabel } from './teamMemberUtils';
 

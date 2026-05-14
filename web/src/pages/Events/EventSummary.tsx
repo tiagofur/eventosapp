@@ -28,7 +28,6 @@ import {
   Calendar,
   Clock,
   Users,
-  Receipt,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -111,13 +110,13 @@ export const EventSummary: React.FC = () => {
   const { data: eventRaw = null, isLoading: eventLoading } = useEvent(id);
   const event = eventRaw as EventWithClient | null;
   const { data: productsRaw = [], isLoading: productsLoading } = useEventProducts(id);
-  const products = Array.isArray(productsRaw) ? productsRaw : [];
+  const products = useMemo(() => (Array.isArray(productsRaw) ? productsRaw : []), [productsRaw]);
   const { data: extrasRaw = [] } = useEventExtras(id);
-  const extras = Array.isArray(extrasRaw) ? extrasRaw : [];
+  const extras = useMemo(() => (Array.isArray(extrasRaw) ? extrasRaw : []), [extrasRaw]);
   const { data: equipmentRaw = [] } = useEventEquipment(id);
-  const equipment = Array.isArray(equipmentRaw) ? equipmentRaw : [];
+  const equipment = useMemo(() => (Array.isArray(equipmentRaw) ? equipmentRaw : []), [equipmentRaw]);
   const { data: suppliesRaw = [] } = useEventSupplies(id);
-  const supplies = Array.isArray(suppliesRaw) ? suppliesRaw : [];
+  const supplies = useMemo(() => (Array.isArray(suppliesRaw) ? suppliesRaw : []), [suppliesRaw]);
   const { data: eventPhotosRaw = [] } = useEventPhotos(id);
   const eventPhotos = Array.isArray(eventPhotosRaw) ? eventPhotosRaw : [];
   const { data: eventStaffRaw = [] } = useEventStaff(id);
@@ -163,7 +162,10 @@ export const EventSummary: React.FC = () => {
     enabled: productIdsSorted.length > 0,
   });
 
-  const allProdIngredients = Array.isArray(allProdIngredientsRaw) ? allProdIngredientsRaw : [];
+  const allProdIngredients = useMemo(
+    () => (Array.isArray(allProdIngredientsRaw) ? allProdIngredientsRaw : []),
+    [allProdIngredientsRaw],
+  );
 
   useEffect(() => {
     if (allProdIngredientsError) {
@@ -227,7 +229,7 @@ export const EventSummary: React.FC = () => {
     } else {
       setCheckedIds(new Set());
     }
-  }, [event, equipment, supplies, extras, allProdIngredients, productQuantities, id]);
+  }, [event, equipment, supplies, extras, allProdIngredients, productQuantities, id, t]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

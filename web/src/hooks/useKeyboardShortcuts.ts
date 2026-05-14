@@ -97,7 +97,7 @@ export function useKeyboardShortcuts() {
       e.preventDefault();
       shortcut.action();
     }
-  }, [currentSection, navigate, shortcuts]);
+  }, [shortcuts]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);

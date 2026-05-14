@@ -141,7 +141,6 @@ export const InventoryDetails: React.FC = () => {
     if (id && item) {
       loadDemandForecast(id, item);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, item]);
 
   const handleDeleteItem = () => {

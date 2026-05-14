@@ -110,17 +110,6 @@ const makeProduct = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 });
 
-const makeExtra = (overrides: Record<string, any> = {}) => ({
-  id: 'ex1',
-  event_id: 'e1',
-  description: 'Decoración floral',
-  cost: 300,
-  price: 500,
-  exclude_utility: false,
-  created_at: '2024-01-01',
-  ...overrides,
-});
-
 const makePayment = (overrides: Record<string, any> = {}) => ({
   id: 'pay1',
   event_id: 'e1',

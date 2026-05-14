@@ -23,7 +23,7 @@ export function useCreateOrRotateEventPublicLink(eventId: string) {
 export function useRevokeEventPublicLink(eventId: string) {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (_: void) => eventPublicLinkService.revoke(eventId),
+        mutationFn: () => eventPublicLinkService.revoke(eventId),
         onSuccess: () => {
             queryClient.setQueryData(queryKeys.eventPublicLinks.byEvent(eventId), null)
             queryClient.invalidateQueries({ queryKey: queryKeys.eventPublicLinks.byEvent(eventId) })

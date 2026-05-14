@@ -6,6 +6,7 @@ import { AuthContext } from './AuthContextInstance';
 import { useAuth } from '@/hooks/useAuth';
 import i18n from '@/i18n/config';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { AuthContext, useAuth };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

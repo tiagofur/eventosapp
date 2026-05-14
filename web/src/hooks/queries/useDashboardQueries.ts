@@ -1,12 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { dashboardService } from "@/services/dashboardService";
 import type { DashboardEventStatusScope, DashboardRevenuePeriod } from "@/types/dashboard";
-import type { components } from "@/types/api";
 import { queryKeys } from "./queryKeys";
-
-type TopClient = components["schemas"]["TopClient"];
-type ProductDemandItem = components["schemas"]["ProductDemandItem"];
-type ForecastDataPoint = components["schemas"]["ForecastDataPoint"];
 
 /**
  * Backend-aggregated KPIs for the dashboard header (sales, VAT, counts).

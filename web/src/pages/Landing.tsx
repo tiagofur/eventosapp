@@ -5,7 +5,6 @@ import {
   Calendar,
   Users,
   Package,
-  TrendingUp,
   Moon,
   Sun,
   CheckCircle,
@@ -18,7 +17,6 @@ import {
   Menu,
   X,
   MapPin,
-  DollarSign,
   Bell,
   ArrowUp,
   Clock,
@@ -26,15 +24,12 @@ import {
   Fingerprint,
   LayoutGrid,
   RefreshCw,
-  Receipt,
   CreditCard,
   Building,
   Send,
   ClipboardList,
   FileText,
-  CheckSquare,
   UsersRound,
-  Warehouse,
 } from "lucide-react";
 
 const APP_STORE_URL = "https://apps.apple.com/mx/app/solennix/id6760874129";
@@ -259,7 +254,7 @@ export const Landing: React.FC = () => {
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  const AppStoreBadge = () => (
+  const renderAppStoreBadge = () => (
     <a
       href={APP_STORE_URL}
       target="_blank"
@@ -277,7 +272,7 @@ export const Landing: React.FC = () => {
     </a>
   );
 
-  const GooglePlayBadge = () => (
+  const renderGooglePlayBadge = () => (
     <a
       href={PLAY_STORE_URL}
       target="_blank"
@@ -295,7 +290,7 @@ export const Landing: React.FC = () => {
     </a>
   );
 
-  const PhoneMockup = () => (
+  const renderPhoneMockup = () => (
     <div className="relative w-full max-w-[280px] mx-auto select-none pointer-events-none">
       <div className="relative bg-card border-[3px] border-border rounded-[44px] overflow-hidden shadow-2xl">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-7 bg-card border-b border-border rounded-b-2xl z-10 flex items-center justify-center gap-1.5">
@@ -357,7 +352,7 @@ export const Landing: React.FC = () => {
     </div>
   );
 
-  const AppMockup = () => (
+  const renderAppMockup = () => (
     <div className="relative w-full max-w-2xl mx-auto select-none pointer-events-none">
       <div className="bg-surface-alt rounded-t-2xl px-4 py-3 flex items-center gap-2">
         <span className="w-3 h-3 rounded-full bg-red-400" />
@@ -524,12 +519,12 @@ export const Landing: React.FC = () => {
                 <span className="h-px w-10 bg-border" />
               </div>
               <div className="flex flex-wrap items-center justify-center gap-4">
-                <AppStoreBadge />
-                <GooglePlayBadge />
+                {renderAppStoreBadge()}
+                {renderGooglePlayBadge()}
               </div>
             </div>
           </div>
-          <AppMockup />
+          {renderAppMockup()}
         </div>
       </section>
 
@@ -632,12 +627,12 @@ export const Landing: React.FC = () => {
                 ))}
               </ul>
               <div className="flex flex-wrap gap-4">
-                <AppStoreBadge />
-                <GooglePlayBadge />
+                {renderAppStoreBadge()}
+                {renderGooglePlayBadge()}
               </div>
             </div>
             <div className="flex justify-center lg:justify-end">
-              <PhoneMockup />
+              {renderPhoneMockup()}
             </div>
           </div>
         </div>

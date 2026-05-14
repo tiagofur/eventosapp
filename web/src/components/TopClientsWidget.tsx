@@ -1,7 +1,7 @@
 import React from "react";
 import { useTopClients } from "@/hooks/queries/useDashboardQueries";
 import { useTranslation } from "react-i18next";
-import { Users, AlertTriangle, RefreshCw } from "lucide-react";
+import { Users, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "@/lib/finance";
 
 export function TopClientsWidget() {

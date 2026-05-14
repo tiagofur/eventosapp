@@ -57,7 +57,7 @@ const formatSubPrice = (sub: { amount_cents?: number | null; currency?: string |
 export const Settings: React.FC = () => {
   const { t, i18n } = useTranslation(["settings", "common"]);
   const { user: profile, updateProfile } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const {
     eventsThisMonth,

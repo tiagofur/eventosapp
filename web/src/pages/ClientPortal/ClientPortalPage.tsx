@@ -109,6 +109,15 @@ export const ClientPortalPage: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // TODO: portal_tier contract from backend — currently not implemented
+  const isGratisView = false;
+
+  useEffect(() => {
+    if (isGratisView && activeTab !== "resumen") {
+      setActiveTab("resumen");
+    }
+  }, [isGratisView, activeTab]);
+
   const fetchHistory = async (tok: string, eventId: string, clientId: string) => {
     setHistoryLoading(true);
     try {
@@ -227,15 +236,6 @@ export const ClientPortalPage: React.FC = () => {
   }
 
   const { event, organizer, client } = data;
-  
-  // TODO: portal_tier contract from backend — currently not implemented
-  const isGratisView = false;
-
-  useEffect(() => {
-    if (isGratisView && activeTab !== "resumen") {
-      setActiveTab("resumen");
-    }
-  }, [isGratisView, activeTab]);
 
   const days = daysUntil(event.event_date);
   const countdownLabel =
@@ -244,9 +244,6 @@ export const ClientPortalPage: React.FC = () => {
       : days === 0
         ? t("portal.it_is_today")
         : t("portal.days_ago", { count: Math.abs(days) });
-
-  const paidPct =
-    data.payment.total > 0 ? Math.min(100, Math.round((data.payment.paid / data.payment.total) * 100)) : 0;
 
   const st = statusLabel(event.status, t);
   const statusToneClass =
