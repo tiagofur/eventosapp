@@ -94,4 +94,28 @@ describe('TeamInviteAccept', () => {
       expect(screen.getByText('Token expirado')).toBeInTheDocument();
     });
   });
+
+  it('accepts invite from legacy /team-invite/accept URL', async () => {
+    const checkAuth = vi.fn().mockResolvedValue(undefined);
+    (useAuth as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ checkAuth });
+    (authService.acceptTeamInvite as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      user: { role: 'team_member' },
+      tokens: {},
+    });
+
+    renderPage('/team-invite/accept?token=legacy-token');
+
+    fireEvent.change(screen.getByLabelText('Contraseña'), {
+      target: { value: 'StrongPass1' },
+    });
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), {
+      target: { value: 'StrongPass1' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /aceptar invitación/i }));
+
+    await waitFor(() => {
+      expect(authService.acceptTeamInvite).toHaveBeenCalledWith('legacy-token', 'StrongPass1');
+    });
+  });
 });

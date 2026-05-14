@@ -94,6 +94,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/team-invite" element={<TeamInviteAccept />} />
+              <Route path="/team-invite/accept" element={<TeamInviteAccept />} />
               <Route path="/register" element={<Register />} />
               <Route path="/about" element={<About />} />
               <Route path="/privacy" element={<Privacy />} />
