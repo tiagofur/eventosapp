@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -198,7 +200,7 @@ fun DashboardScreen(
                             Triple(stringResource(R.string.dashboard_kpi_net_sales), uiState.revenueThisMonth.asMXNCompact(), Triple(Icons.Default.AttachMoney, SolennixTheme.colors.kpiGreen, stringResource(R.string.dashboard_kpi_confirmed_completed))),
                             Triple(stringResource(R.string.dashboard_kpi_collected), uiState.cashCollected.asMXNCompact(), Triple(Icons.Default.Payments, SolennixTheme.colors.kpiOrange, stringResource(R.string.dashboard_kpi_this_month))),
                             Triple(stringResource(R.string.dashboard_kpi_vat_collected), uiState.vatCollected.asMXNCompact(), Triple(Icons.Default.Receipt, SolennixTheme.colors.kpiBlue, stringResource(R.string.dashboard_kpi_this_month))),
-                            Triple(stringResource(R.string.dashboard_kpi_vat_outstanding), uiState.vatOutstanding.asMXNCompact(), Triple(Icons.Default.ReceiptLong, SolennixTheme.colors.kpiBlue, stringResource(R.string.dashboard_kpi_due))),
+                            Triple(stringResource(R.string.dashboard_kpi_vat_outstanding), uiState.vatOutstanding.asMXNCompact(), Triple(Icons.AutoMirrored.Filled.ReceiptLong, SolennixTheme.colors.kpiBlue, stringResource(R.string.dashboard_kpi_due))),
                             Triple(stringResource(R.string.dashboard_kpi_events_this_month), uiState.eventsThisMonth.toString(), Triple(Icons.Default.CalendarMonth, SolennixTheme.colors.kpiOrange, null)),
                             Triple(stringResource(R.string.dashboard_kpi_low_stock), uiState.lowStockCount.toString(), Triple(Icons.Default.Inventory2, if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen, null)),
                             Triple(stringResource(R.string.dashboard_kpi_clients), uiState.totalClients.toString(), Triple(Icons.Default.People, SolennixTheme.colors.kpiBlue, stringResource(R.string.dashboard_kpi_total))),
@@ -247,7 +249,7 @@ fun DashboardScreen(
                             KPICard(title = stringResource(R.string.dashboard_kpi_net_sales), value = uiState.revenueThisMonth.asMXNCompact(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, subtitle = stringResource(R.string.dashboard_kpi_confirmed_completed), modifier = cardModifier)
                             KPICard(title = stringResource(R.string.dashboard_kpi_collected), value = uiState.cashCollected.asMXNCompact(), icon = Icons.Default.Payments, iconColor = SolennixTheme.colors.kpiOrange, subtitle = stringResource(R.string.dashboard_kpi_this_month), modifier = cardModifier)
                             KPICard(title = stringResource(R.string.dashboard_kpi_vat_collected), value = uiState.vatCollected.asMXNCompact(), icon = Icons.Default.Receipt, iconColor = SolennixTheme.colors.kpiBlue, subtitle = stringResource(R.string.dashboard_kpi_this_month), modifier = cardModifier)
-                            KPICard(title = stringResource(R.string.dashboard_kpi_vat_outstanding), value = uiState.vatOutstanding.asMXNCompact(), icon = Icons.Default.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = stringResource(R.string.dashboard_kpi_due), modifier = cardModifier)
+                            KPICard(title = stringResource(R.string.dashboard_kpi_vat_outstanding), value = uiState.vatOutstanding.asMXNCompact(), icon = Icons.AutoMirrored.Filled.ReceiptLong, iconColor = SolennixTheme.colors.kpiBlue, subtitle = stringResource(R.string.dashboard_kpi_due), modifier = cardModifier)
                             KPICard(title = stringResource(R.string.dashboard_kpi_events_this_month), value = uiState.eventsThisMonth.toString(), icon = Icons.Default.CalendarMonth, iconColor = SolennixTheme.colors.kpiOrange, modifier = cardModifier)
                             KPICard(title = stringResource(R.string.dashboard_kpi_low_stock), value = uiState.lowStockCount.toString(), icon = Icons.Default.Inventory2, iconColor = if (uiState.lowStockCount > 0) SolennixTheme.colors.kpiOrange else SolennixTheme.colors.kpiGreen, modifier = cardModifier)
                             KPICard(title = stringResource(R.string.dashboard_kpi_clients), value = uiState.totalClients.toString(), icon = Icons.Default.People, iconColor = SolennixTheme.colors.kpiBlue, subtitle = stringResource(R.string.dashboard_kpi_total), modifier = cardModifier)

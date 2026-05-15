@@ -29,15 +29,15 @@ internal fun renderContractTemplate(
     }
 
     val eventDate = try {
-        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale("es", "MX"))
-        val display = java.text.SimpleDateFormat("d 'de' MMMM, yyyy", java.util.Locale("es", "MX"))
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.forLanguageTag("es-MX"))
+        val display = java.text.SimpleDateFormat("d 'de' MMMM, yyyy", java.util.Locale.forLanguageTag("es-MX"))
         val date = sdf.parse(event.eventDate.take(10))
         if (date != null) display.format(date) else event.eventDate
     } catch (_: Exception) {
         event.eventDate
     }
 
-    val today = java.text.SimpleDateFormat("d 'de' MMMM, yyyy", java.util.Locale("es", "MX")).format(java.util.Date())
+    val today = java.text.SimpleDateFormat("d 'de' MMMM, yyyy", java.util.Locale.forLanguageTag("es-MX")).format(java.util.Date())
 
     val servicesList = if (products.isNotEmpty()) {
         products.joinToString(", ") { "${it.quantity.formatQuantity()} ${it.productName ?: "Producto"}" }

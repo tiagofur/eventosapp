@@ -30,6 +30,6 @@ fun parseFlexibleDate(dateStr: String): LocalDate? {
 
 fun String.toFormattedDate(): String {
     val date = parseFlexibleDate(this) ?: return this
-    val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale("es", "MX"))
+    val formatter = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("es-MX"))
     return date.format(formatter)
 }

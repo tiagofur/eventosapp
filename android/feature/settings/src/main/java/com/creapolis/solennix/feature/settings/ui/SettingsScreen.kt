@@ -9,7 +9,9 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -177,7 +179,7 @@ fun SettingsScreen(
                             SettingsItem(icon = Icons.Default.Star, label = stringResource(R.string.settings_action_manage_plan), onClick = onPricing)
                         }
                         SettingsSection(title = stringResource(R.string.settings_section_information)) {
-                            SettingsItem(icon = Icons.Default.HelpOutline, label = stringResource(R.string.settings_action_help_center), onClick = onHelp)
+                            SettingsItem(icon = Icons.AutoMirrored.Filled.HelpOutline, label = stringResource(R.string.settings_action_help_center), onClick = onHelp)
                             SettingsItem(icon = Icons.Default.Info, label = stringResource(R.string.settings_action_about), onClick = onAbout)
                             SettingsItem(icon = Icons.Default.Shield, label = stringResource(R.string.settings_action_privacy_policy), onClick = onPrivacy)
                             SettingsItem(icon = Icons.Default.Description, label = stringResource(R.string.settings_action_terms_conditions), onClick = onTerms)
@@ -208,7 +210,7 @@ fun SettingsScreen(
                     SettingsItem(icon = Icons.Default.Star, label = stringResource(R.string.settings_action_manage_plan), onClick = onPricing)
                 }
                 SettingsSection(title = stringResource(R.string.settings_section_information)) {
-                    SettingsItem(icon = Icons.Default.HelpOutline, label = stringResource(R.string.settings_action_help_center), onClick = onHelp)
+                    SettingsItem(icon = Icons.AutoMirrored.Filled.HelpOutline, label = stringResource(R.string.settings_action_help_center), onClick = onHelp)
                     SettingsItem(icon = Icons.Default.Info, label = stringResource(R.string.settings_action_about), onClick = onAbout)
                     SettingsItem(icon = Icons.Default.Shield, label = stringResource(R.string.settings_action_privacy_policy), onClick = onPrivacy)
                     SettingsItem(icon = Icons.Default.Description, label = stringResource(R.string.settings_action_terms_conditions), onClick = onTerms)
@@ -276,7 +278,7 @@ fun LogoutItem(onClick: () -> Unit) {
         },
         leadingContent = {
             Icon(
-                imageVector = Icons.Default.Logout,
+                imageVector = Icons.AutoMirrored.Filled.Logout,
                 contentDescription = stringResource(DesignSystemR.string.cd_logout),
                 tint = SolennixTheme.colors.error
             )

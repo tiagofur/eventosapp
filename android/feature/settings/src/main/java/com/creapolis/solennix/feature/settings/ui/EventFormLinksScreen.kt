@@ -249,7 +249,7 @@ private fun EventFormLinkCard(
 
             // Dates
             val dateFormatter = remember {
-                DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("es", "MX"))
+                DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.forLanguageTag("es-MX"))
             }
             val createdDate = remember(link.createdAt) {
                 parseFlexibleDate(link.createdAt)?.format(dateFormatter) ?: link.createdAt

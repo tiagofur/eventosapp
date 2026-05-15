@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -204,7 +205,7 @@ fun InventoryDetailScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             InventoryKpiCard(
-                                icon = Icons.Default.TrendingDown,
+                                icon = Icons.AutoMirrored.Filled.TrendingDown,
                                 iconColor = colors.secondaryText,
                                 label = InventoryStrings.minimumStock,
                                 value = "${item.minimumStock.let { if (it == it.toLong().toDouble()) it.toLong().toString() else "%.1f".format(it) }}",
@@ -528,7 +529,7 @@ private fun DemandForecastCard(
                     val dateFormatter = if (Locale.getDefault().language.startsWith("en")) {
                         DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH)
                     } else {
-                        DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es"))
+                        DateTimeFormatter.ofPattern("d 'de' MMMM", Locale.forLanguageTag("es"))
                     }
                 var accumulated = currentStock
 

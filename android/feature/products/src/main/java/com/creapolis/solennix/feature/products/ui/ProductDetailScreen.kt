@@ -7,6 +7,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -223,7 +225,7 @@ fun ProductDetailScreen(
                                 else -> Color(0xFFFF9800)
                             }
                             KpiCard(
-                                icon = Icons.Default.TrendingUp,
+                                icon = Icons.AutoMirrored.Filled.TrendingUp,
                                 iconColor = marginColor,
                                 label = ProductStrings.marginEstimated,
                                 value = "%.1f%%".format(uiState.margin),
@@ -459,7 +461,7 @@ private fun GeneralInfoCard(
                 fontWeight = FontWeight.SemiBold,
                 color = colors.secondaryText
             )
-            InfoRow(Icons.Default.Label, ProductStrings.category, category, colors)
+            InfoRow(Icons.AutoMirrored.Filled.Label, ProductStrings.category, category, colors)
             HorizontalDivider(color = colors.divider)
             InfoRow(Icons.Default.AttachMoney, ProductStrings.basePrice, basePrice.asMXN(), colors)
             HorizontalDivider(color = colors.divider)

@@ -17,9 +17,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Card
@@ -140,7 +140,7 @@ fun StaffFormScreen(
                         value = viewModel.notes,
                         onValueChange = { viewModel.notes = it },
                         label = "Notas (tarifa habitual, especialidad, disponibilidad...)",
-                        leadingIcon = Icons.Default.Notes
+                        leadingIcon = Icons.AutoMirrored.Filled.Notes
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 

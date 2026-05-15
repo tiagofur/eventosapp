@@ -157,7 +157,7 @@ private fun TeamMemberAssignmentCard(
 ) {
     val status = AssignmentStatus.fromString(assignment.status)
     val isPending = status == AssignmentStatus.PENDING
-    val moneyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("es", "MX")) }
+    val moneyFormatter = remember { NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-MX")) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),

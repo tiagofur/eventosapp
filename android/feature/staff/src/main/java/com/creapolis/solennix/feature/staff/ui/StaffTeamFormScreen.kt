@@ -20,11 +20,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -122,7 +122,7 @@ fun StaffTeamFormScreen(
                     value = viewModel.notes,
                     onValueChange = { viewModel.notes = it },
                     label = "Notas",
-                    leadingIcon = Icons.Default.Notes
+                    leadingIcon = Icons.AutoMirrored.Filled.Notes
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))

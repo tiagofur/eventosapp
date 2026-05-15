@@ -109,8 +109,8 @@ internal object ProductStrings {
     val defaultUnit: String get() = if (isEnglish) "unit" else "und"
     fun shortDateFormatter(): DateTimeFormatter =
         if (isEnglish) DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
-        else DateTimeFormatter.ofPattern("d MMM", Locale("es"))
+        else DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es"))
     fun longDateFormatter(): DateTimeFormatter =
         if (isEnglish) DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH)
-        else DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es"))
+        else DateTimeFormatter.ofPattern("d 'de' MMMM", Locale.forLanguageTag("es"))
 }

@@ -1,5 +1,8 @@
 package com.creapolis.solennix.feature.staff.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +17,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,7 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -72,7 +75,7 @@ fun StaffDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
-    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     val hasPendingInvite = uiState.inviteUrl != null || isPendingInviteStatus(uiState.staff?.inviteStatus)
@@ -228,7 +231,7 @@ fun StaffDetailScreen(
                             Column(modifier = Modifier.padding(20.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
-                                        Icons.Default.Notes,
+                                        Icons.AutoMirrored.Filled.Notes,
                                         contentDescription = null,
                                         tint = SolennixTheme.colors.primary
                                     )
@@ -313,7 +316,10 @@ fun StaffDetailScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 TextButton(
                                     onClick = {
-                                        clipboard.setText(AnnotatedString(uiState.inviteUrl.orEmpty()))
+                                        val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboardManager.setPrimaryClip(
+                                            ClipData.newPlainText("invite_url", uiState.inviteUrl.orEmpty())
+                                        )
                                     }
                                 ) {
                                     Icon(Icons.Default.ContentCopy, contentDescription = null)
@@ -408,7 +414,7 @@ fun StaffDetailScreen(
                             enabled = !uiState.isInviting,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Send, contentDescription = null)
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(if (uiState.isInviting) "Invitando..." else "Invitar acceso")
                         }

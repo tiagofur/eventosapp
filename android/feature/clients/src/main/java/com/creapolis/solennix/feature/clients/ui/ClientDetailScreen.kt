@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -176,7 +177,7 @@ fun ClientDetailScreen(
                                 KPICard(title = stringResource(R.string.clients_stats_total_spent), value = uiState.totalSpent.asMXN(), icon = Icons.Default.AttachMoney, iconColor = SolennixTheme.colors.kpiGreen, modifier = Modifier.weight(1f))
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                KPICard(title = stringResource(R.string.clients_stats_average), value = uiState.averagePerEvent.asMXN(), icon = Icons.Default.TrendingUp, iconColor = SolennixTheme.colors.kpiOrange, modifier = Modifier.weight(1f))
+                                KPICard(title = stringResource(R.string.clients_stats_average), value = uiState.averagePerEvent.asMXN(), icon = Icons.AutoMirrored.Filled.TrendingUp, iconColor = SolennixTheme.colors.kpiOrange, modifier = Modifier.weight(1f))
                                 Spacer(modifier = Modifier.weight(1f))
                             }
                         }

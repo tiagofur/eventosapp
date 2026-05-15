@@ -60,7 +60,6 @@ object HapticFeedbackManager {
             }
             vibrator.vibrate(effect)
         } else {
-            @Suppress("DEPRECATION")
             val duration = when (type) {
                 HapticFeedbackType.LIGHT_TAP -> 10L
                 HapticFeedbackType.MEDIUM_TAP -> 20L
@@ -71,7 +70,8 @@ object HapticFeedbackManager {
                 HapticFeedbackType.SELECTION_CHANGED -> 10L
                 HapticFeedbackType.LONG_PRESS -> 20L
             }
-            vibrator.vibrate(duration)
+            val effect = VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE)
+            vibrator.vibrate(effect)
         }
     }
 

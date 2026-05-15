@@ -318,7 +318,7 @@ private fun PaymentStatusChip(status: String, strings: PaymentInboxStrings) {
 }
 
 private fun formatMXN(amount: Double): String =
-    NumberFormat.getCurrencyInstance(Locale("es", "MX")).format(amount)
+    NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-MX")).format(amount)
 
 private fun formatDate(isoDate: String): String = try {
     val parts = isoDate.substringBefore("T").split("-")
