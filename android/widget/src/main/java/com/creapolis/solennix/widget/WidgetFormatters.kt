@@ -19,9 +19,13 @@ object WidgetFormatters {
             val date = LocalDate.parse(dateString.take(10))
             val dayFormatter = DateTimeFormatter.ofPattern("d")
             val monthFormatter = DateTimeFormatter.ofPattern("MMM", esMxLocale)
+            val normalizedMonth = date.format(monthFormatter)
+                .replace(".", "")
+                .trim()
+                .uppercase(esMxLocale)
             FormattedDate(
                 day = date.format(dayFormatter),
-                month = date.format(monthFormatter).uppercase()
+                month = normalizedMonth
             )
         } catch (_: Exception) {
             FormattedDate("--", "---")
