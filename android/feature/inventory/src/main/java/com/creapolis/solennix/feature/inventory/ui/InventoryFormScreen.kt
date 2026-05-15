@@ -169,7 +169,7 @@ fun InventoryFormScreen(
                                         onValueChange = { viewModel.unit = it },
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .menuAnchor(MenuAnchorType.PrimaryEditable),
+                                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true),
                                         label = { Text(InventoryStrings.unitRequired) },
                                         leadingIcon = {
                                             Icon(

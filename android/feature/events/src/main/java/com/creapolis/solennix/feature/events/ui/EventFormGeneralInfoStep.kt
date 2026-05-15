@@ -199,7 +199,7 @@ fun StepGeneralInfo(viewModel: EventFormViewModel) {
                     readOnly = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showStatusMenu) },
                     shape = RoundedCornerShape(12.dp),
                 )

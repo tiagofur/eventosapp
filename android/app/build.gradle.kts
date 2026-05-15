@@ -294,23 +294,22 @@ val missingReleaseSecrets: List<String> = buildList {
     )
 }
 
-tasks.matching { it.name.startsWith("assembleRelease") || it.name.startsWith("bundleRelease") }
-    .configureEach {
-        // Opt out of configuration cache for this task — the doFirst closure below
-        // captures the `missingReleaseSecrets` list which, despite being a plain
-        // List<String>, still triggers Gradle script object serialization errors when
-        // embedded inside the task action. This only affects release tasks; debug and
-        // library tasks remain configuration-cache compatible.
-        notCompatibleWithConfigurationCache(
-            "Release secret verification uses buildscript values that cannot be serialized"
-        )
-        doFirst {
-            if (missingReleaseSecrets.isNotEmpty()) {
-                throw GradleException(
-                    "Cannot build release: missing required config:\n" +
-                        missingReleaseSecrets.joinToString("\n") { "  - $it" } +
-                        "\n\nSee obsidian/Solennix/Android/Firma y Secretos de Release.md"
-                )
+val releaseTaskRequested = gradle.startParameter.taskNames.any { name ->
+    val lower = name.lowercase()
+    ("release" in lower) && ("assemble" in lower || "bundle" in lower)
+}
+
+if (releaseTaskRequested) {
+    tasks.matching { it.name.startsWith("assembleRelease") || it.name.startsWith("bundleRelease") }
+        .configureEach {
+            doFirst {
+                if (missingReleaseSecrets.isNotEmpty()) {
+                    throw GradleException(
+                        "Cannot build release: missing required config:\n" +
+                            missingReleaseSecrets.joinToString("\n") { "  - $it" } +
+                            "\n\nSee obsidian/Solennix/Android/Firma y Secretos de Release.md"
+                    )
+                }
             }
         }
-    }
+}
