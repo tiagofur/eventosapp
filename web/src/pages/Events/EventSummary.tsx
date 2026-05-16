@@ -28,19 +28,12 @@ import {
   Calendar,
   Clock,
   Users,
-  Receipt,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  generateBudgetPDF,
-  generateContractPDF,
-  generateShoppingListPDF,
-  generateChecklistPDF,
-  generatePaymentReportPDF,
-} from "@/lib/pdfGenerator";
+import { downloadEventPDF } from "@/services/pdfService";
 import { logError } from "@/lib/errorHandler";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { getEventTotalCharged, getEventTaxAmount, getEventNetSales } from "@/lib/finance";
@@ -117,13 +110,13 @@ export const EventSummary: React.FC = () => {
   const { data: eventRaw = null, isLoading: eventLoading } = useEvent(id);
   const event = eventRaw as EventWithClient | null;
   const { data: productsRaw = [], isLoading: productsLoading } = useEventProducts(id);
-  const products = Array.isArray(productsRaw) ? productsRaw : [];
+  const products = useMemo(() => (Array.isArray(productsRaw) ? productsRaw : []), [productsRaw]);
   const { data: extrasRaw = [] } = useEventExtras(id);
-  const extras = Array.isArray(extrasRaw) ? extrasRaw : [];
+  const extras = useMemo(() => (Array.isArray(extrasRaw) ? extrasRaw : []), [extrasRaw]);
   const { data: equipmentRaw = [] } = useEventEquipment(id);
-  const equipment = Array.isArray(equipmentRaw) ? equipmentRaw : [];
+  const equipment = useMemo(() => (Array.isArray(equipmentRaw) ? equipmentRaw : []), [equipmentRaw]);
   const { data: suppliesRaw = [] } = useEventSupplies(id);
-  const supplies = Array.isArray(suppliesRaw) ? suppliesRaw : [];
+  const supplies = useMemo(() => (Array.isArray(suppliesRaw) ? suppliesRaw : []), [suppliesRaw]);
   const { data: eventPhotosRaw = [] } = useEventPhotos(id);
   const eventPhotos = Array.isArray(eventPhotosRaw) ? eventPhotosRaw : [];
   const { data: eventStaffRaw = [] } = useEventStaff(id);
@@ -169,7 +162,10 @@ export const EventSummary: React.FC = () => {
     enabled: productIdsSorted.length > 0,
   });
 
-  const allProdIngredients = Array.isArray(allProdIngredientsRaw) ? allProdIngredientsRaw : [];
+  const allProdIngredients = useMemo(
+    () => (Array.isArray(allProdIngredientsRaw) ? allProdIngredientsRaw : []),
+    [allProdIngredientsRaw],
+  );
 
   useEffect(() => {
     if (allProdIngredientsError) {
@@ -233,7 +229,7 @@ export const EventSummary: React.FC = () => {
     } else {
       setCheckedIds(new Set());
     }
-  }, [event, equipment, supplies, extras, allProdIngredients, productQuantities, id]);
+  }, [event, equipment, supplies, extras, allProdIngredients, productQuantities, id, t]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -464,8 +460,13 @@ export const EventSummary: React.FC = () => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    generateBudgetPDF(event, profile as UserProfile | null, products, extras, i18n.language);
+                  onClick={async () => {
+                    try {
+                      await downloadEventPDF(id, 'budget');
+                    } catch (err) {
+                      logError("Error generating budget PDF", err);
+                      addToast(t('events:summary.error_pdf'), "error");
+                    }
                     setActionsDropdownOpen(false);
                   }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -476,15 +477,13 @@ export const EventSummary: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    const purchaseSupplies = supplies
-                      .filter((s: EventSupply) => s.source === 'purchase')
-                      .map((s: EventSupply) => ({
-                        name: s.supply_name || t('events:summary.supply_fallback'),
-                        quantity: s.quantity,
-                        unit: s.unit || t('events:summary.unit_each'),
-                      }));
-                    generateShoppingListPDF(event, profile as UserProfile | null, [...ingredients, ...purchaseSupplies], i18n.language);
+                  onClick={async () => {
+                    try {
+                      await downloadEventPDF(id, 'shopping-list');
+                    } catch (err) {
+                      logError("Error generating shopping list PDF", err);
+                      addToast(t('events:summary.error_pdf'), "error");
+                    }
                     setActionsDropdownOpen(false);
                   }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"
@@ -497,30 +496,9 @@ export const EventSummary: React.FC = () => {
                   type="button"
                   onClick={async () => {
                     try {
-                      const productQuantities = new Map<string, number>();
-                      products.forEach((p: EventProductWithDetails) => productQuantities.set(p.product_id, p.quantity || 0));
-                      // Use cached ingredients from React Query instead of refetching
-                      const allIngredients = allProdIngredients || [];
-                      const aggregated: Record<string, { name: string; quantity: number; unit: string }> = {};
-                      (allIngredients || [])
-                        .filter((ing: ProductIngredientWithInventory) => ing.type === 'ingredient' && ing.bring_to_event)
-                        .forEach((ing: ProductIngredientWithInventory) => {
-                          const key = ing.inventory_id;
-                          const qty = productQuantities.get(ing.product_id) || 0;
-                          if (!aggregated[key]) {
-                            aggregated[key] = { name: ing.ingredient_name || t('events:summary.supply_fallback'), unit: ing.unit || '', quantity: 0 };
-                          }
-                          aggregated[key].quantity += (ing.quantity_required || 0) * qty;
-                        });
-                      const allEventSupplies = supplies
-                        .map((s: EventSupply) => ({
-                          name: s.supply_name || t('events:summary.supply_fallback'),
-                          quantity: s.quantity,
-                          unit: s.unit || t('events:summary.unit_each'),
-                        }));
-                      generateChecklistPDF(event, profile as UserProfile | null, products, equipment, [...Object.values(aggregated), ...allEventSupplies], extras, i18n.language);
+                      await downloadEventPDF(id, 'checklist');
                     } catch (err) {
-                      logError("Error generating checklist", err);
+                      logError("Error generating checklist PDF", err);
                       addToast(t('events:summary.error_checklist'), "error");
                     }
                     setActionsDropdownOpen(false);
@@ -534,16 +512,12 @@ export const EventSummary: React.FC = () => {
                 <button
                   type="button"
                   disabled={!isDownpaymentMet}
-                  onClick={() => {
+                  onClick={async () => {
                     try {
-                      generateContractPDF(event, profile as UserProfile | null, undefined, products, payments, i18n.language);
-                    } catch (error) {
-                      const message =
-                        error instanceof ContractTemplateError
-                          ? `Faltan datos del contrato: ${error.missingTokens.map((t) => `[${t}]`).join(", ")}`
-                          : "Error al generar contrato.";
-                      addToast(message, "error");
-                      return;
+                      await downloadEventPDF(id, 'contract');
+                    } catch (err) {
+                      logError("Error generating contract PDF", err);
+                      addToast(t('events:summary.error_pdf'), "error");
                     }
                     setActionsDropdownOpen(false);
                   }}
@@ -561,8 +535,13 @@ export const EventSummary: React.FC = () => {
                 {viewMode === "payments" && payments.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => {
-                      generatePaymentReportPDF(event, profile as UserProfile | null, payments, i18n.language);
+                    onClick={async () => {
+                      try {
+                        await downloadEventPDF(id, 'payment-report');
+                      } catch (err) {
+                        logError("Error generating payment report PDF", err);
+                        addToast(t('events:summary.error_pdf'), "error");
+                      }
                       setActionsDropdownOpen(false);
                     }}
                     className="w-full flex items-center px-4 py-2.5 text-sm text-text hover:bg-surface-alt dark:hover:bg-surface transition-colors"

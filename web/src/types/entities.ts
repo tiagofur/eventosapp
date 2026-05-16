@@ -191,14 +191,25 @@ export interface Staff {
     notes?: string | null
     notification_email_opt_in: boolean
     // Phase 3 hook — poblado cuando el organizer invita al colaborador a
-    // registrarse (solo tier Business). Phase 1 siempre es null/undefined.
+    // registrarse (tiers Pro/Business). Phase 1 siempre es null/undefined.
     invited_user_id?: string | null
+    invite_status?: 'pending' | 'accepted' | 'revoked' | 'expired' | null
     created_at: string
     updated_at: string
 }
 
 export type StaffInsert = Omit<Staff, 'id' | 'user_id' | 'created_at' | 'updated_at'>
 export type StaffUpdate = Partial<StaffInsert>
+
+export interface StaffInviteResponse {
+    invite_id: string
+    staff_id: string
+    email: string
+    status: 'pending' | 'accepted' | 'revoked' | 'expired'
+    accept_url: string
+    expires_at: string
+    created_at: string
+}
 
 // Status de una asignación Staff↔Evento. Default backend: 'confirmed'.
 // En writes: null/omit = preservar el valor actual en upsert.
@@ -209,6 +220,8 @@ export interface EventStaff {
     id: string
     event_id: string
     staff_id: string
+    offer_group_id?: string | null
+    offer_slots?: number | null
     fee_amount?: number | null
     role_override?: string | null
     notes?: string | null
@@ -305,6 +318,33 @@ export interface StaffAvailability {
     staff_id: string
     staff_name: string
     assignments: StaffAvailabilityAssignment[]
+}
+
+export type AssignmentPortalResponse = 'accept' | 'decline'
+
+export interface TeamMemberAssignment {
+    event_staff_id: string
+    event_id: string
+    event_name: string
+    event_date: string
+    staff_id: string
+    status: AssignmentStatus
+    fee_amount?: number | null
+    role_override?: string | null
+    notes?: string | null
+    shift_start?: string | null
+    shift_end?: string | null
+    offer_group_id?: string | null
+    offer_slots?: number | null
+    notification_last_result?: string | null
+    notification_sent_at?: string | null
+}
+
+export interface AssignmentResponseOutcome {
+    event_staff_id: string
+    final_status: AssignmentStatus
+    seats_remaining: number
+    auto_declined_count: number
 }
 
 // ===== Pagination =====

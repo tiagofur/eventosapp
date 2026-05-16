@@ -16,40 +16,17 @@ struct MoreMenuView: View {
         List {
             // Catalog section
             Section {
-                NavigationLink(value: Route.productList) {
-                    menuRow(
-                        icon: "shippingbox.fill",
-                        title: "Productos",
-                        subtitle: "Catálogo y recetas",
-                        color: SolennixColors.primary
-                    )
-                }
-
-                NavigationLink(value: Route.inventoryList) {
-                    menuRow(
-                        icon: "archivebox.fill",
-                        title: "Inventario",
-                        subtitle: "Stock de ingredientes",
-                        color: SolennixColors.warning
-                    )
-                }
-
-                NavigationLink(value: Route.staffList) {
-                    menuRow(
-                        icon: "person.3.fill",
-                        title: "Personal",
-                        subtitle: "Colaboradores y equipo",
-                        color: SolennixColors.info
-                    )
-                }
-
-                NavigationLink(value: Route.eventFormLinks) {
-                    menuRow(
-                        icon: "link",
-                        title: "Enlaces de Formulario",
-                        subtitle: "Formularios para clientes nuevos",
-                        color: SolennixColors.success
-                    )
+                ForEach(SidebarSection.moreMenuCatalogSections, id: \.self) { section in
+                    if let route = section.route {
+                        NavigationLink(value: route) {
+                            menuRow(
+                                icon: section.iconName,
+                                title: section.title,
+                                subtitle: section.moreMenuSubtitle,
+                                color: rowColor(for: section)
+                            )
+                        }
+                    }
                 }
             } header: {
                 Text("Catálogo")
@@ -60,13 +37,15 @@ struct MoreMenuView: View {
 
             // Settings section
             Section {
-                NavigationLink(value: Route.settings) {
-                    menuRow(
-                        icon: "gearshape.fill",
-                        title: "Ajustes",
-                        subtitle: "Perfil, negocio, cuenta",
-                        color: SolennixColors.textSecondary
-                    )
+                if let settingsRoute = SidebarSection.settings.route {
+                    NavigationLink(value: settingsRoute) {
+                        menuRow(
+                            icon: SidebarSection.settings.iconName,
+                            title: SidebarSection.settings.title,
+                            subtitle: SidebarSection.settings.moreMenuSubtitle,
+                            color: SolennixColors.textSecondary
+                        )
+                    }
                 }
             } header: {
                 Text("Configuración")
@@ -110,6 +89,21 @@ struct MoreMenuView: View {
             }
         }
         .padding(.vertical, Spacing.xs)
+    }
+
+    private func rowColor(for section: SidebarSection) -> Color {
+        switch section {
+        case .products, .paymentInbox:
+            return SolennixColors.primary
+        case .inventory:
+            return SolennixColors.warning
+        case .eventFormLinks:
+            return SolennixColors.success
+        case .personnel:
+            return SolennixColors.info
+        default:
+            return SolennixColors.textSecondary
+        }
     }
 }
 

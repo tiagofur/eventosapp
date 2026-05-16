@@ -533,8 +533,8 @@ function MonthlyRevenueTrendCard({ points }: { points: DashboardRevenuePoint[] }
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-sm font-semibold text-text">{t('dashboard:revenue_chart.title')}</h3>
       </div>
-      <div className="h-60 w-full" role="img" aria-label={t('dashboard:revenue_chart.aria_label')}>
-        <ResponsiveContainer width="100%" height={240}>
+      <div className="h-60 w-full min-h-[240px]" role="img" aria-label={t('dashboard:revenue_chart.aria_label')}>
+        <ResponsiveContainer width="100%" height={240} minWidth={1} minHeight={1}>
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
             <XAxis

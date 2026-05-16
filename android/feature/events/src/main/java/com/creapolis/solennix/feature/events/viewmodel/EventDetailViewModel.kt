@@ -248,12 +248,9 @@ class EventDetailViewModel @Inject constructor(
                 paymentRepository.createPayment(newPayment)
                 // Flow automatically updates via Room -> paymentRepository.getPaymentsByEventId
 
-                // Auto status change: if event is "quoted", change to "confirmed" on first payment
-                if (currentEvent != null && currentEvent.status == EventStatus.QUOTED) {
-                    val updated = currentEvent.copy(status = EventStatus.CONFIRMED)
-                    eventRepository.updateEvent(updated)
-                    _event.value = updated
-                }
+                // Reload event from backend — the server auto-confirms quoted -> confirmed
+                // when accumulated payments cover the required deposit.
+                loadEvent()
             } catch (e: Exception) {
                 _errorMessage.value = tr(R.string.events_detail_error_add_payment, e.message.orEmpty())
             }
@@ -428,6 +425,10 @@ class EventDetailViewModel @Inject constructor(
             }
         }
     }
+
+    /** Downloads a PDF from the backend and returns the raw bytes. */
+    suspend fun downloadEventPdf(type: String): ByteArray =
+        apiService.getBytes(Endpoints.eventPdf(eventId, type))
 }
 
 /**

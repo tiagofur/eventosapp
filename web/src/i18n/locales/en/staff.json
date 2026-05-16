@@ -22,6 +22,13 @@
       "description_base": "Add photographers, DJs, waiters, coordinators and assign them to your events.",
       "action": "Add staff member"
     },
+    "success_create": "Staff member created successfully",
+    "success_update": "Staff member updated successfully",
+    "success_delete": "Staff member deleted successfully",
+    "error_create": "Error creating staff member",
+    "error_update": "Error updating staff member",
+    "error_delete": "Error deleting staff member",
+    "error_respond_assignment": "Could not respond to assignment.",
     "delete_confirm": {
       "title": "Delete staff member",
       "description": "They will be removed from the catalog and any assigned events. This action cannot be undone.",
@@ -121,6 +128,12 @@
         "description": "Add your first squad. Group photographers, waiters or coordinators and assign them to an event in one click.",
         "action": "Create team"
       },
+      "success_create": "Team created successfully",
+      "success_update": "Team updated successfully",
+      "success_delete": "Team deleted successfully",
+      "error_create": "Error creating team",
+      "error_update": "Error updating team",
+      "error_delete": "Error deleting team",
       "delete_confirm": {
         "title": "Delete team",
         "description": "The team will be removed. Staff members in the team remain available in your catalog.",

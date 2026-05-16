@@ -11,7 +11,7 @@ import { EventSummary } from './EventSummary';
 import { eventService } from '../../services/eventService';
 import { productService } from '../../services/productService';
 import { paymentService } from '../../services/paymentService';
-import { generateContractPDF, generatePaymentReportPDF } from '../../lib/pdfGenerator';
+import { downloadEventPDF } from '../../services/pdfService';
 import { logError } from '../../lib/errorHandler';
 import { ContractTemplateError } from '../../lib/contractTemplate';
 import { installEventSummaryMocks } from './__tests__/eventSummaryFixtures';
@@ -97,11 +97,8 @@ vi.mock('../../services/subscriptionService', () => ({
   },
 }));
 
-vi.mock('../../lib/pdfGenerator', () => ({
-  generateBudgetPDF: vi.fn(),
-  generateContractPDF: vi.fn(),
-  generateShoppingListPDF: vi.fn(),
-  generatePaymentReportPDF: vi.fn(),
+vi.mock('../../services/pdfService', () => ({
+  downloadEventPDF: vi.fn(),
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
@@ -238,7 +235,9 @@ describe('EventSummary — payments & edge cases', () => {
     expect(screen.getByText('Reporte de Pagos')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Reporte de Pagos'));
 
-    expect(generatePaymentReportPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'payment-report');
+    });
   });
 
   it('does not show payment report option when not in payments view', async () => {
@@ -262,7 +261,7 @@ describe('EventSummary — payments & edge cases', () => {
   // Pre-existing because hidden by worker crash.
   it('handles contract PDF generation error with ContractTemplateError', async () => {
     const templateError = new ContractTemplateError('Missing tokens', [], ['event_city', 'client_address']);
-    (generateContractPDF as any).mockImplementation(() => { throw templateError; });
+    (downloadEventPDF as any).mockRejectedValueOnce(templateError);
     (paymentService.getByEventId as any).mockResolvedValue([{ amount: 600 }]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
@@ -276,13 +275,17 @@ describe('EventSummary — payments & edge cases', () => {
     const contratoMenuItem = menuItems.find(el => el.closest('[role="menuitem"]')) || menuItems[menuItems.length - 1];
     fireEvent.click(contratoMenuItem);
 
-    expect(generateContractPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'contract');
+      expect(logError).toHaveBeenCalledWith('Error generating contract PDF', templateError);
+    });
   });
 
   // TODO(contract-freeze-web): pre-existing fail — same root cause as the
   // ContractTemplateError variant above.
   it('handles contract PDF generation with generic error', async () => {
-    (generateContractPDF as any).mockImplementation(() => { throw new Error('generic error'); });
+    const error = new Error('generic error');
+    (downloadEventPDF as any).mockRejectedValueOnce(error);
     (paymentService.getByEventId as any).mockResolvedValue([{ amount: 600 }]);
 
     render(<MemoryRouter><EventSummary /></MemoryRouter>);
@@ -296,7 +299,10 @@ describe('EventSummary — payments & edge cases', () => {
     const contratoMenuItem = menuItems.find(el => el.closest('[role="menuitem"]')) || menuItems[menuItems.length - 1];
     fireEvent.click(contratoMenuItem);
 
-    expect(generateContractPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'contract');
+      expect(logError).toHaveBeenCalledWith('Error generating contract PDF', error);
+    });
   });
 
   it('renders ingredient stock status with "needs more" and "OK"', async () => {

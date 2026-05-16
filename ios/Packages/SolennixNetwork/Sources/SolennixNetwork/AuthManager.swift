@@ -243,6 +243,28 @@ public final class AuthManager {
         return response.user
     }
 
+    // MARK: - Accept Team Invite
+
+    /// Accepts a team-member invitation token and creates an account with password.
+    @discardableResult
+    public func acceptTeamInvite(token: String, password: String) async throws -> User {
+        isLoading = true
+        defer { isLoading = false }
+
+        guard let client = apiClient else {
+            throw APIError.unknown
+        }
+
+        let body = ["token": token, "password": password]
+        let response: AuthResponse = try await client.post(Endpoint.teamInviteAccept, body: body)
+
+        storeTokens(access: response.accessToken, refresh: response.refreshToken)
+        currentUser = response.user
+        authState = .authenticated(response.user)
+        userTrackingDelegate?.setUser(id: response.user.id, email: response.user.email, name: response.user.name)
+        return response.user
+    }
+
     // MARK: - Sign In with Apple
 
     /// Authenticate with an Apple identity token from Sign in with Apple.

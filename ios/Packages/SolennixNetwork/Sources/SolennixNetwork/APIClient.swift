@@ -128,6 +128,16 @@ public actor APIClient {
         return try await performRaw(request)
     }
 
+    /// Perform a POST request with a JSON body and return the raw response Data.
+    public func postData(
+        _ endpoint: String,
+        body: some Encodable
+    ) async throws -> Data {
+        var request = try buildRequest(endpoint, method: "POST")
+        request.httpBody = try encoder.encode(body)
+        return try await performRaw(request)
+    }
+
     /// Fetch a paginated response, with fallback to plain array.
     /// Use this for list views that expect PaginatedResponse but the backend may return a plain array.
     public func getPaginated<T: Decodable>(
@@ -256,6 +266,38 @@ public actor APIClient {
                 apiError: apiError,
                 endpoint: endpoint,
                 method: "PUT",
+                bodyData: bodyData,
+                idempotencyKey: request.value(forHTTPHeaderField: "X-Idempotency-Key")
+            ) {
+                let queuedError = APIError.networkError(
+                    "Sin conexión: guardamos tu cambio y se enviará automáticamente al reconectarte."
+                )
+                showErrorToast(for: queuedError)
+                throw queuedError
+            }
+            if case .networkError = apiError {
+                showErrorToast(for: apiError)
+            }
+
+            throw apiError
+        }
+    }
+
+    public func patch<T: Decodable>(
+        _ endpoint: String,
+        body: some Encodable
+    ) async throws -> T {
+        var request = try buildRequest(endpoint, method: "PATCH")
+        let bodyData = try encoder.encode(body)
+        request.httpBody = bodyData
+
+        do {
+            return try await execute(request, suppressNetworkToast: true)
+        } catch let apiError as APIError {
+            if await queueMutationIfNeeded(
+                apiError: apiError,
+                endpoint: endpoint,
+                method: "PATCH",
                 bodyData: bodyData,
                 idempotencyKey: request.value(forHTTPHeaderField: "X-Idempotency-Key")
             ) {

@@ -3,7 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,22 +18,37 @@ import (
 	"github.com/tiagofur/solennix-backend/internal/repository"
 )
 
-type PaymentSubmissionHandler struct {
-	repo *repository.PaymentSubmissionRepo
-	paymentRepo *repository.PaymentRepo
-	pool *pgxpool.Pool
+// allowedReceiptMIME maps accepted content types to file extensions.
+var allowedReceiptMIME = map[string]string{
+	"image/jpeg":      ".jpg",
+	"image/png":       ".png",
+	"image/webp":      ".webp",
+	"application/pdf": ".pdf",
 }
 
-func NewPaymentSubmissionHandler(repo *repository.PaymentSubmissionRepo, paymentRepo *repository.PaymentRepo, pool *pgxpool.Pool) *PaymentSubmissionHandler {
-	return &PaymentSubmissionHandler{repo: repo, paymentRepo: paymentRepo, pool: pool}
+type PaymentSubmissionHandler struct {
+	repo        *repository.PaymentSubmissionRepo
+	paymentRepo *repository.PaymentRepo
+	userRepo    FullUserRepository
+	pool        *pgxpool.Pool
+	uploadDir   string
+}
+
+func NewPaymentSubmissionHandler(repo *repository.PaymentSubmissionRepo, paymentRepo *repository.PaymentRepo, userRepo FullUserRepository, pool *pgxpool.Pool, uploadDir string) *PaymentSubmissionHandler {
+	receiptsDir := filepath.Join(uploadDir, "receipts")
+	if err := os.MkdirAll(receiptsDir, 0755); err != nil {
+		// Non-fatal: log and continue; uploads will fail at runtime if dir missing.
+		_ = err
+	}
+	return &PaymentSubmissionHandler{repo: repo, paymentRepo: paymentRepo, userRepo: userRepo, pool: pool, uploadDir: uploadDir}
 }
 
 // CreatePublicRequest for client submitting payment from portal
 type CreatePublicPaymentRequest struct {
-	EventID     uuid.UUID  `json:"event_id"`
-	ClientID    uuid.UUID  `json:"client_id"`
-	Amount      float64    `json:"amount"`
-	TransferRef *string    `json:"transfer_ref,omitempty"`
+	EventID     uuid.UUID `json:"event_id"`
+	ClientID    uuid.UUID `json:"client_id"`
+	Amount      float64   `json:"amount"`
+	TransferRef *string   `json:"transfer_ref,omitempty"`
 }
 
 // CreatePublic handles POST /api/public/events/{token}/payment-submissions (client portal)
@@ -51,7 +71,7 @@ func (h *PaymentSubmissionHandler) CreatePublic(w http.ResponseWriter, r *http.R
 	clientIDStr := r.FormValue("client_id")
 	amount := r.FormValue("amount")
 	transferRef := r.FormValue("transfer_ref")
-	
+
 	if eventIDStr == "" || clientIDStr == "" || amount == "" {
 		writeError(w, http.StatusBadRequest, "event_id, client_id, and amount are required")
 		return
@@ -78,14 +98,68 @@ func (h *PaymentSubmissionHandler) CreatePublic(w http.ResponseWriter, r *http.R
 
 	// Parse receipt file if provided (optional)
 	var receiptFileURL *string
-	file, handler, err := r.FormFile("receipt_file")
-	if err == nil {
+	file, fileHeader, fileErr := r.FormFile("receipt_file")
+	if fileErr == nil {
 		defer file.Close()
-		
-		// TODO: Upload to S3/CDN and get URL
-		// For now, store filename as placeholder
-		filename := handler.Filename
-		receiptFileURL = &filename
+
+		// Validate MIME type by reading the first 512 bytes.
+		buf := make([]byte, 512)
+		n, err := file.Read(buf)
+		if err != nil && err != io.EOF {
+			writeError(w, http.StatusBadRequest, "Failed to read uploaded file")
+			return
+		}
+		detectedMIME := http.DetectContentType(buf[:n])
+		// Normalise: http.DetectContentType returns "image/jpeg" etc., but PDF
+		// may be detected as "application/octet-stream" — fall back to extension.
+		ext, mimeOK := allowedReceiptMIME[detectedMIME]
+		if !mimeOK {
+			// Try extension as secondary signal (e.g. PDF).
+			lowerName := strings.ToLower(fileHeader.Filename)
+			for mime, e := range allowedReceiptMIME {
+				if strings.HasSuffix(lowerName, e) {
+					ext = e
+					_ = mime
+					mimeOK = true
+					break
+				}
+			}
+		}
+		if !mimeOK {
+			writeError(w, http.StatusBadRequest, "receipt_file must be jpeg, png, webp, or pdf")
+			return
+		}
+
+		// Validate size (already capped by ParseMultipartForm, but double-check header).
+		if fileHeader.Size > 10<<20 {
+			writeError(w, http.StatusBadRequest, "receipt_file must be 10 MB or smaller")
+			return
+		}
+
+		// Save to {uploadDir}/receipts/{uuid}{ext}
+		receiptsDir := filepath.Join(h.uploadDir, "receipts")
+		filename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
+		dstPath := filepath.Join(receiptsDir, filename)
+
+		dst, err := os.Create(dstPath)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to save receipt file")
+			return
+		}
+		defer dst.Close()
+
+		// Write the already-read buffer, then copy the rest.
+		if _, err := dst.Write(buf[:n]); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to write receipt file")
+			return
+		}
+		if _, err := io.Copy(dst, file); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to write receipt file")
+			return
+		}
+
+		url := "/api/uploads/receipts/" + filename
+		receiptFileURL = &url
 	}
 
 	// Validate event public link
@@ -104,6 +178,17 @@ func (h *PaymentSubmissionHandler) CreatePublic(w http.ResponseWriter, r *http.R
 	// Verify event ID matches
 	if link.EventID != eventID {
 		writeError(w, http.StatusBadRequest, "Event ID mismatch")
+		return
+	}
+
+	// Enforce Pro-only gate for payment submissions.
+	organizer, err := h.userRepo.GetByID(ctx, link.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to load organizer")
+		return
+	}
+	if !FeatureAvailable(organizer.Plan, "payment_submissions") || !IsPlanActive(organizer) {
+		writeError(w, http.StatusForbidden, "Payment submissions require a Pro or Business plan")
 		return
 	}
 
@@ -138,7 +223,7 @@ func (h *PaymentSubmissionHandler) GetHistoryPublic(w http.ResponseWriter, r *ht
 
 	eventIDStr := r.URL.Query().Get("event_id")
 	clientIDStr := r.URL.Query().Get("client_id")
-	
+
 	if eventIDStr == "" || clientIDStr == "" {
 		writeError(w, http.StatusBadRequest, "event_id and client_id query params required")
 		return
@@ -175,6 +260,17 @@ func (h *PaymentSubmissionHandler) GetHistoryPublic(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Enforce Pro-only gate for payment submission history.
+	organizer, err := h.userRepo.GetByID(ctx, link.UserID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to load organizer")
+		return
+	}
+	if !FeatureAvailable(organizer.Plan, "payment_submissions") || !IsPlanActive(organizer) {
+		writeError(w, http.StatusForbidden, "Payment submissions require a Pro or Business plan")
+		return
+	}
+
 	submissions, err := h.repo.GetHistoryByClientEventID(ctx, clientID, eventID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to fetch submissions")
@@ -185,14 +281,22 @@ func (h *PaymentSubmissionHandler) GetHistoryPublic(w http.ResponseWriter, r *ht
 		submissions = make([]*models.PaymentSubmission, 0)
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{"data": submissions,
-	})
+	writeJSON(w, http.StatusOK, map[string]interface{}{"data": submissions})
 }
 
-// GetPendingOrganizerInbox handles GET /api/organizer/payment-submissions (organizer review inbox)
+// GetPendingOrganizerInbox handles GET /api/payment-submissions (organizer review inbox)
 func (h *PaymentSubmissionHandler) GetPendingOrganizerInbox(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := middleware.GetUserID(ctx)
+	organizer, err := h.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to load organizer")
+		return
+	}
+	if !FeatureAvailable(organizer.Plan, "payment_submissions") || !IsPlanActive(organizer) {
+		writeError(w, http.StatusForbidden, "This is a Pro-exclusive feature. Upgrade to review payment submissions.")
+		return
+	}
 
 	submissions, err := h.repo.GetPendingByOrganizerID(ctx, userID)
 	if err != nil {
@@ -204,8 +308,7 @@ func (h *PaymentSubmissionHandler) GetPendingOrganizerInbox(w http.ResponseWrite
 		submissions = make([]*models.PaymentSubmission, 0)
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{"data": submissions,
-	})
+	writeJSON(w, http.StatusOK, map[string]interface{}{"data": submissions})
 }
 
 // ReviewRequest for approving/rejecting a submission
@@ -214,7 +317,7 @@ type ReviewRequest struct {
 	RejectionReason *string `json:"rejection_reason,omitempty"`
 }
 
-// ReviewSubmission handles PATCH /api/organizer/payment-submissions/{id} (approve/reject)
+// ReviewSubmission handles PATCH /api/payment-submissions/{id} (approve/reject)
 func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := middleware.GetUserID(ctx)
@@ -248,6 +351,12 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Idempotency guard: only pending submissions can be reviewed.
+	if ps.Status != "pending" {
+		writeError(w, http.StatusConflict, "Submission has already been reviewed")
+		return
+	}
+
 	ps.Status = req.Status
 	ps.ReviewedBy = &userID
 	now := time.Now()
@@ -256,13 +365,6 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 
 	// If approved, create Payment row
 	if req.Status == "approved" {
-		eventRepo := repository.NewEventRepo(h.pool)
-		_, err := eventRepo.GetByID(ctx, ps.UserID, ps.EventID)
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Event not found")
-			return
-		}
-
 		payment := &models.Payment{
 			EventID:       ps.EventID,
 			UserID:        ps.UserID,
@@ -279,6 +381,11 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 
 		ps.LinkedPaymentID = &payment.ID
 
+		eventRepo := repository.NewEventRepo(h.pool)
+		if _, err := autoConfirmQuotedEventIfDepositCovered(ctx, eventRepo, h.paymentRepo, ps.EventID, ps.UserID); err != nil {
+			slog.Warn("Failed to auto-confirm event after payment submission review", "event_id", ps.EventID, "submission_id", ps.ID, "error", err)
+		}
+
 		// TODO: Emit notifications (client/organizer)
 		// TODO: Update AuditLog
 	}
@@ -288,6 +395,5 @@ func (h *PaymentSubmissionHandler) ReviewSubmission(w http.ResponseWriter, r *ht
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{"data": ps,
-	})
+	writeJSON(w, http.StatusOK, map[string]interface{}{"data": ps})
 }

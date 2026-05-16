@@ -74,7 +74,7 @@ public struct SearchView: View {
     // MARK: - Search Field
 
     private func searchField(vm: SearchViewModel) -> some View {
-        HStack(spacing: Spacing.sm) {
+        return HStack(spacing: Spacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(.body)
                 .foregroundStyle(SolennixColors.textTertiary)

@@ -159,7 +159,9 @@ public struct QuickQuoteView: View {
                         
                         Section(QuickQuoteStrings.export) {
                             Button {
-                                viewModel.generatePDF(profile: nil)
+                                Task {
+                                    await viewModel.generatePDF()
+                                }
                             } label: {
                                 Label(QuickQuoteStrings.exportPDF, systemImage: "doc.text")
                             }

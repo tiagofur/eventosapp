@@ -1,5 +1,6 @@
 import SwiftUI
 import SolennixCore
+import SolennixDesign
 
 struct ForecastWidgetView: View {
     let forecast: [ForecastDataPoint]
@@ -10,11 +11,12 @@ struct ForecastWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Label(tr("dashboard.widgets.forecast.title", "Pronóstico"), systemImage: "chart.line.uptrend.xyaxis")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .foregroundStyle(SolennixColors.text)
                 Spacer()
             }
 
@@ -25,54 +27,58 @@ struct ForecastWidgetView: View {
                     Skeleton()
                         .frame(height: 10)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, Spacing.sm)
             } else if forecast.isEmpty {
                 Text(tr("dashboard.widgets.forecast.empty", "Sin pronóstico disponible"))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(SolennixColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
+                    .padding(.vertical, Spacing.xl)
             } else {
                 // Summary grid
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: Spacing.sm) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(tr("dashboard.widgets.forecast.projected_revenue", "Ingresos proyectados"))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(SolennixColors.textSecondary)
                         Text(DashboardFormatting.currencyMXN(forecast.reduce(0) { $0 + $1.confirmedRevenue }))
                             .font(.headline)
                             .fontWeight(.semibold)
+                            .foregroundStyle(SolennixColors.text)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    .padding(Spacing.md)
+                    .background(SolennixColors.surfaceAlt)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(tr("dashboard.widgets.forecast.confirmed_events", "Eventos confirmados"))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(SolennixColors.textSecondary)
                         Text("\(forecast.reduce(0) { $0 + $1.confirmedEventCount })")
                             .font(.headline)
                             .fontWeight(.semibold)
+                            .foregroundStyle(SolennixColors.text)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(12)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+                    .padding(Spacing.md)
+                    .background(SolennixColors.surfaceAlt)
+                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                 }
 
-                VStack(spacing: 12) {
+                VStack(spacing: Spacing.sm) {
                     ForEach(forecast.prefix(6), id: \.month) { point in
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
                             HStack {
                                 Text(DashboardFormatting.monthYear(from: point.month))
                                     .font(.subheadline)
                                     .fontWeight(.medium)
+                                    .foregroundStyle(SolennixColors.text)
                                 Spacer()
                                 Text(DashboardFormatting.currencyMXN(point.confirmedRevenue))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
+                                    .foregroundStyle(SolennixColors.text)
                             }
                             HStack {
                                 Text(String.localizedStringWithFormat(
@@ -85,25 +91,22 @@ struct ForecastWidgetView: View {
                                     point.confirmedEventCount
                                 ))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(SolennixColors.textSecondary)
                                 Spacer()
                             }
                         }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                        .padding(.vertical, Spacing.sm)
+                        .padding(.horizontal, Spacing.md)
+                        .background(SolennixColors.surfaceAlt)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                     }
                 }
             }
         }
-        .padding(16)
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.systemGray5), lineWidth: 1)
-        )
+        .padding(Spacing.lg)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
     }
 }
 

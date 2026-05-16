@@ -2,10 +2,17 @@
 
 # Roadmap Android — Hacia la Paridad y Más Allá
 
-> [!success] 🆕 Actualizado 2026-04-26 — v1.1.2 (versionCode 5) · CI activo · Dashboard KPIs server-side · Personal completo · Portal Cliente · i18n · Google Play compliance
+> [!success] 🆕 Actualizado 2026-05-13 — hardening incremental extendido (gates JaCoCo en 18/19 módulos con tests en 18/19)
 > Ver [[../00_DASHBOARD|Dashboard]] para el panorama completo.
 >
-> **Hitos desde 2026-04-16:**
+> **Hitos recientes:**
+> - Baseline de tests Android medido y consolidado en docs
+> - Expansión de cobertura estructural a 18/19 módulos con tests
+> - Roadmap de hardening en 4 fases listo para ejecución
+> - Fase 1 completada: `core/model`, `core/database`, `feature/auth`
+> - Fase 2 completada: `feature/clients`, `feature/products`, `feature/inventory`
+> - Fase 3 completada: smoke `androidTest` auth + dashboard en emulador
+> - Gate Android expandido también a app/core:designsystem/widget
 > - Dashboard KPIs consume backend — zero client-side aggregation
 > - Revenue chart 6 meses (premium-only)
 > - Personal completo: CRUD + turnos + equipos + product+staff
@@ -21,9 +28,61 @@
 > - ~~**Sprint 7.B** — `UpgradePlanDialog` wiring cuando API devuelve 403 `plan_limit_exceeded`.~~ ✅ Cerrado 2026-04-26. `SolennixException.PlanLimitExceeded` + wired en Event/Client/Product form ViewModels + Screens.
 > - **Sprint 7.C** — Enforcement tier matrix completo.
 > - **i18n** — Extraer Dashboard + Events strings (issues #94, #95).
+> - ~~**Quality Sprint 3** — agregar smoke tests `androidTest` para login + dashboard.~~ ✅ Completado 2026-05-13.
+> - **Quality Sprint 4** — gate de cobertura gradual por módulo en CI.
 
 > [!tip] Filosofía
 > Priorizado por **impacto en usuario** × **esfuerzo técnico**. Alineado con el [[Roadmap Web]] para mantener paridad cross-platform. Las fases son incrementales — cada una deja la app shippable.
+
+---
+
+## Baseline de Testing (2026-05-13)
+
+> [!info] Estado verificado por ejecución
+> - **88 tests** unitarios debug
+> - **0 failures**, **0 errors**, **0 skipped**
+> - **18/19 módulos** Android con tests actualmente
+> - **2 smoke `androidTest`** activos (auth + dashboard), en verde
+
+| Módulo | Tests debug |
+| ------ | ----------: |
+| `core/data` | 7 |
+| `core/database` | 5 |
+| `core/designsystem` | 3 |
+| `core/model` | 6 |
+| `core/network` | 6 |
+| `app` | 4 |
+| `feature/auth` | 6 |
+| `feature/calendar` | 4 |
+| `feature/clients` | 3 |
+| `feature/dashboard` | 8 |
+| `feature/events` | 7 |
+| `feature/inventory` | 2 |
+| `feature/payments` | 3 |
+| `feature/products` | 2 |
+| `feature/search` | 3 |
+| `feature/settings` | 4 |
+| `feature/staff` | 11 |
+| `widget` | 7 |
+| **Total** | **88** |
+
+### Gap estructural actual
+
+- Módulos con tests: `app`, `core/data`, `core/database`, `core/designsystem`, `core/model`, `core/network`, `feature/auth`, `feature/calendar`, `feature/clients`, `feature/dashboard`, `feature/events`, `feature/inventory`, `feature/payments`, `feature/products`, `feature/search`, `feature/settings`, `feature/staff`, `widget`
+- Módulo sin suite JVM (1): `baselineprofile` (macrobenchmark/instrumentado activo)
+
+### Plan incremental de hardening
+
+1. **Fase 1**: `core/model`, `core/database`, `feature/auth` ✅
+2. **Fase 2**: `feature/clients`, `feature/products`, `feature/inventory` ✅
+3. **Fase 3**: smoke tests `androidTest` (login + dashboard) ✅
+4. **Fase 4**: gate de cobertura gradual por módulo
+    - **Fase 4.1** ✅: thresholds iniciales activos (`core/model`, `core/database`, `feature/auth`)
+    - **Fase 4.2** ✅: gate expandido a módulos de Fase 2 (`feature/clients`, `feature/products`, `feature/inventory`)
+    - **Fase 4.3** ✅: thresholds elevados por módulo sin romper verde en CI local
+    - **Fase 4.4** ✅: gate expandido a `feature/search`, `feature/payments`, `feature/settings`, `feature/calendar`
+    - **Fase 4.5** ✅: gate expandido a `app`, `core:designsystem`, `widget`
+    - **Fase 4.6** ✅: compile gate agregado a `baselineprofile` en CI (`:baselineprofile:compileNonMinifiedReleaseKotlin`)
 
 ---
 
@@ -101,7 +160,7 @@
 | Offline-first               | ❌             | ✅ (completo p/Eventos) | Android adelante |
 | React Query / cache         | 🔄 En progreso | N/A (Room)              | —                |
 | Push notifications          | ❌             | ✅ Activo (Firebase)    | **Fase 2 OK**    |
-| Test coverage               | ❌ 0%          | 🔄 15% (Infra OK)       | Ambos            |
+| Test coverage               | ❌ 0%          | 🔄 Baseline 63 tests debug (14/19 módulos) | Ambos            |
 | i18n                        | ❌             | ❌                      | Ambos            |
 | Analytics                   | ❌             | ❌                      | Ambos            |
 | Suscripciones (billing)     | ❌             | ✅ RevenueCat OK        | **Fase 2 OK**    |
@@ -153,8 +212,9 @@
 - [x] Setup: JUnit 5 + MockK + Turbine + Hilt Testing
 - [x] Tests para `AuthManager` (tokens, refresh, biometric state)
 - [x] Tests para repositories (sync logic, entity mapping)
-- [ ] Tests para ViewModels clave (Dashboard, EventForm, EventDetail)
-- [🔄] Target: 40% coverage en `core/` modules (Infraestructura lista)
+- [x] Tests para ViewModels clave de Dashboard y Events
+- [x] Tests para módulos críticos restantes (`feature/auth`, `feature/clients`, `feature/products`, `feature/inventory`)
+- [x] Target incremental Fase 1+2+2.5 superado: pasar de 4/19 a 14/19 módulos con tests
 
 ### 1.2 Paginación con Paging 3 ✅
 

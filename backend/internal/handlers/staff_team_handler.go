@@ -77,7 +77,7 @@ func (h *StaffTeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := ValidateStaffTeam(&t); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 	t.UserID = userID
@@ -104,7 +104,7 @@ func (h *StaffTeamHandler) UpdateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := ValidateStaffTeam(&t); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 	t.ID = id

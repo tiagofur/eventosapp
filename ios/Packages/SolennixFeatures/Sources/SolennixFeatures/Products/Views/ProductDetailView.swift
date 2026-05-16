@@ -220,7 +220,8 @@ public struct ProductDetailView: View {
     // MARK: - Detail Content
 
     private func detailContent(_ product: Product) -> some View {
-        ScrollView {
+        let isRegularWidth = sizeClass == .regular
+        return ScrollView {
             VStack(spacing: Spacing.md) {
                 AdaptiveDetailLayout {
                     // Left: Product info, image, KPI cards
@@ -277,7 +278,8 @@ public struct ProductDetailView: View {
                     basePrice: product.basePrice
                 )
             }
-            .padding(Spacing.lg)
+            .padding(.horizontal, isRegularWidth ? Spacing.xl : Spacing.md)
+            .padding(.vertical, isRegularWidth ? Spacing.xl : Spacing.lg)
         }
     }
 
@@ -330,42 +332,41 @@ public struct ProductDetailView: View {
     // MARK: - KPI Section
 
     private func kpiSection(_ product: Product) -> some View {
-        VStack(spacing: Spacing.sm) {
-            HStack(spacing: Spacing.sm) {
-                kpiCard(
-                    icon: "dollarsign.circle.fill",
-                    iconColor: SolennixColors.primary,
-                    label: ProductStrings.basePrice,
-                    value: product.basePrice.formatted(.currency(code: "MXN")),
-                    subtitle: ProductStrings.perUnit
-                )
-                kpiCard(
-                    icon: "square.stack.3d.up.fill",
-                    iconColor: SolennixColors.textSecondary,
-                    label: ProductStrings.unitCost,
-                    value: viewModel.unitCost.formatted(.currency(code: "MXN")),
-                    subtitle: ProductStrings.inSupplies
-                )
-            }
-            HStack(spacing: Spacing.sm) {
-                let marginColor: Color = viewModel.margin >= 50 ? .green :
-                    (viewModel.margin >= 20 ? SolennixColors.text : .orange)
-                kpiCard(
-                    icon: "arrow.up.right",
-                    iconColor: marginColor,
-                    label: ProductStrings.marginEstimated,
-                    value: String(format: "%.1f%%", viewModel.margin),
-                    subtitle: ProductStrings.profitEstimated,
-                    valueColor: marginColor
-                )
-                kpiCard(
-                    icon: "calendar",
-                    iconColor: SolennixColors.primary,
-                    label: ProductStrings.upcomingEvents,
-                    value: "\(viewModel.demandData.count)",
-                    subtitle: ProductStrings.confirmed
-                )
-            }
+        let columns = sizeClass == .regular
+            ? Array(repeating: GridItem(.flexible(), spacing: Spacing.sm), count: 4)
+            : Array(repeating: GridItem(.flexible(), spacing: Spacing.sm), count: 2)
+        let marginColor: Color = viewModel.margin >= 50 ? .green :
+            (viewModel.margin >= 20 ? SolennixColors.text : .orange)
+        return LazyVGrid(columns: columns, spacing: Spacing.sm) {
+            kpiCard(
+                icon: "dollarsign.circle.fill",
+                iconColor: SolennixColors.primary,
+                label: ProductStrings.basePrice,
+                value: product.basePrice.formatted(.currency(code: "MXN")),
+                subtitle: ProductStrings.perUnit
+            )
+            kpiCard(
+                icon: "square.stack.3d.up.fill",
+                iconColor: SolennixColors.textSecondary,
+                label: ProductStrings.unitCost,
+                value: viewModel.unitCost.formatted(.currency(code: "MXN")),
+                subtitle: ProductStrings.inSupplies
+            )
+            kpiCard(
+                icon: "arrow.up.right",
+                iconColor: marginColor,
+                label: ProductStrings.marginEstimated,
+                value: String(format: "%.1f%%", viewModel.margin),
+                subtitle: ProductStrings.profitEstimated,
+                valueColor: marginColor
+            )
+            kpiCard(
+                icon: "calendar",
+                iconColor: SolennixColors.primary,
+                label: ProductStrings.upcomingEvents,
+                value: "\(viewModel.demandData.count)",
+                subtitle: ProductStrings.confirmed
+            )
         }
     }
 

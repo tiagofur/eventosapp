@@ -11,6 +11,7 @@ public enum Endpoint {
     public static let refresh = "/auth/refresh"
     public static let forgotPassword = "/auth/forgot-password"
     public static let resetPassword = "/auth/reset-password"
+    public static let teamInviteAccept = "/auth/team-invite/accept"
     public static let me = "/auth/me"
     public static let changePassword = "/auth/change-password"
     public static let appleAuth = "/auth/apple"
@@ -78,6 +79,16 @@ public enum Endpoint {
         "/staff/\(id)"
     }
 
+    public static func staffInvite(_ id: String) -> String {
+        "/staff/\(id)/invite"
+    }
+
+    public static let staffMyAssignments = "/staff/my-assignments"
+
+    public static func staffRespondAssignment(_ id: String) -> String {
+        "/staff/assignments/\(id)/respond"
+    }
+
     /// Reporte de disponibilidad de staff para una fecha o rango.
     /// Consumido via `GET /api/staff/availability?date=YYYY-MM-DD` o
     /// `?start=YYYY-MM-DD&end=YYYY-MM-DD`.
@@ -90,6 +101,14 @@ public enum Endpoint {
     public static func staffTeam(_ id: String) -> String {
         "/staff/teams/\(id)"
     }
+
+    // MARK: - PDF Downloads
+
+    public static func eventPDF(_ eventId: String, type: String) -> String {
+        "/events/\(eventId)/pdf/\(type)"
+    }
+
+    public static let quickQuotePDF = "/quick-quotes/pdf"
 
     // MARK: - Products
 
@@ -119,6 +138,16 @@ public enum Endpoint {
 
     public static func payment(_ id: String) -> String {
         "/payments/\(id)"
+    }
+
+    // MARK: - Payment Submissions (organizer review inbox)
+
+    /// GET /payment-submissions — pending submissions for the organizer
+    public static let paymentSubmissionsInbox = "/payment-submissions"
+
+    /// PATCH /payment-submissions/{id} — approve or reject a submission
+    public static func paymentSubmission(_ id: String) -> String {
+        "/payment-submissions/\(id)"
     }
 
     // MARK: - Unavailable Dates
@@ -194,4 +223,5 @@ public enum Endpoint {
     public static func liveActivityByEvent(_ eventId: String) -> String {
         "/live-activities/by-event/\(eventId)"
     }
+
 }

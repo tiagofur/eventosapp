@@ -124,8 +124,12 @@ private struct DayCellView: View {
 
                 if day.isSelected && day.isCurrentMonth {
                     Circle()
-                        .fill(SolennixColors.primary)
+                        .fill(SolennixColors.primaryLight.opacity(0.55))
                         .frame(width: 32, height: 32)
+                        .overlay(
+                            Circle()
+                                .stroke(SolennixColors.primary.opacity(0.75), lineWidth: 1.5)
+                        )
                 } else if day.isToday && day.isCurrentMonth {
                     Circle()
                         .stroke(SolennixColors.primary, lineWidth: 1.5)
@@ -174,7 +178,7 @@ private struct DayCellView: View {
 
     private var dayTextColor: Color {
         if day.isSelected && day.isCurrentMonth {
-            return .white
+            return SolennixColors.primary
         }
         if !day.isCurrentMonth {
             return SolennixColors.textTertiary

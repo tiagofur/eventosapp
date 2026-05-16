@@ -21,6 +21,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	paymentSubmissionHandler *handlers.PaymentSubmissionHandler,
 	staffHandler *handlers.StaffHandler,
 	staffTeamHandler *handlers.StaffTeamHandler,
+	pdfHandler *handlers.PDFHandler,
 	authService *services.AuthService, userRepo *repository.UserRepo, auditRepo mw.AuditLogger, pool *pgxpool.Pool, corsOrigins []string, uploadDir string) http.Handler {
 
 	r := chi.NewRouter()
@@ -29,6 +30,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	r.Use(mw.Recovery)  // Panic recovery — outermost so it catches the repanic from Sentry
 	r.Use(mw.Sentry)    // Per-request Sentry hub; captures panics then repanics (no-op if Sentry DSN unset)
 	r.Use(mw.RequestID) // X-Request-ID for tracing
+	r.Use(mw.Localization())
 	r.Use(mw.CORS(corsOrigins))
 	r.Use(mw.SecurityHeaders) // Security headers (X-Frame-Options, CSP, HSTS, etc.)
 	r.Use(mw.Logger)
@@ -64,6 +66,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Group(func(r chi.Router) {
 			r.Use(mw.RateLimit(5, 1*time.Minute))
 			r.Post("/login", authHandler.Login)
+			r.Post("/team-invite/accept", authHandler.AcceptTeamInvite)
 			r.Post("/forgot-password", authHandler.ForgotPassword)
 			r.Post("/reset-password", authHandler.ResetPassword)
 			r.Post("/google", authHandler.GoogleSignIn)
@@ -119,11 +122,15 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	v1FileServer := http.StripPrefix("/api/v1/uploads/", http.FileServer(http.Dir(uploadDir)))
 	legacyFileServer := http.StripPrefix("/api/uploads/", http.FileServer(http.Dir(uploadDir)))
 	r.Get("/api/v1/uploads/*", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
 		w.Header().Set("X-API-Version", "v1")
 		v1FileServer.ServeHTTP(w, r)
 	})
 	r.Get("/api/uploads/*", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
 		w.Header().Set("Cache-Control", "public, max-age=31536000")
 		w.Header().Set("X-API-Version", "v1")
 		legacyFileServer.ServeHTTP(w, r)
@@ -171,6 +178,10 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Route("/staff", func(r chi.Router) {
 			r.Get("/", staffHandler.ListStaff)
 			r.Post("/", staffHandler.CreateStaff)
+			r.Get("/my-assignments", staffHandler.GetMyAssignments)
+			r.Post("/assignments/{id}/respond", staffHandler.RespondAssignment)
+			r.Post("/{id}/invite", staffHandler.InviteStaffUser)
+			r.Delete("/{id}/invite", staffHandler.RevokeStaffInvite)
 			// availability must be registered before /{id} so chi does not treat
 			// "availability" as an id param.
 			r.Get("/availability", staffHandler.GetStaffAvailability)
@@ -237,6 +248,14 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 			r.Post("/{id}/public-link", eventPublicLinkHandler.CreateOrRotate)
 			r.Get("/{id}/public-link", eventPublicLinkHandler.GetActive)
 			r.Delete("/{id}/public-link", eventPublicLinkHandler.Revoke)
+
+			// PDF downloads — one endpoint per document type
+			r.Get("/{id}/pdf/budget", pdfHandler.GetBudgetPDF)
+			r.Get("/{id}/pdf/payment-report", pdfHandler.GetPaymentReportPDF)
+			r.Get("/{id}/pdf/contract", pdfHandler.GetContractPDF)
+			r.Get("/{id}/pdf/shopping-list", pdfHandler.GetShoppingListPDF)
+			r.Get("/{id}/pdf/checklist", pdfHandler.GetChecklistPDF)
+			r.Get("/{id}/pdf/equipment-list", pdfHandler.GetEquipmentListPDF)
 		})
 
 		// Products
@@ -269,8 +288,19 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 			r.Delete("/{id}", crudHandler.DeletePayment)
 		})
 
+		// Quick Quotes
+		r.Route("/quick-quotes", func(r chi.Router) {
+			r.Post("/pdf", pdfHandler.GetQuickQuotePDF)
+		})
+
 		// Payment Submissions (organizer review inbox)
 		r.Route("/payment-submissions", func(r chi.Router) {
+			r.Get("/", paymentSubmissionHandler.GetPendingOrganizerInbox)
+			r.Patch("/{id}", paymentSubmissionHandler.ReviewSubmission)
+		})
+
+		// Backward-compatible alias for older organizer clients still calling the prefixed path.
+		r.Route("/organizer/payment-submissions", func(r chi.Router) {
 			r.Get("/", paymentSubmissionHandler.GetPendingOrganizerInbox)
 			r.Patch("/{id}", paymentSubmissionHandler.ReviewSubmission)
 		})

@@ -1,0 +1,103 @@
+import SwiftUI
+import SolennixDesign
+
+// MARK: - Dashboard Shared View Components
+
+struct DashboardQuickActionButton: View {
+    let icon: String
+    let label: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundStyle(color)
+
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundStyle(SolennixColors.text)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.md)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
+    }
+}
+
+struct DashboardLowStockCard: View {
+    let itemName: String
+    let stockText: String
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text(itemName)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(SolennixColors.text)
+
+                Text(stockText)
+                    .font(.caption)
+                    .foregroundStyle(SolennixColors.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(SolennixColors.warning)
+                .font(.body)
+        }
+        .padding(Spacing.md)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
+    }
+}
+
+struct DashboardDateBox: View {
+    let month: String
+    let day: String
+
+    var body: some View {
+        VStack(spacing: Spacing.xxs) {
+            Text(month)
+                .font(.caption2)
+                .fontWeight(.bold)
+                .foregroundStyle(SolennixColors.primary)
+                .textCase(.uppercase)
+
+            Text(day)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(SolennixColors.text)
+        }
+        .frame(width: 48, height: 48)
+        .background(SolennixColors.primaryLight)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+    }
+}
+
+struct DashboardEmptyCardState: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        VStack(spacing: Spacing.md) {
+            Image(systemName: icon)
+                .font(.system(size: 40))
+                .foregroundStyle(SolennixColors.textTertiary)
+
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(SolennixColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.xxl)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.card))
+        .shadowSm()
+    }
+}

@@ -13,6 +13,7 @@ public struct EventPhotosDetailView: View {
     @State private var viewModel: EventDetailViewModel
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var lightboxIndex: Int?
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(eventId: String, apiClient: APIClient) {
         self.eventId = eventId
@@ -143,8 +144,8 @@ public struct EventPhotosDetailView: View {
                         .foregroundStyle(SolennixColors.textSecondary)
                 }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.lg)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.xl : Spacing.md)
+            .padding(.vertical, sizeClass == .regular ? Spacing.xl : Spacing.lg)
         }
     }
 

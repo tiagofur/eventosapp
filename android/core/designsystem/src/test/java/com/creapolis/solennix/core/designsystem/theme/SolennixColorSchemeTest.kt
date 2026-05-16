@@ -1,0 +1,49 @@
+package com.creapolis.solennix.core.designsystem.theme
+
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+
+class SolennixColorSchemeTest {
+
+    @Test
+    fun `light scheme maps material colors`() {
+        val scheme = LightSolennixColors.toMaterialColorScheme(isDarkTheme = false)
+
+        assertEquals(SolennixGold, scheme.primary)
+        assertEquals(Color.White, scheme.onPrimary)
+        assertEquals(SolennixSecondary, scheme.secondary)
+        assertEquals(Color.White, scheme.onSecondary)
+        assertEquals(LightSolennixColors.error, scheme.error)
+        assertEquals(Color.White, scheme.onError)
+        assertEquals(LightSolennixColors.background, scheme.background)
+        assertEquals(LightSolennixColors.surface, scheme.surface)
+        assertEquals(LightSolennixColors.primaryText, scheme.onBackground)
+        assertEquals(LightSolennixColors.primaryText, scheme.onSurface)
+    }
+
+    @Test
+    fun `dark scheme maps material colors`() {
+        val scheme = DarkSolennixColors.toMaterialColorScheme(isDarkTheme = true)
+
+        assertEquals(SolennixGold, scheme.primary)
+        assertEquals(Color.Black, scheme.onPrimary)
+        assertEquals(DarkSolennixColors.secondary, scheme.secondary)
+        assertEquals(Color.Black, scheme.onSecondary)
+        assertEquals(DarkSolennixColors.error, scheme.error)
+        assertEquals(Color.Black, scheme.onError)
+        assertEquals(DarkSolennixColors.background, scheme.background)
+        assertEquals(DarkSolennixColors.surface, scheme.surface)
+        assertEquals(DarkSolennixColors.primaryText, scheme.onBackground)
+        assertEquals(DarkSolennixColors.primaryText, scheme.onSurface)
+    }
+
+    @Test
+    fun `theme palettes keep stable brand tokens`() {
+        assertEquals(8, LightSolennixColors.avatarPalette.size)
+        assertEquals(LightSolennixColors.avatarPalette, DarkSolennixColors.avatarPalette)
+        assertEquals(SolennixGold, LightSolennixColors.avatarPalette[0])
+    }
+}

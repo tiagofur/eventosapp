@@ -2,12 +2,14 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tiagofur/solennix-backend/internal/models"
 )
@@ -218,7 +220,7 @@ func (r *EventRepo) CountCurrentMonth(ctx context.Context, userID uuid.UUID) (in
 	query := `SELECT count(*) FROM events 
 		WHERE user_id = $1 
 		AND date_trunc('month', event_date) = date_trunc('month', CURRENT_DATE)`
-	
+
 	var count int
 	err := r.pool.QueryRow(ctx, query, userID).Scan(&count)
 	if err != nil {
@@ -476,18 +478,41 @@ func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
 				status = st.Status
 			}
 			_, err := tx.Exec(ctx,
-				`INSERT INTO event_staff (event_id, staff_id, fee_amount, role_override, notes,
-					shift_start, shift_end, status)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 'confirmed'))
+				`INSERT INTO event_staff (event_id, staff_id, offer_group_id, offer_slots,
+					fee_amount, role_override, notes, shift_start, shift_end, status)
+				VALUES ($1, $2, $3, CASE WHEN $3::uuid IS NULL THEN NULL ELSE COALESCE($4::int, 1) END, $5, $6, $7, $8, $9, COALESCE($10::text, 'confirmed'))
 				ON CONFLICT (event_id, staff_id) DO UPDATE SET
+					offer_group_id = EXCLUDED.offer_group_id,
+					offer_slots = CASE
+						WHEN EXCLUDED.offer_group_id IS NULL THEN NULL
+						ELSE COALESCE(EXCLUDED.offer_slots, event_staff.offer_slots, 1)
+					END,
 					fee_amount = EXCLUDED.fee_amount,
 					role_override = EXCLUDED.role_override,
 					notes = EXCLUDED.notes,
 					shift_start = COALESCE(EXCLUDED.shift_start, event_staff.shift_start),
 					shift_end = COALESCE(EXCLUDED.shift_end, event_staff.shift_end),
-					status = COALESCE($8, event_staff.status)`,
-				eventID, st.StaffID, st.FeeAmount, st.RoleOverride, st.Notes,
-				st.ShiftStart, st.ShiftEnd, status)
+					status = COALESCE($10, event_staff.status)`,
+				eventID,
+				st.StaffID,
+				st.OfferGroupID,
+				st.OfferSlots,
+				st.FeeAmount,
+				st.RoleOverride,
+				st.Notes,
+				st.ShiftStart,
+				st.ShiftEnd,
+				status,
+			)
+			if err != nil {
+				var pgErr *pgconn.PgError
+				// Backward compatibility: some environments can still run with a
+				// pre-Ola schema that lacks newer columns, or with a legacy
+				// event_staff table missing the conflict target constraint.
+				if errors.As(err, &pgErr) && (pgErr.Code == "42703" || pgErr.Code == "42P10") {
+					err = upsertEventStaffCompat(ctx, tx, eventID, st, status)
+				}
+			}
 			if err != nil {
 				return err
 			}
@@ -495,6 +520,113 @@ func (r *EventRepo) UpdateEventItems(ctx context.Context, eventID uuid.UUID,
 	}
 
 	return tx.Commit(ctx)
+}
+
+func upsertEventStaffCompat(ctx context.Context, tx pgx.Tx, eventID uuid.UUID, st models.EventStaff, status *string) error {
+	updateSQL := `UPDATE event_staff
+		SET offer_group_id = $3,
+			offer_slots = CASE
+				WHEN $3::uuid IS NULL THEN NULL
+				ELSE COALESCE($4::int, offer_slots, 1)
+			END,
+			fee_amount = $5,
+			role_override = $6,
+			notes = $7,
+			shift_start = COALESCE($8, shift_start),
+			shift_end = COALESCE($9, shift_end),
+			status = COALESCE($10::text, status)
+		WHERE event_id = $1 AND staff_id = $2`
+
+	cmd, err := tx.Exec(ctx, updateSQL,
+		eventID,
+		st.StaffID,
+		st.OfferGroupID,
+		st.OfferSlots,
+		st.FeeAmount,
+		st.RoleOverride,
+		st.Notes,
+		st.ShiftStart,
+		st.ShiftEnd,
+		status,
+	)
+	if err == nil {
+		if cmd.RowsAffected() > 0 {
+			return nil
+		}
+		return insertEventStaffCompat(ctx, tx, eventID, st, status)
+	}
+
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "42703" {
+		return err
+	}
+
+	cmd, err = tx.Exec(ctx,
+		`UPDATE event_staff
+		SET fee_amount = $3,
+			role_override = $4,
+			notes = $5
+		WHERE event_id = $1 AND staff_id = $2`,
+		eventID,
+		st.StaffID,
+		st.FeeAmount,
+		st.RoleOverride,
+		st.Notes,
+	)
+	if err != nil {
+		return err
+	}
+	if cmd.RowsAffected() > 0 {
+		return nil
+	}
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO event_staff (event_id, staff_id, fee_amount, role_override, notes)
+		VALUES ($1, $2, $3, $4, $5)`,
+		eventID,
+		st.StaffID,
+		st.FeeAmount,
+		st.RoleOverride,
+		st.Notes,
+	)
+	return err
+}
+
+func insertEventStaffCompat(ctx context.Context, tx pgx.Tx, eventID uuid.UUID, st models.EventStaff, status *string) error {
+	_, err := tx.Exec(ctx,
+		`INSERT INTO event_staff (event_id, staff_id, offer_group_id, offer_slots,
+			fee_amount, role_override, notes, shift_start, shift_end, status)
+		VALUES ($1, $2, $3, CASE WHEN $3::uuid IS NULL THEN NULL ELSE COALESCE($4::int, 1) END, $5, $6, $7, $8, $9, COALESCE($10::text, 'confirmed'))`,
+		eventID,
+		st.StaffID,
+		st.OfferGroupID,
+		st.OfferSlots,
+		st.FeeAmount,
+		st.RoleOverride,
+		st.Notes,
+		st.ShiftStart,
+		st.ShiftEnd,
+		status,
+	)
+	if err == nil {
+		return nil
+	}
+
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "42703" {
+		return err
+	}
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO event_staff (event_id, staff_id, fee_amount, role_override, notes)
+		VALUES ($1, $2, $3, $4, $5)`,
+		eventID,
+		st.StaffID,
+		st.FeeAmount,
+		st.RoleOverride,
+		st.Notes,
+	)
+	return err
 }
 
 // StaffPendingNotification is a row from event_staff JOIN staff that still
@@ -565,9 +697,47 @@ func (r *EventRepo) MarkStaffNotificationResult(ctx context.Context, eventStaffI
 // GetStaff returns all staff assigned to an event with joined denormalized fields
 // from the staff catalog (name, role_label, phone, email) for display convenience.
 func (r *EventRepo) GetStaff(ctx context.Context, eventID uuid.UUID) ([]models.EventStaff, error) {
-	query := `SELECT es.id, es.event_id, es.staff_id, es.fee_amount, es.role_override,
+	query := `SELECT es.id, es.event_id, es.staff_id, es.offer_group_id, es.offer_slots, es.fee_amount, es.role_override,
 		es.notes, es.shift_start, es.shift_end, es.status,
 		es.notification_sent_at, es.notification_last_result, es.created_at,
+		s.name, s.role_label, s.phone, s.email
+		FROM event_staff es
+		LEFT JOIN staff s ON es.staff_id = s.id
+		WHERE es.event_id = $1
+		ORDER BY s.name`
+	rows, err := r.pool.Query(ctx, query, eventID)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "42703" {
+			return r.getStaffLegacy(ctx, eventID)
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]models.EventStaff, 0)
+	for rows.Next() {
+		var es models.EventStaff
+		var status string
+		if err := rows.Scan(&es.ID, &es.EventID, &es.StaffID, &es.OfferGroupID, &es.OfferSlots, &es.FeeAmount,
+			&es.RoleOverride, &es.Notes, &es.ShiftStart, &es.ShiftEnd, &status,
+			&es.NotificationSentAt, &es.NotificationLastResult,
+			&es.CreatedAt, &es.StaffName, &es.StaffRoleLabel, &es.StaffPhone, &es.StaffEmail); err != nil {
+			return nil, err
+		}
+		statusCopy := status
+		es.Status = &statusCopy
+		items = append(items, es)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event staff: %w", err)
+	}
+	return items, nil
+}
+
+func (r *EventRepo) getStaffLegacy(ctx context.Context, eventID uuid.UUID) ([]models.EventStaff, error) {
+	query := `SELECT es.id, es.event_id, es.staff_id, es.fee_amount, es.role_override,
+		es.notes, es.notification_sent_at, es.notification_last_result, es.created_at,
 		s.name, s.role_label, s.phone, s.email
 		FROM event_staff es
 		LEFT JOIN staff s ON es.staff_id = s.id
@@ -582,19 +752,17 @@ func (r *EventRepo) GetStaff(ctx context.Context, eventID uuid.UUID) ([]models.E
 	items := make([]models.EventStaff, 0)
 	for rows.Next() {
 		var es models.EventStaff
-		var status string
 		if err := rows.Scan(&es.ID, &es.EventID, &es.StaffID, &es.FeeAmount,
-			&es.RoleOverride, &es.Notes, &es.ShiftStart, &es.ShiftEnd, &status,
-			&es.NotificationSentAt, &es.NotificationLastResult,
+			&es.RoleOverride, &es.Notes, &es.NotificationSentAt, &es.NotificationLastResult,
 			&es.CreatedAt, &es.StaffName, &es.StaffRoleLabel, &es.StaffPhone, &es.StaffEmail); err != nil {
 			return nil, err
 		}
-		statusCopy := status
-		es.Status = &statusCopy
+		status := models.AssignmentStatusConfirmed
+		es.Status = &status
 		items = append(items, es)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating event staff: %w", err)
+		return nil, fmt.Errorf("error iterating legacy event staff: %w", err)
 	}
 	return items, nil
 }
@@ -701,7 +869,7 @@ func (r *EventRepo) CheckEquipmentConflicts(ctx context.Context, userID uuid.UUI
 // EquipmentAvailability holds available quantity for a specific date.
 type EquipmentAvailability struct {
 	InventoryID uuid.UUID `json:"inventory_id"`
-	Available  int       `json:"available"`
+	Available   int       `json:"available"`
 }
 
 // GetEquipmentAvailability returns available quantity for each inventory item on a given date.
@@ -1087,4 +1255,3 @@ func (r *EventRepo) SearchEventsAdvanced(ctx context.Context, userID uuid.UUID, 
 
 	return events, nil
 }
-

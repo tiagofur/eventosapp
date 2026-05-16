@@ -13,11 +13,13 @@ import SolennixFeatures
 struct ContentView: View {
 
     @Environment(AuthManager.self) private var authManager
+    @Environment(\.apiClient) private var apiClient
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var deepLinkResetToken: String?
+    @State private var deepLinkTeamInviteToken: String?
     @State private var pendingSpotlightRoute: Route?
 
     var body: some View {
@@ -33,13 +35,16 @@ struct ContentView: View {
                     SplashView()
 
                 case .unauthenticated:
-                    AuthFlowView(deepLinkResetToken: $deepLinkResetToken)
+                    AuthFlowView(
+                        deepLinkResetToken: $deepLinkResetToken,
+                        deepLinkTeamInviteToken: $deepLinkTeamInviteToken
+                    )
 
                 case .biometricLocked:
                     BiometricGateView()
 
                 case .authenticated:
-                    mainLayout
+                    authenticatedLayout
                 }
             }
             .frame(maxHeight: .infinity)
@@ -103,6 +108,15 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder
+    private var authenticatedLayout: some View {
+        if authManager.currentUser?.role == "team_member" {
+            TeamMemberPortalView(apiClient: apiClient)
+        } else {
+            mainLayout
+        }
+    }
+
     // MARK: - Deep Link Handling
 
     private func handleDeepLink(_ url: URL) {
@@ -111,6 +125,8 @@ struct ContentView: View {
         switch action {
         case .resetPassword(let token):
             deepLinkResetToken = token
+        case .teamInvite(let token):
+            deepLinkTeamInviteToken = token
         }
     }
 }

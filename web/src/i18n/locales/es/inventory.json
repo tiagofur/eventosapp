@@ -37,7 +37,13 @@
     "stock_adjusted": "Stock ajustado",
     "adjust_stock": "Ajustar stock",
     "adjust_stock_placeholder": "Ej: +10 o -5",
-    "invalid_adjustment": "Ingresá un número válido"
+    "invalid_adjustment": "Ingresá un número válido",
+    "item_added": "Ítem agregado exitosamente",
+    "item_updated": "Ítem actualizado exitosamente",
+    "item_deleted": "Ítem eliminado exitosamente",
+    "error_create": "Error al crear el ítem",
+    "error_update": "Error al actualizar el ítem",
+    "error_delete": "Error al eliminar el ítem"
   },
   "form": {
     "basic_info": "Información Básica",

@@ -14,8 +14,10 @@ struct AuthFlowView: View {
 
     /// Token received from a deep link, triggers navigation to ResetPasswordView.
     @Binding var deepLinkResetToken: String?
+    @Binding var deepLinkTeamInviteToken: String?
 
     @State private var showResetPasswordSheet = false
+    @State private var showTeamInviteSheet = false
 
     var body: some View {
         NavigationStack {
@@ -30,9 +32,23 @@ struct AuthFlowView: View {
                 }
             }
         }
+        .sheet(isPresented: $showTeamInviteSheet) {
+            deepLinkTeamInviteToken = nil
+        } content: {
+            if let token = deepLinkTeamInviteToken {
+                NavigationStack {
+                    TeamInviteAcceptView(token: token)
+                }
+            }
+        }
         .onChange(of: deepLinkResetToken) { _, newValue in
             if newValue != nil {
                 showResetPasswordSheet = true
+            }
+        }
+        .onChange(of: deepLinkTeamInviteToken) { _, newValue in
+            if newValue != nil {
+                showTeamInviteSheet = true
             }
         }
     }
@@ -42,6 +58,9 @@ struct AuthFlowView: View {
 
 #Preview {
     let auth = AuthManager()
-    AuthFlowView(deepLinkResetToken: .constant(nil))
+    AuthFlowView(
+        deepLinkResetToken: .constant(nil),
+        deepLinkTeamInviteToken: .constant(nil)
+    )
         .environment(auth)
 }

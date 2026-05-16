@@ -4,6 +4,7 @@ import { queryKeys } from './queryKeys';
 import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
 import type { ProductInsert, ProductUpdate, PaginationParams } from '@/types/entities';
+import { useTranslation } from 'react-i18next';
 
 // ── Queries ──
 
@@ -43,6 +44,7 @@ export function useProductIngredients(productId: string | undefined) {
 export function useCreateProduct() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('products');
 
   return useMutation({
     mutationKey: ['products', 'create'],
@@ -62,7 +64,7 @@ export function useCreateProduct() {
     },
     onError: (error) => {
       logError('Error creating product', error);
-      addToast(getErrorMessage(error, 'Error al crear el producto.'), 'error');
+      addToast(getErrorMessage(error, t('error_create')), 'error');
     },
   });
 }
@@ -70,6 +72,7 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('products');
 
   return useMutation({
     mutationKey: ['products', 'update'],
@@ -88,7 +91,7 @@ export function useUpdateProduct() {
     },
     onError: (error) => {
       logError('Error updating product', error);
-      addToast(getErrorMessage(error, 'Error al actualizar el producto.'), 'error');
+      addToast(getErrorMessage(error, t('error_update')), 'error');
     },
   });
 }
@@ -96,6 +99,7 @@ export function useUpdateProduct() {
 export function useDeleteProduct() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('products');
 
   return useMutation({
     mutationKey: ['products', 'delete'],
@@ -103,11 +107,11 @@ export function useDeleteProduct() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.planLimits });
-      addToast('Producto eliminado correctamente.', 'success');
+      addToast(t('success_delete'), 'success');
     },
     onError: (error) => {
       logError('Error deleting product', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el producto.'), 'error');
+      addToast(getErrorMessage(error, t('error_delete')), 'error');
     },
   });
 }

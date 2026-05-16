@@ -8,15 +8,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Card
@@ -60,6 +63,7 @@ fun StaffFormScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             SolennixTopAppBar(
                 title = {
@@ -84,6 +88,8 @@ fun StaffFormScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .navigationBarsPadding()
+                        .imePadding()
                         .verticalScroll(scrollState)
                         .padding(16.dp)
                 ) {
@@ -134,7 +140,7 @@ fun StaffFormScreen(
                         value = viewModel.notes,
                         onValueChange = { viewModel.notes = it },
                         label = "Notas (tarifa habitual, especialidad, disponibilidad...)",
-                        leadingIcon = Icons.Default.Notes
+                        leadingIcon = Icons.AutoMirrored.Filled.Notes
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 

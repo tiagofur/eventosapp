@@ -16,10 +16,22 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private fun isPendingInviteStatus(status: String?): Boolean {
+    return when (status?.trim()?.lowercase()) {
+        "pending", "active", "invited", "sent" -> true
+        else -> false
+    }
+}
+
 data class StaffDetailUiState(
     val staff: Staff? = null,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isInviting: Boolean = false,
+    val isRevoking: Boolean = false,
+    val inviteUrl: String? = null,
+    val inviteFeedback: String? = null,
+    val inviteFeedbackIsError: Boolean = false,
 )
 
 @HiltViewModel
@@ -59,6 +71,86 @@ class StaffDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(errorMessage = "Error al eliminar colaborador: ${e.message}")
+                }
+            }
+        }
+    }
+
+    fun inviteAccess() {
+        val current = _uiState.value.staff ?: return
+        if (current.email.isNullOrBlank()) {
+            _uiState.update {
+                it.copy(
+                    inviteFeedback = "Este colaborador necesita email para activar acceso.",
+                    inviteFeedbackIsError = true
+                )
+            }
+            return
+        }
+        if (!current.invitedUserId.isNullOrBlank()) {
+            _uiState.update {
+                it.copy(
+                    inviteFeedback = "Este colaborador ya tiene acceso activado.",
+                    inviteFeedbackIsError = false
+                )
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isInviting = true, inviteFeedback = null, inviteFeedbackIsError = false)
+            }
+            try {
+                val invite = staffRepository.inviteStaffUser(staffId)
+                _uiState.update {
+                    it.copy(
+                        isInviting = false,
+                        inviteUrl = invite.acceptUrl,
+                        inviteFeedback = "Invitación creada correctamente.",
+                        inviteFeedbackIsError = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isInviting = false,
+                        inviteFeedback = "No se pudo crear la invitación: ${e.message ?: "error"}",
+                        inviteFeedbackIsError = true
+                    )
+                }
+            }
+        }
+    }
+
+    fun revokeInviteAccess() {
+        val current = _uiState.value.staff ?: return
+        if (!isPendingInviteStatus(current.inviteStatus) && _uiState.value.inviteUrl.isNullOrBlank()) {
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(isRevoking = true, inviteFeedback = null, inviteFeedbackIsError = false)
+            }
+            try {
+                staffRepository.revokeStaffInvite(staffId)
+                _uiState.update {
+                    it.copy(
+                        isRevoking = false,
+                        staff = it.staff?.copy(inviteStatus = null),
+                        inviteUrl = null,
+                        inviteFeedback = "Invitación revocada correctamente.",
+                        inviteFeedbackIsError = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isRevoking = false,
+                        inviteFeedback = "No se pudo revocar la invitación: ${e.message ?: "error"}",
+                        inviteFeedbackIsError = true
+                    )
                 }
             }
         }

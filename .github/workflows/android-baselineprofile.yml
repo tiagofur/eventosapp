@@ -1,0 +1,96 @@
+name: Android BaselineProfile
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 7 * * *"
+
+concurrency:
+  group: android-baselineprofile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baselineprofile-managed-device:
+    name: BaselineProfile Macrobenchmark (API 34)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      STARTUP_P50_THRESHOLD_MS: "1800"
+    defaults:
+      run:
+        working-directory: ./android
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure jq
+        run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+
+      - name: Run baselineprofile macrobenchmark
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            ./gradlew :baselineprofile:connectedNonMinifiedReleaseAndroidTest --no-daemon --stacktrace
+
+      - name: Upload baselineprofile reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baselineprofile-reports
+          if-no-files-found: ignore
+          path: |
+            android/baselineprofile/build/reports/**
+            android/baselineprofile/build/outputs/**
+
+      - name: Enforce startup threshold
+        if: success()
+        run: |
+          bash ../scripts/android/check_startup_benchmark.sh "$PWD/baselineprofile/build" "$STARTUP_P50_THRESHOLD_MS" | tee baselineprofile-gate-output.txt
+
+      - name: Publish startup summary
+        if: always()
+        run: |
+          if [[ -f baselineprofile-gate-output.txt ]]; then
+            {
+              echo "## BaselineProfile Startup Gate"
+              echo
+              echo "Configured threshold: ${STARTUP_P50_THRESHOLD_MS}ms"
+              echo
+              echo "### Observed metrics"
+              echo "| Benchmark | Metric | Value (ms) |"
+              echo "|---|---|---:|"
+              grep '^STARTUP_METRIC|' baselineprofile-gate-output.txt | while IFS='|' read -r _ benchmark metric value; do
+                echo "| ${benchmark} | ${metric} | ${value} |"
+              done
+              echo
+              echo "### Calibration hint"
+              grep '^STARTUP_GATE_OBSERVED|' baselineprofile-gate-output.txt | awk -F'|' '{print "- Observed max: " $3 "ms"}'
+              grep '^STARTUP_GATE_RECOMMENDED|' baselineprofile-gate-output.txt | awk -F'|' '{print "- Suggested next threshold (max + 15%): " $3 "ms"}'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Gate summary
+        if: always()
+        run: |
+          echo "Acceptance criteria:"
+          echo "1) :baselineprofile:connectedNonMinifiedReleaseAndroidTest passes (no failed instrumentation tests)."
+          echo "2) Startup median/p50 metrics <= ${STARTUP_P50_THRESHOLD_MS}ms."
+          echo "3) Benchmark artifacts are uploaded for trend tracking."

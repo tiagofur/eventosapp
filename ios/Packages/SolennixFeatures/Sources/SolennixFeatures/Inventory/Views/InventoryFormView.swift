@@ -99,7 +99,7 @@ public struct InventoryFormView: View {
                             .font(.caption)
                             .foregroundStyle(SolennixColors.textTertiary)
 
-                        FlowLayout(spacing: Spacing.xs) {
+                        InventoryFlowLayout(spacing: Spacing.xs) {
                             ForEach(group.1, id: \.self) { unit in
                                 Button {
                                     viewModel.unit = unit
@@ -163,7 +163,7 @@ public struct InventoryFormView: View {
 // MARK: - Flow Layout
 
 /// A simple flow layout for wrapping items
-private struct FlowLayout: Layout {
+private struct InventoryFlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

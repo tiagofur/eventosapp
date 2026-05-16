@@ -17,6 +17,7 @@ public enum Route: Hashable {
     case eventSupplies(id: String)
     case eventEquipment(id: String)
     case eventShoppingList(id: String)
+    case eventPurchaseChecklist(id: String)
     case eventPhotos(id: String)
     case eventContractPreview(id: String)
     case eventStaff(id: String)
@@ -53,6 +54,9 @@ public enum Route: Hashable {
 
     // MARK: Event Form Links
     case eventFormLinks
+
+    // MARK: Payment Submissions (organizer inbox)
+    case paymentInbox
 
     // MARK: Settings Sub-Routes
     case editProfile

@@ -8,6 +8,7 @@ object Endpoints {
     const val REFRESH = "auth/refresh"
     const val FORGOT_PASSWORD = "auth/forgot-password"
     const val RESET_PASSWORD = "auth/reset-password"
+    const val TEAM_INVITE_ACCEPT = "auth/team-invite/accept"
     const val ME = "auth/me"
     const val CHANGE_PASSWORD = "auth/change-password"
     const val GOOGLE_AUTH = "auth/google"
@@ -20,7 +21,10 @@ object Endpoints {
     // Staff (Personal / Colaboradores)
     const val STAFF = "staff"
     const val STAFF_AVAILABILITY = "staff/availability"
+    const val STAFF_MY_ASSIGNMENTS = "staff/my-assignments"
     fun staff(id: String) = "staff/$id"
+    fun staffInvite(id: String) = "staff/$id/invite"
+    fun staffRespondAssignment(id: String) = "staff/assignments/$id/respond"
     fun eventStaff(eventId: String) = "events/$eventId/staff"
 
     // Staff Teams (Equipos)
@@ -41,6 +45,7 @@ object Endpoints {
     fun eventPhotos(id: String) = "events/$id/photos"
     fun eventPhoto(eventId: String, photoId: String) = "events/$eventId/photos/$photoId"
     fun eventPublicLink(eventId: String) = "events/$eventId/public-link"
+    fun eventPdf(eventId: String, type: String) = "events/$eventId/pdf/$type"
     const val EQUIPMENT_CONFLICTS = "events/equipment/conflicts"
     const val EQUIPMENT_SUGGESTIONS = "events/equipment/suggestions"
     const val EQUIPMENT_AVAILABILITY = "events/equipment/availability"
@@ -59,6 +64,10 @@ object Endpoints {
     // Payments
     const val PAYMENTS = "payments"
     fun payment(id: String) = "payments/$id"
+
+    // Quick Quotes
+    const val QUICK_QUOTES = "quick-quotes"
+    const val QUICK_QUOTES_PDF = "quick-quotes/pdf"
 
     // Unavailable Dates
     const val UNAVAILABLE_DATES = "unavailable-dates"

@@ -1,6 +1,6 @@
 import React from "react";
 import { formatDistanceToNow, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 import { Activity, AlertTriangle, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDashboardActivity } from "@/hooks/queries/useActivityQueries";
@@ -8,15 +8,6 @@ import type { AuditLog } from "@/services/activityService";
 
 /**
  * Read-only "Actividad reciente" widget for the user Dashboard.
- *
- * Consumes the backend's `/api/dashboard/activity` endpoint (added during
- * the contract freeze) and renders the N most recent entries of the
- * authenticated user's audit log with a minimal, non-interactive layout.
- *
- * Intentionally kept visually aligned with the other Dashboard cards
- * (same rounded-2xl, border, shadow) — this is a new read-only widget,
- * not a redesign. The Dashboard page composes it as a side card near
- * "Próximos Eventos" / "Inventario crítico".
  */
 
 interface RecentActivityCardProps {
@@ -24,56 +15,33 @@ interface RecentActivityCardProps {
   limit?: number;
 }
 
-// Map the backend's verb strings to human-readable Spanish labels.
-// The backend normalizes verbs to a small set (create/update/delete/login,
-// etc.) so the mapping can stay tight. Anything unknown falls back to
-// the raw verb.
-const ACTION_LABELS: Record<string, string> = {
-  create: "Creó",
-  update: "Actualizó",
-  delete: "Eliminó",
-  login: "Inició sesión",
-  logout: "Cerró sesión",
-  register: "Se registró",
-};
-
-const RESOURCE_LABELS: Record<string, string> = {
-  event: "un evento",
-  events: "un evento",
-  client: "un cliente",
-  product: "un producto",
-  products: "un producto",
-  inventory: "un ítem de inventario",
-  inventory_item: "un ítem de inventario",
-  payment: "un pago",
-  payments: "un pago",
-  user: "su perfil",
-  auth: "",
-};
-
-function describeAction(entry: AuditLog): string {
-  const verb = ACTION_LABELS[entry.action.toLowerCase()] ?? entry.action;
-  const resource = RESOURCE_LABELS[entry.resource_type.toLowerCase()] ?? entry.resource_type;
-  if (!resource) return verb;
-  return `${verb} ${resource}`;
-}
-
-function formatRelative(createdAt: string): string {
-  try {
-    return formatDistanceToNow(parseISO(createdAt), { addSuffix: true, locale: es });
-  } catch {
-    return "";
-  }
-}
-
 export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ limit = 8 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: entries, isLoading, isError } = useDashboardActivity(limit);
 
-  // Fallback to Spanish when i18n not initialized in tests
-  const loadingLabel = t('loading_activity') === 'loading_activity' ? 'Cargando actividad reciente...' : t('loading_activity');
-  const errorLabel = t('activity_error') === 'activity_error' ? 'No se pudo cargar la actividad reciente.' : t('activity_error');
-  const noActivityLabel = t('no_activity') === 'no_activity' ? 'Sin actividad registrada todavía.' : t('no_activity');
+  function describeAction(entry: AuditLog): string {
+    const actionKey = entry.action.toLowerCase();
+    const resourceKey = entry.resource_type.toLowerCase();
+    
+    // Normalize some backend resource keys to our i18n keys
+    const normalizedResource = resourceKey.endsWith('s') ? resourceKey.slice(0, -1) : resourceKey;
+    const finalResourceKey = normalizedResource === 'inventory_item' ? 'inventory' : normalizedResource;
+
+    const verb = t(`activity.actions.${actionKey}`, { defaultValue: entry.action });
+    const resource = t(`activity.resources.${finalResourceKey}`, { defaultValue: entry.resource_type });
+    
+    if (!resource) return verb;
+    return `${verb} ${resource}`;
+  }
+
+  function formatRelative(createdAt: string): string {
+    try {
+      const locale = i18n.language.startsWith('es') ? es : enUS;
+      return formatDistanceToNow(parseISO(createdAt), { addSuffix: true, locale });
+    } catch {
+      return "";
+    }
+  }
 
   return (
     <section className="bg-card shadow-sm border border-border rounded-2xl overflow-hidden">
@@ -82,7 +50,7 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ limit = 
           <span className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <Activity className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
           </span>
-          Actividad reciente
+          {t('activity.recent')}
         </h3>
       </div>
 
@@ -98,20 +66,20 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ limit = 
                 </div>
               </div>
             ))}
-            <span className="sr-only">{loadingLabel}</span>
+            <span className="sr-only">{t('action.loading_activity')}</span>
           </div>
         ) : isError ? (
           <div className="flex items-center gap-3 text-sm text-text-secondary">
             <AlertTriangle className="h-4 w-4 text-warning shrink-0" aria-hidden="true" />
-            <span>{errorLabel}</span>
+            <span>{t('action.activity_error')}</span>
           </div>
         ) : !entries || entries.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
             <Clock className="h-8 w-8 text-text-tertiary opacity-40" aria-hidden="true" />
-            <p className="text-xs text-text-secondary">{noActivityLabel}</p>
+            <p className="text-xs text-text-secondary">{t('action.no_activity')}</p>
           </div>
         ) : (
-          <ul className="space-y-3" aria-label="Lista de eventos de actividad reciente">
+          <ul className="space-y-3" aria-label={t('activity.event_list_label')}>
             {entries.map((entry) => (
               <li key={entry.id} className="flex items-start gap-3">
                 <span className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center shrink-0 mt-0.5">

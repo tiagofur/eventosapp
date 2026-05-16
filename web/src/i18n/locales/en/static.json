@@ -12,6 +12,222 @@
     "description": "Solennix is a SaaS application designed for event organizers of all types. Manage clients, events, product catalog, inventory, quotes, and payments all in one place.",
     "footer": "Made with {{heart}} by the Creapolis.Dev team"
   },
+  "changelog": {
+    "title": "Changelog",
+    "subtitle": "Official change history for web, iOS, Android, and backend.",
+    "last_update": "Last update: {{date}}",
+    "current_versions": "Current versions",
+    "platforms": {
+      "web": "Web",
+      "ios": "iOS",
+      "android": "Android",
+      "backend": "Backend"
+    }
+  },
+  "help": {
+    "title": "Help Center",
+    "subtitle": "Quick answers, guides, and support.",
+    "changelog_title": "Changelog — What's New",
+    "changelog_desc": "Review the latest versions and changes across Web, iOS, Android, and Backend.",
+    "changelog_cta": "View Changelog",
+    "guides_title": "Quick Guides",
+    "faq_title": "Frequently Asked Questions",
+    "contact_title": "Couldn't find what you need?",
+    "contact_subtitle": "Contact our support team for personalized help.",
+    "contact_support": "Contact support",
+    "contact_github": "Open issue on GitHub",
+    "categories": {
+      "all": "All",
+      "general": "General",
+      "technical": "Technical",
+      "billing": "Billing",
+      "changelog": "Changelog"
+    },
+    "guides": {
+      "getting_started": {
+        "title": "Getting Started",
+        "description": "Create your first event and learn the basics.",
+        "topics": [
+          "Create an account",
+          "Create your first event",
+          "Invite clients",
+          "Add products"
+        ]
+      },
+      "events": {
+        "title": "Event Management",
+        "description": "Manage events from proposal to final settlement.",
+        "topics": [
+          "Create and edit events",
+          "Budgets and quotes",
+          "Contracts and confirmations",
+          "Payments and settlement"
+        ]
+      },
+      "inventory": {
+        "title": "Inventory",
+        "description": "Manage products, equipment, and supplies.",
+        "topics": [
+          "Add products",
+          "Classify equipment and supplies",
+          "Track stock",
+          "Availability alerts"
+        ]
+      },
+      "clients": {
+        "title": "Clients",
+        "description": "Manage contacts and each client's history.",
+        "topics": [
+          "Create client profiles",
+          "Event history",
+          "Communication",
+          "Private notes"
+        ]
+      }
+    },
+    "faqs": [
+      {
+        "id": "what-is-solennix",
+        "question": "What is Solennix?",
+        "category": "general",
+        "paragraphs": [
+          "Solennix is an all-in-one event operations platform. Manage clients, events, products, inventory, quotes, contracts, and payments in one suite."
+        ],
+        "note": "Available on Web, iOS, and Android with real-time sync."
+      },
+      {
+        "id": "platforms",
+        "question": "Which platforms is Solennix available on?",
+        "category": "general",
+        "paragraphs": ["Solennix is available on:"],
+        "bullets": [
+          "Web — browser access on desktop/laptop",
+          "iOS — iPhone and iPad via App Store",
+          "Android — phone/tablet via Google Play Store"
+        ],
+        "note": "All data syncs automatically across platforms."
+      },
+      {
+        "id": "sync",
+        "question": "Does data sync across platforms?",
+        "category": "technical",
+        "paragraphs": [
+          "Yes. Any change made on one platform (Web, iOS, Android) is automatically reflected on the others in real time (or within a few seconds)."
+        ],
+        "note": "This includes clients, events, products, inventory, quotes, payments, and contracts."
+      },
+      {
+        "id": "offline",
+        "question": "What if I don't have an internet connection?",
+        "category": "technical",
+        "paragraphs": [
+          "On mobile (iOS/Android), you can view data that was already loaded offline, but you can't create or edit without connection.",
+          "On Web, you need an active connection. Data syncs when you reconnect."
+        ]
+      },
+      {
+        "id": "teams",
+        "question": "Can I invite my team to Solennix?",
+        "category": "general",
+        "paragraphs": [
+          "Team management and permissions depend on your plan. Go to Settings → Team in Solennix to invite users."
+        ],
+        "note": "Contact soporte@solennix.com if you have role/permission questions."
+      },
+      {
+        "id": "data-security",
+        "question": "Is my data secure?",
+        "category": "technical",
+        "paragraphs": [
+          "Yes. We use in-transit encryption (HTTPS/TLS) and protected database storage."
+        ],
+        "note": "Read our privacy policy at solennix.com/privacy-policy/ for full details."
+      },
+      {
+        "id": "backup",
+        "question": "What is your backup policy?",
+        "category": "technical",
+        "paragraphs": [
+          "We run automatic daily backups for all data. If you need a manual backup copy, contact soporte@solennix.com."
+        ]
+      },
+      {
+        "id": "billing-plans",
+        "question": "What's the difference between plans?",
+        "category": "billing",
+        "paragraphs": ["Solennix offers 3 plans:"],
+        "bullets": [
+          "Free — basic features, 1 user",
+          "Pro — advanced features, up to 3 users",
+          "Business — full access, unlimited teams"
+        ],
+        "note": "Visit Settings → Plans for complete tier details."
+      },
+      {
+        "id": "downgrade",
+        "question": "Can I change plans?",
+        "category": "billing",
+        "paragraphs": [
+          "Yes. You can upgrade or downgrade at any time from Settings → Billing."
+        ],
+        "note": "Changes are applied immediately. If you downgrade, some features may be disabled."
+      },
+      {
+        "id": "payment-methods",
+        "question": "What payment methods do you accept?",
+        "category": "billing",
+        "paragraphs": [
+          "We accept credit cards (Visa, Mastercard, American Express) and bank transfer for annual plans."
+        ],
+        "note": "Configure your payment method in Settings → Billing."
+      },
+      {
+        "id": "changelog-what",
+        "question": "What does the changelog include?",
+        "category": "changelog",
+        "paragraphs": [
+          "The changelog documents every Solennix release (Web, iOS, Android, Backend) with per-platform changes:"
+        ],
+        "bullets": [
+          "New features",
+          "Bug fixes",
+          "Performance improvements",
+          "UI/UX updates"
+        ]
+      },
+      {
+        "id": "changelog-when",
+        "question": "How often is the changelog updated?",
+        "category": "changelog",
+        "paragraphs": [
+          "We ship every 1-2 weeks with improvements and fixes. The changelog is updated whenever a new version is published."
+        ]
+      },
+      {
+        "id": "feature-request",
+        "question": "How can I request a new feature?",
+        "category": "general",
+        "paragraphs": [
+          "We love feedback. Send your idea to soporte@solennix.com or open an issue in our GitHub repository."
+        ],
+        "note": "Check the changelog to confirm whether it's already planned or in progress."
+      },
+      {
+        "id": "bug-report",
+        "question": "How do I report a bug?",
+        "category": "technical",
+        "paragraphs": ["If you find a bug, share:"],
+        "bullets": [
+          "What you did",
+          "What you expected",
+          "What actually happened",
+          "Where it happened (Web, iOS, Android)",
+          "Screenshots or video, if possible"
+        ],
+        "note": "Send it to soporte@solennix.com or GitHub Issues."
+      }
+    ]
+  },
   "privacy": {
     "back": "Back",
     "title": "Privacy Policy",
@@ -156,5 +372,28 @@
     "footer_note": "* Our team will process your request within 48 to 72 business hours. You will receive a confirmation email once the process is complete.",
     "other_queries_title": "Other queries about your data",
     "other_queries_desc": "If you only wish to correct information or have doubts about how we treat your data, we invite you to review our <link>Privacy Policy</link>."
+  },
+  "setup_required": {
+    "title": "Setup Required",
+    "description": "The application cannot connect to the database because the Supabase configuration is missing.",
+    "steps_title": "Steps to configure:",
+    "step_1": "Create a Supabase project",
+    "step_1_cta": "Go to Supabase Dashboard",
+    "step_1_aria": "Open Supabase Dashboard in a new tab",
+    "step_2": "Copy project credentials",
+    "step_2_desc": "In your Supabase project, go to Settings → API and copy:",
+    "step_2_url": "Project URL",
+    "step_2_key": "anon/public key",
+    "step_3": "Execute the database schema",
+    "step_3_desc": "In the Supabase SQL Editor, run the file:",
+    "step_4": "Configure environment variables",
+    "step_4_local": "For local development:",
+    "step_4_local_env": "# Create a .env file in the project root",
+    "step_4_vercel": "For Vercel:",
+    "step_4_vercel_desc": "Add the environment variables in the project configuration on Vercel Dashboard",
+    "step_5": "Restart the application",
+    "step_5_desc": "After configuring the variables, restart the development server or redeploy on Vercel",
+    "note": "Note:",
+    "note_desc": "If the application was working before, verify that the environment variables have not been lost. In Vercel, check the project's Environment Variables configuration."
   }
 }

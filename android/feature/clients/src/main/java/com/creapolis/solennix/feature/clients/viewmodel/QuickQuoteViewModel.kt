@@ -12,13 +12,9 @@ import com.creapolis.solennix.core.model.InventoryType
 import com.creapolis.solennix.core.model.Product
 import com.creapolis.solennix.core.model.ProductIngredient
 import com.creapolis.solennix.core.network.ApiService
-import com.creapolis.solennix.core.network.get
-import com.creapolis.solennix.core.network.post
-import com.creapolis.solennix.core.network.put
-import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
+import com.creapolis.solennix.core.network.get
 import com.creapolis.solennix.feature.clients.R
-import com.creapolis.solennix.feature.clients.pdf.QuickQuotePdfGenerator
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
@@ -136,12 +134,47 @@ data class QuickQuoteUiState(
         get() = totalCosts > 0
 }
 
+@Serializable
+private data class QuickQuotePDFClientPayload(
+    val name: String,
+    val phone: String,
+    val email: String? = null
+)
+
+@Serializable
+private data class QuickQuotePDFProductPayload(
+    @SerialName("product_id") val productId: String? = null,
+    val name: String,
+    val quantity: Double,
+    @SerialName("unit_price") val unitPrice: Double,
+    val discount: Double
+)
+
+@Serializable
+private data class QuickQuotePDFExtraPayload(
+    val description: String,
+    val cost: Double,
+    val price: Double,
+    @SerialName("exclude_utility") val excludeUtility: Boolean
+)
+
+@Serializable
+private data class QuickQuotePDFRequestPayload(
+    val client: QuickQuotePDFClientPayload? = null,
+    val products: List<QuickQuotePDFProductPayload>,
+    val extras: List<QuickQuotePDFExtraPayload>,
+    @SerialName("num_people") val numPeople: Int,
+    val discount: Double,
+    @SerialName("discount_type") val discountType: String,
+    @SerialName("requires_invoice") val requiresInvoice: Boolean,
+    @SerialName("tax_rate") val taxRate: Double
+)
+
 @HiltViewModel
 class QuickQuoteViewModel @Inject constructor(
     private val productRepository: ProductRepository,
     private val clientRepository: ClientRepository,
     private val apiService: ApiService,
-    private val authManager: AuthManager,
     @ApplicationContext private val appContext: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -379,8 +412,9 @@ class QuickQuoteViewModel @Inject constructor(
     fun generatePdf(context: Context) {
         val state = _uiState.value
         val validItems = state.selectedItems.filter { it.productId.isNotEmpty() && it.quantity > 0 }
+        val validExtras = state.extras.filter { it.description.isNotBlank() }
 
-        if (validItems.isEmpty()) {
+        if (validItems.isEmpty() && validExtras.isEmpty()) {
             _uiState.update { it.copy(errorMessage = appContext.getString(R.string.clients_quick_quote_add_product_error)) }
             return
         }
@@ -388,27 +422,51 @@ class QuickQuoteViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isGeneratingPdf = true) }
             try {
-                val user = authManager.currentUser.value
-                val file = QuickQuotePdfGenerator.generate(
-                    context = context,
-                    client = state.client,
-                    items = validItems,
-                    extras = state.extras.filter { it.description.isNotBlank() },
-                    numPeople = state.numPeople.toIntOrNull(),
-                    subtotalProducts = state.subtotalProducts,
-                    extrasTotal = state.extrasTotal,
-                    discountAmount = state.discountAmount,
-                    discountType = state.discountType,
-                    discountValue = state.discount.toDoubleOrNull() ?: 0.0,
+                val payload = QuickQuotePDFRequestPayload(
+                    client = state.client?.let {
+                        QuickQuotePDFClientPayload(
+                            name = it.name,
+                            phone = it.phone,
+                            email = it.email
+                        )
+                    } ?: state.clientName.takeIf { it.isNotBlank() }?.let {
+                        QuickQuotePDFClientPayload(
+                            name = it,
+                            phone = state.clientPhone,
+                            email = state.clientEmail.takeIf { email -> email.isNotBlank() }
+                        )
+                    },
+                    products = validItems.map { item ->
+                        QuickQuotePDFProductPayload(
+                            productId = item.productId,
+                            name = item.productName.ifBlank { "Producto" },
+                            quantity = item.quantity.toDouble(),
+                            unitPrice = item.unitPrice,
+                            discount = 0.0
+                        )
+                    },
+                    extras = validExtras.map { extra ->
+                        QuickQuotePDFExtraPayload(
+                            description = extra.description,
+                            cost = extra.cost,
+                            price = extra.price,
+                            excludeUtility = extra.excludeUtility
+                        )
+                    },
+                    numPeople = state.numPeople.toIntOrNull() ?: 0,
+                    discount = state.discount.toDoubleOrNull() ?: 0.0,
+                    discountType = when (state.discountType) {
+                        DiscountType.PERCENT -> "percent"
+                        DiscountType.FIXED -> "fixed"
+                    },
                     requiresInvoice = state.requiresInvoice,
-                    taxRate = state.taxRate.toDoubleOrNull() ?: 0.0,
-                    taxAmount = state.taxAmount,
-                    total = state.total,
-                    user = user,
-                    clientName = state.clientName.takeIf { state.client == null },
-                    clientPhone = state.clientPhone.takeIf { state.client == null },
-                    clientEmail = state.clientEmail.takeIf { state.client == null }
+                    taxRate = state.taxRate.toDoubleOrNull() ?: 0.0
                 )
+
+                val bytes = apiService.postBytes(Endpoints.QUICK_QUOTES_PDF, payload)
+                val file = File(context.cacheDir, "cotizacion_rapida.pdf").apply {
+                    writeBytes(bytes)
+                }
                 _uiState.update { it.copy(generatedPdfFile = file, isGeneratingPdf = false) }
             } catch (e: Exception) {
                 _uiState.update {

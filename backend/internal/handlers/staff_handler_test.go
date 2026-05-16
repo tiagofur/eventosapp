@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/tiagofur/solennix-backend/internal/models"
 	"github.com/tiagofur/solennix-backend/internal/repository"
+	"github.com/tiagofur/solennix-backend/internal/services"
 )
 
 // ---------------------------------------------------------------------------
@@ -210,6 +211,25 @@ func TestCreateStaff_RepoError_Returns500(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 }
 
+func TestCreateStaff_ProPlanLimitReached_Returns403(t *testing.T) {
+	userID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro"}, nil)
+	staffRepo.On("CountByUserID", mock.Anything, userID).Return(2, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	body := `{"name":"Maria"}`
+	req := makeReqWithUserID(http.MethodPost, "/api/staff", body, userID)
+	rr := httptest.NewRecorder()
+	h.CreateStaff(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	assert.Contains(t, rr.Body.String(), "plan_limit_exceeded")
+	assert.Contains(t, rr.Body.String(), "staff_seats")
+	staffRepo.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+}
+
 // ---------------------------------------------------------------------------
 // UpdateStaff
 // ---------------------------------------------------------------------------
@@ -272,6 +292,279 @@ func TestDeleteStaff_NotFound_Returns404(t *testing.T) {
 	h.DeleteStaff(rr, req)
 
 	assert.Equal(t, http.StatusNotFound, rr.Code)
+}
+
+// ---------------------------------------------------------------------------
+// InviteStaffUser
+// ---------------------------------------------------------------------------
+
+func TestInviteStaffUser_BusinessPlan_Returns201(t *testing.T) {
+	userID := uuid.New()
+	staffID := uuid.New()
+	email := "staff@example.com"
+
+	staffRepo := new(MockStaffRepo)
+	staffRepo.On("GetByID", mock.Anything, staffID, userID).Return(&models.Staff{
+		ID: staffID, UserID: userID, Name: "Carlos", Email: &email,
+	}, nil)
+	staffRepo.On("CreateInvite", mock.Anything, mock.AnythingOfType("*models.StaffInvite")).Return(nil).Run(func(args mock.Arguments) {
+		inv := args.Get(1).(*models.StaffInvite)
+		inv.ID = uuid.New()
+		inv.CreatedAt = time.Now().UTC()
+	})
+
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "business", Name: "Owner"}, nil)
+
+	authSvc := services.NewAuthService("test-secret", 24)
+	h := NewStaffHandler(staffRepo, userRepo)
+	h.SetInviteSupport(authSvc, nil, "https://app.solennix.com")
+
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/"+staffID.String()+"/invite", "{}", staffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.InviteStaffUser(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code)
+	assert.Contains(t, rr.Body.String(), "accept_url")
+	assert.Contains(t, rr.Body.String(), "team-invite")
+}
+
+func TestInviteStaffUser_ProPlan_Returns201(t *testing.T) {
+	userID := uuid.New()
+	staffID := uuid.New()
+	email := "staff@example.com"
+
+	staffRepo := new(MockStaffRepo)
+	staffRepo.On("GetByID", mock.Anything, staffID, userID).Return(&models.Staff{
+		ID: staffID, UserID: userID, Name: "Carlos", Email: &email,
+	}, nil)
+	staffRepo.On("CreateInvite", mock.Anything, mock.AnythingOfType("*models.StaffInvite")).Return(nil).Run(func(args mock.Arguments) {
+		inv := args.Get(1).(*models.StaffInvite)
+		inv.ID = uuid.New()
+		inv.CreatedAt = time.Now().UTC()
+	})
+
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro", Name: "Owner"}, nil)
+
+	authSvc := services.NewAuthService("test-secret", 24)
+	h := NewStaffHandler(staffRepo, userRepo)
+	h.SetInviteSupport(authSvc, nil, "https://app.solennix.com")
+
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/"+staffID.String()+"/invite", "{}", staffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.InviteStaffUser(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code)
+	assert.Contains(t, rr.Body.String(), "accept_url")
+	assert.Contains(t, rr.Body.String(), "team-invite")
+}
+
+func TestInviteStaffUser_ProPlan_AssistantRole_Returns403(t *testing.T) {
+	userID := uuid.New()
+	staffID := uuid.New()
+	email := "staff@example.com"
+
+	staffRepo := new(MockStaffRepo)
+	staffRepo.On("GetByID", mock.Anything, staffID, userID).Return(&models.Staff{
+		ID: staffID, UserID: userID, Name: "Carlos", Email: &email,
+	}, nil)
+
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "pro", Name: "Owner"}, nil)
+
+	authSvc := services.NewAuthService("test-secret", 24)
+	h := NewStaffHandler(staffRepo, userRepo)
+	h.SetInviteSupport(authSvc, nil, "https://app.solennix.com")
+
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/"+staffID.String()+"/invite", `{"target_role":"assistant"}`, staffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.InviteStaffUser(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	staffRepo.AssertNotCalled(t, "CreateInvite", mock.Anything, mock.Anything)
+}
+
+func TestInviteStaffUser_BusinessPlan_AssistantRole_Returns201(t *testing.T) {
+	userID := uuid.New()
+	staffID := uuid.New()
+	email := "staff@example.com"
+
+	staffRepo := new(MockStaffRepo)
+	staffRepo.On("GetByID", mock.Anything, staffID, userID).Return(&models.Staff{
+		ID: staffID, UserID: userID, Name: "Carlos", Email: &email,
+	}, nil)
+	staffRepo.On("CreateInvite", mock.Anything, mock.AnythingOfType("*models.StaffInvite")).Return(nil).Run(func(args mock.Arguments) {
+		inv := args.Get(1).(*models.StaffInvite)
+		assert.Equal(t, "assistant", inv.TargetRole)
+		inv.ID = uuid.New()
+		inv.CreatedAt = time.Now().UTC()
+	})
+
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "business", Name: "Owner"}, nil)
+
+	authSvc := services.NewAuthService("test-secret", 24)
+	h := NewStaffHandler(staffRepo, userRepo)
+	h.SetInviteSupport(authSvc, nil, "https://app.solennix.com")
+
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/"+staffID.String()+"/invite", `{"target_role":"assistant"}`, staffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.InviteStaffUser(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code)
+	assert.Contains(t, rr.Body.String(), `"target_role":"assistant"`)
+}
+
+func TestInviteStaffUser_BasicPlan_Returns403(t *testing.T) {
+	userID := uuid.New()
+	staffID := uuid.New()
+
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Plan: "basic", Name: "Owner"}, nil)
+
+	authSvc := services.NewAuthService("test-secret", 24)
+	h := NewStaffHandler(staffRepo, userRepo)
+	h.SetInviteSupport(authSvc, nil, "https://app.solennix.com")
+
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/"+staffID.String()+"/invite", "{}", staffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.InviteStaffUser(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	staffRepo.AssertNotCalled(t, "CreateInvite", mock.Anything, mock.Anything)
+}
+
+func TestRevokeStaffInvite_Success_Returns204(t *testing.T) {
+	userID := uuid.New()
+	staffID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	staffRepo.On("GetByID", mock.Anything, staffID, userID).Return(&models.Staff{ID: staffID, UserID: userID, Name: "Carlos"}, nil)
+	staffRepo.On("RevokeInvite", mock.Anything, staffID, userID).Return(nil)
+
+	h := NewStaffHandler(staffRepo, nil)
+	req := makeReqWithIDParam(http.MethodDelete, "/api/staff/"+staffID.String()+"/invite", "", staffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.RevokeStaffInvite(rr, req)
+
+	assert.Equal(t, http.StatusNoContent, rr.Code)
+}
+
+// ---------------------------------------------------------------------------
+// Team-member assignments (Phase 3.5)
+// ---------------------------------------------------------------------------
+
+func TestGetMyAssignments_Success(t *testing.T) {
+	userID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Role: "team_member"}, nil)
+	staffRepo.On("ListMyAssignments", mock.Anything, userID).Return([]repository.TeamMemberAssignment{
+		{
+			EventStaffID: uuid.New(),
+			EventID:      uuid.New(),
+			EventName:    "Boda Sofia y Diego",
+			EventDate:    "2026-06-20",
+			Status:       models.AssignmentStatusPending,
+		},
+	}, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	req := makeReqWithUserID(http.MethodGet, "/api/staff/my-assignments", "", userID)
+	rr := httptest.NewRecorder()
+	h.GetMyAssignments(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Body.String(), "Boda Sofia y Diego")
+	assert.Contains(t, rr.Body.String(), "pending")
+}
+
+func TestGetMyAssignments_OrganizerRole_Returns403(t *testing.T) {
+	userID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Role: "user"}, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	req := makeReqWithUserID(http.MethodGet, "/api/staff/my-assignments", "", userID)
+	rr := httptest.NewRecorder()
+	h.GetMyAssignments(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	staffRepo.AssertNotCalled(t, "ListMyAssignments", mock.Anything, mock.Anything)
+}
+
+func TestRespondAssignment_Accept_Success(t *testing.T) {
+	userID := uuid.New()
+	eventStaffID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Role: "team_member"}, nil)
+	staffRepo.On("RespondToAssignment", mock.Anything, userID, eventStaffID, "accept").Return(&repository.AssignmentResponseOutcome{
+		EventStaffID:      eventStaffID,
+		FinalStatus:       models.AssignmentStatusConfirmed,
+		SeatsRemaining:    0,
+		AutoDeclinedCount: 2,
+	}, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/assignments/"+eventStaffID.String()+"/respond", `{"response":"accept"}`, eventStaffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.RespondAssignment(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Body.String(), "confirmed")
+	assert.Contains(t, rr.Body.String(), "auto_declined_count")
+}
+
+func TestRespondAssignment_OrganizerRole_Returns403(t *testing.T) {
+	userID := uuid.New()
+	eventStaffID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Role: "admin"}, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/assignments/"+eventStaffID.String()+"/respond", `{"response":"accept"}`, eventStaffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.RespondAssignment(rr, req)
+
+	assert.Equal(t, http.StatusForbidden, rr.Code)
+	staffRepo.AssertNotCalled(t, "RespondToAssignment", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestRespondAssignment_OfferAlreadyFilled_Returns409(t *testing.T) {
+	userID := uuid.New()
+	eventStaffID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Role: "assistant"}, nil)
+	staffRepo.On("RespondToAssignment", mock.Anything, userID, eventStaffID, "accept").Return((*repository.AssignmentResponseOutcome)(nil), repository.ErrOfferAlreadyFilled)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/assignments/"+eventStaffID.String()+"/respond", `{"response":"accept"}`, eventStaffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.RespondAssignment(rr, req)
+
+	assert.Equal(t, http.StatusConflict, rr.Code)
+	assert.Contains(t, rr.Body.String(), "Offer slot already taken")
+}
+
+func TestRespondAssignment_InvalidResponse_Returns400(t *testing.T) {
+	userID := uuid.New()
+	eventStaffID := uuid.New()
+	staffRepo := new(MockStaffRepo)
+	userRepo := new(MockFullUserRepo)
+	userRepo.On("GetByID", mock.Anything, userID).Return(&models.User{ID: userID, Role: "assistant"}, nil)
+
+	h := NewStaffHandler(staffRepo, userRepo)
+	req := makeReqWithIDParam(http.MethodPost, "/api/staff/assignments/"+eventStaffID.String()+"/respond", `{"response":"maybe"}`, eventStaffID.String(), userID)
+	rr := httptest.NewRecorder()
+	h.RespondAssignment(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	staffRepo.AssertNotCalled(t, "RespondToAssignment", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
 
 // ---------------------------------------------------------------------------

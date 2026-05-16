@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.events.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
@@ -14,6 +15,7 @@ import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.EventDayNotificationManager
+import com.creapolis.solennix.feature.events.R
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -37,6 +39,7 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventDetailViewModelTest {
 
+    private val appContext = mockk<Context>(relaxed = true)
     private val eventRepository = mockk<EventRepository>(relaxed = true)
     private val clientRepository = mockk<ClientRepository>(relaxed = true)
     private val paymentRepository = mockk<PaymentRepository>(relaxed = true)
@@ -65,6 +68,13 @@ class EventDetailViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        every { appContext.getString(any()) } returns ""
+        every { appContext.getString(any(), *anyVararg()) } answers {
+            when (firstArg<Int>()) {
+                R.string.events_detail_error_positive_amount -> "El monto debe ser mayor a 0"
+                else -> ""
+            }
+        }
 
         every { eventRepository.observeEvent("event-1") } returns flowOf(baseEvent)
         coEvery { eventRepository.getEvent("event-1") } returns baseEvent
@@ -109,6 +119,7 @@ class EventDetailViewModelTest {
 
     private fun buildViewModel(): EventDetailViewModel {
         return EventDetailViewModel(
+            appContext = appContext,
             eventRepository = eventRepository,
             clientRepository = clientRepository,
             paymentRepository = paymentRepository,
@@ -163,7 +174,7 @@ class EventDetailViewModelTest {
                 it.eventId == "event-1" && it.amount == 300.0 && it.paymentMethod == "Efectivo"
             })
         }
-        coVerify(exactly = 1) { eventRepository.updateEvent(match { it.status == EventStatus.CONFIRMED }) }
+        coVerify(exactly = 0) { eventRepository.updateEvent(any()) }
         assertNull(vm.uiState.value.errorMessage)
         collectJob.cancel()
     }

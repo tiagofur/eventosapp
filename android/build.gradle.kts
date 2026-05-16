@@ -11,3 +11,13 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.baselineprofile) apply false
 }
+
+subprojects {
+    pluginManager.withPlugin("org.jetbrains.kotlin.android") {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension>("kotlin") {
+            compilerOptions {
+                freeCompilerArgs.add("-Xannotation-default-target=param-property")
+            }
+        }
+    }
+}

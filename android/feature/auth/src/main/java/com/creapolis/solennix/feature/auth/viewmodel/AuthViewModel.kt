@@ -157,6 +157,11 @@ class AuthViewModel @Inject constructor(
     var confirmNewPassword by mutableStateOf("")
     var resetSuccess by mutableStateOf(false)
 
+    // Team invite accept
+    var teamInvitePassword by mutableStateOf("")
+    var teamInviteConfirmPassword by mutableStateOf("")
+    var teamInviteSuccess by mutableStateOf(false)
+
     fun resetPassword() {
         if (!passwordComplexityRegex.matches(newPassword) || newPassword != confirmNewPassword) return
         viewModelScope.launch {
@@ -172,6 +177,23 @@ class AuthViewModel @Inject constructor(
                 resetSuccess = true
             } catch (e: ApiError) {
                 errorMessage = e.userMessage(appContext = appContext, context = ErrorContext.RESET_PASSWORD)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun acceptTeamInvite(token: String) {
+        if (!passwordComplexityRegex.matches(teamInvitePassword) || teamInvitePassword != teamInviteConfirmPassword) return
+        viewModelScope.launch {
+            isLoading = true
+            errorMessage = null
+            try {
+                authManager.acceptTeamInvite(token = token, password = teamInvitePassword)
+                teamInviteSuccess = true
+                _loginSuccess.tryEmit(Unit)
+            } catch (e: ApiError) {
+                errorMessage = e.userMessage(appContext = appContext, context = ErrorContext.INVITE_ACCEPT)
             } finally {
                 isLoading = false
             }
@@ -268,6 +290,7 @@ private enum class ErrorContext {
     REGISTER,
     FORGOT_PASSWORD,
     RESET_PASSWORD,
+    INVITE_ACCEPT,
     SOCIAL_LOGIN
 }
 
@@ -276,6 +299,7 @@ private fun ApiError.userMessage(appContext: Context, context: ErrorContext): St
     is ApiError.Unauthorized -> when (context) {
         ErrorContext.LOGIN -> appContext.getString(R.string.auth_error_invalid_credentials)
         ErrorContext.RESET_PASSWORD -> appContext.getString(R.string.auth_error_invalid_or_expired_link)
+        ErrorContext.INVITE_ACCEPT -> appContext.getString(R.string.auth_error_invalid_or_expired_link)
         else -> appContext.getString(R.string.auth_error_session_expired)
     }
     is ApiError.Conflict -> when (context) {

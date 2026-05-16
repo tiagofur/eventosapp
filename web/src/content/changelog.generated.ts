@@ -2,20 +2,20 @@
 // Source: versioning/releases.json
 export const changelogData = {
   "schemaVersion": 1,
-  "updatedAt": "2026-05-04",
+  "updatedAt": "2026-05-14",
   "currentVersions": {
     "web": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "source": "web/package.json"
     },
     "ios": {
-      "version": "1.1.0",
-      "build": "6",
+      "version": "1.2.0",
+      "build": "7",
       "source": "ios/project.yml"
     },
     "android": {
-      "version": "1.1.2",
-      "build": "5",
+      "version": "1.2.0",
+      "build": "6",
       "source": "android/app/build.gradle.kts"
     },
     "backend": {
@@ -24,6 +24,52 @@ export const changelogData = {
     }
   },
   "releases": [
+    {
+      "id": "2026-05-14-android-prelaunch-hardening",
+      "date": "2026-05-14",
+      "title": "Android 1.2.0 pre-publicación: hardening y paridad final",
+      "summary": "Se completa el hardening previo a publicación de Android 1.2.0 con mejoras de estabilidad, UX en formularios, consistencia visual y mayor confiabilidad de calidad para stores.",
+      "platforms": {
+        "web": [],
+        "ios": [],
+        "android": [
+          "Se corrige fricción en formularios largos aplicando `imePadding()` en contenedores scrolleables para que el teclado no tape campos ni acciones.",
+          "La bandeja de pagos del organizador queda integrada y alineada visualmente (tema y referencias de diseño corregidas).",
+          "La generación de PDFs migra a endpoints backend para mejorar consistencia y reducir trabajo pesado en cliente.",
+          "Se elimina la acción legacy de WhatsApp en detalle de evento para consolidar el flujo oficial de compartición.",
+          "Se refuerza estabilidad de dependencias/build (alineación Hilt-AGP y actualizaciones de toolchain Android).",
+          "Se consolida baseline de calidad con batería de tests unitarios en verde y gate de umbral de startup para hardening pre-store."
+        ],
+        "backend": []
+      }
+    },
+    {
+      "id": "2026-05-06-mobile-1-2-0-and-web-1-0-1-release-train",
+      "date": "2026-05-06",
+      "title": "Release train móvil 1.2.0 + Web 1.0.1",
+      "summary": "Se prepara el siguiente release de tiendas con mejoras reales de paridad en búsqueda, disponibilidad de equipo y calendario; Web recibe un patch visible para acompañar el changelog público y el reposicionamiento del producto.",
+      "platforms": {
+        "web": [
+          "La versión declarada de Web sube a 1.0.1 para reflejar el siguiente batch público de mejoras.",
+          "La app consume búsqueda de eventos server-backed (`/api/events/search`) y se alinea mejor con mobile en resultados y filtros.",
+          "Landing, Help y changelog público quedan listos como superficie coherente de comunicación del release."
+        ],
+        "ios": [
+          "iOS sube a 1.2.0 (build 7) con búsqueda de eventos apoyada en backend y mejor coherencia de resultados.",
+          "Calendario gana paridad funcional con filtro por estado, exportación iCal, retry y navegación refinada.",
+          "Se recuperan widgets clave del Dashboard y se corrige el guardado de ajustes de stock."
+        ],
+        "android": [
+          "Android sube a 1.2.0 (versionCode 6) con búsqueda server-backed y disponibilidad de equipo integrada al flujo de eventos.",
+          "Calendario alcanza paridad con estado, iCal, retry, FAB y navegación desde eventos.",
+          "Los formularios scrolleables usan `imePadding()` para evitar que el teclado tape acciones o campos."
+        ],
+        "backend": [
+          "El backend mantiene 1.0.0 como versión canónica del API en este release train.",
+          "Las apps consumen capacidades ya presentes en el API actual para `/api/events/search`, disponibilidad de equipo y exportación iCal."
+        ]
+      }
+    },
     {
       "id": "2026-05-04-web-backend-1-0-0-and-help-polish",
       "date": "2026-05-04",

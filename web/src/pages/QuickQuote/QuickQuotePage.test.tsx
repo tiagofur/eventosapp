@@ -23,8 +23,8 @@ vi.mock('@/services/productService', () => ({
   },
 }));
 
-vi.mock('@/lib/pdfGenerator', () => ({
-  generateBudgetPDF: vi.fn(),
+vi.mock('@/services/pdfService', () => ({
+  downloadQuickQuotePDF: vi.fn(),
 }));
 
 vi.mock('@/lib/errorHandler', () => ({

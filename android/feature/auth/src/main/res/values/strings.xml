@@ -39,6 +39,15 @@
     <string name="auth_reset_new_password_label">Nueva contraseña</string>
     <string name="auth_reset_confirm_password_label">Confirmar nueva contraseña</string>
     <string name="auth_reset_submit">Restablecer contraseña</string>
+    <string name="auth_team_invite_title">Activá tu acceso</string>
+    <string name="auth_team_invite_subtitle">Creá tu contraseña para ingresar al portal del equipo.</string>
+    <string name="auth_team_invite_invalid_link">El enlace de invitación es inválido o incompleto.</string>
+    <string name="auth_team_invite_password_label">Contraseña</string>
+    <string name="auth_team_invite_confirm_password_label">Confirmar contraseña</string>
+    <string name="auth_team_invite_submit">Aceptar invitación</string>
+    <string name="auth_team_invite_back_to_login">Volver al inicio</string>
+    <string name="auth_team_invite_success_title">Invitación aceptada</string>
+    <string name="auth_team_invite_success_message">Tu cuenta de equipo fue activada correctamente.</string>
     <string name="auth_biometric_prompt_title">Desbloqueá Solennix</string>
     <string name="auth_biometric_prompt_subtitle">Usá tu huella o rostro para continuar</string>
     <string name="auth_biometric_prompt_cancel">Cerrar sesión</string>

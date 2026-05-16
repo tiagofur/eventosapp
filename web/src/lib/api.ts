@@ -1,4 +1,5 @@
 import { useToast } from '@/hooks/useToast';
+import i18n from '@/i18n/config';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -140,8 +141,8 @@ class ApiClient {
       // Provide user-friendly messages for common status codes
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
-        const waitHint = retryAfter ? ` Intentá nuevamente en ${retryAfter}.` : '';
-        throw new Error(`Demasiadas solicitudes.${waitHint} Esperá un momento e intentá de nuevo.`);
+        const waitHint = retryAfter ? ` ${i18n.language.startsWith('es') ? 'Intentá nuevamente en' : 'Try again in'} ${retryAfter}.` : '';
+        throw new Error(i18n.t('common:error.too_many_requests', { waitHint }));
       }
       // Plan-limit walls come as 403 with a structured body the backend
       // produces via writePlanLimitError. Surface them globally (toast +
@@ -154,7 +155,7 @@ class ApiClient {
           max?: number;
         };
         const detail: PlanLimitExceededEventDetail = {
-          message: errorData.message || 'Alcanzaste el límite de tu plan.',
+          message: errorData.message || i18n.t('common:error.plan_limit_reached'),
           limitType: limit.type ?? 'unknown',
           current: limit.current ?? 0,
           max: limit.max ?? 0,
@@ -195,6 +196,10 @@ class ApiClient {
 
   put<T>(endpoint: string, body: any) {
     return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) });
+  }
+
+  patch<T>(endpoint: string, body: any) {
+    return this.request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(body) });
   }
 
   delete<T>(endpoint: string) {

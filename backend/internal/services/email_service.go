@@ -8,6 +8,7 @@ import (
 
 	"github.com/resend/resend-go/v3"
 	"github.com/tiagofur/solennix-backend/internal/config"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 )
 
 type EmailService struct {
@@ -24,22 +25,34 @@ func NewEmailService(cfg *config.Config) *EmailService {
 
 // SendPasswordReset sends password reset email with token.
 func (s *EmailService) SendPasswordReset(email, token, userName string) error {
+	return s.SendPasswordResetLocalized(email, token, userName, i18n.DefaultLocale)
+}
+
+// SendPasswordResetLocalized sends password reset email with locale-aware subject/body.
+func (s *EmailService) SendPasswordResetLocalized(email, token, userName, locale string) error {
+	lang := i18n.NormalizeLocale(locale)
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", s.cfg.FrontendURL, token)
-	body := s.renderTemplate(passwordResetBody, map[string]any{
+	body := s.renderTemplate(passwordResetBodyForLocale(lang), map[string]any{
 		"UserName":  userName,
 		"ResetLink": resetLink,
 	})
-	return s.sendEmail(email, "Recuperación de Contraseña - Solennix", body)
+	return s.sendEmail(email, i18n.T(lang, "email.password_reset.subject"), body)
 }
 
 // SendWelcome sends a welcome/onboarding email after registration.
 func (s *EmailService) SendWelcome(email, userName string) error {
+	return s.SendWelcomeLocalized(email, userName, i18n.DefaultLocale)
+}
+
+// SendWelcomeLocalized sends a welcome email with locale-aware subject/body.
+func (s *EmailService) SendWelcomeLocalized(email, userName, locale string) error {
+	lang := i18n.NormalizeLocale(locale)
 	dashboardLink := fmt.Sprintf("%s/dashboard", s.cfg.FrontendURL)
-	body := s.renderTemplate(welcomeBody, map[string]any{
+	body := s.renderTemplate(welcomeBodyForLocale(lang), map[string]any{
 		"UserName":      userName,
 		"DashboardLink": dashboardLink,
 	})
-	return s.sendEmail(email, "¡Bienvenido a Solennix! 🎉", body)
+	return s.sendEmail(email, i18n.T(lang, "email.welcome.subject"), body)
 }
 
 // SendEventReminder sends a reminder about an upcoming event.
@@ -55,13 +68,19 @@ func (s *EmailService) SendEventReminder(email, userName, eventName, eventDate, 
 
 // SendPaymentReceipt sends a payment confirmation email.
 func (s *EmailService) SendPaymentReceipt(email, userName, eventName, amount, paymentDate string) error {
+	return s.SendPaymentReceiptLocalized(email, userName, eventName, amount, paymentDate, i18n.DefaultLocale)
+}
+
+// SendPaymentReceiptLocalized sends a localized payment confirmation email.
+func (s *EmailService) SendPaymentReceiptLocalized(email, userName, eventName, amount, paymentDate, locale string) error {
+	lang := i18n.NormalizeLocale(locale)
 	body := s.renderTemplate(paymentReceiptBody, map[string]any{
 		"UserName":    userName,
 		"EventName":   eventName,
 		"Amount":      amount,
 		"PaymentDate": paymentDate,
 	})
-	return s.sendEmail(email, fmt.Sprintf("Pago registrado: %s", amount), body)
+	return s.sendEmail(email, i18n.T(lang, "email.payment_receipt.subject", amount), body)
 }
 
 // SendCollaboratorAssigned notifies a staff collaborator (photographer, DJ,
@@ -74,6 +93,14 @@ func (s *EmailService) SendPaymentReceipt(email, userName, eventName, amount, pa
 func (s *EmailService) SendCollaboratorAssigned(
 	email, staffName, orgName, eventName, eventDate, role, fee string,
 ) error {
+	return s.SendCollaboratorAssignedLocalized(email, staffName, orgName, eventName, eventDate, role, fee, i18n.DefaultLocale)
+}
+
+// SendCollaboratorAssignedLocalized sends a localized collaborator assignment email.
+func (s *EmailService) SendCollaboratorAssignedLocalized(
+	email, staffName, orgName, eventName, eventDate, role, fee, locale string,
+) error {
+	lang := i18n.NormalizeLocale(locale)
 	body := s.renderTemplate(collaboratorAssignedBody, map[string]any{
 		"StaffName": staffName,
 		"OrgName":   orgName,
@@ -82,7 +109,7 @@ func (s *EmailService) SendCollaboratorAssigned(
 		"Role":      role,
 		"Fee":       fee,
 	})
-	return s.sendEmail(email, fmt.Sprintf("%s te asignó a un evento", orgName), body)
+	return s.sendEmail(email, i18n.T(lang, "email.collaborator_assigned.subject", orgName), body)
 }
 
 // SendQuotationReceived sends a notification reminding the user about an unconfirmed quotation.
@@ -98,11 +125,17 @@ func (s *EmailService) SendQuotationReceived(email, userName, eventName, eventDa
 
 // SendSubscriptionConfirmation sends a plan upgrade/renewal confirmation.
 func (s *EmailService) SendSubscriptionConfirmation(email, userName, planName string) error {
+	return s.SendSubscriptionConfirmationLocalized(email, userName, planName, i18n.DefaultLocale)
+}
+
+// SendSubscriptionConfirmationLocalized sends a localized plan confirmation email.
+func (s *EmailService) SendSubscriptionConfirmationLocalized(email, userName, planName, locale string) error {
+	lang := i18n.NormalizeLocale(locale)
 	body := s.renderTemplate(subscriptionConfirmationBody, map[string]any{
 		"UserName": userName,
 		"PlanName": planName,
 	})
-	return s.sendEmail(email, fmt.Sprintf("Tu plan %s está activo - Solennix", planName), body)
+	return s.sendEmail(email, i18n.T(lang, "email.subscription_confirmation.subject", planName), body)
 }
 
 // SendWeeklySummary sends a weekly summary of upcoming events and payments.
@@ -237,33 +270,57 @@ const baseLayout = `<!DOCTYPE html>
 </body>
 </html>`
 
-const passwordResetBody = `
-<p>Hola {{.UserName}},</p>
-<p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Solennix.</p>
-<p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>
+func passwordResetBodyForLocale(locale string) string {
+	lang := i18n.NormalizeLocale(locale)
+	return fmt.Sprintf(`
+<p>%s</p>
+<p>%s</p>
 <div style="text-align: center;">
-    <a href="{{.ResetLink}}" class="button">Restablecer Contraseña</a>
+    <a href="{{.ResetLink}}" class="button">%s</a>
 </div>
 <div class="highlight">
-    <p style="margin: 0;">⏱️ Este enlace es válido por <strong style="color: #dc2626;">1 hora</strong>.</p>
+    <p style="margin: 0;">%s</p>
 </div>
-<p>Si no solicitaste restablecer tu contraseña, puedes ignorar este correo.</p>
-<p style="word-break: break-all; font-size: 13px; color: #6b7280;">{{.ResetLink}}</p>`
+<p>%s</p>
+<p style="word-break: break-all; font-size: 13px; color: #6b7280;">{{.ResetLink}}</p>`,
+		i18n.T(lang, "email.password_reset.greeting"),
+		i18n.T(lang, "email.password_reset.instructions"),
+		i18n.T(lang, "email.password_reset.cta"),
+		i18n.T(lang, "email.password_reset.expiry"),
+		i18n.T(lang, "email.password_reset.ignore"),
+	)
+}
 
-const welcomeBody = `
-<p>Hola {{.UserName}},</p>
-<p>¡Bienvenido a <strong>Solennix</strong>! Tu cuenta ha sido creada exitosamente.</p>
-<p>Solennix te ayuda a gestionar tus eventos de forma profesional: clientes, cotizaciones, inventario, pagos y más — todo en un solo lugar.</p>
+func welcomeBodyForLocale(locale string) string {
+	lang := i18n.NormalizeLocale(locale)
+	return fmt.Sprintf(`
+<p>%s</p>
+<p>%s</p>
+<p>%s</p>
 <div class="highlight">
     <p style="margin: 0 0 8px 0;"><strong>Primeros pasos:</strong></p>
-    <p style="margin: 4px 0;">1. Agrega tu primer cliente</p>
-    <p style="margin: 4px 0;">2. Crea tu catálogo de productos</p>
-    <p style="margin: 4px 0;">3. Registra tu primer evento</p>
+    <p style="margin: 4px 0;">1. %s</p>
+    <p style="margin: 4px 0;">2. %s</p>
+    <p style="margin: 4px 0;">3. %s</p>
 </div>
 <div style="text-align: center;">
-    <a href="{{.DashboardLink}}" class="button">Ir al Dashboard</a>
+    <a href="{{.DashboardLink}}" class="button">%s</a>
 </div>
-<p>Si tienes dudas, estamos aquí para ayudarte.</p>`
+<p>%s</p>`,
+		i18n.T(lang, "email.welcome.greeting"),
+		i18n.T(lang, "email.welcome.title"),
+		i18n.T(lang, "email.welcome.description"),
+		i18n.T(lang, "email.welcome.step1"),
+		i18n.T(lang, "email.welcome.step2"),
+		i18n.T(lang, "email.welcome.step3"),
+		i18n.T(lang, "email.welcome.cta"),
+		i18n.T(lang, "email.welcome.help"),
+	)
+}
+
+// Backward-compatible defaults used by tests that validate base templates directly.
+var passwordResetBody = passwordResetBodyForLocale(i18n.DefaultLocale)
+var welcomeBody = welcomeBodyForLocale(i18n.DefaultLocale)
 
 const eventReminderBody = `
 <p>Hola {{.UserName}},</p>

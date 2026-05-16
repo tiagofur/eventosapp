@@ -23,7 +23,7 @@ import { EventSummary } from './EventSummary';
 import { eventService } from '../../services/eventService';
 import { productService } from '../../services/productService';
 import { paymentService } from '../../services/paymentService';
-import { generateBudgetPDF, generateContractPDF, generateShoppingListPDF } from '../../lib/pdfGenerator';
+import { downloadEventPDF } from '../../services/pdfService';
 import { logError } from '../../lib/errorHandler';
 import { installEventSummaryMocks } from './__tests__/eventSummaryFixtures';
 
@@ -108,11 +108,8 @@ vi.mock('../../services/subscriptionService', () => ({
   },
 }));
 
-vi.mock('../../lib/pdfGenerator', () => ({
-  generateBudgetPDF: vi.fn(),
-  generateContractPDF: vi.fn(),
-  generateShoppingListPDF: vi.fn(),
-  generatePaymentReportPDF: vi.fn(),
+vi.mock('../../services/pdfService', () => ({
+  downloadEventPDF: vi.fn(),
 }));
 
 let mockIsBasicPlan = false;
@@ -199,13 +196,17 @@ describe('EventSummary — core', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Más$/i }));
     fireEvent.click(screen.getByText('Presupuesto'));
-    expect(generateBudgetPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'budget');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /Más$/i }));
     const menuItems = screen.getAllByRole('menuitem');
     const contratoMenuItem = menuItems.find(el => el.textContent?.includes('Contrato'));
     fireEvent.click(contratoMenuItem!);
-    expect(generateContractPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'contract');
+    });
   });
 
   it('handles missing event', async () => {
@@ -374,7 +375,9 @@ describe('EventSummary — core', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Más$/i }));
     fireEvent.click(screen.getAllByText('Lista de Insumos')[0]);
-    expect(generateShoppingListPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'shopping-list');
+    });
   });
 
   it('generates PDFs even on basic plan (no plan guard)', async () => {
@@ -388,11 +391,15 @@ describe('EventSummary — core', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Más$/i }));
     fireEvent.click(screen.getByText('Presupuesto'));
-    expect(generateBudgetPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'budget');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /Más$/i }));
     fireEvent.click(screen.getByText('Lista de Insumos'));
-    expect(generateShoppingListPDF).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(downloadEventPDF).toHaveBeenCalledWith('event-1', 'shopping-list');
+    });
   });
 
   it('renders financial summary with payment info', async () => {

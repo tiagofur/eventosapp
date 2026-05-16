@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -85,7 +85,7 @@ fun ForecastWidget(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     Icon(
-                                        Icons.Default.TrendingUp,
+                                        Icons.AutoMirrored.Filled.TrendingUp,
                                         contentDescription = null,
                                         tint = SolennixTheme.colors.kpiGreen,
                                         modifier = Modifier.size(20.dp)

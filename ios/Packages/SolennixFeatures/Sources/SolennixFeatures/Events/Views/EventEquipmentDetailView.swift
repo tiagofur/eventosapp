@@ -10,6 +10,7 @@ public struct EventEquipmentDetailView: View {
     let eventId: String
 
     @State private var viewModel: EventDetailViewModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     public init(eventId: String, apiClient: APIClient) {
         self.eventId = eventId
@@ -84,8 +85,8 @@ public struct EventEquipmentDetailView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.lg)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.xl : Spacing.md)
+            .padding(.vertical, sizeClass == .regular ? Spacing.xl : Spacing.lg)
         }
     }
 }

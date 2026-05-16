@@ -21,9 +21,6 @@ import com.creapolis.solennix.core.database.SolennixDatabase
 import com.creapolis.solennix.core.database.entity.asExternalModel
 import com.creapolis.solennix.core.model.Event
 import kotlinx.coroutines.flow.first
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class UpcomingEventsWidget : GlanceAppWidget() {
 
@@ -118,7 +115,7 @@ class UpcomingEventsWidget : GlanceAppWidget() {
         textSecondary: Color,
         accentColor: Color
     ) {
-        val formattedDate = formatEventDate(event.eventDate)
+        val formattedDate = WidgetFormatters.formatEventDate(event.eventDate)
 
         Row(
             modifier = GlanceModifier
@@ -183,19 +180,4 @@ class UpcomingEventsWidget : GlanceAppWidget() {
             ?: Intent()
     }
 
-    private fun formatEventDate(dateString: String): FormattedDate {
-        return try {
-            val date = LocalDate.parse(dateString.take(10))
-            val dayFormatter = DateTimeFormatter.ofPattern("d")
-            val monthFormatter = DateTimeFormatter.ofPattern("MMM", Locale("es", "MX"))
-            FormattedDate(
-                day = date.format(dayFormatter),
-                month = date.format(monthFormatter).uppercase()
-            )
-        } catch (e: Exception) {
-            FormattedDate("--", "---")
-        }
-    }
-
-    private data class FormattedDate(val day: String, val month: String)
 }

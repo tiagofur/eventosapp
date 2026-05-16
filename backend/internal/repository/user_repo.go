@@ -2,11 +2,23 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tiagofur/solennix-backend/internal/models"
+)
+
+var (
+	ErrStaffInviteNotFound   = errors.New("staff invite not found")
+	ErrStaffInviteNotPending = errors.New("staff invite is not pending")
+	ErrStaffInviteExpired    = errors.New("staff invite expired")
+	ErrStaffInviteEmailTaken = errors.New("invite email already registered")
+	ErrStaffInviteRoleDenied = errors.New("invite role is not allowed for owner plan")
 )
 
 type UserRepo struct {
@@ -15,6 +27,17 @@ type UserRepo struct {
 
 func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 	return &UserRepo{pool: pool}
+}
+
+func normalizePlan(plan string) string {
+	switch strings.ToLower(strings.TrimSpace(plan)) {
+	case "premium":
+		return "pro"
+	case "enterprise":
+		return "business"
+	default:
+		return strings.ToLower(strings.TrimSpace(plan))
+	}
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *models.User) error {
@@ -207,6 +230,118 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, passwor
 		return fmt.Errorf("user not found")
 	}
 	return nil
+}
+
+// AcceptStaffInvite consumes a pending staff invite token and creates the
+// collaborator account as a user with role=team_member, linking it to staff.
+func (r *UserRepo) AcceptStaffInvite(ctx context.Context, tokenHash, passwordHash string) (*models.User, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin accept invite tx: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	var (
+		inviteID    uuid.UUID
+		staffID     uuid.UUID
+		ownerUserID uuid.UUID
+		email       string
+		targetRole  string
+		status      string
+		expiresAt   time.Time
+		staffName   string
+		ownerPlan   string
+	)
+
+	err = tx.QueryRow(ctx, `
+		SELECT si.id, si.staff_id, si.owner_user_id, si.email, si.target_role, si.status, si.expires_at, s.name, u.plan
+		FROM staff_invites si
+		JOIN staff s ON s.id = si.staff_id
+		JOIN users u ON u.id = si.owner_user_id
+		WHERE si.token_hash = $1
+		FOR UPDATE
+	`, tokenHash).Scan(&inviteID, &staffID, &ownerUserID, &email, &targetRole, &status, &expiresAt, &staffName, &ownerPlan)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrStaffInviteNotFound
+		}
+		return nil, fmt.Errorf("load invite by token hash: %w", err)
+	}
+
+	if status != "pending" {
+		return nil, ErrStaffInviteNotPending
+	}
+
+	if targetRole == "assistant" && normalizePlan(ownerPlan) != "business" {
+		return nil, ErrStaffInviteRoleDenied
+	}
+	if targetRole == "" {
+		targetRole = "team_member"
+	}
+
+	if time.Now().UTC().After(expiresAt) {
+		if _, updErr := tx.Exec(ctx,
+			`UPDATE staff_invites SET status='expired', updated_at=NOW() WHERE id=$1`,
+			inviteID,
+		); updErr != nil {
+			return nil, fmt.Errorf("mark expired invite: %w", updErr)
+		}
+		return nil, ErrStaffInviteExpired
+	}
+
+	var existingUserID uuid.UUID
+	err = tx.QueryRow(ctx, `SELECT id FROM users WHERE email = $1`, email).Scan(&existingUserID)
+	if err == nil {
+		return nil, ErrStaffInviteEmailTaken
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("check existing user by invite email: %w", err)
+	}
+
+	createdUser := &models.User{}
+	err = tx.QueryRow(ctx, `
+		INSERT INTO users (email, password_hash, name, plan, role)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, email, password_hash, name, plan, role, created_at, updated_at
+	`, email, passwordHash, staffName, ownerPlan, targetRole).Scan(
+		&createdUser.ID,
+		&createdUser.Email,
+		&createdUser.PasswordHash,
+		&createdUser.Name,
+		&createdUser.Plan,
+		&createdUser.Role,
+		&createdUser.CreatedAt,
+		&createdUser.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create user from staff invite: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx,
+		`UPDATE staff SET invited_user_id = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+		createdUser.ID,
+		staffID,
+		ownerUserID,
+	); err != nil {
+		return nil, fmt.Errorf("link staff to invited user: %w", err)
+	}
+
+	if _, err = tx.Exec(ctx,
+		`UPDATE staff_invites SET status='accepted', consumed_at=NOW(), updated_at=NOW() WHERE id=$1`,
+		inviteID,
+	); err != nil {
+		return nil, fmt.Errorf("mark invite accepted: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit accept invite tx: %w", err)
+	}
+
+	return createdUser, nil
 }
 
 // GetByGoogleUserID finds a user by their Google OAuth user ID

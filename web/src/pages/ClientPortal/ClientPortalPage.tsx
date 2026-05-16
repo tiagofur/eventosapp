@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Calendar,
@@ -11,10 +11,15 @@ import {
   CircleDashed,
   AlertCircle,
   Zap,
+  Upload,
+  History,
+  Send,
 } from "lucide-react";
 import { ClientPortalUnavailable } from "./components/ClientPortalUnavailable";
 import { useTranslation } from "react-i18next";
 import { components } from "@/types/api";
+import paymentSubmissionService, { PaymentSubmission } from "@/services/paymentSubmissionService";
+import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 
 // Generated type from OpenAPI spec
 type PortalData = components["schemas"]["PublicEventView"];
@@ -83,12 +88,86 @@ function daysUntil(dateStr: string): number {
 // Page
 // ─────────────────────────────────────────────────────────────────────────
 
+type TabId = "resumen" | "enviar" | "historial";
+
 export const ClientPortalPage: React.FC = () => {
   const { t, i18n } = useTranslation(["public", "common"]);
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<PortalData | null>(null);
   const [error, setError] = useState<"not-found" | "disabled" | null>(null);
+
+  // Payment submission tab state
+  const [activeTab, setActiveTab] = useState<TabId>("resumen");
+  const [submissions, setSubmissions] = useState<PaymentSubmission[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [submitAmount, setSubmitAmount] = useState("");
+  const [submitRef, setSubmitRef] = useState("");
+  const [submitFile, setSubmitFile] = useState<File | null>(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // TODO: portal_tier contract from backend — currently not implemented
+  const isGratisView = false;
+
+  useEffect(() => {
+    if (isGratisView && activeTab !== "resumen") {
+      setActiveTab("resumen");
+    }
+  }, [isGratisView, activeTab]);
+
+  const fetchHistory = async (tok: string, eventId: string, clientId: string) => {
+    setHistoryLoading(true);
+    try {
+      const list = await paymentSubmissionService.getSubmissionHistory(tok, eventId, clientId);
+      setSubmissions(list);
+    } catch {
+      // silently fail — history is non-critical
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleTabChange = (tab: TabId) => {
+    if (isGratisView && tab !== "resumen") return;
+    setActiveTab(tab);
+    if (tab === "historial" && data && token) {
+      fetchHistory(token, data.event.id, data.client.id);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!data || !token) return;
+    const amount = parseFloat(submitAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setSubmitError(t("portal.payments.amount_required"));
+      return;
+    }
+    setSubmitLoading(true);
+    setSubmitError(null);
+    try {
+      await paymentSubmissionService.submitPaymentFromPortal(
+        token,
+        data.event.id,
+        data.client.id,
+        amount,
+        submitRef || undefined,
+        submitFile || undefined
+      );
+      setSubmitSuccess(true);
+      setSubmitAmount("");
+      setSubmitRef("");
+      setSubmitFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch {
+      setSubmitError(t("portal.payments.submit_error"));
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) {
@@ -156,11 +235,7 @@ export const ClientPortalPage: React.FC = () => {
     return <ClientPortalUnavailable reason="not-found" />;
   }
 
-  const { event, organizer, client, payment } = data;
-  
-  // Detect if this portal is showing a limited (gratis) view.
-  // Gratis organizers get a redacted response: no service_type, no location, no schedule, no num_people.
-  const isGratisView = !event.service_type;
+  const { event, organizer, client } = data;
 
   const days = daysUntil(event.event_date);
   const countdownLabel =
@@ -169,9 +244,6 @@ export const ClientPortalPage: React.FC = () => {
       : days === 0
         ? t("portal.it_is_today")
         : t("portal.days_ago", { count: Math.abs(days) });
-
-  const paidPct =
-    payment.total > 0 ? Math.min(100, Math.round((payment.paid / payment.total) * 100)) : 0;
 
   const st = statusLabel(event.status, t);
   const statusToneClass =
@@ -296,63 +368,243 @@ export const ClientPortalPage: React.FC = () => {
           </DetailCard>
         </section>
 
-        {/* Payment summary */}
-        <section className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Wallet className="h-5 w-5 text-text-secondary" aria-hidden="true" />
-            <h3 className="text-lg font-semibold text-text">{t("portal.payments.title")}</h3>
+        {/* Payment tabs: resumen + (pro-only: enviar + historial) */}
+        <section className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          {/* Tab strip */}
+          <div className="flex border-b border-border">
+            {(isGratisView ? ["resumen"] as TabId[] : ["resumen", "enviar", "historial"] as TabId[]).map((tab) => {
+              const icons: Record<TabId, React.ReactNode> = {
+                resumen: <Wallet className="h-4 w-4" />,
+                enviar: <Send className="h-4 w-4" />,
+                historial: <History className="h-4 w-4" />,
+              };
+              const labels: Record<TabId, string> = {
+                resumen: t("portal.payments.tab_resumen"),
+                enviar: t("portal.payments.tab_enviar"),
+                historial: t("portal.payments.tab_historial"),
+              };
+              return (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === tab
+                      ? "text-primary border-b-2 border-primary bg-primary/5"
+                      : "text-text-secondary hover:text-text hover:bg-surface-alt"
+                  }`}
+                >
+                  {icons[tab]}
+                  <span className="hidden sm:inline">{labels[tab]}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
-            <div>
-              <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
-                {t("portal.payments.paid")}
-              </p>
-              <p className="text-2xl sm:text-3xl font-bold text-text">
-                {formatCurrency(payment.paid, payment.currency, i18n.language)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
-                {t("portal.payments.total")}
-              </p>
-              <p className="text-base sm:text-lg text-text-secondary">
-                {formatCurrency(payment.total, payment.currency, i18n.language)}
-              </p>
-            </div>
-          </div>
+          <div className="p-6 sm:p-8">
+            {/* Tab: Resumen */}
+            {activeTab === "resumen" && (
+              <div className="space-y-4">
+                {isGratisView ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <p className="text-sm font-medium text-text">
+                      {t("portal.payments.pro_only")}
+                    </p>
+                    <p className="text-xs text-text-secondary mt-1">
+                      {t("portal.payments.pro_only_hint")}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-text-secondary">
+                      {t("portal.payments.summary_intro")}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-surface-alt rounded-xl p-4">
+                        <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">{t("portal.payments.paid")}</p>
+                        <p className="text-xl font-bold text-text">
+                          {formatCurrency(data.payment.paid, data.payment.currency, i18n.language)}
+                        </p>
+                      </div>
+                      <div className="bg-surface-alt rounded-xl p-4">
+                        <p className="text-xs uppercase tracking-widest text-text-tertiary mb-1">{t("portal.payments.pending_label")}</p>
+                        <p className="text-xl font-bold text-warning">
+                          {formatCurrency(data.payment.remaining, data.payment.currency, i18n.language)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleTabChange("enviar")}
+                      className="w-full py-3 px-4 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Send className="h-4 w-4" />
+                      {t("portal.payments.submit_receipt")}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
 
-          <div
-            className="h-3 w-full rounded-full bg-surface-alt overflow-hidden"
-            role="progressbar"
-            aria-valuenow={paidPct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={t("portal.payments.paid_percentage", { percent: paidPct })}
-          >
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${paidPct}%`,
-                backgroundColor: brandColor,
-              }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-text-tertiary">
-            {t("portal.payments.paid_percentage", { percent: paidPct })} · {t("portal.payments.pending_label")}{" "}
-            <span className="font-semibold text-text-secondary">
-              {formatCurrency(payment.remaining, payment.currency, i18n.language)}
-            </span>
-          </p>
+            {/* Tab: Enviar pago */}
+            {activeTab === "enviar" && (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <p className="text-sm text-text-secondary">
+                  {t("portal.payments.submit_intro")}
+                </p>
 
-          <div className="mt-5 bg-surface-alt rounded-xl border border-border p-3 flex items-start gap-2">
-            <AlertCircle
-              className="h-4 w-4 text-text-tertiary shrink-0 mt-0.5"
-              aria-hidden="true"
-            />
-            <p className="text-xs text-text-secondary leading-relaxed">
-              {t("portal.payments.footer_note")}
-            </p>
+                {submitSuccess && (
+                  <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/20 rounded-xl text-success text-sm">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    {t("portal.payments.submit_success")}
+                  </div>
+                )}
+
+                {submitError && (
+                  <div className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-xl text-error text-sm">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {submitError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1">
+                    {t("portal.payments.transferred_amount")} <span className="text-error">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-sm">
+                      {data.payment.currency}
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={submitAmount}
+                      onChange={(e) => setSubmitAmount(e.target.value)}
+                      required
+                      placeholder="0.00"
+                      className="w-full pl-12 pr-4 py-2.5 bg-surface border border-border rounded-xl text-sm text-text placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1">
+                    {t("portal.payments.transfer_reference")}
+                  </label>
+                  <input
+                    type="text"
+                    value={submitRef}
+                    onChange={(e) => setSubmitRef(e.target.value)}
+                    placeholder={t("portal.payments.transfer_reference_placeholder")}
+                    className="w-full px-4 py-2.5 bg-surface border border-border rounded-xl text-sm text-text placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text mb-1">
+                    {t("portal.payments.receipt_upload_label")}
+                  </label>
+                  <div
+                    className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {submitFile ? (
+                      <p className="text-sm text-text">{submitFile.name}</p>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-text-tertiary">
+                        <Upload className="h-5 w-5" />
+                        <p className="text-xs">{t("portal.payments.receipt_upload_hint")}</p>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+                      if (!allowed.includes(file.type)) {
+                        setSubmitError("Formato no válido. Usá jpeg, png, webp o pdf.");
+                        e.target.value = "";
+                        return;
+                      }
+                      if (file.size > 10 * 1024 * 1024) {
+                        setSubmitError("El archivo no puede superar los 10 MB.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setSubmitError(null);
+                      setSubmitFile(file);
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitLoading}
+                  className="w-full py-3 px-4 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                >
+                  {submitLoading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> {t("portal.payments.sending")}</>
+                  ) : (
+                    <><Send className="h-4 w-4" /> {t("portal.payments.send_receipt")}</>
+                  )}
+                </button>
+              </form>
+            )}
+
+            {/* Tab: Historial */}
+            {activeTab === "historial" && (
+              <div>
+                {historyLoading ? (
+                  <div className="flex items-center justify-center py-10 text-text-secondary gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm">{t("portal.payments.loading")}</span>
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <div className="text-center py-10">
+                    <History className="h-8 w-8 text-text-tertiary mx-auto mb-2" />
+                    <p className="text-sm text-text-secondary">{t("portal.payments.history_empty")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions.map((sub) => (
+                      <div key={sub.id} className="bg-surface-alt rounded-xl border border-border p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-text">
+                              {formatCurrency(sub.amount, data.payment.currency, i18n.language)}
+                            </p>
+                            {sub.transfer_ref && (
+                              <p className="text-xs text-text-secondary mt-0.5">{t("portal.payments.reference_short")}: {sub.transfer_ref}</p>
+                            )}
+                            <p className="text-xs text-text-tertiary mt-0.5">
+                              {new Date(sub.submitted_at).toLocaleDateString(i18n.language.startsWith("en") ? "en-US" : "es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                            </p>
+                            {sub.rejection_reason && (
+                              <p className="text-xs text-error mt-1">{t("portal.payments.rejection_reason")}: {sub.rejection_reason}</p>
+                            )}
+                            {sub.receipt_file_url && sub.status === "approved" && (
+                              <a
+                                href={`${(import.meta.env.VITE_API_URL || "http://localhost:8080/api").replace(/\/api$/, "")}${sub.receipt_file_url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline mt-1 inline-block"
+                              >
+                                {t("portal.payments.view_receipt")}
+                              </a>
+                            )}
+                          </div>
+                          <PaymentStatusBadge status={sub.status} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
 

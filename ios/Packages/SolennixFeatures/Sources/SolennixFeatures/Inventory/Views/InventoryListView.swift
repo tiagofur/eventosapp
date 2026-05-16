@@ -156,7 +156,8 @@ public struct InventoryListView: View {
                     inventoryGridSection(title: InventoryStrings.supplies, items: viewModel.supplyItems)
                 }
             }
-            .padding(.horizontal, Spacing.md)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.lg : Spacing.md)
+            .padding(.vertical, Spacing.lg)
             .padding(.bottom, Spacing.xxl)
         }
         .background(SolennixColors.surfaceGrouped)

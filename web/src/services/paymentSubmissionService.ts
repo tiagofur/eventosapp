@@ -81,26 +81,26 @@ class PaymentSubmissionService {
 
   /**
    * Organizer gets pending payment submissions
-   * GET /api/organizer/payment-submissions
+   * GET /api/payment-submissions
    */
   async getPendingSubmissions(): Promise<PaymentSubmission[]> {
     const response = await api.get<{ data: PaymentSubmission[] }>(
-      '/organizer/payment-submissions'
+      '/payment-submissions'
     );
     return response.data || [];
   }
 
   /**
    * Organizer reviews (approves/rejects) a submission
-   * PATCH /api/organizer/payment-submissions/{id}
+   * PATCH /api/payment-submissions/{id}
    */
   async reviewSubmission(
     submissionId: string,
     status: 'approved' | 'rejected',
     rejectionReason?: string
   ): Promise<PaymentSubmission> {
-    const response = await api.put<{ data: PaymentSubmission }>(
-      `/organizer/payment-submissions/${submissionId}`,
+    const response = await api.patch<{ data: PaymentSubmission }>(
+      `/payment-submissions/${submissionId}`,
       {
         status,
         rejection_reason: rejectionReason,

@@ -8,7 +8,7 @@ aliases:
   - Estado Actual
   - Current Status
 date: 2026-03-20
-updated: 2026-05-03
+updated: 2026-05-15
 status: active
 ---
 
@@ -22,8 +22,120 @@ status: active
 > - **Stripe se usa EXCLUSIVAMENTE** para la suscripción Pro del organizador a Solennix (cobro B2B).
 > - El flujo de `payment_submissions` (Sprint 7.E) es un formulario de reporte de transferencias bancarias externas — Solennix NO procesa ni mueve dinero.
 
-**Fecha:** Abril 2026
-**Version:** 1.5
+**Fecha:** Mayo 2026
+**Version:** 1.7
+
+> [!info] 2026-05-14 — Plan de producto definido para Team Member Portal (Ola 4)
+> Se formalizó el backlog funcional para evolucionar el portal `team_member` desde vistas listadas hacia una experiencia de utilidad diaria y calendario operativo real.
+> - **Documento fuente:** `docs/PRD/17_PERSONAL_TRACKER.md` (sección "Ola 4 — Team Member Portal Utility")
+> - **Pantallas objetivo:** Mi Jornada, Bandeja de Asignaciones, Calendario mes/semana/día, Detalle de Evento Team, Timeline de cambios y Disponibilidad del miembro.
+> - **Paridad requerida:** Web + iOS + Android con UX nativa en cada stack y misma cobertura funcional.
+> - **Estado:** planificación cerrada; ejecución iniciada.
+
+> [!success] 2026-05-15 — Team Member Portal: base móvil operativa (slice inicial)
+> Se implementó la base funcional en mobile para que el usuario `team_member` entre a una superficie dedicada y pueda responder asignaciones sin pasar por el shell de organizer.
+> - **iOS:** `User.role` agregado al contrato, routing por rol en `ContentView`, nueva `TeamMemberPortalView` con carga y respuesta de asignaciones.
+> - **Android:** `User.role` agregado al contrato, routing por rol en `MainNavHost`, nueva `TeamMemberPortalScreen` con carga y respuesta de asignaciones.
+> - **Backend:** sin cambios requeridos para este slice (ya existían `GET /api/staff/my-assignments` y `POST /api/staff/assignments/{id}/respond`).
+> - **Estado:** Ola 4 en progreso; faltan Mi Jornada, calendario completo mes/semana/día, detalle Team, timeline y disponibilidad.
+
+> [!success] 2026-05-11 — Personal Phase 3.5: team_member responde asignación + first-accept-wins
+> Se implementó el MVP operativo para colaboradores con login (`team_member`) dentro de Personal:
+> - Nuevo endpoint `GET /api/staff/my-assignments` para listar asignaciones del colaborador autenticado.
+> - Nuevo endpoint `POST /api/staff/assignments/{id}/respond` con `accept|decline`.
+> - Web: nuevo portal `/team/assignments` para ver y responder asignaciones pendientes.
+> - Web: nuevas vistas `/team/events` y `/team/calendar` para visibilidad operativa del colaborador autenticado.
+> - Guard de rol en Web: `team_member` se redirige al portal y no navega el layout operativo del organizer.
+> - Nueva migración `050` en `event_staff` con `offer_group_id` y `offer_slots` para soportar ofertas competitivas.
+> - Semántica transaccional: si el cupo del `offer_group_id` se completa, los demás `pending` del grupo se marcan `declined` automáticamente (first-accept-wins).
+> - Paridad de contrato agregada en Web / iOS / Android (types/endpoints/repos) para habilitar UI en siguiente iteración.
+
+> [!success] 2026-05-11 — Backend i18n server-side activado (errores API + emails)
+> Se implementó localización en backend para mensajes visibles al usuario y plantillas de emails transaccionales.
+> - **Nuevo módulo**: `backend/internal/i18n/messages.go` con catálogo ES/EN y helpers (`Message`, `T`, `NormalizeLocale`).
+> - **Nuevo middleware**: `backend/internal/middleware/localization.go` para resolver `Accept-Language` y propagar locale al contexto.
+> - **Router**: se integró `mw.Localization()` en la cadena global.
+> - **Auth/CRUD/Middleware**: handlers y middlewares críticos migrados a keys i18n en lugar de strings hardcodeados.
+> - **Validaciones**: `ValidationError` ahora soporta localización consistente en respuestas HTTP.
+> - **Emails**: `EmailService` agrega variantes localizadas para welcome, reset password, payment receipt, collaborator assignment y subscription confirmation.
+> - **Compatibilidad de contrato**: sin `Accept-Language`, la API mantiene fallback en inglés para no romper consumidores existentes.
+> - **Validación**: `go test ./...` en `backend` pasando completo.
+
+> [!success] 2026-05-10 — iOS UX refinements: filtro de fechas Apple HIG + KPI responsivo
+> Se aplicaron dos mejoras de calidad UX en iOS siguiendo las guías oficiales de Apple (HIG).
+> - **Events list**: se reemplazó el panel expandible inline ("Filtros" en texto) por un ícono `calendar` en la toolbar que abre un sheet nativo con `DatePicker(.compact)` — el patrón oficial de Apple para date-range en espacio restringido.
+> - **Product detail**: KPI grid pasó de dos `HStack` fijos a `LazyVGrid` responsivo: 2 cols en iPhone, 4 cols en iPad. Usa `horizontalSizeClass` ya existente.
+> - **Archivos**: `EventListView.swift`, `ProductDetailView.swift`
+
+> [!warning] 2026-05-10 — Deuda técnica pendiente — próximas sesiones
+> Trabajo importante aún por hacer. La app avanza pero está lejos de estar terminada:
+>
+> **Web — Refactor y componentización (PRIORIDAD ALTA)**
+> - No se hizo ningún refactor de componentes en Web. Las páginas principales (`EventList`, `EventDetail`, `ClientList`, etc.) siguen siendo archivos monolíticos.
+> - Falta extraer componentes reutilizables (cards, filtros, formularios de sección, states vacíos).
+> - No hay patrón container/presentational consistente en Web todavía.
+> - Archivos candidatos a componentizar: `EventDetail.tsx`, `EventForm.tsx`, `ClientDetails.tsx`, `ProductDetail.tsx`.
+>
+> **Traducciones — sweep pendiente**
+> - El epic #202 de i18n se cerró, pero hay hardcodes residuales en pantallas nuevas y vistas refactorizadas desde entonces.
+> - iOS: vistas nuevas del Apple UI refresh lab y componentes de Event Detail post-refactor pueden tener copy hardcodeada en inglés.
+> - Android: módulos `feature/products` y `feature/inventory` usan shims temporales (`ProductStrings.kt`, `InventoryStrings.kt`) en lugar de `res/values*.xml` por feature — deuda explícita.
+> - Web: revisar si el date filter sheet y las nuevas rutas de calendario tienen claves en `events.json` ES/EN.
+>
+> **Android — Calendar FAB**
+> - La consolidación del FAB en `CalendarScreen.kt` (single FAB, no overlap) fue mencionada pero no verificada ni commiteada en esta sesión. Revisar estado real.
+>
+> **iOS — Apple UI Refresh Lab**
+> - Branch `feat/apple-ui-refresh-lab` con `SolennixGlassSurface`, `SidebarSplitLayout` y semantic color cleanup todavía NO mergeada a `main`.
+> - Requiere QA visual en simuladores (iPhone 15, iPad Pro, macOS Catalyst) antes del merge.
+>
+> **Plan iOS i18n + QA + Refactor por pantalla**
+> - Plan definido en `docs/iOS/Plan iOS i18n + QA + Refactor por Pantalla.md`.
+> - Olas P0/P1/P2 aún sin ejecutar en su mayoría. `EventListView` tuvo trabajo parcial de i18n; falta ejecutar el DoD completo (estados UI, validación funcional, tests, tamaño de archivos).
+
+> [!success] 2026-05-08 — Apple UI refresh lab (iOS/iPadOS/macOS) en branch experimental
+> Se inició la branch `feat/apple-ui-refresh-lab` para unificar UI/UX visual en Apple platforms antes de aplicar glass más agresivo.
+> - **Baseline definido**: colores y jerarquía de superficies basados en Web; shell y navegación basados en iPad/macOS.
+> - **Semantic cleanup**: reemplazo de colores hardcodeados (`.blue/.green/.orange/.purple/.red`) por `SolennixColors` en vistas clave de Clients, Events, Products, Inventory y Staff.
+> - **Design system**: nuevo modifier reusable `SolennixGlassSurface` para materiales controlados en chrome/overlays.
+> - **Shell iPad/macOS**: `SidebarSplitLayout` con fondo unificado `surfaceGrouped`, header/footer con glass sutil y mejor consistencia visual.
+> - **Search y detalle desktop**: mejoras de ancho/densidad para regular width en `SearchView` y `EventDetailView`.
+> - **Objetivo del laboratorio**: cerrar coherencia de base primero y luego ejecutar pasada de Liquid Glass premium sin comprometer legibilidad.
+
+> [!info] 2026-05-08 — Plan iOS pantalla por pantalla (i18n + QA + refactor)
+> Se definió el plan operativo para cerrar calidad de iOS por pantalla en paralelo (traducciones, diseño, funciones y testing) con foco explícito en mantenibilidad.
+> - **Documento guía**: `docs/iOS/Plan iOS i18n + QA + Refactor por Pantalla.md`
+> - **DoD por pantalla**: i18n ES/EN + estados UI + validación funcional + tests + límite de tamaño de archivos.
+> - **Orden de ejecución**: olas P0/P1/P2, comenzando por `EventDetailView`, `DashboardView`, `EventListView`, `EventForm` y `Settings/Pricing`.
+> - **Meta técnica**: eliminar hardcodes visibles y bajar vistas grandes a tamaño mantenible vía componentización controlada.
+
+> [!success] 2026-05-06 — Release audit de mayo + próximos números
+> Se revisaron **42 PRs mergeados en mayo** (11 features, 6 bugs, 22 chores/deps) para separar el material realmente release-facing del ruido de mantenimiento.
+> - **iOS próximo:** `1.2.0` · **build:** `7`
+> - **Android próximo:** `1.2.0` · **versionCode:** `6`
+> - **Web próximo:** `1.0.1`
+> - **Backend:** se mantiene en `1.0.0` hasta el siguiente cambio canónico de API
+> - **Cambios ancla del release:** `#242` búsqueda por backend, `#244` disponibilidad de equipo, `#245` calendar parity, `#254` dashboard iOS, `#303` `imePadding()` Android
+
+> [!info] 2026-05-06 — Navegación de ayuda y tema más secundaria
+> Se bajó la prioridad visual de acciones de soporte/apariencia para no competir con navegación core.
+> - **Web:** `Ayuda` sale del sidebar principal y queda dentro de `Settings`; el switch de tema se elimina del footer lateral junto a logout.
+> - **iOS:** `Centro de ayuda` queda en Ajustes > Legal/Información y la selección de apariencia sigue concentrada en Ajustes.
+> - **Android:** `Centro de ayuda` queda en Ajustes > Información y el selector de tema sigue concentrado en Ajustes.
+
+> [!success] 2026-05-06 — Limpieza de share manual en detalle de evento móvil
+> Se retiró la acción legacy **Compartir por WhatsApp** del detalle de evento en iOS y Android.
+> - **iOS:** `EventDetailView` ya no arma ni intenta enviar un resumen manual por `whatsapp://`.
+> - **Android:** `EventDetailScreen` ya no expone el share manual por `wa.me`.
+> - **Portal del cliente:** queda sin cambios en las 3 plataformas como flujo oficial de compartición.
+
+> [!success] 2026-05-04 — Web + Backend pasan a 1.0.0
+> El baseline de producción ya no usa versiones menores a `1.0.0` para Web y Backend.
+> - **Web:** `1.0.0` en `web/package.json`
+> - **Backend:** `1.0.0` en `backend/VERSION`
+> - **Manifest canónico:** `versioning/releases.json` sincronizado
+> - **Outputs oficiales:** `CHANGELOG.md` y `web/src/content/changelog.generated.ts` regenerados
+> - **Help Center:** reestilado para respetar el design system y el tema activo en vez de usar grises/azules hardcodeados
 
 > [!success] 2026-05-04 — Web + Backend pasan a 1.0.0
 > El baseline de producción ya no usa versiones menores a `1.0.0` para Web y Backend.
@@ -60,13 +172,13 @@ status: active
 > - **Coverage**: navegación, Dashboard, Calendar, Events, Auth y Settings migrados a claves localizadas; verificación local: 815 usos iOS de `FeatureL10n`, 0 claves faltantes.
 > - **Persistencia**: selector de idioma en Settings guarda `preferred_language` vía `PUT /api/users/me`.
 
-> [!success] 2026-05-01 — i18n slice #208 public/client-facing flows listo para merge (PR #225)
-> El slice cross-platform de Quick Quote + organizer-facing Client Portal Share quedó refrescado sobre `main`, con CI verde en PR `#225` y sin hacer build local.
+> [!success] 2026-05-01 — i18n slice #208 public/client-facing flows mergeado (PR #225)
+> El slice cross-platform de Quick Quote + organizer-facing Client Portal Share quedó mergeado a `main` como parte del cierre del tracker de i18n.
 > - **Web**: `QuickQuotePage.tsx` ahora exporta PDF usando el idioma activo; `ClientPortalShareCard.tsx` dejó los hardcodes y consume `events.client_portal_share` en ES/EN.
 > - **iOS**: nuevos shims `QuickQuoteStrings.swift` y `ClientPortalShareStrings.swift` centralizan copy ES/EN para `QuickQuoteView`, `QuickQuotePDFGenerator`, `ClientPortalShareSheet`, `ClientPortalShareViewModel`, `EventDetailView`, `QuickActionsFAB` y `OnboardingTips`.
 > - **Android**: se agregaron resources ES/EN para `feature:clients`, `feature:events` y `core:designsystem`; `QuickQuoteScreen`, `QuickQuoteViewModel`, `QuickQuotePdfGenerator`, `ClientPortalShareBottomSheet`, `ClientPortalShareViewModel`, `EventDetailScreen` y `QuickActionsFAB` dejaron de hardcodear copy del slice.
 > - **Validación**: `web/src/pages/QuickQuote/QuickQuotePage.test.tsx` ✅, `web/src/pages/Events/components/QuickClientModal.test.tsx` ✅, `Backend Tests` ✅, `Frontend Tests` ✅, `iOS Validation` ✅, `Stage 1..6` ✅ en PR `#225`.
-> - **Estado**: PR `#225` (`feat(cross-platform): localize quick quote and client portal (#208)`) quedó `CLEAN` tras refrescar la branch sobre `main`.
+> - **Estado**: PR `#225` (`feat(cross-platform): localize quick quote and client portal (#208)`) ya forma parte de `main`.
 
 > [!success] 2026-04-30 — Slice #206 Clients i18n parity (list + detail + form)
 > Se cerró la localización cross-platform del flujo de Clientes en Web, iOS y Android para lista, detalle y formulario. Quick Quote quedó fuera del slice y sigue como deuda explícita para otro issue.
@@ -89,8 +201,8 @@ status: active
 > - **Repository + Handlers**: 6 methods en repo (Create, GetByID, GetByEventID, GetPendingByOrganizerID, GetHistoryByClientEventID, Update) + 4 endpoints:
 >   - `POST /api/public/events/{token}/payment-submissions` — cliente envía FormData con receipt
 >   - `GET /api/public/events/{token}/payment-submissions?event_id=...&client_id=...` — historial del cliente
->   - `GET /api/organizer/payment-submissions` — pending inbox del organizador
->   - `PUT /api/organizer/payment-submissions/{id}` — review (approve crea auto-Payment row)
+>   - `GET /api/payment-submissions` — pending inbox del organizador
+>   - `PATCH /api/payment-submissions/{id}` — review (approve crea auto-Payment row)
 > - **Web service layer**: `paymentSubmissionService.ts` con 4 async methods tipados, FormData + multipart, query params.
 > - **Testing**: backend `go test ./...` ✅, web `npm run test:run` 1162 tests ✅, CI all stages SUCCESS ✅
 > - **PR #199 merged to main** ✅
@@ -380,7 +492,7 @@ status: active
 - ✅ CRUD public link (`POST/GET/DELETE /api/events/{id}/public-link`)
 - ✅ Vista pública (`GET /api/public/events/{token}`) — rate limited 10/min, tier-gated shapes (gratis vs pro)
 - ✅ Payment submissions (public client side): `POST /api/public/events/{token}/payment-submissions`, `GET /api/public/events/{token}/payment-submissions?event_id=...&client_id=...`
-- ✅ Payment submissions (organizer review): `GET /api/organizer/payment-submissions`, `PUT /api/organizer/payment-submissions/{id}`
+- ✅ Payment submissions (organizer review): `GET /api/payment-submissions`, `PATCH /api/payment-submissions/{id}`
 
 ### Busqueda
 
@@ -1031,6 +1143,69 @@ Primera pantalla de paridad post-Dashboard:
 | **E**  | `ClientFormViewModel` campos opcionales sin validación | ⏭️ Descartado — re-audit 2026-04-11 confirmó validación COMPLETA ya existente (name/phone required + email/phone format, hasAttemptedSubmit pattern) | `feature/clients/.../ClientFormViewModel.kt:62-93` |
 | **E**  | `EventFormViewModel` sin validación de tiempo client-side | ✅ Agregado `isValidTime24h` + `normalizeTime` helpers; validación en `validateStep(0)` y defensivo en `saveEvent`. Formato `HH:mm` requerido. Rechaza horas iguales pero permite overnight events (20:00→02:00 común en bodas LATAM) | `feature/events/.../EventFormViewModel.kt:validateStep, saveEvent` |
 | **F**  | Sync final de docs con realidad       | ✅ Completado — `Roadmap Android.md` corregido (Fase 0.3 y 2.2 dejaron de mentir) | `PRD/11_CURRENT_STATUS.md`, `Android/Roadmap Android.md`, `Android/Firma y Secretos de Release.md` |
+
+### Baseline de Testing Android (2026-05-13)
+
+> [!info] Estado medido por ejecución real
+>
+> - Total tests unitarios: **63** (debug)
+> - Resultado: **0 failures**, **0 errors**, **0 skipped**
+> - Cobertura estructural: **14/19 módulos** con tests
+> - `androidTest`: **2 smoke tests activos y en verde** (auth + dashboard)
+
+| Módulo | Tests debug |
+| ------ | ----------: |
+| `core/data` | 7 |
+| `core/database` | 5 |
+| `core/model` | 6 |
+| `core/network` | 6 |
+| `feature/auth` | 6 |
+| `feature/calendar` | 4 |
+| `feature/clients` | 3 |
+| `feature/dashboard` | 8 |
+| `feature/events` | 7 |
+| `feature/inventory` | 2 |
+| `feature/payments` | 3 |
+| `feature/products` | 2 |
+| `feature/search` | 3 |
+| `feature/settings` | 4 |
+| `feature/staff` | 11 |
+| `widget` | 7 |
+| **Total** | **88** |
+
+| Indicador | Valor |
+| --------- | ----: |
+| Módulos Android totales | 19 |
+| Módulos con suites JVM (`src/test`/`src/androidTest`) | 18 |
+| Módulo sin suite JVM | 1 (`baselineprofile`, instrumentado) |
+
+#### Hardening incremental acordado
+
+1. Fase 1: `core/model`, `core/database`, `feature/auth` ✅
+2. Fase 2: `feature/clients`, `feature/products`, `feature/inventory` ✅
+3. Fase 2.5: `feature/search`, `feature/payments`, `feature/settings`, `feature/calendar` ✅
+4. Fase 3: smoke tests instrumentados (`androidTest`) para login + dashboard ✅
+4. Fase 4: gate de cobertura gradual por módulo en CI
+   - Fase 4.1 ✅ (activo):
+     - `:core:model:jacocoDebugCoverageVerification` (`extensions/**`, line ratio >= 30%)
+     - `:core:database:jacocoDebugCoverageVerification` (`converter/**`, line ratio >= 50%)
+     - `:feature:auth:jacocoDebugCoverageVerification` (`viewmodel/**`, line ratio >= 17%)
+   - Fase 4.2 ✅ (activo):
+     - `:feature:clients:jacocoDebugCoverageVerification` (`QuickQuoteViewModel*`, line ratio >= 25%)
+     - `:feature:products:jacocoDebugCoverageVerification` (`ProductListViewModel*`, line ratio >= 50%)
+     - `:feature:inventory:jacocoDebugCoverageVerification` (`InventoryListViewModel*`, line ratio >= 40%)
+   - Fase 4.3 ✅ (activo): thresholds calibrados y validados en comando unificado local
+   - Fase 4.4 ✅ (activo):
+     - `:feature:search:jacocoDebugCoverageVerification` (`SearchViewModel*`, line ratio >= 15%)
+     - `:feature:payments:jacocoDebugCoverageVerification` (`PaymentInboxViewModel*`, line ratio >= 15%)
+     - `:feature:settings:jacocoDebugCoverageVerification` (`SettingsViewModel*`, line ratio >= 15%)
+     - `:feature:calendar:jacocoDebugCoverageVerification` (`CalendarViewModel*`, line ratio >= 15%)
+   - Fase 4.5 ✅ (activo):
+     - `:app:jacocoDebugCoverageVerification` (`DeepLinkRoutes*`, `TopLevelDestination*`, line ratio >= 20%)
+     - `:core:designsystem:jacocoDebugCoverageVerification` (`SolennixColorScheme*`, line ratio >= 20%)
+     - `:widget:jacocoDebugCoverageVerification` (`WidgetFormatters*`, `WidgetAuthProvider*`, line ratio >= 20%)
+   - Fase 4.6 ✅ (activo):
+     - `:baselineprofile:compileNonMinifiedReleaseKotlin` agregado al Android Quality Gate de CI
 
 ### Pendiente Android (no blocker)
 

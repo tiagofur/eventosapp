@@ -1,11 +1,15 @@
 import { api } from '../lib/api';
 import type {
+  AssignmentPortalResponse,
+  AssignmentResponseOutcome,
   EventStaff,
   PaginatedResponse,
   PaginationParams,
   Staff,
   StaffAvailability,
   StaffInsert,
+  StaffInviteResponse,
+  TeamMemberAssignment,
   StaffTeam,
   StaffTeamInsert,
   StaffTeamUpdate,
@@ -46,6 +50,14 @@ export const staffService = {
     return api.delete(`/staff/${id}`);
   },
 
+  async inviteUser(id: string): Promise<StaffInviteResponse> {
+    return api.post<StaffInviteResponse>(`/staff/${id}/invite`, {});
+  },
+
+  async revokeInvite(id: string): Promise<void> {
+    return api.delete(`/staff/${id}/invite`);
+  },
+
   async getByEvent(eventId: string): Promise<EventStaff[]> {
     return api.get<EventStaff[]>(`/events/${eventId}/staff`);
   },
@@ -56,6 +68,14 @@ export const staffService = {
     if (params.start) query.start = params.start;
     if (params.end) query.end = params.end;
     return api.get<StaffAvailability[]>('/staff/availability', query);
+  },
+
+  async getMyAssignments(): Promise<TeamMemberAssignment[]> {
+    return api.get<TeamMemberAssignment[]>('/staff/my-assignments');
+  },
+
+  async respondAssignment(id: string, response: AssignmentPortalResponse): Promise<AssignmentResponseOutcome> {
+    return api.post<AssignmentResponseOutcome>(`/staff/assignments/${id}/respond`, { response });
   },
 
   // ── Staff Teams (Ola 2) ──

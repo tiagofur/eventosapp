@@ -3,6 +3,38 @@ import UIKit
 import SolennixCore
 import SolennixNetwork
 
+private struct QuickQuotePDFClientPayload: Encodable {
+    let name: String
+    let phone: String
+    let email: String?
+}
+
+private struct QuickQuotePDFProductPayload: Encodable {
+    let productId: String?
+    let name: String
+    let quantity: Double
+    let unitPrice: Double
+    let discount: Double
+}
+
+private struct QuickQuotePDFExtraPayload: Encodable {
+    let description: String
+    let cost: Double
+    let price: Double
+    let excludeUtility: Bool
+}
+
+private struct QuickQuotePDFRequestPayload: Encodable {
+    let client: QuickQuotePDFClientPayload?
+    let products: [QuickQuotePDFProductPayload]
+    let extras: [QuickQuotePDFExtraPayload]
+    let numPeople: Int
+    let discount: Double
+    let discountType: String
+    let requiresInvoice: Bool
+    let taxRate: Double
+}
+
 @Observable
 public final class QuickQuoteViewModel {
     let apiClient: APIClient
@@ -167,54 +199,53 @@ public final class QuickQuoteViewModel {
 
     // MARK: - PDF Generation
 
-    /// Generates a quick quote PDF using current form data.
-    public func generatePDF(profile: User?) {
-        let fin = financials
+    /// Downloads a backend-generated quick quote PDF using current form data.
+    @MainActor
+    public func generatePDF() async {
+        let validProducts = selectedProducts.filter { !$0.productId.isEmpty && $0.quantity > 0 }
+        let validExtras = extras.filter { !$0.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-        let items: [QuickQuotePDFGenerator.QuoteItem] = selectedProducts.compactMap { product in
-            let name = availableProducts.first(where: { $0.id == product.productId })?.name ?? QuickQuoteStrings.product
-            let total = Double(product.quantity) * product.unitPrice
-            return QuickQuotePDFGenerator.QuoteItem(
-                name: name,
-                quantity: product.quantity,
-                unitPrice: product.unitPrice,
-                total: total
-            )
+        guard !validProducts.isEmpty || !validExtras.isEmpty else {
+            return
         }
 
-        let quoteExtras: [QuickQuotePDFGenerator.QuoteExtra] = extras.map { extra in
-            QuickQuotePDFGenerator.QuoteExtra(
-                description: extra.description,
-                price: extra.price
-            )
-        }
-
-        let discountLabel: String
-        if discountType == .percent && discountValue > 0 {
-            discountLabel = "\(Int(discountValue))%"
-        } else if discountValue > 0 {
-            discountLabel = PDFConstants.formatCurrency(discountValue)
-        } else {
-            discountLabel = ""
-        }
-
-        pdfData = QuickQuotePDFGenerator.generate(
-            profile: profile,
+        let payload = QuickQuotePDFRequestPayload(
+            client: clientName.isEmpty ? nil : QuickQuotePDFClientPayload(
+                name: clientName,
+                phone: clientPhone,
+                email: clientEmail.isEmpty ? nil : clientEmail
+            ),
+            products: validProducts.map { product in
+                QuickQuotePDFProductPayload(
+                    productId: product.productId,
+                    name: availableProducts.first(where: { $0.id == product.productId })?.name ?? QuickQuoteStrings.product,
+                    quantity: Double(product.quantity),
+                    unitPrice: product.unitPrice,
+                    discount: product.discount
+                )
+            },
+            extras: validExtras.map { extra in
+                QuickQuotePDFExtraPayload(
+                    description: extra.description,
+                    cost: extra.cost,
+                    price: extra.price,
+                    excludeUtility: extra.excludeUtility
+                )
+            },
             numPeople: numPeople,
-            items: items,
-            extras: quoteExtras,
-            productsSubtotal: fin.productsSubtotal,
-            extrasTotal: fin.extrasTotal,
-            discountAmount: fin.discountAmount,
-            discountLabel: discountLabel,
-            taxAmount: fin.taxAmount,
-            taxRate: taxRate,
-            total: fin.total,
-            clientName: clientName.isEmpty ? nil : clientName,
-            clientPhone: clientPhone.isEmpty ? nil : clientPhone,
-            clientEmail: clientEmail.isEmpty ? nil : clientEmail
+            discount: discountValue,
+            discountType: discountType == .percent ? "percent" : "fixed",
+            requiresInvoice: requiresInvoice,
+            taxRate: taxRate
         )
-        showShareSheet = true
+
+        do {
+            pdfData = try await apiClient.postData(Endpoint.quickQuotePDF, body: payload)
+            showShareSheet = true
+        } catch {
+            pdfData = nil
+            showShareSheet = false
+        }
     }
 }
 

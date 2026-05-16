@@ -21,8 +21,10 @@ import {
 } from "@/hooks/queries/useEventFormQueries";
 import { useToast } from "@/hooks/useToast";
 import type { EventFormLink } from "@/types/entities";
+import { useTranslation } from "react-i18next";
 
 export const EventFormLinksPage: React.FC = () => {
+  const { t, i18n } = useTranslation("public");
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { data: links, isLoading } = useEventFormLinks();
@@ -40,12 +42,12 @@ export const EventFormLinksPage: React.FC = () => {
         label: label.trim() || undefined,
         ttlDays,
       });
-      addToast("Enlace creado", "success");
+      addToast(t("admin_links.toast.created"), "success");
       setShowDialog(false);
       setLabel("");
       setTtlDays(7);
     } catch {
-      addToast("Error al crear enlace", "error");
+      addToast(t("admin_links.toast.error_create"), "error");
     }
   };
 
@@ -53,21 +55,21 @@ export const EventFormLinksPage: React.FC = () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopiedId(id);
-      addToast("Enlace copiado", "success");
+      addToast(t("admin_links.toast.copied"), "success");
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      addToast("No se pudo copiar", "error");
+      addToast(t("admin_links.toast.error_copy"), "error");
     }
   };
 
-  const handleShare = async (url: string, label?: string) => {
+  const handleShare = async (url: string, linkLabel?: string) => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Formulario de evento",
-          text: label
-            ? `Formulario: ${label}`
-            : "Llena los datos de tu evento",
+          title: t("admin_links.share_title"),
+          text: linkLabel
+            ? t("admin_links.share_text_with_label", { label: linkLabel })
+            : t("admin_links.share_text_default"),
           url,
         });
       } catch {
@@ -79,17 +81,17 @@ export const EventFormLinksPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("¿Revocar este enlace? Ya no podrá ser utilizado.")) return;
+    if (!confirm(t("admin_links.confirm_revoke"))) return;
     try {
       await deleteLink.mutateAsync(id);
-      addToast("Enlace revocado", "success");
+      addToast(t("admin_links.toast.revoked"), "success");
     } catch {
-      addToast("Error al revocar", "error");
+      addToast(t("admin_links.toast.error_revoke"), "error");
     }
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("es-MX", {
+    return new Date(dateStr).toLocaleDateString(i18n.language === "es" ? "es-MX" : "en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -102,21 +104,21 @@ export const EventFormLinksPage: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success">
             <Clock className="h-3 w-3" />
-            Activo
+            {t("admin_links.status.active")}
           </span>
         );
       case "used":
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-info/10 text-info">
             <CheckCircle2 className="h-3 w-3" />
-            Usado
+            {t("admin_links.status.used")}
           </span>
         );
       case "expired":
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-text-tertiary/10 text-text-tertiary">
             <XCircle className="h-3 w-3" />
-            Expirado
+            {t("admin_links.status.expired")}
           </span>
         );
     }
@@ -128,10 +130,10 @@ export const EventFormLinksPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text tracking-tight">
-            Formularios
+            {t("admin_links.title")}
           </h1>
           <p className="text-sm text-text-secondary mt-1">
-            Genera enlaces para que tus clientes llenen datos de su evento
+            {t("admin_links.subtitle")}
           </p>
         </div>
         <button
@@ -139,7 +141,7 @@ export const EventFormLinksPage: React.FC = () => {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl premium-gradient text-white font-medium text-sm shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-[1.02]"
         >
           <Plus className="h-4 w-4" />
-          Generar enlace
+          {t("admin_links.new_link")}
         </button>
       </div>
 
@@ -152,18 +154,17 @@ export const EventFormLinksPage: React.FC = () => {
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <Link2 className="h-12 w-12 text-text-tertiary mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-text mb-2">
-            Sin formularios
+            {t("admin_links.no_links")}
           </h3>
           <p className="text-sm text-text-secondary mb-6 max-w-sm mx-auto">
-            Genera un enlace compartible para que tus clientes potenciales
-            llenen los datos de su evento y seleccionen productos.
+            {t("admin_links.no_links_desc")}
           </p>
           <button
             onClick={() => setShowDialog(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl premium-gradient text-white font-medium text-sm"
           >
             <Plus className="h-4 w-4" />
-            Crear primer enlace
+            {t("admin_links.create_first")}
           </button>
         </div>
       ) : (
@@ -176,7 +177,7 @@ export const EventFormLinksPage: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-semibold text-text truncate">
-                    {link.label || "Sin etiqueta"}
+                    {link.label || t("admin_links.no_label")}
                   </p>
                   {getStatusBadge(link)}
                 </div>
@@ -184,10 +185,10 @@ export const EventFormLinksPage: React.FC = () => {
                 <div className="flex items-center gap-3 text-xs text-text-secondary">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    Expira: {formatDate(link.expires_at)}
+                    {t("admin_links.expires", { date: formatDate(link.expires_at) })}
                   </span>
                   {link.used_at && (
-                    <span>Usado: {formatDate(link.used_at)}</span>
+                    <span>{t("admin_links.used", { date: formatDate(link.used_at) })}</span>
                   )}
                 </div>
 
@@ -204,27 +205,27 @@ export const EventFormLinksPage: React.FC = () => {
                     <button
                       onClick={() => handleCopy(link.url, link.id)}
                       className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-text-secondary hover:bg-surface-alt transition-colors"
-                      title="Copiar enlace"
+                      title={t("admin_links.copy")}
                     >
                       {copiedId === link.id ? (
                         <Check className="h-4 w-4 text-success" />
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
-                      <span className="hidden sm:inline">Copiar</span>
+                      <span className="hidden sm:inline">{t("admin_links.copy")}</span>
                     </button>
                     <button
                       onClick={() => handleShare(link.url, link.label)}
                       className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-text-secondary hover:bg-surface-alt transition-colors"
-                      title="Compartir"
+                      title={t("admin_links.share")}
                     >
                       <Share2 className="h-4 w-4" />
-                      <span className="hidden sm:inline">Compartir</span>
+                      <span className="hidden sm:inline">{t("admin_links.share")}</span>
                     </button>
                     <button
                       onClick={() => handleDelete(link.id)}
                       className="inline-flex items-center px-3 py-2 rounded-lg border border-border text-sm text-error/70 hover:bg-error/5 hover:text-error transition-colors"
-                      title="Revocar"
+                      title={t("admin_links.revoke")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -241,7 +242,7 @@ export const EventFormLinksPage: React.FC = () => {
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-text-secondary hover:bg-surface-alt transition-colors"
                   >
                     <ExternalLink className="h-4 w-4" />
-                    Ver evento
+                    {t("admin_links.view_event")}
                   </button>
                 )}
               </div>
@@ -254,24 +255,24 @@ export const EventFormLinksPage: React.FC = () => {
       {showDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md space-y-4 shadow-xl">
-            <h2 className="text-lg font-bold text-text">Generar enlace</h2>
+            <h2 className="text-lg font-bold text-text">{t("admin_links.dialog_title")}</h2>
 
             <div>
               <label className="block text-sm font-medium text-text mb-1.5">
-                Etiqueta (opcional)
+                {t("admin_links.label_field")}
               </label>
               <input
                 type="text"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder="Ej: Boda de María y Pedro"
+                placeholder={t("admin_links.label_placeholder")}
                 className="w-full px-4 py-3 rounded-xl border border-border text-sm bg-card text-text placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent transition-colors"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-text mb-1.5">
-                Válido por: {ttlDays} día{ttlDays !== 1 ? "s" : ""}
+                {t("admin_links.valid_for", { count: ttlDays })}
               </label>
               <input
                 type="range"
@@ -282,8 +283,8 @@ export const EventFormLinksPage: React.FC = () => {
                 className="w-full accent-primary"
               />
               <div className="flex justify-between text-xs text-text-tertiary mt-1">
-                <span>1 día</span>
-                <span>30 días</span>
+                <span>{t("admin_links.day_one")}</span>
+                <span>{t("admin_links.day_plural", { count: 30 })}</span>
               </div>
             </div>
 
@@ -292,7 +293,7 @@ export const EventFormLinksPage: React.FC = () => {
                 onClick={() => setShowDialog(false)}
                 className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium text-text hover:bg-surface-alt transition-colors"
               >
-                Cancelar
+                {t("admin_links.cancel")}
               </button>
               <button
                 onClick={handleGenerate}
@@ -302,7 +303,7 @@ export const EventFormLinksPage: React.FC = () => {
                 {generateLink.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                 ) : (
-                  "Crear"
+                  t("admin_links.create")
                 )}
               </button>
             </div>

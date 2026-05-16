@@ -26,7 +26,7 @@ export const PublicProductCard: React.FC<Props> = ({
   onDecrement,
   onQuantityChange,
 }) => {
-  const { t } = useTranslation("public");
+  const { t } = useTranslation(["public", "common"]);
   return (
     <div
       className={`rounded-xl border p-3 transition-all cursor-pointer ${
@@ -95,7 +95,7 @@ export const PublicProductCard: React.FC<Props> = ({
               className="flex items-center gap-2 mt-2"
               onClick={(e) => e.stopPropagation()}
             >
-              <span className="text-xs text-text-secondary">{t("form.quantity")}:</span>
+              <span className="text-xs text-text-secondary">{t("common:quantity")}:</span>
               <div className="flex items-center rounded-lg border border-border overflow-hidden">
                 <button
                   type="button"

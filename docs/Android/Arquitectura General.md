@@ -152,6 +152,21 @@ sequenceDiagram
 
 ---
 
+## Estado de Calidad (2026-05-13)
+
+| Indicador | Valor |
+|----------|------:|
+| Tests unitarios (debug) | 52 |
+| Failures / Errors / Skipped | 0 / 0 / 0 |
+| Módulos Android con tests | 10 / 19 |
+| `androidTest` activos | 2 (smoke auth + dashboard) |
+
+Módulos con tests hoy: `core/data`, `core/database`, `core/model`, `core/network`, `feature/auth`, `feature/clients`, `feature/dashboard`, `feature/events`, `feature/inventory`, `feature/products`.
+
+Ver detalle operativo en [[Testing]] y priorización en [[Roadmap Android]].
+
+---
+
 ## Relaciones
 
 - [[Sistema de Tipos]] — modelos compartidos en `core/model`

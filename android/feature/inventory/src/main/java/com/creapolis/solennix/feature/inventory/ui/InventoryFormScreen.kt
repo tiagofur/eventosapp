@@ -44,6 +44,7 @@ fun InventoryFormScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             SolennixTopAppBar(
                 title = { Text(InventoryStrings.formTitle) },
@@ -69,6 +70,8 @@ fun InventoryFormScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .navigationBarsPadding()
+                        .imePadding()
                         .verticalScroll(scrollState)
                 ) {
                     // Plan limit banner (only shown when creating a new item)
@@ -166,7 +169,7 @@ fun InventoryFormScreen(
                                         onValueChange = { viewModel.unit = it },
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .menuAnchor(MenuAnchorType.PrimaryEditable),
+                                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true),
                                         label = { Text(InventoryStrings.unitRequired) },
                                         leadingIcon = {
                                             Icon(

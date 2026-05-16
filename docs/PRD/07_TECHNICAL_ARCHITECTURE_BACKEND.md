@@ -10,7 +10,7 @@ aliases:
   - Arquitectura Backend
   - Backend Architecture
 date: 2026-03-20
-updated: 2026-04-17
+updated: 2026-05-11
 status: active
 platform: Backend
 ---
@@ -21,7 +21,7 @@ platform: Backend
 > [[PRD MOC]] | [[01_PRODUCT_VISION]] | [[02_FEATURES]] | [[05_TECHNICAL_ARCHITECTURE_IOS]] | [[06_TECHNICAL_ARCHITECTURE_ANDROID]] | [[08_TECHNICAL_ARCHITECTURE_WEB]] | [[11_CURRENT_STATUS]] | [[04_MONETIZATION]]
 
 **Version:** 1.0
-**Fecha:** 2026-03-20 · **Última actualización:** 2026-05-04
+**Fecha:** 2026-03-20 · **Última actualización:** 2026-05-11
 **Plataforma:** Go REST API + PostgreSQL
 
 > [!success] Producción (2026-04-16)
@@ -36,6 +36,15 @@ platform: Backend
 > - **Manifest canonico:** `versioning/releases.json`
 > - **Changelog oficial:** `CHANGELOG.md` + `web/src/content/changelog.generated.ts`
 > - **CI de governance:** valida sincronía entre `versioning/releases.json` y `backend/VERSION`
+
+> [!success] 2026-05-11 — i18n server-side en producción de backend
+>
+> - **Locale por request:** middleware `Localization()` lee `Accept-Language`, normaliza (`es`/`en`) y lo propaga por `context.Context`.
+> - **Fallback de contrato:** cuando no llega locale, la API mantiene mensajes en inglés por compatibilidad retroactiva.
+> - **Catálogo backend:** nuevo módulo `internal/i18n/messages.go` con keys para auth, validación, CRUD y asuntos de email.
+> - **Handlers/middlewares migrados:** errores de `auth`, parte de `crud` y middlewares (`auth`, `admin`) ahora usan keys i18n en vez de strings hardcodeados.
+> - **Validación localizada:** `ValidationError` soporta traducción de mensajes (`validation.*`) manteniendo shape de error existente.
+> - **Emails localizados:** `EmailService` incorpora variantes `*Localized` para welcome, reset password, payment receipt, collaborator assigned y subscription confirmation.
 
 > [!info] Migraciones recientes (2026-04-16)
 >

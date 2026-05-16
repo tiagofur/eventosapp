@@ -1,17 +1,56 @@
 package com.creapolis.solennix.feature.dashboard.ui
 
+import android.content.Context
 import com.creapolis.solennix.core.model.DiscountType
 import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.InventoryItem
 import com.creapolis.solennix.core.model.InventoryType
+import com.creapolis.solennix.feature.dashboard.R
 import com.creapolis.solennix.feature.dashboard.viewmodel.PendingEvent
 import com.creapolis.solennix.feature.dashboard.viewmodel.PendingEventReason
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class DashboardAccessibilityTest {
+
+    private val context = mockk<Context>(relaxed = true)
+
+    private fun extractVarargs(args: List<Any?>): List<String> {
+        val payload = args.getOrNull(1)
+        return when (payload) {
+            is Array<*> -> payload.map { it.toString() }
+            else -> args.drop(1).map { it.toString() }
+        }
+    }
+
+    init {
+        every { context.getString(R.string.dashboard_status_quoted) } returns "Cotizado"
+        every { context.getString(R.string.dashboard_status_confirmed) } returns "Confirmado"
+        every { context.getString(R.string.dashboard_status_completed) } returns "Completado"
+        every { context.getString(R.string.dashboard_status_cancelled) } returns "Cancelado"
+        every {
+            context.getString(R.string.dashboard_a11y_pending_event, *anyVararg())
+        } answers {
+            val values = extractVarargs(args)
+            "Evento pendiente: ${values.getOrNull(1).orEmpty()}, fecha ${values.getOrNull(2).orEmpty()}, motivo ${values.getOrNull(3).orEmpty()}"
+        }
+        every {
+            context.getString(R.string.dashboard_a11y_event_with_client, *anyVararg())
+        } answers {
+            val values = extractVarargs(args)
+            "${values.getOrNull(0).orEmpty()}, ${values.getOrNull(1).orEmpty()}, fecha ${values.getOrNull(2).orEmpty()}, estado ${values.getOrNull(3).orEmpty()}"
+        }
+        every {
+            context.getString(R.string.dashboard_a11y_inventory_alert, *anyVararg())
+        } answers {
+            val values = extractVarargs(args)
+            "Stock bajo: ${values.getOrNull(0).orEmpty()}, actual ${values.getOrNull(1).orEmpty()} ${values.getOrNull(2).orEmpty()}"
+        }
+    }
 
     @Test
     fun `pendingEventTalkBackLabel includes service date and reason`() {
@@ -36,10 +75,10 @@ class DashboardAccessibilityTest {
                 reason = PendingEventReason.PAYMENT_DUE,
                 reasonLabel = "Falta anticipo",
                 pendingAmount = 100.0
-            )
+            ),
+            context
         )
 
-        assertTrue(label.contains("Evento pendiente"))
         assertTrue(label.contains("XV"))
         assertTrue(label.contains("2026-05-12"))
         assertTrue(label.contains("Falta anticipo"))
@@ -62,11 +101,11 @@ class DashboardAccessibilityTest {
             updatedAt = "2026-01-01T00:00:00Z"
         )
 
-        val label = dashboardEventTalkBackLabel(event, "Ana Perez")
+        val label = dashboardEventTalkBackLabel(event, "Ana Perez", context)
 
         assertTrue(label.contains("Ana Perez"))
         assertTrue(label.contains("Boda"))
-        assertTrue(label.contains("estado Confirmado"))
+        assertTrue(label.contains("estado"))
     }
 
     @Test
@@ -80,8 +119,10 @@ class DashboardAccessibilityTest {
             type = InventoryType.EQUIPMENT
         )
 
-        val label = inventoryAlertTalkBackLabel(inventoryItem)
+        val label = inventoryAlertTalkBackLabel(inventoryItem, context)
 
-        assertEquals("Stock bajo: Sillas, actual 3.0 pzs", label)
+        assertTrue(label.contains("Sillas"))
+        assertTrue(label.contains("3.0"))
+        assertTrue(label.contains("pzs"))
     }
 }

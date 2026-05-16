@@ -29,7 +29,7 @@ describe('UpgradeBanner', () => {
     it('renders upgrade link', () => {
       renderBanner({ type: 'limit-reached', resource: 'events' });
 
-      const link = screen.getByRole('link', { name: /mejorar al plan pro/i });
+      const link = screen.getByRole('link', { name: /mejorar a pro/i });
       expect(link).toHaveAttribute('href', '/pricing');
     });
 

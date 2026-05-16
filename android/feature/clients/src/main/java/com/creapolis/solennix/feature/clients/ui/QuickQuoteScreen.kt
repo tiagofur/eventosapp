@@ -842,7 +842,7 @@ private fun ProductItemCard(
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor(),
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                         textStyle = MaterialTheme.typography.bodyMedium
                     )
                     ExposedDropdownMenu(

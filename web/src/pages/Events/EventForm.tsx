@@ -125,6 +125,11 @@ const serializeShift = (
   };
 };
 
+const isValidUuid = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value.trim(),
+  );
+
 type EventFormData = {
   client_id: string;
   event_date: string;
@@ -971,6 +976,29 @@ export const EventForm: React.FC = () => {
       }
 
       if (eventId) {
+        const staffPayload = selectedStaff
+          .filter((s) => s.staff_id)
+          .map((s, index) => {
+            const trimmedId = s.staff_id.trim();
+            if (!isValidUuid(trimmedId)) {
+              throw new Error(`Personal #${index + 1}: ID inválido`);
+            }
+            if (s.fee_amount != null && s.fee_amount < 0) {
+              throw new Error(`Personal #${index + 1}: El pago no puede ser negativo`);
+            }
+
+            const shift = serializeShift(eventDateValue, s.shift_start, s.shift_end);
+            return {
+              staffId: trimmedId,
+              feeAmount: s.fee_amount,
+              roleOverride: s.role_override || null,
+              notes: s.notes || null,
+              shiftStart: shift.shiftStart,
+              shiftEnd: shift.shiftEnd,
+              status: s.status, // null = preserve current value on upsert
+            };
+          });
+
         await eventService.updateItems(
           eventId,
           selectedProducts.map((p) => ({
@@ -996,20 +1024,7 @@ export const EventForm: React.FC = () => {
               source: s.source,
               excludeCost: s.exclude_cost,
             })),
-          selectedStaff
-            .filter((s) => s.staff_id)
-            .map((s) => {
-              const shift = serializeShift(eventDateValue, s.shift_start, s.shift_end);
-              return {
-                staffId: s.staff_id,
-                feeAmount: s.fee_amount,
-                roleOverride: s.role_override || null,
-                notes: s.notes || null,
-                shiftStart: shift.shiftStart,
-                shiftEnd: shift.shiftEnd,
-                status: s.status, // null = preserve current value on upsert
-              };
-            }),
+          staffPayload,
         );
       }
 
@@ -1053,7 +1068,7 @@ export const EventForm: React.FC = () => {
         aria-live="polite"
       >
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="sr-only">Cargando formulario de evento...</span>
+        <span className="sr-only">{t("events:form.loading")}</span>
       </div>
     );
   }
@@ -1068,7 +1083,7 @@ export const EventForm: React.FC = () => {
           className="mb-6 flex items-center text-sm font-medium text-text-secondary hover:text-text transition-colors"
         >
           <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" />
-          Regresar
+          {t("common:action.back")}
         </button>
         <div className="flex justify-center mt-12">
           <UpgradeBanner
@@ -1083,7 +1098,7 @@ export const EventForm: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ label: 'Dashboard', href: '/dashboard' }, { label: id ? t('events:form.title_edit') : t('events:form.title_new') }]} />
+      <Breadcrumb items={[{ label: t('common:nav.dashboard'), href: '/dashboard' }, { label: id ? t('events:form.title_edit') : t('events:form.title_new') }]} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
           <button

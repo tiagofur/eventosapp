@@ -4,6 +4,7 @@ import { queryKeys } from './queryKeys';
 import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
 import type { ClientInsert, ClientUpdate, PaginationParams } from '@/types/entities';
+import { useTranslation } from 'react-i18next';
 
 // ── Queries ──
 
@@ -35,6 +36,7 @@ export function useClient(id: string | undefined) {
 export function useCreateClient() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('clients');
 
   return useMutation({
     mutationKey: ['clients', 'create'],
@@ -45,7 +47,7 @@ export function useCreateClient() {
     },
     onError: (error) => {
       logError('Error creating client', error);
-      addToast(getErrorMessage(error, 'Error al crear el cliente.'), 'error');
+      addToast(getErrorMessage(error, t('error_create')), 'error');
     },
   });
 }
@@ -53,6 +55,7 @@ export function useCreateClient() {
 export function useUpdateClient() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('clients');
 
   return useMutation({
     mutationKey: ['clients', 'update'],
@@ -64,7 +67,7 @@ export function useUpdateClient() {
     },
     onError: (error) => {
       logError('Error updating client', error);
-      addToast(getErrorMessage(error, 'Error al actualizar el cliente.'), 'error');
+      addToast(getErrorMessage(error, t('error_update')), 'error');
     },
   });
 }
@@ -72,6 +75,7 @@ export function useUpdateClient() {
 export function useDeleteClient() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('clients');
 
   return useMutation({
     mutationKey: ['clients', 'delete'],
@@ -79,11 +83,11 @@ export function useDeleteClient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.clients.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.planLimits });
-      addToast('Cliente eliminado correctamente.', 'success');
+      addToast(t('client_deleted'), 'success');
     },
     onError: (error) => {
       logError('Error deleting client', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el cliente.'), 'error');
+      addToast(getErrorMessage(error, t('error_delete')), 'error');
     },
   });
 }

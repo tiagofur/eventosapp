@@ -9,7 +9,7 @@ aliases:
   - Arquitectura iOS
   - iOS Architecture
 date: 2026-03-20
-updated: 2026-04-29
+updated: 2026-05-15
 status: active
 platform: iOS
 ---
@@ -23,13 +23,37 @@ platform: iOS
 > **Framework UI:** SwiftUI
 > **Arquitectura:** MVVM con @Observable
 
-> [!success] Producción (2026-04-16)
+> [!success] Versionado actual (2026-05-06)
 >
 > - **App Store live:** https://apps.apple.com/mx/app/solennix/id6760874129
-> - **Versión:** 1.0.4 (build 5)
+> - **Manifest canónico:** `versioning/releases.json`
+> - **Versión app (`ios/project.yml`):** `1.2.0` (build `7`)
+> - **Targets embebidos:** widget + notification service alineados a `1.2.0` (build `7`)
 > - **Bundle ID:** `com.solennix.app`
 > - **Development Team:** `T5SKULSP2M`
 > - **Base URL API:** `https://api.solennix.com/api`
+
+> [!info] Release train 2026-05-06
+>
+> - **Búsqueda de eventos:** iOS consume resultados alineados al backend vía `/api/events/search`
+> - **Calendario:** paridad con filtro por estado, retry, navegación e iCal
+> - **Detalle/Dashboard:** restore de upcoming events/top clients y fix en guardado de stock adjustment
+> - **Detalle de evento:** se removió la acción legacy de WhatsApp; la compartición oficial queda en `ClientPortalShareSheet`
+> - **Settings:** el centro de ayuda vive como acción secundaria en Ajustes y la apariencia se mantiene concentrada en esa pantalla
+
+> [!success] UI Refresh Lab 2026-05-08 (iOS/iPadOS/macOS)
+>
+> - Se incorporó `SolennixGlassSurface` en `SolennixDesign` para material/glass reutilizable y controlado (uso recomendado en chrome y overlays, no en todas las cards de datos).
+> - Se estandarizó la migración a `SolennixColors` en vistas SwiftUI para evitar drift de colores de sistema hardcodeados.
+> - `SidebarSplitLayout` refuerza consistencia de fondo/superficies y aplica glass sutil en header/footer del sidebar para iPad/macOS.
+> - `SearchView` y `EventDetailView` mejoran comportamiento de regular width con límites de ancho y espaciado desktop-class.
+
+> [!success] 2026-05-15 — Team Member Portal (Ola 4) base implementada
+>
+> - Implementado: `User.role` en modelo compartido + routing por rol en `ContentView`.
+> - Implementado: `TeamMemberPortalView` y `TeamMemberPortalViewModel` con carga y respuesta de asignaciones (`accept|decline`).
+> - Pendiente: `TeamHomeView`, calendario completo mes/semana/día y detalle Team scoped.
+> - Fuente de roadmap y DoD: `docs/PRD/17_PERSONAL_TRACKER.md`.
 
 > [!info] Dependencias externas SPM (2026-04-16)
 >
@@ -45,6 +69,7 @@ platform: iOS
 > - [[01_PRODUCT_VISION]] — Vision del producto
 > - [[02_FEATURES]] — Features y tabla de paridad
 > - [[19_I18N_STRATEGY]] — Estrategia de i18n, copy matrix y reglas de paridad semántica
+> - `docs/iOS/Plan iOS i18n + QA + Refactor por Pantalla.md` — ejecución iOS pantalla por pantalla (traducciones + tests + refactor)
 > - [[06_TECHNICAL_ARCHITECTURE_ANDROID]] — Arquitectura Android
 > - [[07_TECHNICAL_ARCHITECTURE_BACKEND]] — Arquitectura Backend
 > - [[08_TECHNICAL_ARCHITECTURE_WEB]] — Arquitectura Web
@@ -211,6 +236,7 @@ ios/
 │   │           ├── Avatar.swift
 │   │           ├── ConfirmDialog.swift
 │   │           ├── EmptyStateView.swift
+│   │           ├── GlassSurface.swift
 │   │           ├── PremiumButton.swift
 │   │           ├── SkeletonView.swift
 │   │           ├── SolennixTextField.swift

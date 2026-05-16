@@ -4,12 +4,14 @@ import { queryKeys } from './queryKeys';
 import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
 import type {
+  AssignmentPortalResponse,
   PaginationParams,
   StaffInsert,
   StaffTeamInsert,
   StaffTeamUpdate,
   StaffUpdate,
 } from '@/types/entities';
+import { useTranslation } from 'react-i18next';
 
 // ── Queries ──
 
@@ -66,11 +68,40 @@ export function useStaffAvailabilityRange(start: string | null | undefined, end:
   });
 }
 
+export function useMyAssignments() {
+  return useQuery({
+    queryKey: queryKeys.staff.myAssignments,
+    queryFn: () => staffService.getMyAssignments(),
+    refetchInterval: 30 * 1000,
+  });
+}
+
+export function useRespondAssignment() {
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
+  const { t } = useTranslation('staff');
+
+  return useMutation({
+    mutationKey: ['staff', 'respond-assignment'],
+    mutationFn: ({ id, response }: { id: string; response: AssignmentPortalResponse }) =>
+      staffService.respondAssignment(id, response),
+    onSuccess: (_result, { response }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.staff.myAssignments });
+      addToast(response === 'accept' ? t('form.messages.accepted', { defaultValue: 'Asignación aceptada.' }) : t('form.messages.declined', { defaultValue: 'Asignación rechazada.' }), 'success');
+    },
+    onError: (error) => {
+      logError('Error responding assignment', error);
+      addToast(getErrorMessage(error, t('error_respond_assignment')), 'error');
+    },
+  });
+}
+
 // ── Mutations ──
 
 export function useCreateStaff() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('staff');
 
   return useMutation({
     mutationKey: ['staff', 'create'],
@@ -80,7 +111,7 @@ export function useCreateStaff() {
     },
     onError: (error) => {
       logError('Error creating staff', error);
-      addToast(getErrorMessage(error, 'Error al crear el colaborador.'), 'error');
+      addToast(getErrorMessage(error, t('error_create')), 'error');
     },
   });
 }
@@ -88,6 +119,7 @@ export function useCreateStaff() {
 export function useUpdateStaff() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('staff');
 
   return useMutation({
     mutationKey: ['staff', 'update'],
@@ -99,7 +131,7 @@ export function useUpdateStaff() {
     },
     onError: (error) => {
       logError('Error updating staff', error);
-      addToast(getErrorMessage(error, 'Error al actualizar el colaborador.'), 'error');
+      addToast(getErrorMessage(error, t('error_update')), 'error');
     },
   });
 }
@@ -107,17 +139,18 @@ export function useUpdateStaff() {
 export function useDeleteStaff() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('staff');
 
   return useMutation({
     mutationKey: ['staff', 'delete'],
-    mutationFn: (id: string) => staffService.delete(id),
+    mutationFn: (id: string) => staffService.delete(id) || staffService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.staff.all });
-      addToast('Colaborador eliminado correctamente.', 'success');
+      addToast(t('success_delete'), 'success');
     },
     onError: (error) => {
       logError('Error deleting staff', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el colaborador.'), 'error');
+      addToast(getErrorMessage(error, t('error_delete')), 'error');
     },
   });
 }
@@ -142,6 +175,7 @@ export function useStaffTeam(id: string | undefined) {
 export function useCreateStaffTeam() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('staff');
 
   return useMutation({
     mutationKey: ['staff', 'teams', 'create'],
@@ -151,7 +185,7 @@ export function useCreateStaffTeam() {
     },
     onError: (error) => {
       logError('Error creating staff team', error);
-      addToast(getErrorMessage(error, 'Error al crear el equipo.'), 'error');
+      addToast(getErrorMessage(error, t('teams.error_create')), 'error');
     },
   });
 }
@@ -159,6 +193,7 @@ export function useCreateStaffTeam() {
 export function useUpdateStaffTeam() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('staff');
 
   return useMutation({
     mutationKey: ['staff', 'teams', 'update'],
@@ -170,7 +205,7 @@ export function useUpdateStaffTeam() {
     },
     onError: (error) => {
       logError('Error updating staff team', error);
-      addToast(getErrorMessage(error, 'Error al actualizar el equipo.'), 'error');
+      addToast(getErrorMessage(error, t('teams.error_update')), 'error');
     },
   });
 }
@@ -178,17 +213,18 @@ export function useUpdateStaffTeam() {
 export function useDeleteStaffTeam() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('staff');
 
   return useMutation({
     mutationKey: ['staff', 'teams', 'delete'],
     mutationFn: (id: string) => staffService.deleteTeam(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.staff.teams });
-      addToast('Equipo eliminado correctamente.', 'success');
+      addToast(t('teams.success_delete'), 'success');
     },
     onError: (error) => {
       logError('Error deleting staff team', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el equipo.'), 'error');
+      addToast(getErrorMessage(error, t('teams.error_delete')), 'error');
     },
   });
 }

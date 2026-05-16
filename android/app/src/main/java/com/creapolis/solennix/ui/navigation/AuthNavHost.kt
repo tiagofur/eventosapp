@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,6 +18,7 @@ import com.creapolis.solennix.feature.auth.ui.ForgotPasswordScreen
 import com.creapolis.solennix.feature.auth.ui.LoginScreen
 import com.creapolis.solennix.feature.auth.ui.RegisterScreen
 import com.creapolis.solennix.feature.auth.ui.ResetPasswordScreen
+import com.creapolis.solennix.feature.auth.ui.TeamInviteAcceptScreen
 import com.creapolis.solennix.feature.auth.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -85,6 +86,27 @@ fun AuthNavHost(
                 token = token,
                 viewModel = viewModel,
                 onNavigateToLogin = { navController.navigate("login") },
+                isWideScreen = isWideScreen
+            )
+        }
+        composable(
+            route = "team-invite?token={token}",
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "solennix://team-invite?token={token}" }
+            ),
+            arguments = listOf(
+                navArgument("token") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val token = backStackEntry.arguments?.getString("token")
+            TeamInviteAcceptScreen(
+                token = token,
+                viewModel = viewModel,
+                onNavigateToLogin = { navController.navigate("login") },
+                onAccepted = onAuthenticated,
                 isWideScreen = isWideScreen
             )
         }

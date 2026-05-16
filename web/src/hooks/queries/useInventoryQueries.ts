@@ -4,6 +4,7 @@ import { queryKeys } from './queryKeys';
 import { useToast } from '@/hooks/useToast';
 import { logError, getErrorMessage } from '@/lib/errorHandler';
 import type { InventoryItemInsert, InventoryItemUpdate, PaginationParams } from '@/types/entities';
+import { useTranslation } from 'react-i18next';
 
 // ── Queries ──
 
@@ -35,6 +36,7 @@ export function useInventoryItem(id: string | undefined) {
 export function useCreateInventoryItem() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('inventory');
 
   return useMutation({
     mutationKey: ['inventory', 'create'],
@@ -45,7 +47,7 @@ export function useCreateInventoryItem() {
     },
     onError: (error) => {
       logError('Error creating inventory item', error);
-      addToast(getErrorMessage(error, 'Error al crear el ítem de inventario.'), 'error');
+      addToast(getErrorMessage(error, t('list.error_create')), 'error');
     },
   });
 }
@@ -53,6 +55,7 @@ export function useCreateInventoryItem() {
 export function useUpdateInventoryItem() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('inventory');
 
   return useMutation({
     mutationKey: ['inventory', 'update'],
@@ -64,7 +67,7 @@ export function useUpdateInventoryItem() {
     },
     onError: (error) => {
       logError('Error updating inventory item', error);
-      addToast(getErrorMessage(error, 'Error al actualizar el ítem.'), 'error');
+      addToast(getErrorMessage(error, t('list.error_update')), 'error');
     },
   });
 }
@@ -72,6 +75,7 @@ export function useUpdateInventoryItem() {
 export function useDeleteInventoryItem() {
   const queryClient = useQueryClient();
   const { addToast } = useToast();
+  const { t } = useTranslation('inventory');
 
   return useMutation({
     mutationKey: ['inventory', 'delete'],
@@ -79,11 +83,11 @@ export function useDeleteInventoryItem() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.planLimits });
-      addToast('Ítem de inventario eliminado correctamente.', 'success');
+      addToast(t('list.item_deleted'), 'success');
     },
     onError: (error) => {
       logError('Error deleting inventory item', error);
-      addToast(getErrorMessage(error, 'Error al eliminar el ítem de inventario.'), 'error');
+      addToast(getErrorMessage(error, t('list.error_delete')), 'error');
     },
   });
 }

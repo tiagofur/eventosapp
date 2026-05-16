@@ -18,6 +18,7 @@ public struct EventListView: View {
     @State private var showShareSheet = false
     @State private var csvFileURL: URL?
     @State private var showQuickQuote = false
+    @State private var showDateFilter = false
 
     // MARK: - Init
 
@@ -56,6 +57,16 @@ public struct EventListView: View {
                     // Sort menu — Apple HIG: Menu in toolbar with checkmark
                     // on the active field; tapping the same field flips the
                     // ASC/DESC direction (mirrors Web's sortable columns).
+                    // Date filter calendar icon
+                    Button {
+                        showDateFilter = true
+                    } label: {
+                        Image(systemName: viewModel.activeFilterCount > 0 ? "calendar.badge.clock" : "calendar")
+                            .font(.body)
+                            .foregroundStyle(viewModel.activeFilterCount > 0 ? SolennixColors.primary : SolennixColors.primary)
+                            .accessibilityLabel(tr("events.list.filters.title", "Filtrar por fecha"))
+                    }
+
                     Menu {
                         sortMenuButton(field: .eventDate, label: tr("events.list.sort.date", "Fecha"))
                         sortMenuButton(field: .serviceType, label: tr("events.list.sort.service", "Servicio"))
@@ -103,6 +114,15 @@ public struct EventListView: View {
             }
             .sheet(isPresented: $showQuickQuote) {
                 QuickQuoteView(apiClient: apiClient)
+            }
+            .sheet(isPresented: $showDateFilter) {
+                DateFilterSheet(
+                    startDate: $viewModel.dateRangeStart,
+                    endDate: $viewModel.dateRangeEnd,
+                    onClear: { viewModel.clearAdvancedFilters() }
+                )
+                .presentationDetents([.height(380)])
+                .presentationDragIndicator(.visible)
             }
             .confirmationDialog(
                 tr("events.list.delete_confirm.title", "Eliminar evento"),
@@ -195,138 +215,84 @@ public struct EventListView: View {
         .padding(.top, Spacing.sm)
     }
 
-    // MARK: - Advanced Filters
+    // MARK: - Date Filter Sheet
 
-    @ViewBuilder
-    private var advancedFilters: some View {
-        VStack(spacing: 0) {
-            // Toggle row
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    viewModel.showAdvancedFilters.toggle()
-                }
-            } label: {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.subheadline)
-                    Text(tr("events.list.filters.title", "Filtros"))
-                        .font(.caption)
-                        .fontWeight(.medium)
+    private struct DateFilterSheet: View {
+        @Binding var startDate: Date?
+        @Binding var endDate: Date?
+        var onClear: () -> Void
+        @Environment(\.dismiss) private var dismiss
 
-                    if viewModel.activeFilterCount > 0 {
-                        Text("\(viewModel.activeFilterCount)")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(SolennixColors.primary)
-                            .clipShape(Capsule())
-                    }
+        private func tr(_ key: String, _ value: String) -> String {
+            FeatureL10n.text(key, value)
+        }
 
-                    Spacer()
+        // DatePicker requires non-optional Binding — use sentinel Date()
+        private var startBinding: Binding<Date> {
+            Binding(get: { startDate ?? Date() }, set: { startDate = $0 })
+        }
+        private var endBinding: Binding<Date> {
+            Binding(get: { endDate ?? Date() }, set: { endDate = $0 })
+        }
 
-                    if viewModel.activeFilterCount > 0 {
-                        Button {
-                            viewModel.clearAdvancedFilters()
-                        } label: {
-                            Text(tr("events.list.filters.clear", "Limpiar"))
-                                .font(.caption)
-                                .foregroundStyle(SolennixColors.error)
+        var body: some View {
+            NavigationStack {
+                Form {
+                    Section {
+                        Toggle(isOn: Binding(
+                            get: { startDate != nil },
+                            set: { if !$0 { startDate = nil } else { startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date() } }
+                        )) {
+                            Text(tr("events.list.filters.from", "Desde"))
+                                .font(.body)
+                        }
+                        .tint(SolennixColors.primary)
+
+                        if startDate != nil {
+                            DatePicker("", selection: startBinding, displayedComponents: .date)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                                .tint(SolennixColors.primary)
                         }
                     }
 
-                    Image(systemName: viewModel.showAdvancedFilters ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                }
-                .foregroundStyle(SolennixColors.textSecondary)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-            }
-
-            // Expandable filter content
-            if viewModel.showAdvancedFilters {
-                VStack(spacing: Spacing.sm) {
-                    // Client picker dropped — not in Android/Web, and the
-                    // Clients tab already shows per-client event lists.
-
-                    // Date range
-                    HStack {
-                        Text(tr("events.list.filters.from", "Desde"))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(SolennixColors.textSecondary)
-                            .frame(width: 60, alignment: .leading)
-
-                        if let start = viewModel.dateRangeStart {
-                            DatePicker("", selection: Binding(
-                                get: { start },
-                                set: { viewModel.dateRangeStart = $0 }
-                            ), displayedComponents: .date)
-                            .labelsHidden()
-                            .tint(SolennixColors.primary)
-
-                            Button {
-                                viewModel.dateRangeStart = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(SolennixColors.textTertiary)
-                            }
-                        } else {
-                            Button {
-                                viewModel.dateRangeStart = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-                            } label: {
-                                Text(tr("events.list.filters.select", "Seleccionar"))
-                                    .font(.caption)
-                                    .foregroundStyle(SolennixColors.primary)
-                            }
+                    Section {
+                        Toggle(isOn: Binding(
+                            get: { endDate != nil },
+                            set: { if !$0 { endDate = nil } else { endDate = Date() } }
+                        )) {
+                            Text(tr("events.list.filters.to", "Hasta"))
+                                .font(.body)
                         }
+                        .tint(SolennixColors.primary)
 
-                        Spacer()
-                    }
-
-                    HStack {
-                        Text(tr("events.list.filters.to", "Hasta"))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(SolennixColors.textSecondary)
-                            .frame(width: 60, alignment: .leading)
-
-                        if let end = viewModel.dateRangeEnd {
-                            DatePicker("", selection: Binding(
-                                get: { end },
-                                set: { viewModel.dateRangeEnd = $0 }
-                            ), displayedComponents: .date)
-                            .labelsHidden()
-                            .tint(SolennixColors.primary)
-
-                            Button {
-                                viewModel.dateRangeEnd = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(SolennixColors.textTertiary)
-                            }
-                        } else {
-                            Button {
-                                viewModel.dateRangeEnd = Date()
-                            } label: {
-                                Text(tr("events.list.filters.select", "Seleccionar"))
-                                    .font(.caption)
-                                    .foregroundStyle(SolennixColors.primary)
-                            }
+                        if endDate != nil {
+                            DatePicker("", selection: endBinding, displayedComponents: .date)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                                .tint(SolennixColors.primary)
                         }
-
-                        Spacer()
                     }
                 }
-                .padding(.horizontal, Spacing.md)
-                .padding(.bottom, Spacing.sm)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                .navigationTitle(tr("events.list.filters.title", "Filtrar por fecha"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(tr("events.list.filters.clear", "Limpiar")) {
+                            onClear()
+                        }
+                        .foregroundStyle(SolennixColors.error)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(tr("events.list.filters.apply", "Aplicar")) {
+                            dismiss()
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(SolennixColors.primary)
+                    }
+                }
             }
         }
-        .background(SolennixColors.surfaceGrouped)
     }
 
     // MARK: - Result Count
@@ -357,7 +323,6 @@ public struct EventListView: View {
         // content (Apple-standard behavior for list views with filter chips).
         ScrollView {
             filterChips
-            advancedFilters
             resultCount
 
             eventListContent
@@ -416,8 +381,8 @@ public struct EventListView: View {
                     }
                 }
             }
-            .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.xxl)
+            .padding(.horizontal, sizeClass == .regular ? Spacing.lg : Spacing.md)
+            .padding(.vertical, Spacing.lg)
         } else {
             LazyVStack(spacing: Spacing.sm) {
                 ForEach(filtered) { event in

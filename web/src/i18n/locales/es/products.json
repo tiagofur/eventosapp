@@ -36,6 +36,12 @@
     "active": "Activo",
     "inactive": "Inactivo"
   },
+  "success_create": "Producto creado exitosamente",
+  "success_update": "Producto actualizado exitosamente",
+  "success_delete": "Producto eliminado exitosamente",
+  "error_create": "Error al crear el producto",
+  "error_update": "Error al actualizar el producto",
+  "error_delete": "Error al eliminar el producto",
   "form": {
     "basic_info": "Información Básica",
     "name": "Nombre",

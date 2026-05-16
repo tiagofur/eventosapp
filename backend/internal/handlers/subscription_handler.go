@@ -14,6 +14,7 @@ import (
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/webhook"
 	"github.com/tiagofur/solennix-backend/internal/config"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
 	"github.com/tiagofur/solennix-backend/internal/services"
@@ -68,8 +69,8 @@ func NewSubscriptionHandler(
 // CreateCheckoutSession. An empty/missing body defaults to the Pro plan with
 // the server-configured 14-day trial, which matches the historical behavior.
 type checkoutSessionRequest struct {
-	Plan             string `json:"plan"`               // "pro" | "business"
-	SkipTrial        bool   `json:"skip_trial"`         // true to bypass the trial for testing
+	Plan      string `json:"plan"`       // "pro" | "business"
+	SkipTrial bool   `json:"skip_trial"` // true to bypass the trial for testing
 }
 
 // defaultCheckoutTrialDays is the free-trial length offered on the web
@@ -285,7 +286,12 @@ func (h *SubscriptionHandler) StripeWebhook(w http.ResponseWriter, r *http.Reque
 					go func() {
 						if user, err := h.userRepo.GetByID(context.Background(), userID); err == nil {
 							if user.EmailSubscriptionUpdates == nil || *user.EmailSubscriptionUpdates {
-								_ = h.emailService.SendSubscriptionConfirmation(user.Email, user.Name, planLabel)
+								_ = h.emailService.SendSubscriptionConfirmationLocalized(
+									user.Email,
+									user.Name,
+									planLabel,
+									i18n.NormalizeLocale(user.PreferredLanguage),
+								)
 							}
 						}
 					}()
@@ -444,9 +450,9 @@ type revenueCatEvent struct {
 		Type           string `json:"type"`
 		AppUserID      string `json:"app_user_id"`
 		ProductID      string `json:"product_id"`
-		Store          string `json:"store"`             // APP_STORE | PLAY_STORE | STRIPE
-		PeriodType     string `json:"period_type"`       // NORMAL | TRIAL | INTRO
-		ExpirationAtMS *int64 `json:"expiration_at_ms"`  // Expiration timestamp in milliseconds
+		Store          string `json:"store"`            // APP_STORE | PLAY_STORE | STRIPE
+		PeriodType     string `json:"period_type"`      // NORMAL | TRIAL | INTRO
+		ExpirationAtMS *int64 `json:"expiration_at_ms"` // Expiration timestamp in milliseconds
 	} `json:"event"`
 }
 

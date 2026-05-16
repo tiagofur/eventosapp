@@ -8,6 +8,7 @@ import SolennixNetwork
 public struct EventContractPreviewView: View {
 
     let eventId: String
+    private let apiClient: APIClient
 
     @State private var viewModel: EventDetailViewModel
     @Environment(AuthManager.self) private var authManager
@@ -16,6 +17,7 @@ public struct EventContractPreviewView: View {
 
     public init(eventId: String, apiClient: APIClient) {
         self.eventId = eventId
+        self.apiClient = apiClient
         self._viewModel = State(initialValue: EventDetailViewModel(apiClient: apiClient))
     }
 
@@ -190,7 +192,7 @@ public struct EventContractPreviewView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    sharePDF(event)
+                    Task { await sharePDF(event) }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
@@ -310,58 +312,24 @@ public struct EventContractPreviewView: View {
 
     // MARK: - PDF Export
 
-    private func sharePDF(_ event: Event) {
-        guard let client = viewModel.client else {
-            toastManager.show(message: "Datos del cliente no disponibles", type: .error)
-            return
-        }
-        let productNames = viewModel.productMap.mapValues { $0.name }
-        let pdfData = ContractPDFGenerator.generate(
-            event: event,
-            client: client,
-            profile: profile,
-            products: viewModel.products,
-            payments: viewModel.payments,
-            productNames: productNames
-        )
-        let filename = "Contrato_\(client.name.replacingOccurrences(of: " ", with: "_")).pdf"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+    private func sharePDF(_ event: Event) async {
+        let clientName = viewModel.client?.name ?? event.serviceType
+        let sanitized = clientName.replacingOccurrences(of: " ", with: "_")
+        let filename = "Contrato_\(sanitized).pdf"
+
         do {
-            try pdfData.write(to: tempURL)
+            let tempURL = try await EventPDFFileService.download(
+                apiClient: apiClient,
+                eventId: eventId,
+                type: "contract",
+                filename: filename
+            )
+            try await MainActor.run {
+                try EventPDFFileService.presentShareSheet(fileURL: tempURL)
+            }
         } catch {
-            toastManager.show(message: "No se pudo guardar el PDF", type: .error)
-            return
+            toastManager.show(message: "No se pudo generar el PDF", type: .error)
         }
-
-        guard let presenter = topMostViewController() else {
-            toastManager.show(message: "No se pudo presentar el compartir", type: .error)
-            return
-        }
-
-        let activityVC = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
-        if let popover = activityVC.popoverPresentationController {
-            popover.sourceView = presenter.view
-            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
-            popover.permittedArrowDirections = []
-        }
-        presenter.present(activityVC, animated: true)
-    }
-
-    /// Walks the presentation chain to find the topmost VC that can present.
-    /// Using the root VC fails silently when a sheet/modal is already on top.
-    private func topMostViewController() -> UIViewController? {
-        guard let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState == .foregroundActive })
-              ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
-              let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
-        else { return nil }
-
-        var top = window.rootViewController
-        while let presented = top?.presentedViewController {
-            top = presented
-        }
-        return top
     }
 
     // MARK: - Helpers

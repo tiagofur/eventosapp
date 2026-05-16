@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.creapolis.solennix.feature.dashboard"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
@@ -30,9 +30,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlin { compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    } }
     buildFeatures {
         compose = true
     }
@@ -53,6 +53,7 @@ dependencies {
     implementation(composeBom)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
+    androidTestImplementation(composeBom)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -73,4 +74,10 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    androidTestImplementation(libs.test.ext.junit)
+    androidTestImplementation(libs.test.espresso.core)
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

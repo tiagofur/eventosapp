@@ -258,6 +258,32 @@ public final class AuthViewModel {
         isLoading = false
     }
 
+    // MARK: - Accept Team Invite
+
+    @MainActor
+    public func acceptTeamInvite(token: String) async {
+        guard isPasswordComplex(password) else {
+            errorMessage = tr("auth.validation.password_min_8", "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número")
+            return
+        }
+        guard password == confirmPassword else {
+            errorMessage = tr("auth.validation.password_mismatch", "Las contraseñas no coinciden")
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            _ = try await authManager.acceptTeamInvite(token: token, password: password)
+            showSuccess = true
+        } catch {
+            errorMessage = mapError(error)
+        }
+
+        isLoading = false
+    }
+
     // MARK: - Helpers
 
     /// Checks password meets complexity requirements: 8+ chars, uppercase, lowercase, digit.

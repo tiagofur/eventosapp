@@ -8,7 +8,7 @@ import java.util.Locale
  * Use everywhere cents matter (event detail, payments, PDFs, reconciliation).
  */
 fun Double.asMXN(): String {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("es", "MX"))
+    val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-MX"))
     return formatter.format(this)
 }
 
@@ -22,7 +22,7 @@ fun Double.asMXN(): String {
  * level screens — reconciliation users need the centavos.
  */
 fun Double.asMXNCompact(): String {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("es", "MX"))
+    val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("es-MX"))
     formatter.maximumFractionDigits = 0
     formatter.minimumFractionDigits = 0
     return formatter.format(this)

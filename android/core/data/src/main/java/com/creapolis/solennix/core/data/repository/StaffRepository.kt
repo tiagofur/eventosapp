@@ -12,6 +12,10 @@ import com.creapolis.solennix.core.model.EventStaff
 import com.creapolis.solennix.core.model.PaginatedResponse
 import com.creapolis.solennix.core.model.Staff
 import com.creapolis.solennix.core.model.StaffAvailability
+import com.creapolis.solennix.core.model.StaffInviteResponse
+import com.creapolis.solennix.core.model.TeamMemberAssignment
+import com.creapolis.solennix.core.model.AssignmentPortalResponse
+import com.creapolis.solennix.core.model.AssignmentResponseOutcome
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.Endpoints
 import com.creapolis.solennix.core.network.SolennixException
@@ -32,6 +36,10 @@ interface StaffRepository {
     suspend fun createStaff(staff: Staff): Staff
     suspend fun updateStaff(staff: Staff): Staff
     suspend fun deleteStaff(id: String)
+    suspend fun inviteStaffUser(id: String): StaffInviteResponse
+    suspend fun revokeStaffInvite(id: String)
+    suspend fun getMyAssignments(): List<TeamMemberAssignment>
+    suspend fun respondAssignment(id: String, response: AssignmentPortalResponse): AssignmentResponseOutcome
 
     fun getStaffRemotePaging(
         sort: String = "name",
@@ -73,8 +81,16 @@ class OfflineFirstStaffRepository @Inject constructor(
 
     override fun getStaffCount(): Flow<Int> = staffDao.getStaffCount()
 
-    override suspend fun getStaffMember(id: String): Staff? =
-        staffDao.getStaffMember(id)?.asExternalModel()
+    override suspend fun getStaffMember(id: String): Staff? {
+        return try {
+            val networkStaff: Staff = apiService.get(Endpoints.staff(id))
+            staffDao.insertStaff(listOf(networkStaff.asEntity()))
+            networkStaff
+        } catch (e: Exception) {
+            if (e is SolennixException.Auth) throw e
+            staffDao.getStaffMember(id)?.asExternalModel()
+        }
+    }
 
     override suspend fun syncStaff() {
         val networkStaff: List<Staff> = apiService.get(Endpoints.STAFF)
@@ -105,6 +121,25 @@ class OfflineFirstStaffRepository @Inject constructor(
             // Offline support: mark pending delete, SyncWorker will push later.
             staffDao.updateSyncStatus(id, SyncStatus.PENDING_DELETE)
         }
+    }
+
+    override suspend fun inviteStaffUser(id: String): StaffInviteResponse {
+        return apiService.post(Endpoints.staffInvite(id), emptyMap<String, String>())
+    }
+
+    override suspend fun revokeStaffInvite(id: String) {
+        apiService.delete(Endpoints.staffInvite(id))
+    }
+
+    override suspend fun getMyAssignments(): List<TeamMemberAssignment> {
+        return apiService.get(Endpoints.STAFF_MY_ASSIGNMENTS)
+    }
+
+    override suspend fun respondAssignment(id: String, response: AssignmentPortalResponse): AssignmentResponseOutcome {
+        return apiService.post(
+            Endpoints.staffRespondAssignment(id),
+            mapOf("response" to response.raw)
+        )
     }
 
     override fun getStaffRemotePaging(

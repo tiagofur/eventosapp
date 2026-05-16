@@ -114,6 +114,16 @@ class ApiService @Inject constructor(
         }.body(type)
     }
 
+    suspend fun <T> patch(
+        endpoint: String,
+        body: Any,
+        type: io.ktor.util.reflect.TypeInfo
+    ): T = wrapError {
+        client.httpClient.patch(endpoint) {
+            setBody(body)
+        }.body(type)
+    }
+
     suspend fun delete(endpoint: String) = wrapError {
         client.httpClient.delete(endpoint)
     }
@@ -138,6 +148,18 @@ class ApiService @Inject constructor(
     ): String = wrapError {
         client.httpClient.get(endpoint) {
             params.forEach { (key, value) -> parameter(key, value) }
+        }.body()
+    }
+
+    /** GET request that returns raw bytes (e.g. PDF downloads). */
+    suspend fun getBytes(endpoint: String): ByteArray = wrapError {
+        client.httpClient.get(endpoint).body()
+    }
+
+    /** POST request that returns raw bytes (e.g. PDF downloads with JSON payload). */
+    suspend fun postBytes(endpoint: String, body: Any): ByteArray = wrapError {
+        client.httpClient.post(endpoint) {
+            setBody(body)
         }.body()
     }
 
@@ -173,6 +195,11 @@ suspend inline fun <reified T> ApiService.put(
     endpoint: String,
     body: Any
 ): T = put(endpoint, body, io.ktor.util.reflect.typeInfo<T>())
+
+suspend inline fun <reified T> ApiService.patch(
+    endpoint: String,
+    body: Any
+): T = patch(endpoint, body, io.ktor.util.reflect.typeInfo<T>())
 
 suspend inline fun <reified T> ApiService.getPaginated(
     endpoint: String,

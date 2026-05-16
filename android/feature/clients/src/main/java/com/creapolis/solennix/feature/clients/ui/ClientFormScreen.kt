@@ -11,10 +11,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -67,6 +67,7 @@ fun ClientFormScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             SolennixTopAppBar(
                 title = {
@@ -94,6 +95,8 @@ fun ClientFormScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .navigationBarsPadding()
+                        .imePadding()
                         .verticalScroll(scrollState)
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -188,7 +191,7 @@ fun ClientFormScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     SolennixTextField(value = viewModel.address, onValueChange = { viewModel.address = it }, label = stringResource(R.string.clients_field_address), leadingIcon = Icons.Default.LocationOn)
                     Spacer(modifier = Modifier.height(16.dp))
-                    SolennixTextField(value = viewModel.notes, onValueChange = { viewModel.notes = it }, label = stringResource(R.string.clients_field_notes), leadingIcon = Icons.Default.Notes)
+                    SolennixTextField(value = viewModel.notes, onValueChange = { viewModel.notes = it }, label = stringResource(R.string.clients_field_notes), leadingIcon = Icons.AutoMirrored.Filled.Notes)
                     Spacer(modifier = Modifier.height(32.dp))
 
                     if (viewModel.errorMessage != null) {

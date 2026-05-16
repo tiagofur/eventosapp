@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import SolennixCore
 import SolennixDesign
 import SolennixNetwork
@@ -6,6 +7,12 @@ import SolennixNetwork
 // MARK: - Staff Detail View
 
 public struct StaffDetailView: View {
+    private func isPendingInviteStatus(_ status: String?) -> Bool {
+        guard let raw = status?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() else {
+            return false
+        }
+        return raw == "pending" || raw == "active" || raw == "invited" || raw == "sent"
+    }
 
     let staffId: String
 
@@ -13,6 +20,12 @@ public struct StaffDetailView: View {
     @State private var isLoading: Bool = true
     @State private var errorMessage: String?
     @State private var showDeleteConfirm: Bool = false
+    @State private var showRevokeConfirm: Bool = false
+    @State private var isInviting: Bool = false
+    @State private var isRevoking: Bool = false
+    @State private var inviteURL: String?
+    @State private var inviteFeedback: String?
+    @State private var inviteFeedbackIsError: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -59,6 +72,17 @@ public struct StaffDetailView: View {
         } message: {
             Text(StaffStrings.deleteConfirmMessage(staff?.name ?? ""))
         }
+        .confirmationDialog(
+            StaffStrings.revokeConfirmTitle,
+            isPresented: $showRevokeConfirm
+        ) {
+            Button(StaffStrings.revokeInvite, role: .destructive) {
+                Task { await revokeInviteAccess() }
+            }
+            Button(StaffStrings.cancel, role: .cancel) {}
+        } message: {
+            Text(StaffStrings.revokeConfirmMessage)
+        }
         .task { await loadData() }
     }
 
@@ -77,6 +101,19 @@ public struct StaffDetailView: View {
 
                 if let notes = item.notes, !notes.isEmpty {
                     notesCard(notes)
+                }
+
+                if let inviteURL, !inviteURL.isEmpty {
+                    inviteLinkCard(inviteURL)
+                } else if hasPendingInvite {
+                    pendingInviteCard
+                }
+
+                if let inviteFeedback, !inviteFeedback.isEmpty {
+                    Text(inviteFeedback)
+                        .font(.footnote)
+                        .foregroundStyle(inviteFeedbackIsError ? SolennixColors.error : SolennixColors.success)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 actionButtons
@@ -242,6 +279,36 @@ public struct StaffDetailView: View {
 
     private var actionButtons: some View {
         HStack(spacing: Spacing.sm) {
+                if let item = staff,
+               let email = item.email,
+               !email.isEmpty,
+                    item.invitedUserId == nil,
+                    !hasPendingInvite {
+                Button {
+                    inviteAccess()
+                } label: {
+                    actionButton(
+                        icon: "paperplane",
+                        label: isInviting ? StaffStrings.inviting : StaffStrings.inviteAccess,
+                        fg: SolennixColors.primary
+                    )
+                }
+                .disabled(isInviting)
+            }
+
+            if hasPendingInvite {
+                Button {
+                    showRevokeConfirm = true
+                } label: {
+                    actionButton(
+                        icon: "xmark.shield",
+                        label: isRevoking ? StaffStrings.revoking : StaffStrings.revokeInvite,
+                        fg: SolennixColors.error
+                    )
+                }
+                .disabled(isRevoking || isInviting)
+            }
+
             NavigationLink(value: Route.staffForm(id: staffId)) {
                 actionButton(
                     icon: "pencil",
@@ -279,6 +346,58 @@ public struct StaffDetailView: View {
         .shadowSm()
     }
 
+    private func inviteLinkCard(_ url: String) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(StaffStrings.inviteLinkTitle)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(SolennixColors.textSecondary)
+
+            Text(url)
+                .font(.footnote)
+                .foregroundStyle(SolennixColors.text)
+                .textSelection(.enabled)
+
+            Button {
+                UIPasteboard.general.string = url
+                inviteFeedback = StaffStrings.inviteLinkCopied
+                inviteFeedbackIsError = false
+            } label: {
+                Label(StaffStrings.copyInviteLink, systemImage: "doc.on.doc")
+                    .font(.footnote)
+                    .foregroundStyle(SolennixColors.primary)
+            }
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .shadowSm()
+    }
+
+    private var pendingInviteCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(StaffStrings.inviteLinkTitle)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(SolennixColors.textSecondary)
+
+            Text(StaffStrings.invitePendingActive)
+                .font(.footnote)
+                .foregroundStyle(SolennixColors.text)
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+        .shadowSm()
+    }
+
+    private var hasPendingInvite: Bool {
+        !inviteURL.orEmpty.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || isPendingInviteStatus(staff?.inviteStatus)
+    }
+
     // MARK: - Data Loading
 
     @MainActor
@@ -299,6 +418,74 @@ public struct StaffDetailView: View {
 
         isLoading = false
     }
+
+    @MainActor
+    private func inviteAccess() {
+        guard let item = staff else { return }
+        guard let email = item.email, !email.isEmpty else {
+            inviteFeedback = StaffStrings.inviteEmailRequired
+            inviteFeedbackIsError = true
+            return
+        }
+        guard item.invitedUserId == nil else {
+            inviteFeedback = StaffStrings.inviteAlreadyActivated
+            inviteFeedbackIsError = false
+            return
+        }
+        guard !hasPendingInvite else {
+            return
+        }
+
+        Task {
+            isInviting = true
+            inviteFeedback = nil
+            inviteFeedbackIsError = false
+            do {
+                let response = try await apiClient.inviteStaffUser(staffId: staffId)
+                inviteURL = response.acceptUrl
+                inviteFeedback = StaffStrings.inviteCreated
+                inviteFeedbackIsError = false
+                await loadData()
+            } catch {
+                if let apiError = error as? APIError {
+                    inviteFeedback = apiError.errorDescription ?? StaffStrings.inviteCreateError
+                } else {
+                    inviteFeedback = StaffStrings.inviteCreateError
+                }
+                inviteFeedbackIsError = true
+            }
+            isInviting = false
+        }
+    }
+
+    @MainActor
+    private func revokeInviteAccess() async {
+        guard hasPendingInvite else { return }
+        isRevoking = true
+        inviteFeedback = nil
+        inviteFeedbackIsError = false
+
+        do {
+            try await apiClient.revokeStaffInvite(staffId: staffId)
+            inviteURL = nil
+            inviteFeedback = StaffStrings.inviteRevoked
+            inviteFeedbackIsError = false
+            await loadData()
+        } catch {
+            if let apiError = error as? APIError {
+                inviteFeedback = apiError.errorDescription ?? StaffStrings.inviteRevokeError
+            } else {
+                inviteFeedback = StaffStrings.inviteRevokeError
+            }
+            inviteFeedbackIsError = true
+        }
+
+        isRevoking = false
+    }
+}
+
+private extension Optional where Wrapped == String {
+    var orEmpty: String { self ?? "" }
 }
 
 // MARK: - Preview

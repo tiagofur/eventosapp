@@ -1,0 +1,310 @@
+import SwiftUI
+import SolennixCore
+import SolennixNetwork
+import SolennixDesign
+
+// MARK: - Payment Inbox View
+
+/// Organizer inbox for reviewing client payment submissions.
+/// Shows pending (and historical) transfer receipts with approve / reject actions.
+public struct PaymentInboxView: View {
+
+    // MARK: - State
+
+    @State private var viewModel: PaymentInboxViewModel
+    @State private var rejectTarget: PaymentSubmission? = nil
+    @State private var rejectionReason: String = ""
+    @State private var showRejectSheet = false
+    @State private var selectedSubmission: PaymentSubmission? = nil
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+
+    private var isRegularWidth: Bool { horizontalSizeClass == .regular }
+
+    // MARK: - Init
+
+    public init(apiClient: APIClient) {
+        _viewModel = State(wrappedValue: PaymentInboxViewModel(apiClient: apiClient))
+    }
+
+    // MARK: - Body
+
+    public var body: some View {
+        Group {
+            if viewModel.isLoading && viewModel.submissions.isEmpty {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.isPlanLocked {
+                planLockedState
+            } else if viewModel.submissions.isEmpty {
+                emptyState
+            } else {
+                submissionContent
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(SolennixColors.surfaceGrouped)
+        .navigationTitle("Pagos recibidos")
+        .navigationBarTitleDisplayMode(.large)
+        .task { await viewModel.fetchSubmissions() }
+        .refreshable { await viewModel.fetchSubmissions() }
+        .sheet(item: $selectedSubmission) { submission in
+            submissionDetailSheet(submission)
+        }
+        .sheet(isPresented: $showRejectSheet) {
+            rejectSheet
+        }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+    }
+
+    // MARK: - Submission Content
+
+    private var submissionContent: some View {
+        ScrollView {
+            if isRegularWidth {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 300))], spacing: Spacing.sm) {
+                    ForEach(viewModel.submissions) { submission in
+                        PaymentSubmissionCardView(submission: submission) {
+                            selectedSubmission = submission
+                        }
+                    }
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.lg)
+            } else {
+                LazyVStack(spacing: Spacing.sm) {
+                    ForEach(viewModel.submissions) { submission in
+                        PaymentSubmissionCardView(submission: submission) {
+                            selectedSubmission = submission
+                        }
+                    }
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.bottom, Spacing.xxl)
+            }
+        }
+        .background(SolennixColors.surfaceGrouped)
+    }
+
+    // MARK: - Submission Detail Sheet
+
+    private func submissionDetailSheet(_ submission: PaymentSubmission) -> some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.md) {
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(submission.clientName ?? "Cliente")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundStyle(SolennixColors.text)
+
+                        Text(submission.eventLabel ?? "Evento")
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.textSecondary)
+
+                        PaymentSubmissionStatusBadge(status: submission.status)
+                    }
+
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Label(CommonFormatting.currencyMXN(submission.amount), systemImage: "dollarsign.circle.fill")
+                            .font(.headline)
+                            .foregroundStyle(SolennixColors.primary)
+
+                        if let ref = submission.transferRef, !ref.isEmpty {
+                            Label(ref, systemImage: "number")
+                                .font(.subheadline)
+                                .foregroundStyle(SolennixColors.textSecondary)
+                        }
+
+                        Label(CommonFormatting.dateTimeFromISO(submission.submittedAt), systemImage: "calendar")
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    }
+
+                    if let urlString = submission.receiptFileUrl,
+                       let url = APIClient.resolveURL(urlString) {
+                        VStack(alignment: .leading, spacing: Spacing.sm) {
+                            Text("Comprobante")
+                                .font(.headline)
+                                .foregroundStyle(SolennixColors.text)
+
+                            if isImageURL(url) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(maxWidth: .infinity)
+                                            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+                                    case .failure:
+                                        receiptFallback
+                                    default:
+                                        ProgressView()
+                                            .frame(maxWidth: .infinity, minHeight: 180)
+                                    }
+                                }
+                            } else {
+                                receiptFallback
+                            }
+
+                            Link(destination: url) {
+                                Label("Abrir comprobante", systemImage: "paperclip")
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+
+                    if submission.status == .rejected,
+                       let reason = submission.rejectionReason,
+                       !reason.isEmpty {
+                        VStack(alignment: .leading, spacing: Spacing.xs) {
+                            Text("Motivo del rechazo")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(SolennixColors.text)
+                            Text(reason)
+                                .font(.subheadline)
+                                .foregroundStyle(SolennixColors.error)
+                        }
+                    }
+
+                    if submission.status == .pending {
+                        PaymentSubmissionActionBar(
+                            submissionId: submission.id,
+                            approvingId: viewModel.approvingId,
+                            rejectingId: viewModel.rejectingId,
+                            onApprove: {
+                                Task {
+                                    await viewModel.approve(id: submission.id)
+                                    selectedSubmission = nil
+                                }
+                            },
+                            onReject: {
+                                selectedSubmission = nil
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    rejectTarget = submission
+                                    rejectionReason = ""
+                                    showRejectSheet = true
+                                }
+                            }
+                        )
+                    }
+                }
+                .padding(Spacing.lg)
+            }
+            .background(SolennixColors.surfaceGrouped)
+            .navigationTitle("Detalle de pago")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") { selectedSubmission = nil }
+                }
+            }
+        }
+    }
+
+    private var receiptFallback: some View {
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: "doc.text.image")
+                .font(.largeTitle)
+                .foregroundStyle(SolennixColors.textTertiary)
+            Text("No se pudo previsualizar el archivo")
+                .font(.caption)
+                .foregroundStyle(SolennixColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 180)
+        .background(SolennixColors.card)
+        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
+    }
+
+    private func isImageURL(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        return ["jpg", "jpeg", "png", "heic", "heif", "webp", "gif"].contains(ext)
+    }
+
+    // MARK: - Reject Sheet
+
+    private var rejectSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                if let target = rejectTarget {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(target.clientName ?? "Cliente")
+                            .font(.headline)
+                        Text(CommonFormatting.currencyMXN(target.amount))
+                            .font(.subheadline)
+                            .foregroundStyle(SolennixColors.textSecondary)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Motivo del rechazo")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    TextEditor(text: $rejectionReason)
+                        .frame(minHeight: 120)
+                        .padding(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(SolennixColors.border, lineWidth: 1)
+                        )
+                }
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Rechazar pago")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { showRejectSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Rechazar") {
+                        guard let target = rejectTarget,
+                              rejectionReason.count >= 10 else { return }
+                        Task {
+                            await viewModel.reject(id: target.id, reason: rejectionReason)
+                            showRejectSheet = false
+                        }
+                    }
+                    .disabled(rejectionReason.count < 10 || viewModel.rejectingId != nil)
+                    .foregroundStyle(SolennixColors.error)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Plan Locked State
+
+    private var planLockedState: some View {
+        EmptyStateView(
+            icon: "lock.fill",
+            title: String(localized: "payment_inbox.pro_only_title",
+                          defaultValue: "Función exclusiva para usuarios Pro."),
+            message: String(localized: "payment_inbox.pro_only_hint",
+                            defaultValue: "Actualiza tu plan para revisar y aprobar pagos recibidos de clientes.")
+        )
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        EmptyStateView(
+            icon: "checkmark.seal",
+            title: "Sin pagos pendientes",
+            message: "Cuando tus clientes suban comprobantes de transferencia, los verás aquí para aprobar o rechazar.",
+            actionTitle: "Actualizar"
+        ) {
+            Task { await viewModel.fetchSubmissions() }
+        }
+    }
+
+}

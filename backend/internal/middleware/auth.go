@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/services"
 )
 
@@ -79,21 +80,21 @@ func Auth(authService *services.AuthService) func(http.Handler) http.Handler {
 
 			// No token found in either cookie or header
 			if token == "" {
-				writeAuthError(w, http.StatusUnauthorized, "Authentication required")
+				writeAuthError(w, http.StatusUnauthorized, i18n.Message(r.Context(), "auth.required"))
 				return
 			}
 
 			// Check if token has been revoked (e.g., by logout)
 			tokenHash := sha256Hex(token)
 			if tokenBlacklistInstance.IsRevoked(r.Context(), tokenHash) {
-				writeAuthError(w, http.StatusUnauthorized, "Token has been revoked")
+				writeAuthError(w, http.StatusUnauthorized, i18n.Message(r.Context(), "auth.token_revoked"))
 				return
 			}
 
 			// Validate token
 			claims, err := authService.ValidateToken(token)
 			if err != nil {
-				writeAuthError(w, http.StatusUnauthorized, "Invalid or expired token")
+				writeAuthError(w, http.StatusUnauthorized, i18n.Message(r.Context(), "auth.token_invalid_or_expired"))
 				return
 			}
 

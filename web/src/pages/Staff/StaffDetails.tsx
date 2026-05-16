@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarClock, Edit, Mail, Phone, Trash2, UserCog } from "lucide-react";
+import { ArrowLeft, CalendarClock, Edit, Mail, Phone, Send, Trash2, UserCog } from "lucide-react";
 import {
   useStaffMember,
   useDeleteStaff,
@@ -9,6 +9,9 @@ import {
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import type { AssignmentStatus } from "@/types/entities";
+import { staffService } from "@/services/staffService";
+import { useToast } from "@/hooks/useToast";
+import { getErrorMessage, logError } from "@/lib/errorHandler";
 
 const formatShiftRange = (
   start: string | null | undefined,
@@ -53,13 +56,23 @@ const STATUS_CLASSES: Record<AssignmentStatus, string> = {
   cancelled: "bg-slate-200 text-slate-700 dark:bg-slate-700/40 dark:text-slate-200",
 };
 
+const isPendingInviteStatus = (status?: string | null): boolean => {
+  const normalized = (status ?? "").trim().toLowerCase();
+  return normalized === "pending" || normalized === "active" || normalized === "invited" || normalized === "sent";
+};
+
 export const StaffDetails: React.FC = () => {
   const { t, i18n } = useTranslation(["staff"]);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: staff, isLoading } = useStaffMember(id);
+  const { addToast } = useToast();
+  const { data: staff, isLoading, refetch } = useStaffMember(id);
   const deleteMut = useDeleteStaff();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [revokeOpen, setRevokeOpen] = React.useState(false);
+  const [inviteURL, setInviteURL] = React.useState<string | null>(null);
+  const [inviting, setInviting] = React.useState(false);
+  const hasPendingInvite = Boolean(inviteURL || isPendingInviteStatus(staff?.invite_status));
 
   // Próximas asignaciones — ventana rolling de 90 días desde hoy. Usamos la
   // fecha en zona local (no UTC) para que la ventana coincida con lo que el
@@ -106,6 +119,67 @@ export const StaffDetails: React.FC = () => {
     navigate("/staff");
   };
 
+  const onInviteAccess = async () => {
+    if (!staff?.email || inviting || hasPendingInvite) return;
+    setInviting(true);
+    try {
+      const result = await staffService.inviteUser(staff.id);
+      setInviteURL(result.accept_url);
+      await refetch();
+      addToast(
+        t("staff:details.actions.invite_sent", { defaultValue: "Invitación creada correctamente." }),
+        "success",
+      );
+    } catch (error) {
+      logError("Error creating staff invite", error);
+      addToast(
+        getErrorMessage(
+          error,
+          t("staff:details.actions.invite_error", { defaultValue: "No se pudo crear la invitación." }),
+        ),
+        "error",
+      );
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const onRevokeInvite = async () => {
+    if (!staff || !hasPendingInvite) return;
+    setRevokeOpen(false);
+    try {
+      await staffService.revokeInvite(staff.id);
+      setInviteURL(null);
+      await refetch();
+      addToast(
+        t("staff:details.actions.invite_revoked", { defaultValue: "Invitación revocada." }),
+        "info",
+      );
+    } catch (error) {
+      logError("Error revoking staff invite", error);
+      addToast(
+        getErrorMessage(
+          error,
+          t("staff:details.actions.invite_revoke_error", { defaultValue: "No se pudo revocar la invitación." }),
+        ),
+        "error",
+      );
+    }
+  };
+
+  const onCopyInviteURL = async () => {
+    if (!inviteURL) return;
+    try {
+      await navigator.clipboard.writeText(inviteURL);
+      addToast(
+        t("staff:details.actions.invite_copied", { defaultValue: "Link copiado al portapapeles." }),
+        "success",
+      );
+    } catch {
+      addToast(inviteURL, "info");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <ConfirmDialog
@@ -116,6 +190,18 @@ export const StaffDetails: React.FC = () => {
         cancelText={t("staff:details.delete_confirm.cancel")}
         onConfirm={onDelete}
         onCancel={() => setConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={revokeOpen}
+        title={t("staff:details.revoke_confirm.title", { defaultValue: "Revocar invitación" })}
+        description={t("staff:details.revoke_confirm.description", {
+          defaultValue: "La invitación quedará desactivada y el enlace dejará de funcionar.",
+        })}
+        confirmText={t("staff:details.revoke_confirm.confirm", { defaultValue: "Revocar" })}
+        cancelText={t("staff:details.revoke_confirm.cancel", { defaultValue: "Cancelar" })}
+        onConfirm={onRevokeInvite}
+        onCancel={() => setRevokeOpen(false)}
       />
 
       <Link to="/staff" className="inline-flex items-center text-sm text-primary hover:underline">
@@ -139,6 +225,19 @@ export const StaffDetails: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {staff.email && !staff.invited_user_id && !hasPendingInvite && (
+              <button
+                type="button"
+                onClick={onInviteAccess}
+                disabled={inviting}
+                className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-xl text-white premium-gradient disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Send className="h-4 w-4 mr-2" aria-hidden="true" />
+                {inviting
+                  ? t("staff:details.actions.inviting", { defaultValue: "Invitando..." })
+                  : t("staff:details.actions.invite", { defaultValue: "Invitar acceso" })}
+              </button>
+            )}
             <Link
               to={`/staff/${staff.id}/edit`}
               className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-xl text-text bg-surface-alt hover:bg-card border border-border transition-colors"
@@ -154,6 +253,41 @@ export const StaffDetails: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {hasPendingInvite && (
+          <div className="mt-4 rounded-xl border border-border bg-surface-alt p-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-1">
+              {t("staff:details.actions.invite_link", { defaultValue: "Link de invitación" })}
+            </p>
+            <div className="flex flex-col gap-3">
+              {inviteURL ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <code className="flex-1 text-xs text-text break-all">{inviteURL}</code>
+                  <button
+                    type="button"
+                    onClick={onCopyInviteURL}
+                    className="inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-text bg-card border border-border hover:bg-surface-alt transition-colors"
+                  >
+                    {t("staff:details.actions.copy_link", { defaultValue: "Copiar" })}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  {t("staff:details.actions.invite_pending", {
+                    defaultValue: "Hay una invitación activa pendiente.",
+                  })}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setRevokeOpen(true)}
+                className="inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg text-danger bg-danger/10 border border-danger/20 hover:bg-danger/20 transition-colors self-start"
+              >
+                {t("staff:details.actions.revoke_invite", { defaultValue: "Revocar invitación" })}
+              </button>
+            </div>
+          </div>
+        )}
 
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
           <div>

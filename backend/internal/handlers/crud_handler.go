@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/tiagofur/solennix-backend/internal/i18n"
 	"github.com/tiagofur/solennix-backend/internal/middleware"
 	"github.com/tiagofur/solennix-backend/internal/models"
 	"github.com/tiagofur/solennix-backend/internal/repository"
@@ -89,6 +91,10 @@ func (h *CRUDHandler) SetStaffTeamRepo(s StaffTeamRepository) {
 	h.staffTeamRepo = s
 }
 
+func writeCRUDI18nError(w http.ResponseWriter, r *http.Request, status int, key string, args ...any) {
+	writeError(w, status, i18n.Message(r.Context(), key, args...))
+}
+
 // ===================
 // CLIENTS
 // ===================
@@ -108,7 +114,7 @@ func (h *CRUDHandler) ListClients(w http.ResponseWriter, r *http.Request) {
 		offset := (params.Page - 1) * params.Limit
 		clients, total, err := h.clientRepo.GetAllPaginated(r.Context(), userID, offset, params.Limit, params.Sort, params.Order)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to fetch clients")
+			writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_clients_failed")
 			return
 		}
 		if clients == nil {
@@ -120,7 +126,7 @@ func (h *CRUDHandler) ListClients(w http.ResponseWriter, r *http.Request) {
 
 	clients, err := h.clientRepo.GetAll(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch clients")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_clients_failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, clients)
@@ -130,12 +136,12 @@ func (h *CRUDHandler) GetClient(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid client ID")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_client_id")
 		return
 	}
 	client, err := h.clientRepo.GetByID(r.Context(), id, userID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "Client not found")
+		writeCRUDI18nError(w, r, http.StatusNotFound, "crud.client_not_found")
 		return
 	}
 	writeJSON(w, http.StatusOK, client)
@@ -145,27 +151,27 @@ func (h *CRUDHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	var client models.Client
 	if err := decodeJSON(r, &client); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "common.invalid_request_body")
 		return
 	}
 
 	// Validate business rules
 	if err := ValidateClient(&client); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
 	// Check limits
 	user, err := h.userRepo.GetByID(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch user limits")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_user_limits_failed")
 		return
 	}
 
 	if user.Plan == "basic" {
 		count, err := h.clientRepo.CountByUserID(r.Context(), userID)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to verify client limits")
+			writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.verify_client_limits_failed")
 			return
 		}
 		if count >= 20 {
@@ -176,7 +182,7 @@ func (h *CRUDHandler) CreateClient(w http.ResponseWriter, r *http.Request) {
 
 	client.UserID = userID
 	if err := h.clientRepo.Create(r.Context(), &client); err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to create client")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.create_client_failed")
 		return
 	}
 	writeJSON(w, http.StatusCreated, client)
@@ -186,25 +192,25 @@ func (h *CRUDHandler) UpdateClient(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid client ID")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_client_id")
 		return
 	}
 	var client models.Client
 	if err := decodeJSON(r, &client); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "common.invalid_request_body")
 		return
 	}
 
 	// Validate business rules
 	if err := ValidateClient(&client); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
 	client.ID = id
 	client.UserID = userID
 	if err := h.clientRepo.Update(r.Context(), &client); err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to update client")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.update_client_failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, client)
@@ -214,11 +220,11 @@ func (h *CRUDHandler) DeleteClient(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid client ID")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_client_id")
 		return
 	}
 	if err := h.clientRepo.Delete(r.Context(), id, userID); err != nil {
-		writeError(w, http.StatusNotFound, "Client not found")
+		writeCRUDI18nError(w, r, http.StatusNotFound, "crud.client_not_found")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -246,12 +252,12 @@ func (h *CRUDHandler) ListEvents(w http.ResponseWriter, r *http.Request) {
 	if clientID != "" {
 		cid, err := uuid.Parse(clientID)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "Invalid client_id")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_client_id_param")
 			return
 		}
 		events, err := h.eventRepo.GetByClientID(r.Context(), userID, cid)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to fetch events")
+			writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_events_failed")
 			return
 		}
 		writeJSON(w, http.StatusOK, events)
@@ -261,17 +267,17 @@ func (h *CRUDHandler) ListEvents(w http.ResponseWriter, r *http.Request) {
 	if start != "" && end != "" {
 		startDate, err := normalizeDateParam(start)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "Invalid start date")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_start_date")
 			return
 		}
 		endDate, err := normalizeDateParam(end)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "Invalid end date")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_end_date")
 			return
 		}
 		events, err := h.eventRepo.GetByDateRange(r.Context(), userID, startDate, endDate)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to fetch events")
+			writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_events_failed")
 			return
 		}
 		writeJSON(w, http.StatusOK, events)
@@ -284,7 +290,7 @@ func (h *CRUDHandler) ListEvents(w http.ResponseWriter, r *http.Request) {
 		offset := (params.Page - 1) * params.Limit
 		events, total, err := h.eventRepo.GetAllPaginated(r.Context(), userID, offset, params.Limit, params.Sort, params.Order)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, "Failed to fetch events")
+			writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_events_failed")
 			return
 		}
 		if events == nil {
@@ -296,7 +302,7 @@ func (h *CRUDHandler) ListEvents(w http.ResponseWriter, r *http.Request) {
 
 	events, err := h.eventRepo.GetAll(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch events")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_events_failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, events)
@@ -316,7 +322,7 @@ func (h *CRUDHandler) GetUpcomingEvents(w http.ResponseWriter, r *http.Request) 
 	}
 	events, err := h.eventRepo.GetUpcoming(r.Context(), userID, limit)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to fetch upcoming events")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.fetch_upcoming_events_failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, events)
@@ -356,7 +362,7 @@ func (h *CRUDHandler) SearchEvents(w http.ResponseWriter, r *http.Request) {
 			"completed": true, "cancelled": true,
 		}
 		if !validStatuses[filters.Status] {
-			writeError(w, http.StatusBadRequest, "Invalid status value")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_status_value")
 			return
 		}
 	}
@@ -365,7 +371,7 @@ func (h *CRUDHandler) SearchEvents(w http.ResponseWriter, r *http.Request) {
 	if cidStr := q.Get("client_id"); cidStr != "" {
 		cid, err := uuid.Parse(cidStr)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "Invalid client_id")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_client_id_param")
 			return
 		}
 		filters.ClientID = &cid
@@ -374,27 +380,27 @@ func (h *CRUDHandler) SearchEvents(w http.ResponseWriter, r *http.Request) {
 	// Validate date formats if provided
 	if filters.FromDate != "" {
 		if _, err := time.Parse("2006-01-02", filters.FromDate); err != nil {
-			writeError(w, http.StatusBadRequest, "Invalid 'from' date format (use YYYY-MM-DD)")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_from_date_format")
 			return
 		}
 	}
 	if filters.ToDate != "" {
 		if _, err := time.Parse("2006-01-02", filters.ToDate); err != nil {
-			writeError(w, http.StatusBadRequest, "Invalid 'to' date format (use YYYY-MM-DD)")
+			writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_to_date_format")
 			return
 		}
 	}
 
 	// At least one filter must be provided
 	if filters.Query == "" && filters.Status == "" && filters.FromDate == "" && filters.ToDate == "" && filters.ClientID == nil {
-		writeError(w, http.StatusBadRequest, "At least one search filter is required (q, status, from, to, client_id)")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.search_filters_required")
 		return
 	}
 
 	events, err := h.eventRepo.SearchEventsAdvanced(r.Context(), userID, filters)
 	if err != nil {
 		slog.Error("Advanced event search failed", "error", err, "user_id", userID)
-		writeError(w, http.StatusInternalServerError, "Failed to search events")
+		writeCRUDI18nError(w, r, http.StatusInternalServerError, "crud.search_events_failed")
 		return
 	}
 
@@ -405,12 +411,12 @@ func (h *CRUDHandler) GetEvent(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid event ID")
+		writeCRUDI18nError(w, r, http.StatusBadRequest, "crud.invalid_event_id")
 		return
 	}
 	event, err := h.eventRepo.GetByID(r.Context(), id, userID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "Event not found")
+		writeCRUDI18nError(w, r, http.StatusNotFound, "crud.event_not_found")
 		return
 	}
 	writeJSON(w, http.StatusOK, event)
@@ -571,7 +577,7 @@ func (h *CRUDHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Validate business rules
 	if err := ValidateEvent(&event); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -658,7 +664,7 @@ func (h *CRUDHandler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 	// Validate business rules
 	if err := ValidateEvent(existing); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -880,6 +886,22 @@ func (h *CRUDHandler) UpdateEventItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.eventRepo.UpdateEventItems(r.Context(), eventID, req.Products, req.Extras, req.Equipment, req.Supplies, req.Staff); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			slog.Error("update event items failed", "code", pgErr.Code, "detail", pgErr.Detail, "message", pgErr.Message)
+			switch pgErr.Code {
+			case "22P02", "23503", "23514":
+				writeError(w, http.StatusBadRequest, fmt.Sprintf("Invalid event items: %s", pgErr.Message))
+				return
+			case "42703", "42P10", "42P01":
+				writeError(w, http.StatusBadRequest, "Event staff schema is outdated. Run latest database migrations")
+				return
+			}
+			if strings.HasPrefix(pgErr.Code, "22") || strings.HasPrefix(pgErr.Code, "23") || strings.HasPrefix(pgErr.Code, "42") {
+				writeError(w, http.StatusBadRequest, fmt.Sprintf("Invalid event items: %s", pgErr.Message))
+				return
+			}
+		}
 		writeError(w, http.StatusInternalServerError, "Failed to update event items")
 		return
 	}
@@ -945,8 +967,8 @@ func (h *CRUDHandler) notifyAssignedStaff(userID, eventID uuid.UUID) {
 			fee = fmt.Sprintf("$%.2f MXN", *p.FeeAmount)
 		}
 
-		sendErr := h.emailService.SendCollaboratorAssigned(
-			p.StaffEmail, p.StaffName, orgName, event.ServiceType, event.EventDate, role, fee,
+		sendErr := h.emailService.SendCollaboratorAssignedLocalized(
+			p.StaffEmail, p.StaffName, orgName, event.ServiceType, event.EventDate, role, fee, i18n.NormalizeLocale(user.PreferredLanguage),
 		)
 		result := "sent"
 		if sendErr != nil {
@@ -1522,7 +1544,7 @@ func (h *CRUDHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	// Validate business rules
 	if err := ValidateProduct(&product); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -1593,7 +1615,7 @@ func (h *CRUDHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 	// Validate business rules
 	if err := ValidateProduct(&product); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -1800,7 +1822,7 @@ func (h *CRUDHandler) CreateInventoryItem(w http.ResponseWriter, r *http.Request
 
 	// Validate business rules
 	if err := ValidateInventoryItem(&item); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -1846,7 +1868,7 @@ func (h *CRUDHandler) UpdateInventoryItem(w http.ResponseWriter, r *http.Request
 
 	// Validate business rules
 	if err := ValidateInventoryItem(&item); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -1991,7 +2013,7 @@ func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 
 	// Validate business rules
 	if err := ValidatePayment(&payment); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 
@@ -1999,6 +2021,12 @@ func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	if err := h.paymentRepo.Create(r.Context(), &payment); err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to create payment")
 		return
+	}
+
+	if h.eventRepo != nil {
+		if _, err := autoConfirmQuotedEventIfDepositCovered(r.Context(), h.eventRepo, h.paymentRepo, payment.EventID, userID); err != nil {
+			slog.Warn("Failed to auto-confirm event after payment", "event_id", payment.EventID, "error", err)
+		}
 	}
 
 	// Send push notification (fire-and-forget)
@@ -2022,10 +2050,11 @@ func (h *CRUDHandler) CreatePayment(w http.ResponseWriter, r *http.Request) {
 			if event, err := h.eventRepo.GetByID(context.Background(), payment.EventID, userID); err == nil {
 				eventName = event.ServiceType
 			}
-			_ = h.emailService.SendPaymentReceipt(
+			_ = h.emailService.SendPaymentReceiptLocalized(
 				user.Email, user.Name, eventName,
 				fmt.Sprintf("$%.2f MXN", payment.Amount),
 				payment.PaymentDate,
+				i18n.NormalizeLocale(user.PreferredLanguage),
 			)
 		}()
 	}
@@ -2048,7 +2077,7 @@ func (h *CRUDHandler) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 
 	// Validate business rules
 	if err := ValidatePayment(&payment); err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
+		writeError(w, http.StatusBadRequest, validationErrorMessage(r.Context(), err))
 		return
 	}
 

@@ -15,6 +15,7 @@ type FullUserRepository interface {
 	UserRepository // existing: GetByID, UpdatePlanAndStripeID, UpdatePlanByStripeCustomerID
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	Create(ctx context.Context, user *models.User) error
+	AcceptStaffInvite(ctx context.Context, tokenHash, passwordHash string) (*models.User, error)
 	Update(ctx context.Context, id uuid.UUID, name, businessName, logoURL, brandColor *string, showBusinessNameInPdf *bool, depositPercent, cancellationDays, refundPercent *float64, contractTemplate *string, emailPaymentReceipt, emailEventReminder, emailSubscriptionUpdates, emailWeeklySummary, emailMarketing, pushEnabled, pushEventReminder, pushPaymentReceived *bool, preferredLanguage *string) (*models.User, error)
 	UpdatePassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
 	// OAuth methods
@@ -85,6 +86,10 @@ type StaffRepository interface {
 	CountByUserID(ctx context.Context, userID uuid.UUID) (int, error)
 	Search(ctx context.Context, userID uuid.UUID, query string) ([]models.Staff, error)
 	GetAvailability(ctx context.Context, userID uuid.UUID, start, end string) ([]repository.StaffAvailability, error)
+	CreateInvite(ctx context.Context, invite *models.StaffInvite) error
+	RevokeInvite(ctx context.Context, staffID, ownerUserID uuid.UUID) error
+	ListMyAssignments(ctx context.Context, invitedUserID uuid.UUID) ([]repository.TeamMemberAssignment, error)
+	RespondToAssignment(ctx context.Context, invitedUserID, eventStaffID uuid.UUID, response string) (*repository.AssignmentResponseOutcome, error)
 }
 
 // StaffTeamRepository defines staff team repo operations (Ola 2).
@@ -166,7 +171,7 @@ type AuditRepository interface {
 // AdminRepository defines admin repo operations.
 type AdminRepository interface {
 	GetPlatformStats(ctx context.Context) (*repository.PlatformStats, error)
-	GetAllUsers(ctx context.Context) ([]repository.AdminUser, error)
+	GetAllUsers(ctx context.Context, accountType string) ([]repository.AdminUser, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*repository.AdminUser, error)
 	UpdateUserPlan(ctx context.Context, id uuid.UUID, plan string, expiresAt *time.Time) error
 	HasActiveSubscription(ctx context.Context, userID uuid.UUID) (bool, error)

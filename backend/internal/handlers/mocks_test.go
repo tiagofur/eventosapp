@@ -60,6 +60,14 @@ func (m *MockFullUserRepo) Create(ctx context.Context, user *models.User) error 
 	return args.Error(0)
 }
 
+func (m *MockFullUserRepo) AcceptStaffInvite(ctx context.Context, tokenHash, passwordHash string) (*models.User, error) {
+	args := m.Called(ctx, tokenHash, passwordHash)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*models.User), args.Error(1)
+}
+
 func (m *MockFullUserRepo) Update(ctx context.Context, id uuid.UUID, name, businessName, logoURL, brandColor *string, showBusinessNameInPdf *bool, depositPercent, cancellationDays, refundPercent *float64, contractTemplate *string, emailPaymentReceipt, emailEventReminder, emailSubscriptionUpdates, emailWeeklySummary, emailMarketing, pushEnabled, pushEventReminder, pushPaymentReceived *bool, preferredLanguage *string) (*models.User, error) {
 	args := m.Called(ctx, id, name, businessName, logoURL, brandColor, showBusinessNameInPdf, depositPercent, cancellationDays, refundPercent, contractTemplate, emailPaymentReceipt, emailEventReminder, emailSubscriptionUpdates, emailWeeklySummary, emailMarketing, pushEnabled, pushEventReminder, pushPaymentReceived)
 	if args.Get(0) == nil {
@@ -424,6 +432,32 @@ func (m *MockStaffRepo) GetAvailability(ctx context.Context, userID uuid.UUID, s
 	return args.Get(0).([]repository.StaffAvailability), args.Error(1)
 }
 
+func (m *MockStaffRepo) CreateInvite(ctx context.Context, invite *models.StaffInvite) error {
+	args := m.Called(ctx, invite)
+	return args.Error(0)
+}
+
+func (m *MockStaffRepo) RevokeInvite(ctx context.Context, staffID, ownerUserID uuid.UUID) error {
+	args := m.Called(ctx, staffID, ownerUserID)
+	return args.Error(0)
+}
+
+func (m *MockStaffRepo) ListMyAssignments(ctx context.Context, invitedUserID uuid.UUID) ([]repository.TeamMemberAssignment, error) {
+	args := m.Called(ctx, invitedUserID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]repository.TeamMemberAssignment), args.Error(1)
+}
+
+func (m *MockStaffRepo) RespondToAssignment(ctx context.Context, invitedUserID, eventStaffID uuid.UUID, response string) (*repository.AssignmentResponseOutcome, error) {
+	args := m.Called(ctx, invitedUserID, eventStaffID, response)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*repository.AssignmentResponseOutcome), args.Error(1)
+}
+
 // ---------------------------------------------------------------------------
 // MockProductRepo — implements ProductRepository
 // ---------------------------------------------------------------------------
@@ -657,8 +691,8 @@ func (m *MockAdminRepo) GetPlatformStats(ctx context.Context) (*repository.Platf
 	return args.Get(0).(*repository.PlatformStats), args.Error(1)
 }
 
-func (m *MockAdminRepo) GetAllUsers(ctx context.Context) ([]repository.AdminUser, error) {
-	args := m.Called(ctx)
+func (m *MockAdminRepo) GetAllUsers(ctx context.Context, accountType string) ([]repository.AdminUser, error) {
+	args := m.Called(ctx, accountType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

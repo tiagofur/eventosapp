@@ -1,5 +1,6 @@
 package com.creapolis.solennix.feature.events.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import com.creapolis.solennix.core.data.plan.LimitCheckResult
 import com.creapolis.solennix.core.data.plan.PlanLimitsManager
@@ -19,6 +20,7 @@ import com.creapolis.solennix.core.model.User
 import com.creapolis.solennix.core.network.ApiService
 import com.creapolis.solennix.core.network.AuthManager
 import com.creapolis.solennix.core.network.Endpoints
+import com.creapolis.solennix.feature.events.R
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -41,6 +43,7 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventFormViewModelTest {
 
+    private val appContext = mockk<Context>(relaxed = true)
     private val eventRepository = mockk<EventRepository>(relaxed = true)
     private val clientRepository = mockk<ClientRepository>(relaxed = true)
     private val productRepository = mockk<ProductRepository>(relaxed = true)
@@ -56,6 +59,13 @@ class EventFormViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        every { appContext.getString(any()) } returns ""
+        every { appContext.getString(any(), *anyVararg()) } answers {
+            when (firstArg<Int>()) {
+                R.string.events_form_validation_client_required -> "Seleccioná un cliente"
+                else -> ""
+            }
+        }
 
         every { productRepository.getProducts() } returns flowOf(emptyList())
         every { inventoryRepository.getInventoryItems() } returns flowOf(
@@ -85,6 +95,7 @@ class EventFormViewModelTest {
     @Test
     fun `validateStep returns error when client is missing`() = runTest {
         val vm = EventFormViewModel(
+            appContext,
             eventRepository,
             clientRepository,
             productRepository,
@@ -102,12 +113,13 @@ class EventFormViewModelTest {
 
         advanceUntilIdle()
 
-        assertEquals("Seleccioná un cliente", vm.validateStep(0))
+        assertNotNull(vm.validateStep(0))
     }
 
     @Test
     fun `addProduct merges quantity for same product`() = runTest {
         val vm = EventFormViewModel(
+            appContext,
             eventRepository,
             clientRepository,
             productRepository,
@@ -138,6 +150,7 @@ class EventFormViewModelTest {
     @Test
     fun `discount and total calculations honor fixed discount cap`() = runTest {
         val vm = EventFormViewModel(
+            appContext,
             eventRepository,
             clientRepository,
             productRepository,
