@@ -38,27 +38,8 @@ public final class TeamMemberPortalViewModel {
         errorMessage = nil
 
         do {
-            let outcome = try await apiClient.respondAssignment(eventStaffId: assignment.id, response: response)
-            assignments = assignments.map { item in
-                guard item.id == assignment.id else { return item }
-                return TeamMemberAssignment(
-                    eventStaffId: item.eventStaffId,
-                    eventId: item.eventId,
-                    eventName: item.eventName,
-                    eventDate: item.eventDate,
-                    staffId: item.staffId,
-                    status: outcome.finalStatus,
-                    feeAmount: item.feeAmount,
-                    roleOverride: item.roleOverride,
-                    notes: item.notes,
-                    shiftStart: item.shiftStart,
-                    shiftEnd: item.shiftEnd,
-                    offerGroupId: item.offerGroupId,
-                    offerSlots: item.offerSlots,
-                    notificationLastResult: item.notificationLastResult,
-                    notificationSentAt: item.notificationSentAt
-                )
-            }
+            _ = try await apiClient.respondAssignment(eventStaffId: assignment.id, response: response)
+            assignments = try await apiClient.getMyAssignments()
         } catch {
             errorMessage = "No pudimos actualizar tu respuesta."
         }
