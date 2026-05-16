@@ -57,7 +57,7 @@ platform: Android
 >
 > - `TeamMemberPortalScreen` se consolidó en una sola superficie con tabs `Mi jornada` y `Calendario`.
 > - `Mi jornada` agrupa pendientes accionables y agenda completa en la misma pantalla.
-> - `Calendario` usa `CalendarView` nativo con selección de día y lista de asignaciones del día.
+> - `Calendario` usa grilla mensual Compose (`LazyVerticalGrid`) con navegación de mes y dots por estado para fechas con asignaciones.
 > - Se mantiene refresh, manejo de errores y actualización de estado de asignaciones en `TeamMemberPortalViewModel`.
 
 > [!tip] Documentos relacionados

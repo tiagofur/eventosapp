@@ -59,8 +59,9 @@ platform: iOS
 >
 > - `TeamMemberPortalView` se consolidó en una única superficie operativa con selector segmentado: `Mi jornada` + `Calendario`.
 > - `Mi jornada` contiene pendientes accionables y agenda completa en la misma vista.
-> - `Calendario` usa `DatePicker(.graphical)` para selección real de fecha y detalle de asignaciones del día.
+> - `Calendario` usa grilla mensual custom (`LazyVGrid`) con navegación de mes y dots por estado para fechas con asignaciones.
 > - `TeamMemberPortalViewModel.respond` ahora actualiza estado (`confirmed/declined/cancelled`) en lugar de eliminar la asignación, para mantener continuidad de agenda.
+> - `TeamMemberPortalView` consume `AuthManager` desde `Environment` y expone logout directo en la top bar, alineando la salida del portal con Android sin agregar otra pantalla.
 
 > [!info] Dependencias externas SPM (2026-04-16)
 >

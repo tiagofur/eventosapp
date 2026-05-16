@@ -41,10 +41,12 @@ status: active
 
 > [!success] 2026-05-15 — Team Member Portal móvil: paridad A3 iOS + Android implementada
 > Se alineó el flujo móvil del miembro con la decisión de consolidación y calendario real.
-> - **iOS:** `TeamMemberPortalView` ahora usa una sola superficie con secciones `Mi jornada` y `Calendario` (selector gráfico de fecha + eventos del día).
-> - **Android:** `TeamMemberPortalScreen` ahora usa tabs `Mi jornada` y `Calendario` (CalendarView nativo + eventos del día).
+> - **iOS:** `TeamMemberPortalView` ahora usa una sola superficie con secciones `Mi jornada` y `Calendario` (grilla mensual con dots por estado + eventos del día).
+> - **Android:** `TeamMemberPortalScreen` ahora usa tabs `Mi jornada` y `Calendario` (grilla mensual Compose con dots por estado + eventos del día).
 > - **Consolidación:** ambas plataformas muestran pendientes accionables y agenda en la misma pantalla operativa.
 > - **Respuesta de asignación:** iOS deja de remover ítems al responder y actualiza estado final para mantener consistencia de agenda.
+> - **Logout iOS:** el portal team member suma acción explícita de cierre de sesión en la top bar, cerrando la brecha operativa que ya estaba cubierta en Android.
+> - **Markers de calendario:** se implementaron indicadores visuales (dots) por fecha con asignaciones, resolviendo el gap operativo de escaneo rápido en mobile.
 
 > [!info] 2026-05-14 — Plan de producto definido para Team Member Portal (Ola 4)
 > Se formalizó el backlog funcional para evolucionar el portal `team_member` desde vistas listadas hacia una experiencia de utilidad diaria y calendario operativo real.
@@ -133,8 +135,8 @@ status: active
 
 > [!success] 2026-05-06 — Release audit de mayo + próximos números
 > Se revisaron **42 PRs mergeados en mayo** (11 features, 6 bugs, 22 chores/deps) para separar el material realmente release-facing del ruido de mantenimiento.
-> - **iOS próximo:** `1.2.0` · **build:** `7`
-> - **Android próximo:** `1.2.0` · **versionCode:** `6`
+> - **iOS próximo:** `1.2.0` · **build:** `9` (enviado 2026-05-16)
+> - **Android próximo:** `1.2.0` · **versionCode:** `6` (enviado 2026-05-16)
 > - **Web próximo:** `1.0.1`
 > - **Backend:** se mantiene en `1.0.0` hasta el siguiente cambio canónico de API
 > - **Cambios ancla del release:** `#242` búsqueda por backend, `#244` disponibilidad de equipo, `#245` calendar parity, `#254` dashboard iOS, `#303` `imePadding()` Android

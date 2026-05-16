@@ -61,7 +61,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.solennix.app
         MARKETING_VERSION: "1.2.0"
-        CURRENT_PROJECT_VERSION: "7"
+        CURRENT_PROJECT_VERSION: "9"
         SWIFT_VERSION: "5.9"
         INFOPLIST_FILE: Solennix/Info.plist
         GENERATE_INFOPLIST_FILE: NO
@@ -92,7 +92,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.solennix.app.notifications
         MARKETING_VERSION: "1.2.0"
-        CURRENT_PROJECT_VERSION: "7"
+        CURRENT_PROJECT_VERSION: "9"
         SWIFT_VERSION: "5.9"
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_ENTITLEMENTS: SolennixNotificationServiceExtension/SolennixNotificationServiceExtension.entitlements
@@ -110,7 +110,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.solennix.app.widgets
         MARKETING_VERSION: "1.2.0"
-        CURRENT_PROJECT_VERSION: "7"
+        CURRENT_PROJECT_VERSION: "9"
         SWIFT_VERSION: "5.9"
         INFOPLIST_FILE: SolennixWidgetExtension/Info.plist
         GENERATE_INFOPLIST_FILE: NO
