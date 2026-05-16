@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { ApiHttpError, api } from '@/lib/api';
 import { logError } from '@/lib/errorHandler';
 import { User } from '@/types/auth';
 import { AuthContext } from './AuthContextInstance';
@@ -8,6 +8,18 @@ import i18n from '@/i18n/config';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export { AuthContext, useAuth };
+
+const isPublicAuthRoute = (pathname: string) => {
+  const publicAuthRoutes = new Set([
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/team-invite',
+    '/team-invite/accept',
+  ]);
+  return publicAuthRoutes.has(pathname);
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -19,7 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = await api.get<User>('/auth/me');
       setUser(userData);
     } catch (error) {
-      logError('Auth check failed', error);
+      // A 401 from /auth/me is expected when no session is active — don't log it as an error
+      if (!(error instanceof ApiHttpError && error.statusCode === 401)) {
+        logError('Auth check failed', error);
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -27,6 +42,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Skip the /auth/me network call on public auth routes — no session expected there
+    if (isPublicAuthRoute(window.location.pathname)) {
+      setLoading(false);
+      return;
+    }
     checkAuth();
     
     // Listen for 401 logout events from api.ts

@@ -24,6 +24,24 @@ export class PlanLimitExceededError extends Error {
 }
 
 /**
+ * Thrown for any non-OK HTTP response that isn't already handled by
+ * a more specific error type (e.g. PlanLimitExceededError).
+ * Preserves the status code so callers can distinguish expected 401s
+ * (no active session) from genuine errors without string matching.
+ */
+export class ApiHttpError extends Error {
+  readonly statusCode: number;
+  readonly endpoint: string;
+
+  constructor(message: string, statusCode: number, endpoint: string) {
+    super(message);
+    this.name = 'ApiHttpError';
+    this.statusCode = statusCode;
+    this.endpoint = endpoint;
+  }
+}
+
+/**
  * Detail payload emitted on the `plan:limit-exceeded` CustomEvent.
  * Listeners (e.g., Layout.tsx) use this to decide whether to show a
  * modal, redirect, or simply flash a toast.
@@ -175,7 +193,11 @@ class ApiClient {
           detail.max,
         );
       }
-      throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      throw new ApiHttpError(
+        errorData.error || `Request failed with status ${response.status}`,
+        response.status,
+        endpoint,
+      );
     }
 
     // Handle 204 No Content
