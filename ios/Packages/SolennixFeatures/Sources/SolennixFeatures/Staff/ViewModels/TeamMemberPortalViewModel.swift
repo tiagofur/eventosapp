@@ -39,7 +39,7 @@ public final class TeamMemberPortalViewModel {
 
         do {
             _ = try await apiClient.respondAssignment(eventStaffId: assignment.id, response: response)
-            assignments.removeAll { $0.id == assignment.id }
+            assignments = try await apiClient.getMyAssignments()
         } catch {
             errorMessage = "No pudimos actualizar tu respuesta."
         }
