@@ -25,6 +25,14 @@ status: active
 **Fecha:** Mayo 2026
 **Version:** 1.7
 
+> [!success] 2026-05-17 — Backend: rate limiting autenticado por `user_id` configurable (issue #180)
+> Se completó el hardening de rate limiting para tráfico autenticado detrás de NAT/proxy.
+> - **Middleware autenticado:** `UserRateLimit` aplica límite por `user_id` (contexto JWT) y fallback natural al límite por IP cuando no hay usuario autenticado.
+> - **Configuración por entorno:** nuevos env vars `USER_RATE_LIMIT_BASIC`, `USER_RATE_LIMIT_PRO`, `USER_RATE_LIMIT_BUSINESS`, `USER_RATE_LIMIT_PREMIUM` (requests/minuto por plan).
+> - **Headers/contrato:** respuestas 429 incluyen `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`.
+> - **Cobertura:** tests de middleware + tests de config para defaults/overrides/errores de parseo.
+> - **Validación:** `go test ./internal/config ./internal/middleware ./cmd/server`.
+
 > [!success] 2026-05-17 — Voice shortcuts/App Actions nativos (issues #211 y #212) implementados
 > Se cerró la paridad de asistentes de voz con funciones útiles y datos reales en iOS + Android.
 > - **iOS:** `SolennixIntents` reemplaza mocks por datos del App Group (`widget_upcoming_events`, `widget_kpis`, `widget_user_plan`) y habilita 5 atajos útiles: próximos eventos, eventos de hoy, conteo por periodo, ingresos del mes y stock bajo.

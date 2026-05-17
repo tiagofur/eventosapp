@@ -23,6 +23,10 @@ func TestLoad_Success(t *testing.T) {
 	os.Setenv("UPLOAD_DIR", "/tmp/uploads")
 	os.Setenv("JWT_EXPIRY_HOURS", "12")
 	os.Setenv("CORS_ALLOWED_ORIGINS", "http://test.com,https://test2.com")
+	os.Setenv("USER_RATE_LIMIT_BASIC", "61")
+	os.Setenv("USER_RATE_LIMIT_PRO", "201")
+	os.Setenv("USER_RATE_LIMIT_BUSINESS", "501")
+	os.Setenv("USER_RATE_LIMIT_PREMIUM", "502")
 
 	defer func() {
 		os.Clearenv()
@@ -78,6 +82,18 @@ func TestLoad_Success(t *testing.T) {
 	if len(cfg.CORSAllowedOrigins) != 2 || cfg.CORSAllowedOrigins[0] != "http://test.com" || cfg.CORSAllowedOrigins[1] != "https://test2.com" {
 		t.Errorf("expected CORS allowed origins to be parsed properly, got %v", cfg.CORSAllowedOrigins)
 	}
+	if cfg.UserRateLimitBasic != 61 {
+		t.Errorf("expected USER_RATE_LIMIT_BASIC=61, got %d", cfg.UserRateLimitBasic)
+	}
+	if cfg.UserRateLimitPro != 201 {
+		t.Errorf("expected USER_RATE_LIMIT_PRO=201, got %d", cfg.UserRateLimitPro)
+	}
+	if cfg.UserRateLimitBusiness != 501 {
+		t.Errorf("expected USER_RATE_LIMIT_BUSINESS=501, got %d", cfg.UserRateLimitBusiness)
+	}
+	if cfg.UserRateLimitPremium != 502 {
+		t.Errorf("expected USER_RATE_LIMIT_PREMIUM=502, got %d", cfg.UserRateLimitPremium)
+	}
 }
 
 func TestLoad_Defaults(t *testing.T) {
@@ -111,6 +127,9 @@ func TestLoad_Defaults(t *testing.T) {
 	if len(cfg.CORSAllowedOrigins) != 1 || cfg.CORSAllowedOrigins[0] != "http://localhost:5173" {
 		t.Errorf("expected default cors allowed origins, got %v", cfg.CORSAllowedOrigins)
 	}
+	if cfg.UserRateLimitBasic != 60 || cfg.UserRateLimitPro != 200 || cfg.UserRateLimitBusiness != 500 || cfg.UserRateLimitPremium != 500 {
+		t.Errorf("expected default user rate limits 60/200/500/500, got %d/%d/%d/%d", cfg.UserRateLimitBasic, cfg.UserRateLimitPro, cfg.UserRateLimitBusiness, cfg.UserRateLimitPremium)
+	}
 }
 
 func TestLoad_Errors(t *testing.T) {
@@ -141,6 +160,22 @@ func TestLoad_Errors(t *testing.T) {
 	_, err = Load()
 	if err == nil || !strings.Contains(err.Error(), "JWT_EXPIRY_HOURS must be a number") {
 		t.Errorf("expected invalid expiry hours error, got %v", err)
+	}
+
+	// Invalid USER_RATE_LIMIT_BASIC
+	os.Setenv("JWT_EXPIRY_HOURS", "24")
+	os.Setenv("USER_RATE_LIMIT_BASIC", "invalid")
+	_, err = Load()
+	if err == nil || !strings.Contains(err.Error(), "USER_RATE_LIMIT_BASIC must be a number") {
+		t.Errorf("expected invalid USER_RATE_LIMIT_BASIC error, got %v", err)
+	}
+
+	// Invalid USER_RATE_LIMIT_PRO (<= 0)
+	os.Setenv("USER_RATE_LIMIT_BASIC", "60")
+	os.Setenv("USER_RATE_LIMIT_PRO", "0")
+	_, err = Load()
+	if err == nil || !strings.Contains(err.Error(), "USER_RATE_LIMIT_PRO must be > 0") {
+		t.Errorf("expected invalid USER_RATE_LIMIT_PRO (>0) error, got %v", err)
 	}
 }
 

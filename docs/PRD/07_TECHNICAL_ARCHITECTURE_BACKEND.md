@@ -199,6 +199,8 @@ backend/
 │   │   ├── cors.go                    # CORS con origenes configurables
 │   │   ├── logging.go                 # Logger de requests (slog estructurado)
 │   │   ├── ratelimit.go              # Rate limiting por IP con ventana deslizante
+│   │   ├── user_ratelimit.go         # Rate limiting por user_id autenticado + plan
+│   │   ├── plan_resolver.go          # Resolucion/caché del plan para rate limiting
 │   │   ├── recovery.go               # Recuperacion de panics con stack trace
 │   │   ├── security.go               # Headers de seguridad OWASP
 │   │   └── *_test.go                  # Tests unitarios por middleware
@@ -935,6 +937,15 @@ Limites configurados:
 | Search                       | 30 requests | 1 minuto |
 | Admin                        | 30 requests | 1 minuto |
 
+### 7.7 Rate Limiting Autenticado (Per-User + Plan)
+
+**Archivos:** `middleware/user_ratelimit.go`, `middleware/plan_resolver.go`
+
+- **Keying:** en rutas protegidas, el límite se aplica por `user_id` obtenido del middleware JWT.
+- **Fallback:** si la request no tiene `user_id`, el sistema mantiene el comportamiento de límite por IP.
+- **Planes:** límites por plan (`basic`, `pro`, `business`, `premium`) configurables por entorno.
+- **Headers en 429:** `Retry-After`, `X-RateLimit-Limit`, `X-RateLimit-Remaining`.
+
 Respuesta cuando se excede: HTTP 429 con header `Retry-After`.
 
 ### 7.7 Admin Only (Per-Route)
@@ -1171,6 +1182,10 @@ services:
 | `UPLOAD_DIR`                | No        | `./uploads`                       | Directorio de uploads                             |
 | `BOOTSTRAP_ADMIN_EMAIL`     | No        | —                                 | Email a promover a admin al iniciar               |
 | `TRUST_PROXY`               | No        | `false`                           | Confiar en `X-Forwarded-For`                      |
+| `USER_RATE_LIMIT_BASIC`     | No        | `60`                              | Límite por minuto para usuarios plan Basic        |
+| `USER_RATE_LIMIT_PRO`       | No        | `200`                             | Límite por minuto para usuarios plan Pro          |
+| `USER_RATE_LIMIT_BUSINESS`  | No        | `500`                             | Límite por minuto para usuarios plan Business     |
+| `USER_RATE_LIMIT_PREMIUM`   | No        | `500`                             | Límite por minuto para usuarios plan Premium      |
 
 ### 11.4 Health Check
 

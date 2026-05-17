@@ -52,6 +52,12 @@ type Config struct {
 	BootstrapAdminEmail string // Email to automatically promote to admin on startup
 	TrustProxy          bool   // Trust X-Forwarded-For header for client IP (only enable behind a reverse proxy)
 
+	// Authenticated user rate limits (requests per minute by plan)
+	UserRateLimitBasic    int
+	UserRateLimitPro      int
+	UserRateLimitBusiness int
+	UserRateLimitPremium  int
+
 	// Push Notifications
 	FCMCredentialsJSON string // Firebase service account JSON (base64 or raw)
 	APNsKeyPath        string // Path to APNs .p8 key file
@@ -130,6 +136,23 @@ func Load() (*Config, error) {
 	}
 	cfg.JWTExpiryHours = jwtExpiry
 
+	cfg.UserRateLimitBasic, err = parsePositiveInt("USER_RATE_LIMIT_BASIC", "60")
+	if err != nil {
+		return nil, err
+	}
+	cfg.UserRateLimitPro, err = parsePositiveInt("USER_RATE_LIMIT_PRO", "200")
+	if err != nil {
+		return nil, err
+	}
+	cfg.UserRateLimitBusiness, err = parsePositiveInt("USER_RATE_LIMIT_BUSINESS", "500")
+	if err != nil {
+		return nil, err
+	}
+	cfg.UserRateLimitPremium, err = parsePositiveInt("USER_RATE_LIMIT_PREMIUM", "500")
+	if err != nil {
+		return nil, err
+	}
+
 	origins := getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 	cfg.CORSAllowedOrigins = strings.Split(origins, ",")
 
@@ -170,4 +193,15 @@ func defaultSentryRate(env string) string {
 		return "0.1"
 	}
 	return "1.0"
+}
+
+func parsePositiveInt(key, fallback string) (int, error) {
+	v, err := strconv.Atoi(getEnv(key, fallback))
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a number: %w", key, err)
+	}
+	if v <= 0 {
+		return 0, fmt.Errorf("%s must be > 0", key)
+	}
+	return v, nil
 }

@@ -36,6 +36,10 @@ func main() {
 
 	// Set rate limiter trust proxy from config
 	mw.TrustProxy = cfg.TrustProxy
+	mw.PlanLimits["basic"] = cfg.UserRateLimitBasic
+	mw.PlanLimits["pro"] = cfg.UserRateLimitPro
+	mw.PlanLimits["business"] = cfg.UserRateLimitBusiness
+	mw.PlanLimits["premium"] = cfg.UserRateLimitPremium
 
 	// Sentry — panics + errors reporting. No-op if DSN is empty.
 	if cfg.SentryDSN != "" {
