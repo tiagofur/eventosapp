@@ -65,6 +65,12 @@ struct ContentView: View {
                   let route = notification.userInfo?["route"] as? Route else { return }
             pendingSpotlightRoute = route
         }
+        .onAppear {
+            WidgetDataSync.shared.syncUserPlan(authManager.currentUser?.plan.rawValue)
+        }
+        .onChange(of: authManager.currentUser?.plan.rawValue) { _, newValue in
+            WidgetDataSync.shared.syncUserPlan(newValue)
+        }
     }
 
     // MARK: - Offline Banner

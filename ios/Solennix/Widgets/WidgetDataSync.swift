@@ -49,6 +49,16 @@ final class WidgetDataSync {
         }
     }
 
+    // MARK: - Sync User Plan
+
+    func syncUserPlan(_ planRawValue: String?) {
+        if let planRawValue, !planRawValue.isEmpty {
+            userDefaults?.set(planRawValue, forKey: "widget_user_plan")
+        } else {
+            userDefaults?.removeObject(forKey: "widget_user_plan")
+        }
+    }
+
     // MARK: - Reload Widgets
 
     func reloadEventWidgets() {
@@ -70,6 +80,7 @@ final class WidgetDataSync {
     func clearWidgetData() {
         userDefaults?.removeObject(forKey: "widget_upcoming_events")
         userDefaults?.removeObject(forKey: "widget_kpis")
+        userDefaults?.removeObject(forKey: "widget_user_plan")
         userDefaults?.removeObject(forKey: "widget_last_updated")
         userDefaults?.removeObject(forKey: "completed_events")
         reloadAllWidgets()

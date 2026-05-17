@@ -854,6 +854,8 @@ Claves de datos: `widget_upcoming_events`, `widget_kpis`, `widget_last_updated`.
 
 `WidgetDataSync` (en el target principal) sincroniza datos desde el APIClient hacia el App Group `UserDefaults` y solicita `WidgetCenter.shared.reloadAllTimelines()`.
 
+`SolennixIntents` consume el mismo App Group para exponer atajos útiles con datos reales, y aplica gating Pro para las acciones de voz avanzadas.
+
 ### Live Activity (Dynamic Island)
 
 Implementada con `ActivityKit` para eventos en curso. Usa `SolennixEventAttributes` definido en SolennixCore:

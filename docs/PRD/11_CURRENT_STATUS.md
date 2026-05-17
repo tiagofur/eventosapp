@@ -25,6 +25,13 @@ status: active
 **Fecha:** Mayo 2026
 **Version:** 1.7
 
+> [!success] 2026-05-17 — Voice shortcuts/App Actions nativos (issues #211 y #212) implementados
+> Se cerró la paridad de asistentes de voz con funciones útiles y datos reales en iOS + Android.
+> - **iOS:** `SolennixIntents` reemplaza mocks por datos del App Group (`widget_upcoming_events`, `widget_kpis`, `widget_user_plan`) y habilita 5 atajos útiles: próximos eventos, eventos de hoy, conteo por periodo, ingresos del mes y stock bajo.
+> - **iOS gating:** los atajos de voz quedan limitados al plan Pro y muestran snippet de upgrade cuando no hay acceso.
+> - **Android:** `shortcuts.xml` expone App Actions sobre `solennix://` con deep links nativos a calendario, nuevo evento, cotización rápida e inventario.
+> - **Validación:** `xcodebuild -project Solennix.xcodeproj -scheme Solennix -destination 'generic/platform=iOS Simulator' build`, `./gradlew :app:assembleDebug`.
+
 > [!success] 2026-05-17 — Client Portal: status hub + contrato tier/capabilities (issue #325) implementado
 > Se completó la evolución del portal público en Web + Backend con contrato explícito por tier y UX orientada a estado/pagos.
 > - **Backend:** `PublicEventView` ahora expone `portal_tier` + `capabilities` y milestones públicos para tier Pro.

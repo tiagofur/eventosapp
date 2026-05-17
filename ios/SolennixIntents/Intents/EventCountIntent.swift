@@ -14,6 +14,13 @@ struct EventCountIntent: AppIntent {
     var period: EventPeriod
 
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        guard IntentSharedDataStore.hasProAccess else {
+            return .result(
+                dialog: "Plan Pro requerido para usar este atajo.",
+                view: PlanRequiredSnippetView()
+            )
+        }
+
         let counts = await fetchEventCounts()
 
         let count: Int
@@ -47,8 +54,27 @@ struct EventCountIntent: AppIntent {
     }
 
     private func fetchEventCounts() async -> EventCounts {
-        // Mock data - in production, read from shared App Group or API
-        return EventCounts(today: 1, thisWeek: 4, thisMonth: 12, confirmed: 10, quoted: 2)
+        let events = IntentSharedDataStore.loadUpcomingEvents()
+        let calendar = Calendar.current
+        let now = Date()
+        let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now)
+
+        let today = events.filter { calendar.isDateInToday($0.eventDate) }.count
+        let thisWeek = events.filter { event in
+            guard let interval = weekInterval else { return false }
+            return interval.contains(event.eventDate)
+        }.count
+        let thisMonth = events.filter { calendar.isDate($0.eventDate, equalTo: now, toGranularity: .month) }.count
+        let confirmed = events.filter { $0.status == "confirmed" }.count
+        let quoted = events.filter { $0.status == "quoted" }.count
+
+        return EventCounts(
+            today: today,
+            thisWeek: thisWeek,
+            thisMonth: thisMonth,
+            confirmed: confirmed,
+            quoted: quoted
+        )
     }
 }
 

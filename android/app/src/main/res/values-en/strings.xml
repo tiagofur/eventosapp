@@ -32,6 +32,13 @@
     <string name="shortcut_new_event">New Event</string>
     <string name="shortcut_new_event_long">Create a new event</string>
     <string name="shortcut_calendar">Calendar</string>
+    <string name="shortcut_upcoming_events">Upcoming events</string>
+    <string name="shortcut_upcoming_events_long">View your next confirmed events</string>
+    <string name="shortcut_monthly_revenue">Monthly revenue</string>
+    <string name="shortcut_monthly_revenue_long">Check current month revenue</string>
+    <string name="shortcut_low_stock">Low stock</string>
+    <string name="shortcut_low_stock_long">Review items below minimum stock</string>
+    <string name="assistant_upgrade_required">Pro plan required</string>
 
     <!-- Widgets -->
     <string name="widget_upcoming_events">Upcoming Events</string>

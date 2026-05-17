@@ -14,6 +14,13 @@ struct ShowTodayEventsIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        guard IntentSharedDataStore.hasProAccess else {
+            return .result(
+                dialog: "Plan Pro requerido para usar este atajo.",
+                view: PlanRequiredSnippetView()
+            )
+        }
+
         let events = await fetchTodayEvents()
 
         if events.isEmpty {
@@ -31,18 +38,20 @@ struct ShowTodayEventsIntent: AppIntent {
     }
 
     private func fetchTodayEvents() async -> [TodayEvent] {
-        // Mock data - in production, read from shared App Group or API
-        return [
-            TodayEvent(
-                id: "1",
-                clientName: "Maria Garcia",
-                eventType: "Boda",
-                time: "14:00",
-                location: "Salon Jardin",
-                guestCount: 150,
-                status: "confirmed"
-            )
-        ]
+        IntentSharedDataStore.loadUpcomingEvents()
+            .filter { $0.isToday }
+            .sorted { ($0.startTime ?? "") < ($1.startTime ?? "") }
+            .map {
+                TodayEvent(
+                    id: $0.id,
+                    clientName: $0.clientName,
+                    eventType: $0.eventType,
+                    time: $0.startTime ?? "all day",
+                    location: $0.location ?? "Sin ubicacion",
+                    guestCount: $0.guestCount ?? 0,
+                    status: $0.status
+                )
+            }
     }
 }
 

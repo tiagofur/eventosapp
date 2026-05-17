@@ -17,7 +17,13 @@ struct ShowUpcomingEventsIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
-        // In a real implementation, this would fetch from the API or local cache
+        guard IntentSharedDataStore.hasProAccess else {
+            return .result(
+                dialog: "Plan Pro requerido para usar este atajo.",
+                view: PlanRequiredSnippetView()
+            )
+        }
+
         let events = await fetchUpcomingEvents(limit: count)
 
         if events.isEmpty {
@@ -36,12 +42,21 @@ struct ShowUpcomingEventsIntent: AppIntent {
     }
 
     private func fetchUpcomingEvents(limit: Int) async -> [EventSummary] {
-        // Mock data - in production, read from shared App Group or API
-        return [
-            EventSummary(id: "1", clientName: "Maria Garcia", eventType: "Boda", date: "Hoy", time: "14:00"),
-            EventSummary(id: "2", clientName: "Carlos Lopez", eventType: "XV Anos", date: "Manana", time: "18:00"),
-            EventSummary(id: "3", clientName: "Ana Martinez", eventType: "Corporativo", date: "15 Mar", time: "12:00")
-        ].prefix(limit).map { $0 }
+        let upcoming = IntentSharedDataStore.loadUpcomingEvents()
+        let safeLimit = max(1, min(limit, 10))
+
+        return upcoming
+            .sorted { $0.eventDate < $1.eventDate }
+            .prefix(safeLimit)
+            .map {
+                EventSummary(
+                    id: $0.id,
+                    clientName: $0.clientName,
+                    eventType: $0.eventType,
+                    date: $0.formattedDate,
+                    time: $0.startTime ?? "all day"
+                )
+            }
     }
 }
 

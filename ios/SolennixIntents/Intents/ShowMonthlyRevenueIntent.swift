@@ -11,6 +11,13 @@ struct ShowMonthlyRevenueIntent: AppIntent {
     static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
+        guard IntentSharedDataStore.hasProAccess else {
+            return .result(
+                dialog: "Plan Pro requerido para usar este atajo.",
+                view: PlanRequiredSnippetView()
+            )
+        }
+
         let revenue = await fetchMonthlyRevenue()
 
         let formatter = NumberFormatter()
@@ -33,13 +40,23 @@ struct ShowMonthlyRevenueIntent: AppIntent {
     }
 
     private func fetchMonthlyRevenue() async -> MonthlyRevenue {
-        // Mock data - in production, read from shared App Group or API
+        guard let kpis = IntentSharedDataStore.loadKPIs() else {
+            return MonthlyRevenue(
+                total: 0,
+                collected: 0,
+                pending: 0,
+                eventsCount: 0,
+                previousMonthTotal: 0
+            )
+        }
+
+        let collected = max(0, kpis.monthlyRevenue - kpis.pendingPayments)
         return MonthlyRevenue(
-            total: 125000,
-            collected: 90000,
-            pending: 35000,
-            eventsCount: 8,
-            previousMonthTotal: 110000
+            total: kpis.monthlyRevenue,
+            collected: collected,
+            pending: kpis.pendingPayments,
+            eventsCount: kpis.eventsThisMonth,
+            previousMonthTotal: 0
         )
     }
 }

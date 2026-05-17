@@ -30,6 +30,17 @@
     <string name="shortcut_new_event">Nuevo Evento</string>
     <string name="shortcut_new_event_long">Crear un nuevo evento</string>
     <string name="shortcut_calendar">Calendario</string>
+    <string name="shortcut_quick_quote">Nueva Cotizacion</string>
+    <string name="shortcut_quick_quote_long">Iniciar cotizacion rapida</string>
+    <string name="shortcut_inventory">Inventario</string>
+    <string name="shortcut_inventory_long">Revisar inventario y stock</string>
+    <string name="shortcut_upcoming_events">Proximos eventos</string>
+    <string name="shortcut_upcoming_events_long">Ver tus proximos eventos confirmados</string>
+    <string name="shortcut_monthly_revenue">Ingresos del mes</string>
+    <string name="shortcut_monthly_revenue_long">Consultar ingresos del mes actual</string>
+    <string name="shortcut_low_stock">Stock bajo</string>
+    <string name="shortcut_low_stock_long">Revisar items con stock bajo</string>
+    <string name="assistant_upgrade_required">Plan Pro requerido</string>
 
     <!-- Widgets -->
     <string name="widget_upcoming_events">Próximos Eventos</string>

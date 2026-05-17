@@ -22,6 +22,8 @@ fun parseAppDeepLinkRoute(intent: Intent?): String? {
             uri.getQueryParameter("clientId")?.let { put("clientId", it) }
             uri.getQueryParameter("query")?.let { put("query", it) }
             uri.getQueryParameter("q")?.let { put("q", it) }
+            uri.getQueryParameter("source")?.let { put("source", it) }
+            uri.getQueryParameter("feature")?.let { put("feature", it) }
         }
     )
 }
@@ -62,7 +64,9 @@ fun parseAppDeepLinkRoute(
             }
         }
         "product" -> pathId?.let { "product_detail/$it" }
-        "inventory" -> pathId?.let { "inventory_detail/$it" }
+        "inventory" -> if (pathId.isNullOrBlank()) "inventory" else "inventory_detail/$pathId"
+        "events" -> "events"
+        "home" -> "home"
         "new-event" -> "event_form?eventId="
         "calendar" -> "calendar"
         "settings" -> "settings"

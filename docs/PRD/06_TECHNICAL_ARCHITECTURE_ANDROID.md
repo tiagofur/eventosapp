@@ -685,6 +685,8 @@ Soporte de deep links con esquema `solennix://`:
 
 Procesado en `MainActivity.onNewIntent()` y `parseDeepLinkRoute()` en `MainNavHost.kt`.
 
+`shortcuts.xml` reutiliza esas mismas rutas para App Actions de Assistant, de modo que el asistente y la navegación interna comparten el mismo contrato nativo.
+
 ### Destinos de Navegación
 
 La navegación principal incluye las siguientes tabs y destinos:
