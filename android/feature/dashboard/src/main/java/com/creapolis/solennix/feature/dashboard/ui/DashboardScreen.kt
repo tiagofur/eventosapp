@@ -311,9 +311,12 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = SolennixTheme.colors.primaryText
                         )
-                        uiState.lowStockItems.forEach { item ->
-                            InventoryAlertItem(item = item, onClick = { onInventoryClick(item.id) })
-                        }
+                    }
+                    items(
+                        items = uiState.lowStockItems,
+                        key = { it.id }
+                    ) { inventoryItem ->
+                        InventoryAlertItem(item = inventoryItem, onClick = { onInventoryClick(inventoryItem.id) })
                     }
                 }
 
@@ -327,13 +330,16 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = SolennixTheme.colors.primaryText
                         )
-                        uiState.upcomingEvents.forEach { event ->
-                            EventListItem(
-                                event = event,
-                                clientName = uiState.clientMap[event.clientId],
-                                onClick = { onEventClick(event.id) }
-                            )
-                        }
+                    }
+                    items(
+                        items = uiState.upcomingEvents,
+                        key = { it.id }
+                    ) { event ->
+                        EventListItem(
+                            event = event,
+                            clientName = uiState.clientMap[event.clientId],
+                            onClick = { onEventClick(event.id) }
+                        )
                     }
                 }
 

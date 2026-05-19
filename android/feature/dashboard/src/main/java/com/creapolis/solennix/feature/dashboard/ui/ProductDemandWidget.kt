@@ -2,8 +2,6 @@ package com.creapolis.solennix.feature.dashboard.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -69,8 +67,8 @@ fun ProductDemandWidget(
                     }
                 }
                 else -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(products) { product ->
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        products.forEach { product ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

@@ -49,6 +49,9 @@
     <string name="events_list_error_change_status">No se pudo cambiar el estado</string>
     <string name="events_list_error_delete">No se pudo eliminar el evento</string>
     <string name="events_list_error_sync">Ocurrió un error al sincronizar</string>
+    <string name="events_list_error_network">Error de conexión. Verificá tu internet.</string>
+    <string name="events_list_error_server">Error del servidor. Intentá más tarde.</string>
+    <string name="events_list_error_session_expired">Sesión expirada. Iniciá sesión de nuevo.</string>
     <string name="events_list_csv_header_name">Nombre</string>
     <string name="events_list_csv_header_date">Fecha</string>
     <string name="events_list_csv_header_client">Cliente</string>

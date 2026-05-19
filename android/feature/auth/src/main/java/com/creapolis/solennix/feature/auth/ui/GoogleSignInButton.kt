@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
@@ -21,6 +22,7 @@ import androidx.credentials.exceptions.NoCredentialException
 import com.creapolis.solennix.feature.auth.R
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 
@@ -63,14 +65,11 @@ fun GoogleSignInButton(
             isLoading = true
             coroutineScope.launch {
                 try {
-                    val googleIdOption = GetGoogleIdOption.Builder()
-                        .setFilterByAuthorizedAccounts(false)
-                        .setServerClientId(webClientId)
-                        .setAutoSelectEnabled(true)
+                    val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(webClientId)
                         .build()
 
                     val request = GetCredentialRequest.Builder()
-                        .addCredentialOption(googleIdOption)
+                        .addCredentialOption(signInWithGoogleOption)
                         .build()
 
                     val credentialManager = CredentialManager.create(context)
@@ -80,7 +79,44 @@ fun GoogleSignInButton(
                     )
 
                     val credential = result.credential
-                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    val googleIdTokenCredential = try {
+                        when (credential) {
+                            is CustomCredential -> GoogleIdTokenCredential.createFrom(credential.data)
+                            else -> {
+                                Log.w(
+                                    "GoogleSignIn",
+                                    "Unexpected credential type: ${credential::class.java.name}. Retrying with GetGoogleIdOption"
+                                )
+                                throw GoogleIdTokenParsingException()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(
+                            "GoogleSignIn",
+                            "Primary SignInWithGoogle credential parsing failed, retrying with GetGoogleIdOption",
+                            e
+                        )
+
+                        val fallbackOption = GetGoogleIdOption.Builder()
+                            .setFilterByAuthorizedAccounts(false)
+                            .setServerClientId(webClientId)
+                            .setAutoSelectEnabled(false)
+                            .build()
+
+                        val fallbackRequest = GetCredentialRequest.Builder()
+                            .addCredentialOption(fallbackOption)
+                            .build()
+
+                        val fallbackResult = credentialManager.getCredential(
+                            request = fallbackRequest,
+                            context = context
+                        )
+
+                        when (val fallbackCredential = fallbackResult.credential) {
+                            is CustomCredential -> GoogleIdTokenCredential.createFrom(fallbackCredential.data)
+                            else -> throw GoogleIdTokenParsingException()
+                        }
+                    }
                     val idToken = googleIdTokenCredential.idToken
                     val displayName = googleIdTokenCredential.displayName
 

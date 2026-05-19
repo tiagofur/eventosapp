@@ -8,6 +8,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.creapolis.solennix.core.model.ApiError
 import com.creapolis.solennix.core.data.repository.ClientRepository
 import com.creapolis.solennix.core.data.repository.EventRepository
 import com.creapolis.solennix.core.model.Client
@@ -15,12 +16,14 @@ import com.creapolis.solennix.core.model.Event
 import com.creapolis.solennix.core.model.EventStatus
 import com.creapolis.solennix.core.model.extensions.asMXN
 import com.creapolis.solennix.core.model.extensions.parseFlexibleDate
+import com.creapolis.solennix.core.network.toApiError
 import com.creapolis.solennix.feature.events.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -86,6 +89,7 @@ class EventListViewModel @Inject constructor(
     private val _updatingStatusEventId = MutableStateFlow<String?>(null)
     /** Local events list for soft-delete modifications. */
     private val _localEvents = MutableStateFlow<List<Event>>(emptyList())
+    private var refreshJob: Job? = null
 
     private data class FilterState(
         val query: String,
@@ -402,22 +406,37 @@ class EventListViewModel @Inject constructor(
     }
 
     fun refresh() {
-        viewModelScope.launch {
+        refreshJob?.cancel()
+
+        refreshJob = viewModelScope.launch {
             _isRefreshing.value = true
             _error.value = null
             try {
                 eventRepository.syncEvents()
                 clientRepository.syncClients()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _error.value = e.message ?: tr(R.string.events_list_error_sync)
+                _error.value = e.toEventsSyncMessage()
             } finally {
                 _isRefreshing.value = false
+                refreshJob = null
             }
         }
     }
 
     fun clearError() {
         _error.value = null
+    }
+
+    private fun Throwable.toEventsSyncMessage(): String {
+        val mapped = if (this is ApiError) this else toApiError()
+        return when (mapped) {
+            is ApiError.NetworkError -> tr(R.string.events_list_error_network)
+            is ApiError.ServerError -> tr(R.string.events_list_error_server)
+            ApiError.Unauthorized -> tr(R.string.events_list_error_session_expired)
+            else -> message ?: tr(R.string.events_list_error_sync)
+        }
     }
 }
 

@@ -2,8 +2,6 @@ package com.creapolis.solennix.feature.dashboard.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -70,8 +68,8 @@ fun TopClientsWidget(
                     }
                 }
                 else -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(clients) { client ->
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        clients.forEach { client ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
