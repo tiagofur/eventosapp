@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,7 +30,10 @@ export const Login: React.FC = () => {
   const { t } = useTranslation(["auth", "common"]);
   const navigate = useNavigate();
   const { checkAuth } = useAuth();
+  const location = useLocation() as { state?: { email?: string; verificationRequired?: boolean } };
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -48,23 +51,70 @@ export const Login: React.FC = () => {
     { icon: BarChart3, text: t("auth:social_proof.feature_reports") },
   ], [t]);
 
+  const isEmailNotVerifiedMessage = (message: string) => {
+    const normalized = message.toLowerCase();
+    return (
+      normalized.includes("verify your email") ||
+      normalized.includes("verificar tu correo") ||
+      normalized.includes("verificar el correo")
+    );
+  };
+
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
+
+  useEffect(() => {
+    const email = location.state?.email;
+    if (email) {
+      setValue("email", email, { shouldDirty: false, shouldTouch: false });
+    }
+    if (location.state?.verificationRequired) {
+      setNotice(t("auth:login.verification_required_notice"));
+    }
+  }, [location.state, setValue, t]);
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     setError(null);
+    setNotice(null);
     try {
       await api.post("/auth/login", { email: data.email, password: data.password });
       await checkAuth();
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.message || t("auth:login.error"));
+      const message = err?.message || t("auth:login.error");
+      if (isEmailNotVerifiedMessage(message)) {
+        setNotice(message);
+        setError(null);
+      } else {
+        setError(message);
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    const email = getValues("email").trim();
+    if (!email) {
+      setError(t("auth:login.resend_requires_email"));
+      return;
+    }
+
+    setResendLoading(true);
+    setError(null);
+    try {
+      await api.post("/auth/verify-email/resend", { email });
+      setNotice(t("auth:login.verification_resent"));
+    } catch (err: any) {
+      setError(err?.message || t("auth:login.resend_error"));
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -192,6 +242,26 @@ export const Login: React.FC = () => {
               >
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <span className="text-sm">{error}</span>
+              </div>
+            )}
+
+            {notice && (
+              <div
+                className="flex items-start gap-3 bg-success/5 border border-success/30 text-success rounded-xl p-4 mb-6"
+                role="status"
+              >
+                <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                <div className="text-sm space-y-3">
+                  <p>{notice}</p>
+                  <button
+                    type="button"
+                    onClick={resendVerification}
+                    disabled={resendLoading}
+                    className="font-semibold text-success hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {resendLoading ? t("auth:login.resending_verification") : t("auth:login.resend_verification")}
+                  </button>
+                </div>
               </div>
             )}
 

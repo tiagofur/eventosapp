@@ -78,6 +78,30 @@ describe('Login', () => {
     });
   });
 
+  it('shows verification notice and can resend the link', async () => {
+    (api.post as any)
+      .mockRejectedValueOnce(new Error('You must verify your email before signing in'))
+      .mockResolvedValueOnce({});
+
+    renderLogin();
+
+    fireEvent.change(screen.getByLabelText(/correo|email/i, { selector: 'input' }), { target: { value: 'pending@example.com' } });
+    fireEvent.change(screen.getByLabelText(/contraseña/i, { selector: 'input' }), { target: { value: 'password' } });
+    fireEvent.click(screen.getByRole('button', { name: /ingresar|iniciar sesión|login\.submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/verify your email|verificar tu correo/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /reenviar enlace de verificación|resend verification link/i }));
+
+    await waitFor(() => {
+      expect(api.post).toHaveBeenLastCalledWith('/auth/verify-email/resend', {
+        email: 'pending@example.com',
+      });
+    });
+  });
+
   it('toggles theme from header button', () => {
     const toggleTheme = vi.fn();
     (useTheme as any).mockReturnValue({ theme: 'light', toggleTheme });
