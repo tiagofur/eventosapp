@@ -38,6 +38,7 @@ var (
 	ErrAdminUserAlreadyDeleted       = errors.New("admin user already deleted")
 	ErrAdminUserNotBlocked           = errors.New("admin user is not blocked")
 	ErrAdminUserNotEligibleForDelete = errors.New("admin user is not eligible for deletion")
+	ErrAdminUserNotBlockable         = errors.New("admin user is not blockable")
 )
 
 func NewAdminRepo(pool *pgxpool.Pool) *AdminRepo {
@@ -320,12 +321,22 @@ func (r *AdminRepo) BlockUser(ctx context.Context, id, adminID uuid.UUID, reason
 	}
 
 	if role != "user" {
-		return fmt.Errorf("only end-user accounts can be blocked")
+		return ErrAdminUserNotBlockable
 	}
 
 	if currentStatus == AccountStatusDeleted {
 		return ErrAdminUserAlreadyDeleted
 	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin block user tx: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback(ctx)
+		}
+	}()
 
 	query := `
 		UPDATE users
@@ -336,12 +347,20 @@ func (r *AdminRepo) BlockUser(ctx context.Context, id, adminID uuid.UUID, reason
 			deletion_eligible_at = NOW() + INTERVAL '6 months',
 			updated_at = NOW()
 		WHERE id = $1`
-	tag, err := r.pool.Exec(ctx, query, id, AccountStatusBlocked, strings.TrimSpace(reason), adminID)
+	tag, err := tx.Exec(ctx, query, id, AccountStatusBlocked, strings.TrimSpace(reason), adminID)
 	if err != nil {
 		return fmt.Errorf("failed to block user: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrAdminUserNotFound
+	}
+
+	if _, err = tx.Exec(ctx, `DELETE FROM refresh_token_families WHERE user_id = $1`, id); err != nil {
+		return fmt.Errorf("failed to revoke refresh tokens for blocked user: %w", err)
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit block user tx: %w", err)
 	}
 
 	return nil

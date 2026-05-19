@@ -382,6 +382,8 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		r.Get("/stats", adminHandler.GetStats)
 		r.Get("/users", adminHandler.ListUsers)
 		r.Get("/users/{id}", adminHandler.GetUser)
+		r.Put("/users/{id}/block", adminHandler.BlockUser)
+		r.Delete("/users/{id}", adminHandler.DeleteUser)
 		r.Put("/users/{id}/upgrade", adminHandler.UpgradeUser)
 		r.Get("/subscriptions", adminHandler.GetSubscriptions)
 		r.Get("/audit-logs", auditHandler.GetAllAuditLogs)

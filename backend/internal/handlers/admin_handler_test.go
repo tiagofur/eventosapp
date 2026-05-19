@@ -728,6 +728,30 @@ func TestAdminHandler_BlockUser(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
+
+	t.Run("forbidden for non-end-user account", func(t *testing.T) {
+		repo := new(MockAdminRepo)
+		handler := NewAdminHandler(repo)
+
+		userID := uuid.New()
+		adminID := uuid.New()
+
+		req := httptest.NewRequest("PUT", "/api/admin/users/"+userID.String()+"/block", bytes.NewReader([]byte(`{"reason":"fraud"}`)))
+		req.Header.Set("Content-Type", "application/json")
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", userID.String())
+		ctx := context.WithValue(req.Context(), chi.RouteCtxKey, rctx)
+		ctx = context.WithValue(ctx, middleware.UserIDKey, adminID)
+		req = req.WithContext(ctx)
+
+		repo.On("BlockUser", mock.Anything, userID, adminID, "fraud").Return(repository.ErrAdminUserNotBlockable)
+
+		w := httptest.NewRecorder()
+		handler.BlockUser(w, req)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		repo.AssertExpectations(t)
+	})
 }
 
 func TestAdminHandler_DeleteUser(t *testing.T) {

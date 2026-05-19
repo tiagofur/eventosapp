@@ -261,12 +261,10 @@ func (h *AdminHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, repository.ErrAdminUserAlreadyDeleted):
 			writeError(w, http.StatusConflict, "User is already deleted")
 			return
+		case errors.Is(err, repository.ErrAdminUserNotBlockable):
+			writeError(w, http.StatusForbidden, "Only end-user accounts can be blocked")
+			return
 		default:
-			errMsg := strings.ToLower(err.Error())
-			if strings.Contains(errMsg, "only end-user") {
-				writeError(w, http.StatusForbidden, "Only end-user accounts can be blocked")
-				return
-			}
 			slog.Error("admin: failed to block user", "error", err, "target_user_id", id, "admin_id", adminID)
 			writeError(w, http.StatusInternalServerError, "Failed to block user")
 			return
