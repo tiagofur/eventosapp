@@ -89,6 +89,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 		// Protected auth routes (requires valid token)
 		r.Group(func(r chi.Router) {
 			r.Use(mw.Auth(authService))
+			r.Use(mw.AccountStatusActive(userRepo))
 			r.Get("/me", authHandler.Me)
 			r.Post("/change-password", authHandler.ChangePassword)
 		})
@@ -170,6 +171,7 @@ func New(authHandler *handlers.AuthHandler, crudHandler *handlers.CRUDHandler, s
 	// Protected routes
 	apiRouter.Group(func(r chi.Router) {
 		r.Use(mw.Auth(authService))
+		r.Use(mw.AccountStatusActive(userRepo))
 		r.Use(mw.ValidateUUID("id", "photoId"))
 		planResolver := mw.NewCachedPlanResolver(userRepo, 5*time.Minute)
 		r.Use(mw.UserRateLimit(planResolver, 1*time.Minute))
