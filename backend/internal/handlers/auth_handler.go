@@ -543,7 +543,11 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		// Store the new refresh token in the family
 		newTokenHash := hashToken(tokens.RefreshToken)
 		refreshExpiry := time.Now().Add(7 * 24 * time.Hour)
-		h.refreshTokenRepo.Store(r.Context(), claims.UserID, familyID, newTokenHash, refreshExpiry)
+		if err := h.refreshTokenRepo.Store(r.Context(), claims.UserID, familyID, newTokenHash, refreshExpiry); err != nil {
+			slog.Error("Failed to store rotated refresh token", "error", err, "user_id", claims.UserID, "family_id", familyID)
+			writeAuthI18nError(w, r, http.StatusInternalServerError, "auth.internal_server_error")
+			return
+		}
 
 		setAuthCookie(w, r, tokens.AccessToken)
 		slog.Info("auth.event", "action", "token_refresh", "user_id", claims.UserID, "family_id", familyID, "ip", clientIP(r))
